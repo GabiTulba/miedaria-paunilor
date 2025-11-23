@@ -1,0 +1,14 @@
+
+services:
+  miedaria-paunilor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    # Optional: Mount volumes for development to enable hot-reloading without rebuilding the image
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules # Exclude node_modules from the volume mount
