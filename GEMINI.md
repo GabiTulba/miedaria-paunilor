@@ -12,6 +12,7 @@ Miedaria Paunilor is a web application built with Next.js, React, and Tailwind C
 *   **UI Library:** React
 *   **Styling:** Tailwind CSS
 *   **Database:** MySQL
+*   **Authentication:** JSON Web Tokens (JWT) using `jose` library (Edge Runtime compatible)
 
 ### Current State
 
@@ -28,6 +29,8 @@ The project is currently in an early prototype stage. The main features include:
 
 Product data is now managed through the admin panel and stored in the MySQL database.
 *   **Product Management:** The `/admin/products` page allows administrators to add, edit, and delete products. Product deletion includes a confirmation step and interacts with the `/api/admin/products/[product_name]` endpoint.
+*   **Admin User Display:** The `/admin` page displays the actual logged-in username by decoding a JWT stored in an `admin-token` cookie.
+*   **Secure Admin Route Protection:** The `middleware.ts` actively verifies the validity of the `admin-token` JWT for all `/admin` routes (excluding login). If the token is invalid, missing, or tampered with, the user is redirected to the `/admin/login` page, ensuring robust and secure access control to administrative areas. The application strictly enforces the presence of the `JWT_SECRET` environment variable at runtime for all JWT operations. All JWT operations now utilize the `jose` library, ensuring compatibility with Next.js Edge Runtime.
 
 ## Agent Instructions
 

@@ -9,8 +9,6 @@ export default function AdminPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // In a real application, you would fetch the username from an authenticated API endpoint
-    // For now, let's mock it or try to get it from a cookie if available
     const fetchUsername = async () => {
       try {
         const response = await fetch('/api/admin/user');
@@ -18,13 +16,11 @@ export default function AdminPage() {
           const data = await response.json();
           setUsername(data.username);
         } else {
-          setUsername('Guest');
-          // Optionally redirect to login if unauthorized
-          // router.push('/admin/login');
+          router.push('/admin/login');
         }
       } catch (error) {
         console.error('Failed to fetch username:', error);
-        setUsername('Guest');
+        router.push('/admin/login');
       }
     };
     fetchUsername();
