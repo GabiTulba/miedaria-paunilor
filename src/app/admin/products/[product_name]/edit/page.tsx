@@ -9,6 +9,14 @@ export default function EditProductPage({ params }: { params: { product_name: st
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
   const [product_name, setproduct_name] = useState('');
+  const [size, setSize] = useState('');
+  const [availability, setAvailability] = useState('');
+  const [organoleptic, setOrganoleptic] = useState('');
+  const [taste, setTaste] = useState('');
+  const [smell, setSmell] = useState('');
+  const [body, setBody] = useState('');
+  const [alcohol, setAlcohol] = useState('');
+  const [ingredients, setIngredients] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -22,6 +30,14 @@ export default function EditProductPage({ params }: { params: { product_name: st
         setDescription(product.description);
         setImage(product.image);
         setproduct_name(product.product_name);
+        setSize(product.size);
+        setAvailability(product.availability);
+        setOrganoleptic(product.organoleptic);
+        setTaste(product.taste);
+        setSmell(product.smell);
+        setBody(product.body);
+        setAlcohol(product.alcohol);
+        setIngredients(product.ingredients);
       }
     };
     fetchProduct();
@@ -36,7 +52,11 @@ export default function EditProductPage({ params }: { params: { product_name: st
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, price, description, image, product_name }),
+      body: JSON.stringify({ 
+        name, price: parseFloat(price), description, image, product_name, 
+        size: parseInt(size), availability: parseInt(availability), 
+        organoleptic, taste, smell, body, alcohol: parseFloat(alcohol), ingredients 
+      }),
     });
 
     if (res.ok) {
@@ -59,15 +79,17 @@ export default function EditProductPage({ params }: { params: { product_name: st
             className="w-full px-3 py-2 border rounded-lg"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            required
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700">Price</label>
+          <label className="block text-gray-700">Product Name (URL friendly)</label>
           <input
             type="text"
             className="w-full px-3 py-2 border rounded-lg"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            value={product_name}
+            onChange={(e) => setproduct_name(e.target.value)}
+            required
           />
         </div>
         <div className="mb-4">
@@ -88,12 +110,89 @@ export default function EditProductPage({ params }: { params: { product_name: st
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700">product_name</label>
+          <label className="block text-gray-700">Price (€)</label>
+          <input
+            type="number"
+            step="0.01"
+            className="w-full px-3 py-2 border rounded-lg"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Size (ml)</label>
+          <input
+            type="number"
+            className="w-full px-3 py-2 border rounded-lg"
+            value={size}
+            onChange={(e) => setSize(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Availability (bottles)</label>
+          <input
+            type="number"
+            className="w-full px-3 py-2 border rounded-lg"
+            value={availability}
+            onChange={(e) => setAvailability(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Organoleptic</label>
           <input
             type="text"
             className="w-full px-3 py-2 border rounded-lg"
-            value={product_name}
-            onChange={(e) => setproduct_name(e.target.value)}
+            value={organoleptic}
+            onChange={(e) => setOrganoleptic(e.target.value)}
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Taste</label>
+          <input
+            type="text"
+            className="w-full px-3 py-2 border rounded-lg"
+            value={taste}
+            onChange={(e) => setTaste(e.target.value)}
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Smell</label>
+          <input
+            type="text"
+            className="w-full px-3 py-2 border rounded-lg"
+            value={smell}
+            onChange={(e) => setSmell(e.target.value)}
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Body</label>
+          <input
+            type="text"
+            className="w-full px-3 py-2 border rounded-lg"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Alcohol (% ABV)</label>
+          <input
+            type="number"
+            step="0.01"
+            className="w-full px-3 py-2 border rounded-lg"
+            value={alcohol}
+            onChange={(e) => setAlcohol(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700">Ingredients</label>
+          <textarea
+            className="w-full px-3 py-2 border rounded-lg"
+            value={ingredients}
+            onChange={(e) => setIngredients(e.target.value)}
           />
         </div>
         <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-lg">

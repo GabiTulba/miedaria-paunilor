@@ -7,7 +7,11 @@ export async function GET(req: NextRequest, { params }: { params: { product_name
 
   try {
     const results: any = await query({
-      query: 'SELECT * FROM products WHERE product_name = ?',
+      query: `SELECT 
+                id, name, product_name, description, image, 
+                size, price, availability, 
+                organoleptic, taste, smell, body, alcohol, ingredients 
+              FROM products WHERE product_name = ?`,
       values: [product_name],
     });
 
@@ -24,16 +28,29 @@ export async function GET(req: NextRequest, { params }: { params: { product_name
 
 export async function PUT(req: NextRequest, { params }: { params: { product_name: string } }) {
   const { product_name: oldProduct_name } = params;
-  const { name, price, description, image, product_name: newproduct_name } = await req.json();
+  const { 
+    name, product_name: newproduct_name, description, image, 
+    size, price, availability, 
+    organoleptic, taste, smell, body, alcohol, ingredients 
+  } = await req.json();
 
-  if (!name || !price || !newproduct_name) {
-    return NextResponse.json({ message: 'Name, price and product_name are required' }, { status: 400 });
+  if (!name || !price || !newproduct_name || !size || !availability || !alcohol) {
+    return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
   }
 
   try {
     const results: ResultSetHeader = await query({
-      query: 'UPDATE products SET name = ?, price = ?, description = ?, image = ?, product_name = ? WHERE product_name = ?',
-      values: [name, price, description, image, newproduct_name, oldProduct_name],
+      query: `UPDATE products SET 
+                name = ?, product_name = ?, description = ?, image = ?, 
+                size = ?, price = ?, availability = ?, 
+                organoleptic = ?, taste = ?, smell = ?, body = ?, alcohol = ?, ingredients = ? 
+              WHERE product_name = ?`,
+      values: [
+        name, newproduct_name, description, image, 
+        size, price, availability, 
+        organoleptic, taste, smell, body, alcohol, ingredients,
+        oldProduct_name
+      ],
     }) as ResultSetHeader;
 
     if (results.affectedRows === 0) {

@@ -1,10 +1,18 @@
 CREATE TABLE products (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
-  price DECIMAL(10, 2) NOT NULL,
-  image VARCHAR(255) NOT NULL,
+  product_name VARCHAR(255) NOT NULL UNIQUE,
   description TEXT,
-  product_name VARCHAR(255) NOT NULL UNIQUE
+  image VARCHAR(255),
+  size INT,
+  price DECIMAL(10, 2),
+  availability INT,
+  organoleptic VARCHAR(255),
+  taste VARCHAR(255),
+  smell VARCHAR(255),
+  body VARCHAR(255),
+  alcohol DECIMAL(4, 2),
+  ingredients TEXT
 );
 
 CREATE TABLE users (

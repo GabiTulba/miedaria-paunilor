@@ -5,10 +5,18 @@ import Link from 'next/link';
 interface Product {
   id: number;
   name: string;
-  price: number;
+  product_name: string;
   description: string;
   image: string;
-  product_name: string;
+  size: number;
+  price: number;
+  availability: number;
+  organoleptic: string;
+  taste: string;
+  smell: string;
+  body: string;
+  alcohol: number;
+  ingredients: string;
 }
 
 async function getProducts() {
@@ -29,7 +37,7 @@ const ShopProductList = async () => {
         <div className="mt-6 space-y-8">
           {products.map((product) => (
             <Link key={product.product_name} href={`/products/${product.product_name}`} className="block hover:bg-gray-100 rounded-lg">
-              <div className="flex flex-col md:flex-row items-start md:items-center bg-gray-50 p-4 rounded-lg shadow-sm">
+              <div className="flex flex-col md:flex-row items-start bg-gray-50 p-4 rounded-lg shadow-sm min-h-[200px] md:min-h-[250px]">
                 <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-6">
                   <div className="w-48 h-48 relative">
                     <Image
@@ -40,13 +48,16 @@ const ShopProductList = async () => {
                       className="rounded-md"
                     />
                   </div>
-                  <h3 className="mt-2 text-lg font-semibold text-gray-900 text-center md:text-left">{product.name}</h3>
+                  <h3 className="mt-2 text-lg font-semibold text-gray-900 text-center md:text-left break-words">{product.name}</h3>
                 </div>
-                <div className="flex-grow">
-                  <h4 className="font-medium text-gray-700">Details</h4>
-                  <ul className="mt-2 list-disc list-inside text-gray-600 space-y-1">
-                    <li>Price: €{product.price}</li>
-                  </ul>
+                <div className="flex-grow flex flex-col justify-between h-full whitespace-normal">
+                  <p className="text-gray-600 mb-2 break-words">{product.description}</p>
+                  <div>
+                    <p className="text-xl font-bold text-gray-800 mb-1">€{product.price}</p>
+                    <p className={`text-lg font-bold ${product.availability > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {product.availability > 0 ? 'In Stock' : 'Out of Stock'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </Link>

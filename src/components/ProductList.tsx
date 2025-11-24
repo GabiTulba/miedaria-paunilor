@@ -5,10 +5,18 @@ import { query } from '@/lib/db';
 interface Product {
   id: number;
   name: string;
-  price: number;
+  product_name: string;
   description: string;
   image: string;
-  product_name: string;
+  size: number;
+  price: number;
+  availability: number;
+  organoleptic: string;
+  taste: string;
+  smell: string;
+  body: string;
+  alcohol: number;
+  ingredients: string;
 }
 
 async function getProducts() {
@@ -17,6 +25,13 @@ async function getProducts() {
   });
   return products as Product[];
 }
+
+const truncateDescription = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return text.substring(0, maxLength - 3) + '...';
+};
 
 const ProductList = async ({ limit }: { limit?: number }) => {
   const products = await getProducts();
@@ -39,7 +54,13 @@ const ProductList = async ({ limit }: { limit?: number }) => {
                 />
                 <div className="p-6">
                   <h3 className="text-xl font-bold mb-2">{product.name}</h3>
-                  <p className="text-gray-600">{product.description}</p>
+                  <p className="font-bold text-gray-800">
+                    €{product.price} | {product.size}ml | {product.alcohol}% ABV
+                  </p>
+                  <p className={`font-bold ${product.availability > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {product.availability > 0 ? 'In Stock' : 'Out of Stock'}
+                  </p>
+                  <p className="text-gray-600 mt-2">{truncateDescription(product.description, 100)}</p>
                 </div>
               </div>
             </Link>
