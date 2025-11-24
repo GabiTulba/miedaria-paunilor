@@ -8,7 +8,7 @@ interface Product {
   price: number;
   description: string;
   image: string;
-  slug: string;
+  product_name: string;
 }
 
 async function getProducts() {
@@ -28,7 +28,7 @@ const ShopProductList = async () => {
 
         <div className="mt-6 space-y-8">
           {products.map((product) => (
-            <Link key={product.slug} href={`/products/${product.slug}`} className="block hover:bg-gray-100 rounded-lg">
+            <Link key={product.product_name} href={`/products/${product.product_name}`} className="block hover:bg-gray-100 rounded-lg">
               <div className="flex flex-col md:flex-row items-start md:items-center bg-gray-50 p-4 rounded-lg shadow-sm">
                 <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-6">
                   <div className="w-48 h-48 relative">

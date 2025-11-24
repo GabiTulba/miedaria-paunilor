@@ -21,9 +21,13 @@ The project is currently in an early prototype stage. The main features include:
 *   A dedicated shop page that displays all available products.
 *   A product detail page for each product.
 *   A MySQL database to store and manage products and users.
-*   A simple admin panel at `/admin/login` to manage products.
+*   A simple admin panel at `/admin/login` to manage products, now with enhanced authentication and navigation:
+    *   Requests to `/admin` are redirected to `/admin/login` if the user is not authenticated.
+    *   The `/admin` page provides a menu to disconnect, navigate to the product dashboard, and displays the logged-in user's username.
+    *   Login and logout functionalities are fully integrated with cookie-based authentication.
 
 Product data is now managed through the admin panel and stored in the MySQL database.
+*   **Product Management:** The `/admin/products` page allows administrators to add, edit, and delete products. Product deletion includes a confirmation step and interacts with the `/api/admin/products/[product_name]` endpoint.
 
 ## Agent Instructions
 

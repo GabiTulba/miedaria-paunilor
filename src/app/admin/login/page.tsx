@@ -22,7 +22,7 @@ export default function LoginPage() {
     });
 
     if (res.ok) {
-      router.push('/admin/dashboard/products');
+      router.push('/admin');
     } else {
       const data = await res.json();
       setError(data.message || 'An error occurred.');

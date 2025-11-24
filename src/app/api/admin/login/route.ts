@@ -16,7 +16,14 @@ export async function POST(req: NextRequest) {
 
     if (results.length > 0) {
       // In a real application, you would create a session and return a token
-      return NextResponse.json({ message: 'Login successful' });
+      const response = NextResponse.json({ message: 'Login successful' });
+      response.cookies.set('admin-token', 'authenticated', { // Setting a simple token for now
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24, // 1 day
+        path: '/',
+      });
+      return response;
     } else {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }

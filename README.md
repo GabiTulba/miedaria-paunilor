@@ -16,7 +16,7 @@ This project is a prototype for the official website of Miedăria Păunilor, a t
 *   **Shop Page**: A dedicated page at `/shop` that displays all available products.
 *   **Dynamic Product Pages**: Individual pages for each mead product.
 *   **Database Integration**: The project is connected to a MySQL database to store and manage products and users.
-*   **Admin Panel**: A simple admin panel at `/admin/login` to manage products.
+*   **Admin Panel**: An enhanced admin panel at `/admin/login` for comprehensive product management (add, edit, delete functionality), user authentication, and navigation.
 
 ## Environment Variables
 

@@ -4,7 +4,7 @@ CREATE TABLE products (
   price DECIMAL(10, 2) NOT NULL,
   image VARCHAR(255) NOT NULL,
   description TEXT,
-  slug VARCHAR(255) NOT NULL UNIQUE
+  product_name VARCHAR(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE users (

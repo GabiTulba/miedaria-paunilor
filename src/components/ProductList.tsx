@@ -8,7 +8,7 @@ interface Product {
   price: number;
   description: string;
   image: string;
-  slug: string;
+  product_name: string;
 }
 
 async function getProducts() {
@@ -28,7 +28,7 @@ const ProductList = async ({ limit }: { limit?: number }) => {
         <h2 className="text-3xl font-bold text-center mb-8">Our Meads</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {productsToShow.map((product) => (
-            <Link key={product.slug} href={`/products/${product.slug}`}>
+            <Link key={product.product_name} href={`/products/${product.product_name}`}>
               <div className="bg-white rounded-lg shadow-md overflow-hidden">
                 <Image
                   src={product.image}
