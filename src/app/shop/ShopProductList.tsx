@@ -1,8 +1,26 @@
 import Image from 'next/image';
-import { products } from '@/lib/products';
+import { query } from '@/lib/db';
 import Link from 'next/link';
 
-const ShopProductList = () => {
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  description: string;
+  image: string;
+  slug: string;
+}
+
+async function getProducts() {
+  const products = await query({
+    query: 'SELECT * FROM products',
+  });
+  return products as Product[];
+}
+
+const ShopProductList = async () => {
+  const products = await getProducts();
+
   return (
     <div className="bg-white">
       <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
@@ -27,9 +45,7 @@ const ShopProductList = () => {
                 <div className="flex-grow">
                   <h4 className="font-medium text-gray-700">Details</h4>
                   <ul className="mt-2 list-disc list-inside text-gray-600 space-y-1">
-                    <li>Size: {product.details.size}</li>
-                    <li>Price: {product.details.price}</li>
-                    <li>Availability: <span className="font-semibold text-green-600">{product.details.availability}</span></li>
+                    <li>Price: €{product.price}</li>
                   </ul>
                 </div>
               </div>

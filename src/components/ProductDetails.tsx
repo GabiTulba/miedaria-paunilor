@@ -1,6 +1,5 @@
 // src/components/ProductDetails.tsx
 import Image from 'next/image';
-import CollapsibleInfo from './CollapsibleInfo';
 
 const ProductDetails = ({ product }: { product: any }) => {
   return (
@@ -16,16 +15,8 @@ const ProductDetails = ({ product }: { product: any }) => {
       </div>
       <div className="md:col-span-2">
         <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
-        <div className="mb-8">
-          <p><strong>Bottle Size:</strong> {product.details.size}</p>
-          <p><strong>Price:</strong> {product.details.price}</p>
-          <p><strong>Availability:</strong> {product.details.availability}</p>
-        </div>
-        <CollapsibleInfo
-          description={product.description}
-          characteristics={product.characteristics}
-          ingredients={product.ingredients}
-        />
+        <p className="text-2xl font-semibold text-gray-800 mb-4">€{product.price}</p>
+        <p className="text-gray-700">{product.description}</p>
       </div>
     </div>
   );

@@ -1,8 +1,25 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { products } from '@/lib/products';
+import { query } from '@/lib/db';
 
-const ProductList = ({ limit }: { limit?: number }) => {
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  description: string;
+  image: string;
+  slug: string;
+}
+
+async function getProducts() {
+  const products = await query({
+    query: 'SELECT * FROM products',
+  });
+  return products as Product[];
+}
+
+const ProductList = async ({ limit }: { limit?: number }) => {
+  const products = await getProducts();
   const productsToShow = limit ? products.slice(0, limit) : products;
 
   return (

@@ -1,10 +1,20 @@
 // src/app/products/[slug]/page.tsx
 import ProductDetails from '@/components/ProductDetails';
-import { products } from '@/lib/products';
+import { query } from '@/lib/db';
 import Link from 'next/link';
 
-const ProductPage = ({ params }: { params: { slug: string } }) => {
-  const product = products.find((p) => p.slug === params.slug);
+export const dynamic = 'force-dynamic';
+
+async function getProduct(slug: string) {
+  const products: any = await query({
+    query: 'SELECT * FROM products WHERE slug = ?',
+    values: [slug],
+  });
+  return products[0];
+}
+
+const ProductPage = async ({ params }: { params: { slug:string } }) => {
+  const product = await getProduct(params.slug);
 
   if (!product) {
     return <div>Product not found</div>;
