@@ -1,0 +1,6 @@
+frontend/.env
+backend/.env
+backend/target/*
+backend/migrations/.diesel_lock
+backend/migrations/*_diesel_initial_setup/*
+backend/Cargo.lock

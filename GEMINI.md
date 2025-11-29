@@ -1,0 +1,116 @@
+# Notes for AI Agents
+## Scope
+This documents serves as high-level documentation for an app, describing the architecture, components, technologies, and features of the app.
+
+
+## Coding Style and Code Quality
+You write your code in a concise, easily readable way, only leaving inline doc-comments where to add additional behaviour information to the reader. The code should be mostly self-documenting. 
+
+You try to avoid code duplication and prefer to factor out similar functionality in separate functions.
+
+You do not want to go into any technical debt. Always implement features with a lot of carefulness, not leaving any feature partially implemented or comments about issues that should be implemented in the future.
+
+You are concerned with security and possible vulnerabilities that the app could have, you try to reason about any form of malicious attack and try to avoid and mitigate them preemptively.
+
+You should feel free to use the latest versions of docker images and programming languages.
+
+## Updating the Documentation
+Whenever you do significant feature or behaivour changes to the codebase, remember to update this GEMINI.md document. Your updates should be concise, summaries of the changes and always consider the rest of the information already present in this document, trying to keep the size of this document relatively small over time.
+
+
+# High Level Description
+This project is the source code for a full-stack application for a e-commerce website for a mead making company called "Miedăria Păunilor".
+
+
+# Docker Setup
+## Containers
+The app is built on top of Docker and has the following images:
+* a frontend image -- built with React
+* a backend image -- build with Rust
+* a database image -- build with PostgreSQL
+
+
+## Networks
+The backend is the middle-man between the frontend and the database. For security reasons, the frontend is not on the same docker network as the database and the networks are:
+* react-rust -- the frontend and the backend images share this network
+* rust-postgres -- the backend and the database images share this network
+
+## Volumes
+There is only one volume for the PostgreSQL database.
+
+## Envrionment
+All the images share the same .env file, but they live in diferent directories -- frontend/, backend/, and database/, respectively.
+
+# Logical Components
+## Database
+### Technologies
+This is a PostgreSQL database.
+
+### Features
+The instance has a single database [miedaria_paunilor], with two tables:
+1. [products]
+2. [users]
+
+[products] has the following schema:
+* product_id - a short string composed of lowercase letters, dashes or underscores. Represents the machine-friendly name of the product.
+* name - a short string that supports any character. Represents the human-friendly name of the product
+* bottle_size - positive integer (mililiters of volume). Represents the net volume of the bottle of mead.
+* bottle_count - non-negative integer. Represents the number of bottles in stock.
+* description - a long, free-form text string. Represents a detailed description of the product.
+* price_eur - decimal with two digits of precision. Represents the price of the product in Euros.
+* abv - decimal with one digit of precision, valid ranges from 0.0 to 99.9. Represents the alcohol by volume concentration of the mead.
+
+[users] has the following schema:
+* unique identifier - integer, auto increasing
+* user_name - ASCII printable string, limited to 256 characters.
+* user_salt - ASCII printable string, limited to 256 characters.
+* password_hash - hexadecimal string, limited to 256 characters.
+
+The password is stored in the database as the sha256 hash of the password and the user's salt like the following pseudocode (| means string concatenation):
+```
+password_hash = hex(sha256(user_salt | password))
+```
+
+The [users] database is initialized at Docker build time with a user using the [ADMIN_USER_NAME] and [ADMIN_USER_PASSWORD] variables from .env file. the password hash is computed at build time for the user as described in the scheme above.
+
+## Backend
+### Technologies
+The backend acts as a middle-man between the frontend and the database, it uses two main libraries to talk to these components:
+* [axum ]-- A web application framework that focuses on ergonomics and modularity.
+* [diesel] - An ORM and query builder designed to reduce the boilerplate for database interactions.
+
+Additionally, it uses [jsonwebtoken] for interracting with JWT signing and verifying.
+
+### Features
+Axum is used to interact with the frontend, dealing with:
+* user requests
+* user authentication, signing 
+* routing
+
+Diesel is used to interact with the database, dealing with:
+* fetching data from the database tables
+* modifying [product] entries
+* inserting new entries [product]
+* deleting entries from [product]
+
+
+## Frontend
+### Technologies
+The frontend is written in React, offers a sleek and modern UI, with low overhead and intuitive UX.
+
+For authenticated users, it uses cookies to store the session data, via JWTs.
+
+### Features
+The frontend website is structured as follows:
+/ -- redirects to home/
+    home/ -- entry page, displays contents of shop/ about-us/ contact/ in a summarised way.
+    shop/ -- displays all the products in the shop, only displays a summary view of each product
+        shop/[product_id]/ -- displays all the details about the product
+    cart/ -- displays all the products in the cart, alongside their total price
+    about-us/ -- displays a static page that has a short story about the owners
+    contact/ -- displays a static page that has a short list of contact details: mail, phone number, address
+    admin/ -- login page for admin users, after login, it always redirects to admin/dashboard/
+        admin/dashboard/ -- admin dashboard, showing a list of all the other admin pages
+            admin/dashboard/products -- displays all the products in the database, with the possibility of adding new products, deleting old ones, editing existing ones
+            admin/dashboard/products/[product_id]/edit -- displays a page that allows to edit product data, the user gets redirected here after clicking on an edit button on a specific product
+            admin/dashboard/products/create/ -- page to create a new product entry in the database. The admin user gets redirected to this page when they click on a button to create a new product on admin/dashboard/products/
