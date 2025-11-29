@@ -1,0 +1,121 @@
+/* frontend/src/index.css */
+:root {
+  --primary-color: #5a2c0f; /* Dark brown, mead-like */
+  --secondary-color: #f7e0bb; /* Light cream/honey color */
+  --accent-color: #a0522d; /* Sienna */
+  --text-color: #333;
+  --background-color: #f8f8f8;
+  --border-color: #ddd;
+}
+
+body {
+  font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+#root {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary-color);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+nav {
+  background-color: var(--primary-color);
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+nav a {
+  color: var(--secondary-color);
+  font-weight: bold;
+  padding: 5px 10px;
+  transition: color 0.3s ease;
+}
+
+nav a:hover {
+  color: white;
+  text-decoration: none;
+}
+
+button {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #8b4513; /* Darker sienna */
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-sizing: border-box; /* Ensures padding doesn't expand the width */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden; /* For rounded corners */
+}
+
+th, td {
+  border: 1px solid var(--border-color);
+  padding: 12px 15px;
+  text-align: left;
+}
+
+th {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  font-weight: bold;
+}
+
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}

@@ -1,0 +1,77 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+
+import App from './App';
+import Home from './pages/Home';
+import Shop from './pages/Shop';
+import ProductDetails from './pages/ProductDetails';
+import Cart from './pages/Cart';
+import AboutUs from './pages/AboutUs';
+import Contact from './pages/Contact';
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminProductEdit from './pages/admin/AdminProductEdit';
+import AdminProductCreate from './pages/admin/AdminProductCreate';
+
+import ProtectedRoute from './components/ProtectedRoute';
+// ... other imports
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <App />,
+    children: [
+      { index: true, element: <Navigate to="/home" replace /> },
+      { path: 'home', element: <Home /> },
+      { path: 'shop', element: <Shop /> },
+      { path: 'shop/:productId', element: <ProductDetails /> },
+      { path: 'cart', element: <Cart /> },
+      { path: 'about-us', element: <AboutUs /> },
+      { path: 'contact', element: <Contact /> },
+      {
+        path: 'admin',
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <AdminLogin /> },
+          {
+            element: <ProtectedRoute />,
+            children: [
+              { path: 'dashboard', element: <AdminDashboard /> },
+              { path: 'dashboard/products', element: <AdminProducts /> },
+              { path: 'dashboard/products/:productId/edit', element: <AdminProductEdit /> },
+              { path: 'dashboard/products/create', element: <AdminProductCreate /> },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+]);
+
+// ... rest of the file
+
+
+import { AuthProvider } from './context/AuthContext';
+
+// ... (rest of the imports)
+
+// ... (router definition)
+
+import './index.css';
+import { CartProvider } from './context/CartContext';
+// ... other imports
+
+// ... router definition
+
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+  <React.StrictMode>
+    <AuthProvider>
+      <CartProvider>
+        <RouterProvider router={router} />
+      </CartProvider>
+    </AuthProvider>
+  </React.StrictMode>
+);

@@ -38,8 +38,8 @@ The backend is the middle-man between the frontend and the database. For securit
 ## Volumes
 There is only one volume for the PostgreSQL database.
 
-## Envrionment
-All the images share the same .env file, but they live in diferent directories -- frontend/, backend/, and database/, respectively.
+## Environment
+All Docker images utilize environment variables defined in a single `.env` file located at the project root. This centralizes configuration for all services.
 
 # Logical Components
 ## Database
@@ -71,46 +71,55 @@ The password is stored in the database as the sha256 hash of the password and th
 password_hash = hex(sha256(user_salt | password))
 ```
 
-The [users] database is initialized at Docker build time with a user using the [ADMIN_USER_NAME] and [ADMIN_USER_PASSWORD] variables from .env file. the password hash is computed at build time for the user as described in the scheme above.
+The [users] database is initialized at container startup by the backend's `entrypoint.sh` using `diesel setup` (to create the database and run migrations) and then `add_admin_user` to create the default admin user with credentials from the root `.env` file.
 
 ## Backend
 ### Technologies
-The backend acts as a middle-man between the frontend and the database, it uses two main libraries to talk to these components:
-* [axum ]-- A web application framework that focuses on ergonomics and modularity.
-* [diesel] - An ORM and query builder designed to reduce the boilerplate for database interactions.
+The backend acts as a middle-man between the frontend and the database. It is built with Rust and utilizes the following key libraries:
+*   [axum] - A web application framework for handling user requests, routing, and API endpoints. (Updated to 0.8.x)
+*   [diesel] - An ORM and query builder for database interactions. (Updated version, with `r2d2` feature enabled)
+*   [jsonwebtoken] - For JWT (JSON Web Token) signing and verification. (Updated version, with `rust_crypto` feature enabled)
+*   [tokio] - An asynchronous runtime for Rust.
+*   [r2d2] - A connection pool for managing database connections.
+*   [async-trait] - A procedural macro for async functions in traits.
 
-Additionally, it uses [jsonwebtoken] for interracting with JWT signing and verifying.
+The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`).
 
 ### Features
 Axum is used to interact with the frontend, dealing with:
-* user requests
-* user authentication, signing 
-* routing
+*   User requests to various API endpoints (e.g., `/api/products`, `/api/admin/login`).
+*   Routing, including dynamic path parameters (e.g., `/api/products/{product_id}`).
+*   User authentication and authorization using JWTs, with an `Auth` extractor (`auth.rs`) to protect admin routes.
+*   CORS (Cross-Origin Resource Sharing) middleware is enabled to allow communication with the frontend during development.
 
 Diesel is used to interact with the database, dealing with:
-* fetching data from the database tables
-* modifying [product] entries
-* inserting new entries [product]
-* deleting entries from [product]
+*   Fetching data from the `products` table.
+*   Modifying, inserting, and deleting entries from the `products` table via authenticated admin endpoints.
+*   User management (fetching admin/regular users, creating, updating passwords, deleting) for authentication purposes.
 
 
 ## Frontend
 ### Technologies
-The frontend is written in React, offers a sleek and modern UI, with low overhead and intuitive UX.
-
-For authenticated users, it uses cookies to store the session data, via JWTs.
+The frontend is written in `Vite + React + TypeScript`, offering a sleek and modern UI with low overhead and intuitive UX.
+*   `react-router-dom` is used for client-side routing.
+*   `Nginx` serves the built static assets in the production Docker environment.
+*   `React Context` is used for state management, specifically for user authentication (JWTs) and shopping cart functionality.
+*   Global CSS (`index.css`) provides basic styling and a consistent visual theme.
 
 ### Features
 The frontend website is structured as follows:
+```
 / -- redirects to home/
     home/ -- entry page, displays contents of shop/ about-us/ contact/ in a summarised way.
     shop/ -- displays all the products in the shop, only displays a summary view of each product
-        shop/[product_id]/ -- displays all the details about the product
-    cart/ -- displays all the products in the cart, alongside their total price
+        shop/[product_id]/ -- displays all the details about the product, with an "Add to Cart" button.
+    cart/ -- displays all the products in the cart, alongside their total price, with options to remove items or clear the cart.
     about-us/ -- displays a static page that has a short story about the owners
     contact/ -- displays a static page that has a short list of contact details: mail, phone number, address
     admin/ -- login page for admin users, after login, it always redirects to admin/dashboard/
-        admin/dashboard/ -- admin dashboard, showing a list of all the other admin pages
-            admin/dashboard/products -- displays all the products in the database, with the possibility of adding new products, deleting old ones, editing existing ones
-            admin/dashboard/products/[product_id]/edit -- displays a page that allows to edit product data, the user gets redirected here after clicking on an edit button on a specific product
+        admin/dashboard/ -- admin dashboard, showing a list of all the other admin pages. These routes are protected by JWT authentication.
+            admin/dashboard/products -- displays all the products in the database for administration, with the possibility of adding new products, deleting old ones, and editing existing ones.
+            admin/dashboard/products/[product_id]/edit -- displays a page that allows to edit product data. The admin user gets redirected here after clicking on an edit button on a specific product.
             admin/dashboard/products/create/ -- page to create a new product entry in the database. The admin user gets redirected to this page when they click on a button to create a new product on admin/dashboard/products/
+```
+All frontend pages are now implemented with placeholder content and fetch data from the backend where applicable.
