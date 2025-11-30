@@ -1,6 +1,5 @@
 use axum::{
     extract::{Request, State}, 
-    http::StatusCode,
     Json,
     middleware::Next, 
     response::Response, 
@@ -12,6 +11,8 @@ use crate::user_crud;
 use crate::utils::verify_password;
 use std::sync::Arc;
 use crate::AppState;
+use crate::AppError;
+use crate::db;
 
 #[derive(Debug, Serialize, Deserialize, Clone)] 
 pub struct Claims {
@@ -33,20 +34,15 @@ pub struct LoginResponse {
 pub async fn login(
     State(app_state): State<Arc<AppState>>,
     Json(payload): Json<LoginPayload>,
-) -> Result<Json<LoginResponse>, StatusCode> {
-    println!("DEBUG: Login function entered for user: {}", payload.username); // DEBUG LINE
-
-    let mut conn = app_state
-        .pool
-        .get()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+) -> Result<Json<LoginResponse>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
 
     let user = user_crud::get_admin(&mut conn, &payload.username)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .ok_or(StatusCode::UNAUTHORIZED)?;
+        .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
+        .ok_or(AppError::Unauthorized("Invalid credentials".to_string()))?;
 
     if !verify_password(&payload.password, &user.salt, &user.hashed_password) {
-        return Err(StatusCode::UNAUTHORIZED);
+        return Err(AppError::Unauthorized("Invalid credentials".to_string()));
     }
 
     let now = chrono::Utc::now();
@@ -56,9 +52,9 @@ pub async fn login(
         exp,
     };
 
-    let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    let secret = env::var("JWT_SECRET").map_err(|_| AppError::InternalServerError("JWT_SECRET not set".to_string()))?;
     let token = encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_ref()))
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| AppError::InternalServerError("Failed to encode JWT".to_string()))?;
 
     Ok(Json(LoginResponse { token }))
 }
@@ -69,7 +65,7 @@ pub async fn auth_middleware(
     State(_app_state): State<Arc<AppState>>, 
     mut req: Request,
     next: Next,
-) -> Result<Response, StatusCode> {
+) -> Result<Response, AppError> {
     let auth_header = req.headers()
         .get("Authorization")
         .and_then(|header| header.to_str().ok());
@@ -78,19 +74,22 @@ pub async fn auth_middleware(
         if header_value.starts_with("Bearer ") {
             header_value[7..].to_string()
         } else {
-            return Err(StatusCode::UNAUTHORIZED);
+            return Err(AppError::Unauthorized("Invalid authorization header format".to_string()));
         }
     } else {
-        return Err(StatusCode::UNAUTHORIZED);
+        return Err(AppError::Unauthorized("Authorization header missing".to_string()));
     };
 
-    let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    let secret = env::var("JWT_SECRET").map_err(|_| AppError::InternalServerError("JWT_SECRET not set".to_string()))?;
     let token_data = decode::<Claims>(
         &token,
         &DecodingKey::from_secret(secret.as_ref()),
         &Validation::default(),
     )
-    .map_err(|_| StatusCode::UNAUTHORIZED)?;
+    .map_err(|e| {
+        eprintln!("JWT decoding error: {:?}", e);
+        AppError::Unauthorized("Invalid or expired token".to_string())
+    })?;
 
     req.extensions_mut().insert(token_data.claims);
 

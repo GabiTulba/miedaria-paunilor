@@ -1,30 +1,10 @@
-import { useEffect, useState } from 'react';
-import { ProductWithImage } from '../types'; // Import ProductWithImage
-import { api } from '../lib/api';
 import { Link } from 'react-router-dom';
+import { useFetchProducts } from '../hooks/useFetchProducts';
+import ProductCard from '../components/ProductCard'; // Import the new ProductCard component
 import './Shop.css';
 
 function Shop() {
-    const [products, setProducts] = useState<ProductWithImage[]>([]); // Change type here
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchProducts = async () => {
-            setIsLoading(true);
-            try {
-                const data = await api.getProducts();
-                setProducts(data);
-            } catch (err) {
-                setError('Failed to fetch products. Please try again later.');
-                console.error(err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchProducts();
-    }, []);
+    const { products, isLoading, error } = useFetchProducts();
 
     if (isLoading) {
         return <div className="loader">Loading...</div>;
@@ -44,7 +24,7 @@ function Shop() {
             <div className="shop-content">
                 <aside className="filters-sidebar">
                     <h3>Filters</h3>
-                    {/* Add filter controls here */}
+
                     <div className="filter-group">
                         <h4>Sort by Price</h4>
                         <select>
@@ -56,28 +36,11 @@ function Shop() {
 
                 <main className="product-display">
                     <div className="product-grid">
-                        {products.map(productWithImage => ( // Iterate over ProductWithImage
-                            <div key={productWithImage.product.product_id} className="product-card">
-                                <Link to={`/shop/${productWithImage.product.product_id}`}>
-                                    <div className="product-card-main">
-                                        <div className="product-card-image">
-                                            {productWithImage.image ? (
-                                                <img 
-                                                    src={`/images/${productWithImage.image.id}`} 
-                                                    alt={productWithImage.product.product_name} 
-                                                    className="product-image" 
-                                                />
-                                            ) : (
-                                                <div className="placeholder-image">No Image</div>
-                                            )}
-                                        </div>
-                                        <div className="product-card-content">
-                                            <h3>{productWithImage.product.product_name}</h3>
-                                            <p className="price">{productWithImage.product.price} €</p>
-                                        </div>
-                                    </div>
-                                </Link>
-                            </div>
+                        {products.map(productWithImage => (
+                            <ProductCard 
+                                key={productWithImage.product.product_id} 
+                                productWithImage={productWithImage} 
+                            />
                         ))}
                     </div>
                 </main>

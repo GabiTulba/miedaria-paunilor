@@ -59,7 +59,7 @@ COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
 # Expose port
-EXPOSE 3000
+EXPOSE 8000
 
 # Set entrypoint
 ENTRYPOINT ["./entrypoint.sh"]

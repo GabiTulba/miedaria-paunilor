@@ -56,8 +56,7 @@
     width: 100%;
 }
 
-/* Re-using product-grid and product-card styles from Home.css */
-/* If not already global, you might need to copy them here or make them global */
+
 
 .loader, .error-message {
     text-align: center;

@@ -6,6 +6,10 @@ pub mod product_crud;
 pub mod auth;
 pub mod image_crud;
 pub mod db; // Declare the new db module
+pub mod error; // Declare the new error module
+
+pub use crate::db::get_db_connection;
+pub use crate::error::{AppError, ErrorResponse, ValidationErrorResponse};
 
 
 pub struct AppState {

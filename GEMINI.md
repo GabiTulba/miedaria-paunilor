@@ -153,3 +153,28 @@ The frontend website is structured as follows:
 ```
 All pages are fully implemented with the new design and fetch data from the backend where applicable.
 The frontend `Product` and `ProductWithImage` types have been updated to reflect the new image management.
+## Refactoring Changes (Summary)
+
+This section summarizes the significant refactoring changes made to improve code quality, modularity, consistency, and maintainability across the full-stack application.
+
+### Backend Refactoring (Rust)
+
+*   **Centralized Database Connection Acquisition:** A new helper function, `db::get_db_connection`, was introduced. This function centralizes the logic for acquiring a database connection from the application's connection pool, significantly reducing boilerplate code in handler functions and improving consistency.
+*   **Generalized Error Handling:** A new `AppError` enum was created in `backend/src/error.rs`. This `AppError` now serves as a unified error type for all API handlers, providing `From` implementations for various specific errors (e.g., `diesel::result::Error`, product CRUD errors, authentication errors) and an `IntoResponse` implementation for consistent HTTP response generation. All product CRUD, image CRUD, and authentication handlers were updated to utilize this new error handling mechanism.
+*   **Consistent Image CRUD Operations:** Functions within `image_crud.rs` were modified to accept a mutable pooled database connection (`&mut PgConnection`) as an argument, rather than establishing new connections independently. This aligns image operations with product operations, ensuring consistent resource management and database interaction patterns.
+*   **Removed Dead Code:** The unused `_get_image` function was removed from `backend/src/main.rs`.
+*   **Cleaned Unnecessary Comments:** Redundant and development-specific comments were removed from `backend/src/main.rs` and `backend/src/auth.rs` to improve code clarity.
+*   **Dependency Review:** `backend/Cargo.toml` was reviewed, confirming that all listed dependencies are actively used or are necessary transitive components.
+
+### Frontend Refactoring (React/TypeScript)
+
+*   **Extracted Data Fetching Hook:** A custom hook, `useFetchProducts` (in `frontend/src/hooks/useFetchProducts.ts`), was created to encapsulate the logic for fetching product data, including loading and error states. This reduces code duplication and improves reusability in components that display product listings (e.g., `Shop.tsx`).
+*   **Reusable Product Card Component:** The common UI structure for displaying individual product cards was extracted into a dedicated `ProductCard` component (`frontend/src/components/ProductCard.tsx`). This enhances reusability and maintainability across different product display areas.
+*   **Modular Form Input Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) were created within `frontend/src/components/forms/`. These components centralize input rendering, labeling, and error display logic, significantly reducing boilerplate and improving consistency in complex forms like `ProductForm.tsx`.
+*   **Cleaned Unnecessary Comments:** Redundant comments were removed from `frontend/src/pages/Shop.tsx` and `frontend/src/context/AuthContext.tsx`.
+*   **Dependency Cleanup:** The unused `axios` dependency was removed from `frontend/package.json` and `npm install` was run to clean up `node_modules`.
+
+### Cross-Cutting Concerns
+
+*   **Configuration Management:** The frontend's `API_BASE_URL` in `frontend/src/lib/api.ts` was changed to dynamically use `import.meta.env.VITE_API_BASE_URL`. This eliminates a hardcoded URL and centralizes configuration through environment variables, aligning with the project's overall strategy.
+*   **Docker Configuration Optimization:** The `backend/Dockerfile` was corrected to `EXPOSE 8000` instead of `3000`, matching the actual port the Rust application listens on for improved clarity and correctness in image metadata. Additionally, the redundant `VITE_API_URL` build argument was removed from the `frontend` service in `docker-compose.yml`.

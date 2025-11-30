@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 // AuthChecker component to handle redirection if token is missing
 import { useNavigate } from 'react-router-dom';
-import { useContext } from 'react'; // Added missing import
+import { useContext } from 'react';
 
 export function AuthChecker({ children }: { children: ReactNode }) {
     const { token } = useContext(AuthContext);
