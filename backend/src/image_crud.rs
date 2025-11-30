@@ -175,8 +175,12 @@ pub async fn delete_image(conn: &mut PgConnection, image_id: uuid::Uuid) -> Resu
 
     // Delete file from filesystem
     if let Err(e) = tokio::fs::remove_file(&image_to_delete.storage_path).await {
-        eprintln!("Error deleting file {}: {:?}", image_to_delete.storage_path, e);
-        return Err(AppError::InternalServerError("Failed to delete image file from filesystem".to_string()));
+        if e.kind() == std::io::ErrorKind::NotFound {
+            eprintln!("Warning: Image file {} not found on filesystem but record exists in DB. Proceeding with DB deletion.", image_to_delete.storage_path);
+        } else {
+            eprintln!("Error deleting file {}: {:?}", image_to_delete.storage_path, e);
+            return Err(AppError::InternalServerError("Failed to delete image file from filesystem".to_string()));
+        }
     }
 
     // Delete record from DB

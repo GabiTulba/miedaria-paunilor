@@ -179,7 +179,7 @@ This section summarizes the significant refactoring changes made to improve code
 *   **Consistent Image CRUD Operations:** Functions within `image_crud.rs` were modified to accept a mutable pooled database connection (`&mut PgConnection`) as an argument, rather than establishing new connections independently. This aligns image operations with product operations, ensuring consistent resource management and database interaction patterns.
 *   **Removed Dead Code:** The unused `_get_image` function was removed from `backend/src/main.rs`.
 *   **Cleaned Unnecessary Comments:** Redundant and development-specific comments were removed from `backend/src/main.rs` and `backend/src/auth.rs` to improve code clarity.
-*   **Dependency Review:** `backend/Cargo.toml` was reviewed, confirming that all listed dependencies are actively used or are necessary transitive components.
+*   **Improved Image Deletion Robustness:** The `delete_image` function in `image_crud.rs` was updated to gracefully handle cases where an image file is already missing from the filesystem during a deletion attempt. If `tokio::fs::remove_file` returns a `NotFound` error, a warning is logged, and the function proceeds to delete the database record, preventing an `InternalServerError` and maintaining consistency.
 
 ### Frontend Refactoring (React/TypeScript)
 
