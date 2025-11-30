@@ -1,3 +1,11 @@
+export interface Image {
+  id: string; // UUID as string
+  file_name: string;
+  storage_path: string;
+  created_at: string; // NaiveDateTime as string
+  file_size: number;
+}
+
 export interface Product {
   product_id: string;
   product_name: string;
@@ -7,5 +15,10 @@ export interface Product {
   bottle_count: number;
   bottle_size: number;
   price: string; // Decimal is a string on the frontend
-  image_url: string; // New field for product image
+  image_id: string; // Reference to Image.id
+}
+
+export interface ProductWithImage {
+  product: Product;
+  image: Image | null;
 }

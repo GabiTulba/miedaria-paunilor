@@ -12,6 +12,7 @@ use std::{env, net::SocketAddr, sync::Arc};
 // Import everything from the backend library crate
 use backend::{auth, models, product_crud, AppState};
 use backend::image_crud;
+use backend::product_crud::ProductWithImage;
 use axum::extract::Extension; 
 
 #[tokio::main]
@@ -41,10 +42,15 @@ use tower_http::cors::Any; // Or specific origins
         .route("/products", post(create_product))
         .route("/products/{product_id}", put(update_product))
         .route("/products/{product_id}", delete(delete_product))
-        .route("/images/upload", post(image_crud::upload_image))
-        .route_layer(axum::middleware::from_fn_with_state(app_state.clone(), auth::auth_middleware));
+        .route("/images", get(list_images)) // New route
+        .route("/images", post(image_crud::upload_image)) // Existing, but confirming
+        .route("/images/{image_id}", put(update_image_meta)) // New route
+        .route("/images/{image_id}", delete(delete_image_handler)) // New route
+        .route_layer(axum::middleware::from_fn_with_state(app_state.clone(), auth::auth_middleware))
+        .layer(cors.clone()); // Apply CORS specifically to admin_routes
 
     let app = Router::new()
+        .route("/images/{image_id}", get(image_crud::serve_image)) // New public route for serving image content
         .route("/health", get(health_check))
         .route("/api/products", get(get_all_products))
         .route("/api/products/{product_id}", get(get_product_by_id))
@@ -65,7 +71,7 @@ async fn health_check() -> impl IntoResponse {
 
 async fn get_all_products(
     State(app_state): State<Arc<AppState>>,
-) -> Result<Json<Vec<models::Product>>, StatusCode> {
+) -> Result<Json<Vec<ProductWithImage>>, StatusCode> {
     let mut conn = app_state
         .pool
         .get()
@@ -80,7 +86,7 @@ async fn get_all_products(
 async fn get_product_by_id(
     State(app_state): State<Arc<AppState>>,
     Path(product_id): Path<String>,
-) -> Result<Json<models::Product>, StatusCode> {
+) -> Result<Json<ProductWithImage>, StatusCode> {
     let mut conn = app_state
         .pool
         .get()
@@ -244,4 +250,33 @@ async fn delete_product(
             diesel::result::Error::NotFound => StatusCode::NOT_FOUND,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         })
+}
+
+
+async fn list_images(
+    State(_app_state): State<Arc<AppState>>,
+) -> Result<Json<Vec<models::Image>>, StatusCode> {
+    image_crud::get_all_images().await
+}
+
+async fn _get_image(
+    State(_app_state): State<Arc<AppState>>,
+    Path(image_id): Path<uuid::Uuid>,
+) -> Result<Json<models::Image>, StatusCode> {
+    image_crud::get_image_by_id(Path(image_id)).await
+}
+
+async fn update_image_meta(
+    State(_app_state): State<Arc<AppState>>,
+    Path(image_id): Path<uuid::Uuid>,
+    Json(updated_image): Json<models::UpdateImage>,
+) -> Result<Json<models::Image>, StatusCode> {
+    image_crud::update_image(Path(image_id), Json(updated_image)).await
+}
+
+async fn delete_image_handler(
+    State(_app_state): State<Arc<AppState>>,
+    Path(image_id): Path<uuid::Uuid>,
+) -> Result<StatusCode, StatusCode> {
+    image_crud::delete_image(Path(image_id)).await
 }

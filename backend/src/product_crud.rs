@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use crate::models::{Product, NewProduct};
+use crate::models::{Product, NewProduct, Image};
 use crate::schema::*;
 use diesel::result::{Error as DieselError, DatabaseErrorKind};
 use rust_decimal::Decimal;
@@ -17,7 +17,6 @@ pub enum ProductValidationError {
     InvalidPrice,
     InvalidAbvPrecision,
     InvalidPricePrecision,
-    EmptyImageUrl, // New variant
 }
 
 fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
@@ -42,11 +41,6 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
     // ingredients: A text field for the ingredients of the product.
     if new_product.ingredients.is_empty() {
         errors.push(ProductValidationError::EmptyIngredients);
-    }
-
-    // image_url: Not null, so must be present
-    if new_product.image_url.is_empty() {
-        errors.push(ProductValidationError::EmptyImageUrl);
     }
 
     // abv: Decimal with one digit of precision, valid ranges from 0.0 to 99.9.
@@ -104,6 +98,17 @@ impl From<DieselError> for ProductCreationError {
     }
 }
 
+
+#[derive(Debug, Serialize, Queryable, Selectable)]
+#[diesel(table_name = products)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct ProductWithImage {
+    #[diesel(embed)]
+    pub product: Product,
+    #[diesel(embed)]
+    pub image: Option<Image>,
+}
+
 pub fn create_product(conn: &mut PgConnection, new_product: &NewProduct) -> Result<Product, ProductCreationError> {
     let validation_errors = validate_product(new_product);
     if !validation_errors.is_empty() {
@@ -117,11 +122,14 @@ pub fn create_product(conn: &mut PgConnection, new_product: &NewProduct) -> Resu
         .map_err(ProductCreationError::from)
 }
 
-pub fn get_product(conn: &mut PgConnection, id: &str) -> QueryResult<Option<Product>> {
+pub fn get_product(conn: &mut PgConnection, id: &str) -> QueryResult<Option<ProductWithImage>> {
     use crate::schema::products::dsl::*;
+    use crate::schema::images::dsl::images;
 
-    products.find(id)
-        .select(Product::as_select())
+    products
+        .left_join(images)
+        .filter(product_id.eq(id))
+        .select(ProductWithImage::as_select())
         .first(conn)
         .optional()
 }
@@ -157,7 +165,7 @@ pub fn update_product(conn: &mut PgConnection, product: &Product) -> Result<Prod
         bottle_count: product.bottle_count,
         bottle_size: product.bottle_size,
         price: product.price,
-        image_url: product.image_url.clone()
+        image_id: product.image_id
     });
     if !validation_errors.is_empty() {
         return Err(ProductUpdateError::ValidationErrors(validation_errors));
@@ -178,7 +186,11 @@ pub fn delete_product(conn: &mut PgConnection, product_id: &str) -> QueryResult<
     .map(|_| ())
 }
 
-pub fn get_all_products(conn: &mut PgConnection) -> QueryResult<Vec<Product>> {
+pub fn get_all_products(conn: &mut PgConnection) -> QueryResult<Vec<ProductWithImage>> {
     use crate::schema::products::dsl::*;
-    products.select(Product::as_select()).load(conn)
+    use crate::schema::images::dsl::images;
+    products
+        .left_join(images)
+        .select(ProductWithImage::as_select())
+        .load(conn)
 }

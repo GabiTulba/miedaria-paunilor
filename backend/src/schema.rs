@@ -9,6 +9,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    images (id) {
+        id -> Uuid,
+        file_name -> Varchar,
+        storage_path -> Varchar,
+        created_at -> Timestamp,
+        file_size -> Int8,
+    }
+}
+
+diesel::table! {
     products (product_id) {
         product_id -> Varchar,
         product_name -> Varchar,
@@ -18,7 +28,7 @@ diesel::table! {
         bottle_count -> Int4,
         bottle_size -> Int4,
         price -> Numeric,
-        image_url -> VarChar,
+        image_id -> Uuid,
     }
 }
 
@@ -30,4 +40,6 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(admin_users, products, users,);
+diesel::joinable!(products -> images (image_id));
+
+diesel::allow_tables_to_appear_in_same_query!(admin_users, images, products, users,);

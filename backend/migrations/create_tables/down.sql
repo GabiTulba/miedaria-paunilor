@@ -1,5 +1,4 @@
 DROP TABLE IF EXISTS products;
-
+DROP TABLE IF EXISTS images;
 DROP TABLE IF EXISTS admin_users;
-
 DROP TABLE IF EXISTS users;

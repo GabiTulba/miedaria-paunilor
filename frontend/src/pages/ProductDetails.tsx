@@ -1,13 +1,13 @@
 import { useEffect, useState, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Product } from '../types';
+import { ProductWithImage } from '../types'; // Import ProductWithImage
 import { api } from '../lib/api';
 import { CartContext } from '../context/CartContext';
 import './ProductDetails.css';
 
 function ProductDetails() {
     const { productId } = useParams<{ productId: string }>();
-    const [product, setProduct] =useState<Product | null>(null);
+    const [productWithImage, setProductWithImage] = useState<ProductWithImage | null>(null); // Change type here
     const [quantity, setQuantity] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -19,7 +19,7 @@ function ProductDetails() {
             try {
                 if (!productId) return;
                 const data = await api.getProductById(productId);
-                setProduct(data);
+                setProductWithImage(data);
             } catch (err) {
                 setError('Failed to fetch product details.');
                 console.error(err);
@@ -32,8 +32,8 @@ function ProductDetails() {
     }, [productId]);
 
     const handleAddToCart = () => {
-        if (product) {
-            addToCart(product, quantity);
+        if (productWithImage?.product) { // Access product from productWithImage
+            addToCart(productWithImage.product, quantity);
         }
     };
 
@@ -41,9 +41,11 @@ function ProductDetails() {
         return <div className="loader">Loading...</div>;
     }
 
-    if (error || !product) {
+    if (error || !productWithImage) {
         return <div className="error-message">{error || 'Product not found.'}</div>;
     }
+
+    const { product, image } = productWithImage;
 
     return (
         <div className="product-details-page">
@@ -51,7 +53,15 @@ function ProductDetails() {
                 <Link to="/shop">&larr; Back to Shop</Link>
             </div>
             <div className="product-details-content">
-                    <img src={product.image_url} alt={product.product_name} className="product-detail-image" />
+                {image ? (
+                    <img 
+                        src={`/images/${image.id}`} 
+                        alt={product.product_name} 
+                        className="product-detail-image" 
+                    />
+                ) : (
+                    <div className="placeholder-image product-detail-image">No Image</div>
+                )}
                 <div className="product-info-section">
                     <h1>{product.product_name}</h1>
                     <p className="price-large">{product.price} €</p>

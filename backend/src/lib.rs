@@ -4,24 +4,12 @@ pub mod utils;
 pub mod user_crud;
 pub mod product_crud;
 pub mod auth;
-pub mod image_crud; // New module
+pub mod image_crud;
+pub mod db; // Declare the new db module
 
-use diesel::prelude::*;
-use dotenvy::dotenv;
-use std::env;
-use diesel::r2d2::{ConnectionManager};
 
-pub type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 pub struct AppState {
-    pub pool: Pool,
-}
-
-pub fn establish_connection() -> PgConnection {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-     PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+    pub pool: db::PgPool,
 }
 
 // Export modules and their contents

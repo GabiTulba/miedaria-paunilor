@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Product } from '../types';
+import { ProductWithImage } from '../types'; // Import ProductWithImage
 import { api } from '../lib/api';
 import { Link } from 'react-router-dom';
 import './Shop.css';
 
 function Shop() {
-    const [products, setProducts] = useState<Product[]>([]);
+    const [products, setProducts] = useState<ProductWithImage[]>([]); // Change type here
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -56,16 +56,24 @@ function Shop() {
 
                 <main className="product-display">
                     <div className="product-grid">
-                        {products.map(product => (
-                            <div key={product.product_id} className="product-card">
-                                <Link to={`/shop/${product.product_id}`}>
+                        {products.map(productWithImage => ( // Iterate over ProductWithImage
+                            <div key={productWithImage.product.product_id} className="product-card">
+                                <Link to={`/shop/${productWithImage.product.product_id}`}>
                                     <div className="product-card-main">
                                         <div className="product-card-image">
-                                            <img src={product.image_url} alt={product.product_name} className="product-image" />
+                                            {productWithImage.image ? (
+                                                <img 
+                                                    src={`/images/${productWithImage.image.id}`} 
+                                                    alt={productWithImage.product.product_name} 
+                                                    className="product-image" 
+                                                />
+                                            ) : (
+                                                <div className="placeholder-image">No Image</div>
+                                            )}
                                         </div>
                                         <div className="product-card-content">
-                                            <h3>{product.product_name}</h3>
-                                            <p className="price">{product.price} €</p>
+                                            <h3>{productWithImage.product.product_name}</h3>
+                                            <p className="price">{productWithImage.product.price} €</p>
                                         </div>
                                     </div>
                                 </Link>

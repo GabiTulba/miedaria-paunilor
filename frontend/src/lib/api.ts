@@ -1,4 +1,4 @@
-import { Product } from '../types';
+import { Product, ProductWithImage } from '../types';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -21,8 +21,8 @@ async function request(endpoint: string, options: RequestInit = {}) {
 }
 
 export const api = {
-    getProducts: (): Promise<Product[]> => request('/products'),
-    getProductById: (id: string): Promise<Product> => request(`/products/${id}`),
+    getProducts: (): Promise<ProductWithImage[]> => request('/products'),
+    getProductById: (id: string): Promise<ProductWithImage> => request(`/products/${id}`),
 
     adminLogin: async (credentials: any) => {
         return request('/admin/login', {
@@ -43,7 +43,7 @@ export const api = {
         });
     },
 
-    updateProduct: async (id: string, productData: any, token: string) => {
+    updateProduct: async (id: string, productData: Product, token: string) => {
         return request(`/admin/products/${id}`, {
             method: 'PUT',
             headers: {
@@ -56,6 +56,47 @@ export const api = {
 
     deleteProduct: async (id: string, token: string) => {
         return request(`/admin/products/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+    },
+
+    // Image CRUD Operations
+    uploadImage: async (formData: FormData, token: string) => {
+        return request('/admin/images', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
+        });
+    },
+
+    getImages: async (token: string) => {
+        return request('/admin/images', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+    },
+
+    getImageById: async (id: string, token: string) => {
+        return request(`/admin/images/${id}`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+    },
+
+    updateImage: async (id: string, newFileName: string, token: string) => {
+        return request(`/admin/images/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ file_name: newFileName }),
+        });
+    },
+
+    deleteImage: async (id: string, token: string) => {
+        return request(`/admin/images/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` },
         });

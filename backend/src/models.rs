@@ -1,6 +1,8 @@
 use diesel::prelude::*;
 use rust_decimal::Decimal;
 use crate::schema::*;
+use uuid;
+use chrono;
 
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = crate::schema::admin_users)]
@@ -39,18 +41,32 @@ pub struct NewUser<'a> {
     pub hashed_password: &'a str
 }
 
-// diesel::table! {
-//     products (product_id) {
-//         product_id -> Varchar,
-//         product_name -> Varchar,
-//         product_description -> Text,
-//         ingredients -> Text,
-//         abv -> Numeric,
-//         bottle_count -> Int4,
-//         bottle_size -> Int4,
-//         price -> Numeric,
-//     }
-// }
+
+#[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug)]
+#[diesel(table_name = crate::schema::images)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Image {
+    pub id: uuid::Uuid,
+    pub file_name: String,
+    pub storage_path: String,
+    pub created_at: chrono::NaiveDateTime,
+    pub file_size: i64,
+}
+
+#[derive(Insertable, serde::Deserialize)]
+#[diesel(table_name = images)]
+pub struct NewImage {
+    pub file_name: String,
+    pub storage_path: String,
+    pub file_size: i64,
+}
+
+#[derive(serde::Deserialize, AsChangeset, Debug)]
+#[diesel(table_name = images)]
+pub struct UpdateImage {
+    pub file_name: Option<String>,
+}
+
 
 #[derive(Queryable, Selectable, AsChangeset, serde::Serialize, serde::Deserialize, Debug)]
 #[diesel(table_name = crate::schema::products)]
@@ -64,7 +80,7 @@ pub struct Product {
     pub bottle_count: i32,
     pub bottle_size: i32,
     pub price: Decimal,
-    pub image_url: String, // New field
+    pub image_id: uuid::Uuid,
 }
 
 #[derive(Insertable, serde::Deserialize)]
@@ -78,5 +94,5 @@ pub struct NewProduct {
     pub bottle_count: i32,
     pub bottle_size: i32,
     pub price: Decimal,
-    pub image_url: String, // New field
+    pub image_id: uuid::Uuid,
 }

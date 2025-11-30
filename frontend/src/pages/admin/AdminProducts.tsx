@@ -1,12 +1,12 @@
 import { useEffect, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { Product } from '../../types';
+import { ProductWithImage } from '../../types'; // Import ProductWithImage
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import './Admin.css';
 
 function AdminProducts() {
-    const [products, setProducts] = useState<Product[]>([]);
+    const [products, setProducts] = useState<ProductWithImage[]>([]); // Change type here
     const { token } = useContext(AuthContext);
 
     useEffect(() => {
@@ -25,7 +25,7 @@ function AdminProducts() {
         if (token && window.confirm('Are you sure you want to delete this product?')) {
             try {
                 await api.deleteProduct(productId, token);
-                setProducts(products.filter(p => p.product_id !== productId));
+                setProducts(products.filter(pwi => pwi.product.product_id !== productId)); // Access product_id correctly
             } catch (error) {
                 console.error("Failed to delete product:", error);
                 alert('Failed to delete product.');
@@ -50,14 +50,14 @@ function AdminProducts() {
                     </tr>
                 </thead>
                 <tbody>
-                    {products.map(product => (
-                        <tr key={product.product_id}>
-                            <td>{product.product_name}</td>
-                            <td>{product.price} €</td>
-                            <td>{product.bottle_count}</td>
+                    {products.map(productWithImage => ( // Iterate over ProductWithImage
+                        <tr key={productWithImage.product.product_id}>
+                            <td>{productWithImage.product.product_name}</td>
+                            <td>{productWithImage.product.price} €</td>
+                            <td>{productWithImage.product.bottle_count}</td>
                             <td>
-                                <Link to={`${product.product_id}/edit`} className="button button-secondary">Edit</Link>
-                                <button onClick={() => handleDelete(product.product_id)} className="button" style={{marginLeft: '10px', backgroundColor: 'var(--error-color)'}}>Delete</button>
+                                <Link to={`${productWithImage.product.product_id}/edit`} className="button button-secondary">Edit</Link>
+                                <button onClick={() => handleDelete(productWithImage.product.product_id)} className="button" style={{marginLeft: '10px', backgroundColor: 'var(--error-color)'}}>Delete</button>
                             </td>
                         </tr>
                     ))}

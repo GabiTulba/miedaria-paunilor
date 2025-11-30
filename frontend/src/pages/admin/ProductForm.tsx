@@ -1,4 +1,4 @@
-import { Product } from '../../types';
+import { Product, Image } from '../../types';
 
 interface ProductFormProps {
     product: Omit<Product, 'product_id'> & { product_id?: string };
@@ -7,11 +7,12 @@ interface ProductFormProps {
     submitText: string;
     isEdit?: boolean;
     errors?: Record<string, string>;
+    availableImages: Image[]; // New prop for available images
 }
 
-function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false, errors = {} }: ProductFormProps) {
+function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false, errors = {}, availableImages }: ProductFormProps) {
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setProduct({ ...product, [name]: value });
     };
@@ -20,6 +21,8 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
         const { name, value } = e.target;
         setProduct({ ...product, [name]: value === '' ? '' : Number(value) });
     };
+
+    const selectedImage = availableImages.find(img => img.id === product.image_id);
     
     return (
         <form onSubmit={onSubmit} className="admin-product-form">
@@ -62,16 +65,31 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                 {errors.product_description && <p className="error-message">{errors.product_description}</p>}
             </div>
             <div className="form-group">
-                <label htmlFor="image_url">Image URL</label>
-                <input
-                    type="text"
-                    id="image_url"
-                    name="image_url"
-                    value={product.image_url || ''} // Use empty string for controlled component
+                <label htmlFor="image_id">Product Image</label>
+                <select
+                    id="image_id"
+                    name="image_id"
+                    value={product.image_id || ''}
                     onChange={handleChange}
                     required
-                />
-                {errors.image_url && <p className="error-message">{errors.image_url}</p>}
+                >
+                    <option value="">Select an image</option>
+                    {availableImages.map((image) => (
+                        <option key={image.id} value={image.id}>
+                            {image.file_name} (ID: {image.id.substring(0, 8)}...)
+                        </option>
+                    ))}
+                </select>
+                {selectedImage && (
+                    <div style={{ marginTop: '10px' }}>
+                        <img
+                            src={`/images/${selectedImage.id}`}
+                            alt={selectedImage.file_name}
+                            style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                        />
+                    </div>
+                )}
+                {errors.image_id && <p className="error-message">{errors.image_id}</p>}
             </div>
             <div className="form-group">
                 <label htmlFor="ingredients">Ingredients</label>

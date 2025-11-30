@@ -1,6 +1,7 @@
 use diesel::PgConnection; // Keep this for PgConnection type
 use std::env::args;
-use backend::{establish_connection, get_admin, create_admin, salt_and_hash}; // Import what's needed
+use backend::db::establish_connection;
+use backend::{get_admin, create_admin, salt_and_hash}; // Import what's needed
 use backend::models::AdminUser;
 
 // Throws if there already is a user $ADMIN_USERNAME in the database with a different password than $ADMIN_PASSWORD
