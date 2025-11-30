@@ -160,7 +160,7 @@ The frontend website is structured as follows:
         shop/[product_id]/ -- A detailed view of a single product with an "Add to Cart" button and quantity selector. Now displays images using UUID-based URLs.
     cart/ -- A summary of the items in the shopping cart, with options to update quantities, remove items, or clear the cart.
     about-us/ -- A static page with a modern design telling the story of the meadery.
-    contact/ -- A static page with contact information and a contact form.
+    contact/ -- A static page with contact information.
     admin/ -- A login page for administrators.
         admin/dashboard/ -- A protected admin section with a sidebar for navigation.
             admin/dashboard/products -- A page to manage products (create, edit, delete) with a modern table view. Product forms now include image selection from uploaded images.
