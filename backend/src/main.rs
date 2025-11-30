@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, State, Query},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post, put, delete},
@@ -107,12 +107,21 @@ async fn delete_image_wrapper(
     image_crud::delete_image(&mut conn, image_id).await
 }
 
+
+#[derive(Debug, serde::Deserialize)]
+pub struct GetProductsQuery {
+    order_by: Option<String>,
+    in_stock: Option<bool>,
+    order_direction: Option<String>,
+}
+
 async fn get_all_products(
     State(app_state): State<Arc<AppState>>,
+    query: Query<GetProductsQuery>,
 ) -> Result<Json<Vec<ProductWithImage>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
-    let products = product_crud::get_all_products(&mut conn)?;
+    let products = product_crud::get_all_products(&mut conn, query.order_by.as_deref(), query.in_stock, query.order_direction.as_deref())?;
 
     Ok(Json(products))
 }

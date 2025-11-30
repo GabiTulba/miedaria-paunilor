@@ -186,11 +186,47 @@ pub fn delete_product(conn: &mut PgConnection, product_id: &str) -> QueryResult<
     .map(|_| ())
 }
 
-pub fn get_all_products(conn: &mut PgConnection) -> QueryResult<Vec<ProductWithImage>> {
+pub fn get_all_products(
+    conn: &mut PgConnection,
+    order_by: Option<&str>,
+    in_stock: Option<bool>,
+    order_direction: Option<&str>,
+) -> QueryResult<Vec<ProductWithImage>> {
     use crate::schema::products::dsl::*;
     use crate::schema::images::dsl::images;
-    products
-        .left_join(images)
+    use diesel::ExpressionMethods; // Import ExpressionMethods to use .asc() and .desc()
+
+    let mut query = products.left_join(images).into_boxed();
+
+    if let Some(true) = in_stock {
+        query = query.filter(bottle_count.gt(0));
+    }
+
+    if let Some(order_by_col) = order_by {
+        let sorted_query = match order_by_col {
+            "price" => {
+                if let Some("desc") = order_direction {
+                    query.order(price.desc())
+                } else {
+                    query.order(price.asc())
+                }
+            },
+            "volume" => {
+                if let Some("desc") = order_direction {
+                    query.order(bottle_size.desc())
+                } else {
+                    query.order(bottle_size.asc())
+                }
+            },
+            _ => {
+                // If order_by is specified but not recognized, do nothing (no specific order)
+                query
+            }
+        };
+        query = sorted_query;
+    }
+
+    query
         .select(ProductWithImage::as_select())
         .load(conn)
 }

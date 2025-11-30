@@ -24,7 +24,7 @@ async function request(endpoint: string, options: RequestInit = {}) {
 }
 
 export const api = {
-    getProducts: (): Promise<ProductWithImage[]> => request('/products'),
+    get: (endpoint: string) => request(endpoint),
     getProductById: (id: string): Promise<ProductWithImage> => request(`/products/${id}`),
 
     adminLogin: async (credentials: any) => {
