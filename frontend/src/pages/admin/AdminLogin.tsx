@@ -1,6 +1,8 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
+import { api } from '../../lib/api';
+import './Admin.css';
 
 function AdminLogin() {
     const [username, setUsername] = useState('');
@@ -14,51 +16,48 @@ function AdminLogin() {
         setError('');
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password }),
-            });
-
-            if (!response.ok) {
+            const data = await api.adminLogin({ username, password });
+            if (data && data.token) {
+                setToken(data.token);
+                navigate('/admin/dashboard');
+            } else {
                 throw new Error('Login failed');
             }
-
-            const data = await response.json();
-            setToken(data.token);
-            navigate('/admin/dashboard');
         } catch (err) {
             setError('Invalid username or password');
+            console.error(err);
         }
     };
 
     return (
-        <div>
-            <h3>Admin Login</h3>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label htmlFor="username">Username</label>
-                    <input
-                        id="username"
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="password">Password</label>
-                    <input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                </div>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                <button type="submit">Login</button>
-            </form>
+        <div className="admin-login-page">
+            <div className="admin-form-container">
+                <h2>Admin Login</h2>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="username">Username</label>
+                        <input
+                            id="username"
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="password">Password</label>
+                        <input
+                            id="password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </div>
+                    {error && <p className="error-message">{error}</p>}
+                    <button type="submit" className="button">Login</button>
+                </form>
+            </div>
         </div>
     );
 }

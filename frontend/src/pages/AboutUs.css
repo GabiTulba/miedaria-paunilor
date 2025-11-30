@@ -1,0 +1,70 @@
+/* frontend/src/pages/AboutUs.css */
+.about-us-page {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.about-hero {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1516222338279-a7f7e83445e8?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover;
+    height: 50vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--white-color);
+}
+
+.about-hero-content h1 {
+    font-size: 3rem;
+    color: var(--white-color);
+    max-width: 800px;
+}
+
+.about-content {
+    max-width: 800px;
+    margin: 3rem auto;
+    padding: 0 20px;
+}
+
+.about-section {
+    margin-bottom: 3rem;
+}
+
+.about-section h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    position: relative;
+}
+
+.about-section h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background-color: var(--accent-color);
+}
+
+.about-section p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    text-align: justify;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .about-hero {
+        height: 40vh;
+    }
+    .about-hero-content h1 {
+        font-size: 2.2rem;
+    }
+    .about-section h2 {
+        font-size: 2rem;
+    }
+    .about-content {
+        margin-top: 2rem;
+    }
+}

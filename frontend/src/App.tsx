@@ -1,21 +1,45 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, NavLink } from "react-router-dom";
+import { useContext, useState } from 'react';
+import { CartContext } from './context/CartContext';
+import './App.css';
 
 function App() {
+  const { itemCount } = useContext(CartContext);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
   return (
-    <div>
-      <nav>
-        <ul>
-          <li><Link to="/home">Home</Link></li>
-          <li><Link to="/shop">Shop</Link></li>
-          <li><Link to="/about-us">About Us</Link></li>
-          <li><Link to="/contact">Contact</Link></li>
-          <li><Link to="/cart">Cart</Link></li>
-          <li><Link to="/admin">Admin</Link></li>
-        </ul>
-      </nav>
-      <hr />
-      <Outlet />
-    </div>
+    <>
+      <header className="header">
+        <div className="container">
+          <Link to="/" className="logo">Miedăria Păunilor</Link>
+          <nav className={`main-nav ${isMobileMenuOpen ? 'active' : ''}`}>
+            <NavLink to="/home" onClick={toggleMobileMenu}>Home</NavLink>
+            <NavLink to="/shop" onClick={toggleMobileMenu}>Shop</NavLink>
+            <NavLink to="/about-us" onClick={toggleMobileMenu}>About Us</NavLink>
+            <NavLink to="/contact" onClick={toggleMobileMenu}>Contact</NavLink>
+            <NavLink to="/cart" onClick={toggleMobileMenu}>Cart {itemCount > 0 && `(${itemCount})`}</NavLink>
+            <NavLink to="/admin" onClick={toggleMobileMenu}>Admin</NavLink>
+          </nav>
+          <button className="hamburger" onClick={toggleMobileMenu}>
+            <span className="bar"></span>
+            <span className="bar"></span>
+            <span className="bar"></span>
+          </button>
+        </div>
+      </header>
+      <main>
+        <Outlet />
+      </main>
+      <footer className="footer">
+        <div className="container">
+          <p>&copy; 2025 Miedăria Păunilor. All rights reserved.</p>
+        </div>
+      </footer>
+    </>
   );
 }
 

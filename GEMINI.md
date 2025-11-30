@@ -1,7 +1,6 @@
 # Notes for AI Agents
 ## Scope
-This documents serves as high-level documentation for an app, describing the architecture, components, technologies, and features of the app.
-
+This document serves as high-level documentation for an app, describing the architecture, components, technologies, and features of the app.
 
 ## Coding Style and Code Quality
 You write your code in a concise, easily readable way, only leaving inline doc-comments where to add additional behaviour information to the reader. The code should be mostly self-documenting. 
@@ -15,7 +14,7 @@ You are concerned with security and possible vulnerabilities that the app could 
 You should feel free to use the latest versions of docker images and programming languages.
 
 ## Updating the Documentation
-Whenever you do significant feature or behaivour changes to the codebase, remember to update this GEMINI.md document. Your updates should be concise, summaries of the changes and always consider the rest of the information already present in this document, trying to keep the size of this document relatively small over time.
+Whenever you do significant feature or behaviour changes to the codebase, remember to update this GEMINI.md document. Your updates should be concise, summaries of the changes and always consider the rest of the information already present in this document, trying to keep the size of this document relatively small over time.
 
 
 # High Level Description
@@ -47,41 +46,42 @@ All Docker images utilize environment variables defined in a single `.env` file 
 This is a PostgreSQL database.
 
 ### Features
-The instance has a single database [miedaria_paunilor], with two tables:
+The instance has a single database [miedaria_paunilor], with three tables:
 1. [products]
 2. [users]
+3. [admin_users]
 
 [products] has the following schema:
-* product_id - a short string composed of lowercase letters, dashes or underscores. Represents the machine-friendly name of the product.
-* name - a short string that supports any character. Represents the human-friendly name of the product
-* bottle_size - positive integer (mililiters of volume). Represents the net volume of the bottle of mead.
-* bottle_count - non-negative integer. Represents the number of bottles in stock.
-* description - a long, free-form text string. Represents a detailed description of the product.
-* price_eur - decimal with two digits of precision. Represents the price of the product in Euros.
-* abv - decimal with one digit of precision, valid ranges from 0.0 to 99.9. Represents the alcohol by volume concentration of the mead.
+* product_id - (Primary Key) A short string composed of lowercase letters, dashes or underscores. Represents the machine-friendly name of the product.
+* product_name - A short string that supports any character. Represents the human-friendly name of the product
+* product_description - A long, free-form text string. Represents a detailed description of the product.
+* ingredients - A text field for the ingredients of the product.
+* abv - Decimal with one digit of precision, valid ranges from 0.0 to 99.9. Represents the alcohol by volume concentration of the mead.
+* bottle_count - Non-negative integer. Represents the number of bottles in stock.
+* bottle_size - Positive integer (mililiters of volume). Represents the net volume of the bottle of mead.
+* price - Decimal with two digits of precision. Represents the price of the product in Euros.
 
-[users] has the following schema:
-* unique identifier - integer, auto increasing
-* user_name - ASCII printable string, limited to 256 characters.
-* user_salt - ASCII printable string, limited to 256 characters.
-* password_hash - hexadecimal string, limited to 256 characters.
+[users] and [admin_users] have the following schema:
+* username - (Primary Key) ASCII printable string, limited to 256 characters.
+* salt - ASCII printable string, limited to 256 characters.
+* hashed_password - Hexadecimal string, limited to 256 characters.
 
 The password is stored in the database as the sha256 hash of the password and the user's salt like the following pseudocode (| means string concatenation):
 ```
 password_hash = hex(sha256(user_salt | password))
 ```
 
-The [users] database is initialized at container startup by the backend's `entrypoint.sh` using `diesel setup` (to create the database and run migrations) and then `add_admin_user` to create the default admin user with credentials from the root `.env` file.
+The database is initialized at container startup by the backend's `entrypoint.sh` using `diesel setup` (to create the database and run migrations) and then `add_admin_user` to create the default admin user with credentials from the root `.env` file.
 
 ## Backend
 ### Technologies
 The backend acts as a middle-man between the frontend and the database. It is built with Rust and utilizes the following key libraries:
-*   [axum] - A web application framework for handling user requests, routing, and API endpoints. (Updated to 0.8.x)
-*   [diesel] - An ORM and query builder for database interactions. (Updated version, with `r2d2` feature enabled)
-*   [jsonwebtoken] - For JWT (JSON Web Token) signing and verification. (Updated version, with `rust_crypto` feature enabled)
-*   [tokio] - An asynchronous runtime for Rust.
-*   [r2d2] - A connection pool for managing database connections.
-*   [async-trait] - A procedural macro for async functions in traits.
+*   [axum] (v0.8.7) - A web application framework for handling user requests, routing, and API endpoints.
+*   [diesel] (v2.2.0) - An ORM and query builder for database interactions, with the `r2d2` feature enabled.
+*   [jsonwebtoken] (v10.2.0) - For JWT (JSON Web Token) signing and verification, with the `rust_crypto` feature enabled.
+*   [tokio] (v1) - An asynchronous runtime for Rust.
+*   [r2d2] (v0.8.10) - A connection pool for managing database connections.
+*   [async-trait] (v0.1.80) - A procedural macro for async functions in traits.
 
 The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`).
 
@@ -99,27 +99,33 @@ Diesel is used to interact with the database, dealing with:
 
 
 ## Frontend
+### UI/UX
+The frontend features a sleek, modern, and reactive user experience. The design is fully responsive, ensuring a great experience on all devices, from mobile phones to desktops.
+
 ### Technologies
-The frontend is written in `Vite + React + TypeScript`, offering a sleek and modern UI with low overhead and intuitive UX.
+The frontend is written in `Vite + React + TypeScript`.
 *   `react-router-dom` is used for client-side routing.
 *   `Nginx` serves the built static assets in the production Docker environment.
 *   `React Context` is used for state management, specifically for user authentication (JWTs) and shopping cart functionality.
-*   Global CSS (`index.css`) provides basic styling and a consistent visual theme.
+
+### CSS Architecture
+The styling is managed through a modular and organized CSS architecture:
+*   **Global Styles (`index.css`):** A global stylesheet defines CSS variables for the color palette, typography (using Google Fonts), and base styles for common HTML elements.
+*   **Component-Specific Styles:** Each page and major component has its own dedicated CSS file (e.g., `Home.css`, `Shop.css`, `Admin.css`). This keeps styles organized and easy to maintain.
+*   **Responsive Design:** Media queries are used extensively in the CSS files to ensure the layout adapts to different screen sizes. A hamburger menu is implemented for mobile navigation.
 
 ### Features
 The frontend website is structured as follows:
 ```
 / -- redirects to home/
-    home/ -- entry page, displays contents of shop/ about-us/ contact/ in a summarised way.
-    shop/ -- displays all the products in the shop, only displays a summary view of each product
-        shop/[product_id]/ -- displays all the details about the product, with an "Add to Cart" button.
-    cart/ -- displays all the products in the cart, alongside their total price, with options to remove items or clear the cart.
-    about-us/ -- displays a static page that has a short story about the owners
-    contact/ -- displays a static page that has a short list of contact details: mail, phone number, address
-    admin/ -- login page for admin users, after login, it always redirects to admin/dashboard/
-        admin/dashboard/ -- admin dashboard, showing a list of all the other admin pages. These routes are protected by JWT authentication.
-            admin/dashboard/products -- displays all the products in the database for administration, with the possibility of adding new products, deleting old ones, and editing existing ones.
-            admin/dashboard/products/[product_id]/edit -- displays a page that allows to edit product data. The admin user gets redirected here after clicking on an edit button on a specific product.
-            admin/dashboard/products/create/ -- page to create a new product entry in the database. The admin user gets redirected to this page when they click on a button to create a new product on admin/dashboard/products/
+    home/ -- A visually appealing landing page with a hero section, featured products, and teasers for other sections.
+    shop/ -- Displays all products in a grid, with a sidebar for filtering and sorting.
+        shop/[product_id]/ -- A detailed view of a single product with an "Add to Cart" button and quantity selector.
+    cart/ -- A summary of the items in the shopping cart, with options to update quantities, remove items, or clear the cart.
+    about-us/ -- A static page with a modern design telling the story of the meadery.
+    contact/ -- A static page with contact information and a contact form.
+    admin/ -- A login page for administrators.
+        admin/dashboard/ -- A protected admin section with a sidebar for navigation.
+            admin/dashboard/products -- A page to manage products (create, edit, delete) with a modern table view.
 ```
-All frontend pages are now implemented with placeholder content and fetch data from the backend where applicable.
+All pages are fully implemented with the new design and fetch data from the backend where applicable.
