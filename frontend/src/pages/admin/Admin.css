@@ -74,6 +74,16 @@
     margin-bottom: 1rem;
 }
 
+.form-group .error-message {
+    background-color: transparent;
+    padding: 0;
+    text-align: left;
+    margin-top: 5px;
+    font-size: 0.9rem;
+    color: var(--error-color);
+    margin-bottom: 0;
+}
+
 /* Admin Dashboard */
 .admin-dashboard .card {
     background-color: var(--white-color);

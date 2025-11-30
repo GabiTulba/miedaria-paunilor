@@ -6,8 +6,13 @@ async function request(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
     const response = await fetch(url, options);
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Network response was not ok' }));
-        throw new Error(error.message || 'An error occurred');
+        const errorBody = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+        const error: any = new Error(errorBody.message || 'An error occurred');
+        error.response = {
+            status: response.status,
+            data: errorBody,
+        };
+        throw error;
     }
     if (response.status === 204) {
         return null;

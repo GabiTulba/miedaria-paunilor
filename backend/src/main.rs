@@ -109,46 +109,118 @@ pub struct ErrorResponse {
 async fn create_product(
     State(app_state): State<Arc<AppState>>,
     Json(new_product): Json<models::NewProduct>,
-) -> Result<Json<models::Product>, (StatusCode, Json<ErrorResponse>)> {
-    let mut conn = app_state
-        .pool
-        .get()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse { message: format!("Database connection error: {}", e) })))?;
+) -> impl IntoResponse {
+    let mut conn = match app_state.pool.get() {
+        Ok(conn) => conn,
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    message: "Could not connect to database".to_string(),
+                }),
+            ).into_response();
+        }
+    };
 
     match product_crud::create_product(&mut conn, &new_product) {
-        Ok(product) => Ok(Json(product)),
-        Err(ProductCreationError::DuplicateProductId) => {
-            Err((StatusCode::CONFLICT, Json(ErrorResponse { message: "Product with this ID already exists.".to_string() })))
-        },
-        Err(ProductCreationError::DatabaseError(msg)) => {
-            Err((StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse { message: format!("Database error: {}", msg) })))
-        },
-        Err(ProductCreationError::UnknownError) => {
-            Err((StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorResponse { message: "An unknown error occurred during product creation.".to_string() })))
+        Ok(product) => (StatusCode::CREATED, Json(product)).into_response(),
+        Err(ProductCreationError::ValidationErrors(validation_errors)) => {
+            #[derive(serde::Serialize)]
+            struct ValidationErrorResponse {
+                message: String,
+                errors: Vec<product_crud::ProductValidationError>,
+            }
+            (
+                StatusCode::BAD_REQUEST,
+                Json(ValidationErrorResponse {
+                    message: "Validation failed".to_string(),
+                    errors: validation_errors,
+                }),
+            )
+                .into_response()
         }
+        Err(ProductCreationError::DuplicateProductId) => (
+            StatusCode::CONFLICT,
+            Json(ErrorResponse {
+                message: "Product with this ID already exists.".to_string(),
+            }),
+        )
+            .into_response(),
+        Err(ProductCreationError::DatabaseError(msg)) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                message: format!("Database error: {}", msg),
+            }),
+        )
+            .into_response(),
+        Err(ProductCreationError::UnknownError) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                message: "An unknown error occurred during product creation.".to_string(),
+            }),
+        )
+            .into_response(),
     }
 }
 
 async fn update_product(
     State(app_state): State<Arc<AppState>>,
     Path(product_id): Path<String>,
-    Json(product): Json<models::Product>,
-) -> Result<StatusCode, StatusCode> {
-    let mut conn = app_state
-        .pool
-        .get()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    
-    if product_id != product.product_id {
-        return Err(StatusCode::BAD_REQUEST);
-    }
+    Json(mut product): Json<models::Product>,
+) -> impl IntoResponse {
+    let mut conn = match app_state.pool.get() {
+        Ok(conn) => conn,
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    message: "Could not connect to database".to_string(),
+                }),
+            ).into_response();
+        }
+    };
 
-    product_crud::update_product(&mut conn, &product)
-        .map(|_| StatusCode::OK)
-        .map_err(|e| match e {
-            diesel::result::Error::NotFound => StatusCode::NOT_FOUND,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        })
+    product.product_id = product_id;
+
+    match product_crud::update_product(&mut conn, &product) {
+        Ok(updated_product) => (StatusCode::OK, Json(updated_product)).into_response(),
+        Err(product_crud::ProductUpdateError::ValidationErrors(validation_errors)) => {
+             #[derive(serde::Serialize)]
+            struct ValidationErrorResponse {
+                message: String,
+                errors: Vec<product_crud::ProductValidationError>,
+            }
+            (
+                StatusCode::BAD_REQUEST,
+                Json(ValidationErrorResponse {
+                    message: "Validation failed".to_string(),
+                    errors: validation_errors,
+                }),
+            )
+                .into_response()
+        }
+        Err(product_crud::ProductUpdateError::NotFound) => (
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse {
+                message: "Product not found".to_string(),
+            }),
+        )
+            .into_response(),
+        Err(product_crud::ProductUpdateError::DatabaseError(msg)) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                message: format!("Database error: {}", msg),
+            }),
+        )
+            .into_response(),
+        Err(product_crud::ProductUpdateError::UnknownError) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                message: "An unknown error occurred during product update.".to_string(),
+            }),
+        )
+            .into_response(),
+    }
 }
 
 async fn delete_product(
