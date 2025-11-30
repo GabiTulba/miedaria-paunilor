@@ -22,7 +22,7 @@ function App() {
             <NavLink to="/about-us" onClick={toggleMobileMenu}>About Us</NavLink>
             <NavLink to="/contact" onClick={toggleMobileMenu}>Contact</NavLink>
             <NavLink to="/cart" onClick={toggleMobileMenu}>Cart {itemCount > 0 && `(${itemCount})`}</NavLink>
-            <NavLink to="/admin" onClick={toggleMobileMenu}>Admin</NavLink>
+
           </nav>
           <button className="hamburger" onClick={toggleMobileMenu}>
             <span className="bar"></span>

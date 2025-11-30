@@ -168,6 +168,9 @@ The frontend website is structured as follows:
 ```
 All pages are fully implemented with the new design and fetch data from the backend where applicable.
 The frontend `Product` and `ProductWithImage` types have been updated to reflect the new image management.
+
+### UI Changes
+*   **Admin Link Removal:** The "Admin" link has been removed from the main sticky navigation bar at the top of the application for regular users.
 ## Refactoring Changes (Summary)
 
 This section summarizes the significant refactoring changes made to improve code quality, modularity, consistency, and maintainability across the full-stack application.
