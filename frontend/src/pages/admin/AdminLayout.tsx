@@ -19,6 +19,7 @@ function AdminLayout() {
                 <nav className="admin-nav">
                     <NavLink to="/admin/dashboard">Dashboard</NavLink>
                     <NavLink to="/admin/dashboard/products">Products</NavLink>
+                    <NavLink to="/admin/dashboard/images">Images</NavLink> {/* New NavLink */}
                     {/* Add other admin links here */}
                 </nav>
                 <button onClick={handleLogout} className="button-secondary" style={{ width: '100%', marginTop: '2rem' }}>Logout</button>

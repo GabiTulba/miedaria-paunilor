@@ -15,6 +15,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminProductEdit from './pages/admin/AdminProductEdit';
 import AdminProductCreate from './pages/admin/AdminProductCreate';
+import AdminImages from './pages/admin/AdminImages'; // New import
 
 import ProtectedRoute from './components/ProtectedRoute';
 // ... other imports
@@ -43,6 +44,7 @@ const router = createBrowserRouter([
               { path: 'dashboard/products', element: <AdminProducts /> },
               { path: 'dashboard/products/:productId/edit', element: <AdminProductEdit /> },
               { path: 'dashboard/products/create', element: <AdminProductCreate /> },
+              { path: 'dashboard/images', element: <AdminImages /> }, // New route for image upload
             ],
           },
         ],

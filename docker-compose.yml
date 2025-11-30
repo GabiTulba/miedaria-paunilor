@@ -12,6 +12,8 @@ services:
       - react-rust
     env_file:
       - .env
+    volumes:
+      - 'miedaria_paunilor_images:/app/public/images' # New volume mount for images
 
   backend:
     build: ./backend
@@ -22,6 +24,8 @@ services:
       - rust-postgres
     env_file:
       - .env
+    volumes:
+      - 'miedaria_paunilor_images:/app/images' # New volume mount for images
 
   database:
     image: postgres:16.2-alpine
@@ -40,3 +44,4 @@ networks:
 
 volumes:
   postgres-data:
+  miedaria_paunilor_images: # New named volume for images

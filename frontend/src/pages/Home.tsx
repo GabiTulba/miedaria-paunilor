@@ -30,30 +30,35 @@ function Home() {
             </section>
 
             <section className="featured-products">
-                <h2 className="section-title">Featured Products</h2>
-                <div className="product-grid">
+                <div className="section-content-container">
+                    <h2 className="section-title">Featured Products</h2>
+                    <div className="product-grid">
                     {featuredProducts.map(product => (
                         <div key={product.product_id} className="product-card">
                             <Link to={`/shop/${product.product_id}`}>
-                                <div className="product-card-image">
-                                    {/* Placeholder for image */}
-                                    <div className="placeholder-image"></div>
-                                </div>
-                                <div className="product-card-content">
-                                    <h3>{product.product_name}</h3>
-                                    <p className="price">{product.price} €</p>
+                                <div className="product-card-main">
+                                    <div className="product-card-image">
+                                    <img src={product.image_url} alt={product.product_name} className="product-image" />
+                                    </div>
+                                    <div className="product-card-content">
+                                        <h3>{product.product_name}</h3>
+                                        <p className="price">{product.price} €</p>
+                                    </div>
                                 </div>
                             </Link>
                         </div>
                     ))}
                 </div>
+                </div>
             </section>
 
             <section className="about-teaser">
-                <div className="teaser-content">
-                    <h2>Our Story</h2>
-                    <p>Miedăria Păunilor is born from a love for nature, tradition, and the golden nectar of bees. We are a family-run business dedicated to producing the finest mead.</p>
-                    <Link to="/about-us" className="button button-secondary">Read More</Link>
+                <div className="section-content-container">
+                    <div className="teaser-content">
+                        <h2>Our Story</h2>
+                        <p>Miedăria Păunilor is born from a love for nature, tradition, and the golden nectar of bees. We are a family-run business dedicated to producing the finest mead.</p>
+                        <Link to="/about-us" className="button button-secondary">Read More</Link>
+                    </div>
                 </div>
             </section>
         </div>

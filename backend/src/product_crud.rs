@@ -17,6 +17,7 @@ pub enum ProductValidationError {
     InvalidPrice,
     InvalidAbvPrecision,
     InvalidPricePrecision,
+    EmptyImageUrl, // New variant
 }
 
 fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
@@ -41,6 +42,11 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
     // ingredients: A text field for the ingredients of the product.
     if new_product.ingredients.is_empty() {
         errors.push(ProductValidationError::EmptyIngredients);
+    }
+
+    // image_url: Not null, so must be present
+    if new_product.image_url.is_empty() {
+        errors.push(ProductValidationError::EmptyImageUrl);
     }
 
     // abv: Decimal with one digit of precision, valid ranges from 0.0 to 99.9.
@@ -151,6 +157,7 @@ pub fn update_product(conn: &mut PgConnection, product: &Product) -> Result<Prod
         bottle_count: product.bottle_count,
         bottle_size: product.bottle_size,
         price: product.price,
+        image_url: product.image_url.clone()
     });
     if !validation_errors.is_empty() {
         return Err(ProductUpdateError::ValidationErrors(validation_errors));

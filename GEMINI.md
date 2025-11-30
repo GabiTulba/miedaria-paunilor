@@ -36,6 +36,7 @@ The backend is the middle-man between the frontend and the database. For securit
 
 ## Volumes
 There is only one volume for the PostgreSQL database.
+*   **images:** A volume for storing uploaded product images, mounted at `/app/images` in the backend container.
 
 ## Environment
 All Docker images utilize environment variables defined in a single `.env` file located at the project root. This centralizes configuration for all services.
@@ -60,6 +61,7 @@ The instance has a single database [miedaria_paunilor], with three tables:
 * bottle_count - Non-negative integer. Represents the number of bottles in stock.
 * bottle_size - Positive integer (mililiters of volume). Represents the net volume of the bottle of mead.
 * price - Decimal with two digits of precision. Represents the price of the product in Euros.
+* image_url - A string representing the URL of the product image.
 
 [users] and [admin_users] have the following schema:
 * username - (Primary Key) ASCII printable string, limited to 256 characters.
@@ -97,6 +99,11 @@ Diesel is used to interact with the database, dealing with:
 *   Modifying, inserting, and deleting entries from the `products` table via authenticated admin endpoints.
 *   User management (fetching admin/regular users, creating, updating passwords, deleting) for authentication purposes.
 *   Validation of product creation and update fields to ensure data integrity and security, returning specific error types for different validation failures.
+*   **Image Upload:**
+    *   Provides an API endpoint (`/api/images/upload`) for uploading product images.
+    *   Saves uploaded images to a designated directory (`/app/images`) within the Docker container, intended to be mounted as a volume.
+    *   Performs basic validation to ensure only image files are uploaded.
+    *   Returns the URL of the uploaded image for storage in the product's `image_url` field.
 
 
 ## Frontend

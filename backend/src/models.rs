@@ -64,6 +64,7 @@ pub struct Product {
     pub bottle_count: i32,
     pub bottle_size: i32,
     pub price: Decimal,
+    pub image_url: String, // New field
 }
 
 #[derive(Insertable, serde::Deserialize)]
@@ -77,4 +78,5 @@ pub struct NewProduct {
     pub bottle_count: i32,
     pub bottle_size: i32,
     pub price: Decimal,
+    pub image_url: String, // New field
 }

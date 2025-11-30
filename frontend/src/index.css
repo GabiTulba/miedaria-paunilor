@@ -145,17 +145,67 @@ tr:hover {
 }
 
 /* Card styles */
-.card {
+.product-card {
     background-color: var(--white-color);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
-    padding: 20px;
-    margin-bottom: 20px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex; /* Make it a flex container */
+    flex-direction: column; /* Stack children vertically */
+    height: 100%; /* Ensure cards take full height in grid */
+    text-decoration: none; /* Remove underline from Link */
+    color: inherit; /* Inherit color from parent */
 }
 
-/* Form container */
-.form-container {
-    max-width: 500px;
-    margin: 2rem auto;
-    padding: 2rem;
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+}
+
+.product-card-main {
+    display: flex; /* Flex container for image and content */
+    flex-direction: row; /* Image on left, content on right */
+    align-items: stretch; /* Stretch items to fill container height */
+    flex-grow: 1; /* Allow main content to grow */
+}
+
+.product-card-image {
+  width: 150px; /* Fixed width for image */
+  height: auto; /* Allow height to adjust */
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Removed border-bottom as it's now a side element */
+  background-color: var(--secondary-color); /* Light background for images */
+  flex-shrink: 0; /* Prevent image from shrinking */
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Ensures the image fits within the container without cropping, maintaining aspect ratio */
+  object-position: center;
+}
+
+.product-card-content {
+    padding: 15px; /* Adjusted padding */
+    flex-grow: 1; /* Allow content to take remaining space */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.product-card-content h3 {
+    margin: 0 0 5px 0; /* Adjusted margin */
+    font-size: 1.2rem; /* Adjusted font size */
+    color: var(--primary-color);
+}
+
+.product-card .price {
+    font-size: 1rem; /* Adjusted font size */
+    font-weight: bold;
+    color: var(--accent-color);
+    margin-top: auto; /* Push price to the bottom if content is short */
 }

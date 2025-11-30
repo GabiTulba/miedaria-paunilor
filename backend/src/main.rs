@@ -11,7 +11,8 @@ use std::{env, net::SocketAddr, sync::Arc};
 
 // Import everything from the backend library crate
 use backend::{auth, models, product_crud, AppState};
-
+use backend::image_crud;
+use axum::extract::Extension; 
 
 #[tokio::main]
 async fn main() {
@@ -35,15 +36,20 @@ use tower_http::cors::Any; // Or specific origins
         .allow_methods(Any) // Allow all methods
         .allow_headers(Any); // Allow all headers
 
+    let admin_routes = Router::new()
+        .route("/protected", get(protected_route))
+        .route("/products", post(create_product))
+        .route("/products/{product_id}", put(update_product))
+        .route("/products/{product_id}", delete(delete_product))
+        .route("/images/upload", post(image_crud::upload_image))
+        .route_layer(axum::middleware::from_fn_with_state(app_state.clone(), auth::auth_middleware));
+
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/api/products", get(get_all_products))
         .route("/api/products/{product_id}", get(get_product_by_id))
         .route("/api/admin/login", post(auth::login))
-        .route("/api/admin/protected", get(protected_route))
-        .route("/api/admin/products", post(create_product))
-        .route("/api/admin/products/{product_id}", put(update_product))
-        .route("/api/admin/products/{product_id}", delete(delete_product))
+        .nest("/api/admin", admin_routes) // Mount the protected admin routes
         .with_state(app_state)
         .layer(cors); // Apply CORS middleware
 
@@ -90,7 +96,7 @@ async fn get_product_by_id(
     Ok(Json(product))
 }
 
-async fn protected_route(claims: auth::Claims) -> Result<String, StatusCode> {
+async fn protected_route(Extension(claims): Extension<auth::Claims>) -> Result<String, StatusCode> {
     Ok(format!(
         "Welcome to the protected area, {}!",
         claims.sub

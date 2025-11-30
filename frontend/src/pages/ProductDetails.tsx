@@ -51,9 +51,7 @@ function ProductDetails() {
                 <Link to="/shop">&larr; Back to Shop</Link>
             </div>
             <div className="product-details-content">
-                <div className="product-image-section">
-                    <div className="placeholder-image-large"></div>
-                </div>
+                    <img src={product.image_url} alt={product.product_name} className="product-detail-image" />
                 <div className="product-info-section">
                     <h1>{product.product_name}</h1>
                     <p className="price-large">{product.price} €</p>

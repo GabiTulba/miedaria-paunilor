@@ -59,12 +59,14 @@ function Shop() {
                         {products.map(product => (
                             <div key={product.product_id} className="product-card">
                                 <Link to={`/shop/${product.product_id}`}>
-                                    <div className="product-card-image">
-                                        <div className="placeholder-image"></div>
-                                    </div>
-                                    <div className="product-card-content">
-                                        <h3>{product.product_name}</h3>
-                                        <p className="price">{product.price} €</p>
+                                    <div className="product-card-main">
+                                        <div className="product-card-image">
+                                            <img src={product.image_url} alt={product.product_name} className="product-image" />
+                                        </div>
+                                        <div className="product-card-content">
+                                            <h3>{product.product_name}</h3>
+                                            <p className="price">{product.price} €</p>
+                                        </div>
                                     </div>
                                 </Link>
                             </div>

@@ -16,6 +16,7 @@ function AdminProductCreate() {
         bottle_count: 0,
         bottle_size: 750,
         price: '0.00',
+        image_url: '', // Initialize image_url
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const { token } = useContext(AuthContext);

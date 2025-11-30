@@ -18,6 +18,7 @@ diesel::table! {
         bottle_count -> Int4,
         bottle_size -> Int4,
         price -> Numeric,
+        image_url -> VarChar,
     }
 }
 

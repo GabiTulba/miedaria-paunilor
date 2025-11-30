@@ -1,7 +1,9 @@
 use axum::{
-    extract::{FromRequest, Request, State},
+    extract::{Request, State}, 
     http::StatusCode,
     Json,
+    middleware::Next, 
+    response::Response, 
 };
 use jsonwebtoken::{encode, DecodingKey, EncodingKey, Header, Validation, decode};
 use serde::{Deserialize, Serialize};
@@ -11,7 +13,7 @@ use crate::utils::verify_password;
 use std::sync::Arc;
 use crate::AppState;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)] 
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
@@ -61,30 +63,36 @@ pub async fn login(
     Ok(Json(LoginResponse { token }))
 }
 
-impl FromRequest<Arc<AppState>> for Claims
-{
-    type Rejection = StatusCode;
 
-    async fn from_request(req: Request, _state: &Arc<AppState>) -> Result<Self, Self::Rejection> {
-        let auth_header = req
-            .headers()
-            .get("Authorization")
-            .and_then(|header| header.to_str().ok());
 
-        if let Some(auth_header) = auth_header {
-            if auth_header.starts_with("Bearer ") {
-                let token = &auth_header[7..];
-                let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
-                let token_data = decode::<Claims>(
-                    token,
-                    &DecodingKey::from_secret(secret.as_ref()),
-                    &Validation::default(),
-                )
-                .map_err(|_| StatusCode::UNAUTHORIZED)?;
-                return Ok(token_data.claims);
-            }
+pub async fn auth_middleware(
+    State(_app_state): State<Arc<AppState>>, 
+    mut req: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    let auth_header = req.headers()
+        .get("Authorization")
+        .and_then(|header| header.to_str().ok());
+
+    let token = if let Some(header_value) = auth_header {
+        if header_value.starts_with("Bearer ") {
+            header_value[7..].to_string()
+        } else {
+            return Err(StatusCode::UNAUTHORIZED);
         }
+    } else {
+        return Err(StatusCode::UNAUTHORIZED);
+    };
 
-        Err(StatusCode::UNAUTHORIZED)
-    }
+    let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    let token_data = decode::<Claims>(
+        &token,
+        &DecodingKey::from_secret(secret.as_ref()),
+        &Validation::default(),
+    )
+    .map_err(|_| StatusCode::UNAUTHORIZED)?;
+
+    req.extensions_mut().insert(token_data.claims);
+
+    Ok(next.run(req).await)
 }

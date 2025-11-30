@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS products (
   abv DECIMAL(3,1) NOT NULL,
   bottle_count INTEGER NOT NULL,
   bottle_size INTEGER NOT NULL,
-  price DECIMAL(5,2) NOT NULL
+  price DECIMAL(5,2) NOT NULL,
+  image_url VARCHAR NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS admin_users (

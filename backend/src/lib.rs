@@ -4,6 +4,7 @@ pub mod utils;
 pub mod user_crud;
 pub mod product_crud;
 pub mod auth;
+pub mod image_crud; // New module
 
 use diesel::prelude::*;
 use dotenvy::dotenv;

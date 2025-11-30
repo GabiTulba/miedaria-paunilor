@@ -7,4 +7,5 @@ export interface Product {
   bottle_count: number;
   bottle_size: number;
   price: string; // Decimal is a string on the frontend
+  image_url: string; // New field for product image
 }

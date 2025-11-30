@@ -62,6 +62,18 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                 {errors.product_description && <p className="error-message">{errors.product_description}</p>}
             </div>
             <div className="form-group">
+                <label htmlFor="image_url">Image URL</label>
+                <input
+                    type="text"
+                    id="image_url"
+                    name="image_url"
+                    value={product.image_url || ''} // Use empty string for controlled component
+                    onChange={handleChange}
+                    required
+                />
+                {errors.image_url && <p className="error-message">{errors.image_url}</p>}
+            </div>
+            <div className="form-group">
                 <label htmlFor="ingredients">Ingredients</label>
                 <textarea
                     id="ingredients"
