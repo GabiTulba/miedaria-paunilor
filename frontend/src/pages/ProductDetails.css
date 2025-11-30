@@ -124,3 +124,19 @@
         align-items: stretch;
     }
 }
+
+.availability-details {
+    font-weight: bold;
+}
+
+.availability-details.in-stock-details {
+    color: #28a745; /* Green */
+}
+
+.availability-details.low-stock-details {
+    color: #ffc107; /* Orange */
+}
+
+.availability-details.out-of-stock-details {
+    color: #dc3545; /* Red */
+}

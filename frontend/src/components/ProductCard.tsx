@@ -25,6 +25,13 @@ function ProductCard({ productWithImage }: ProductCardProps) {
           <div className="product-card-content">
             <h3>{productWithImage.product.product_name}</h3>
             <p className="price">{productWithImage.product.price} €</p>
+            {productWithImage.product.bottle_count === 0 ? (
+              <p className="availability out-of-stock">Out of Stock</p>
+            ) : productWithImage.product.bottle_count >= 24 ? (
+              <p className="availability in-stock">In stock</p>
+            ) : (
+              <p className="availability low-stock">Only {productWithImage.product.bottle_count} left in stock</p>
+            )}
           </div>
         </div>
       </Link>

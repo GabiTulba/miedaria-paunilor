@@ -75,3 +75,22 @@
     font-size: 1.1em;
     font-style: italic;
 }
+
+.availability {
+  font-size: 0.9em;
+  font-weight: bold;
+  text-align: right;
+  margin-top: 5px;
+}
+
+.availability.in-stock {
+  color: #28a745; /* Green */
+}
+
+.availability.low-stock {
+  color: #ffc107; /* Orange */
+}
+
+.availability.out-of-stock {
+  color: #dc3545; /* Red */
+}

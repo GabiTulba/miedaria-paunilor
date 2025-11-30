@@ -71,7 +71,15 @@ function ProductDetails() {
                         <p><strong>ABV:</strong> {product.abv}%</p>
                         <p><strong>Volume:</strong> {product.bottle_size}ml</p>
                         <p><strong>Ingredients:</strong> {product.ingredients}</p>
-                        <p><strong>Availability:</strong> {product.bottle_count > 0 ? `${product.bottle_count} in stock` : 'Out of stock'}</p>
+                        <p><strong>Availability:</strong> 
+                          {product.bottle_count === 0 ? (
+                            <span className="availability-details out-of-stock-details">Out of Stock</span>
+                          ) : product.bottle_count >= 24 ? (
+                            <span className="availability-details in-stock-details">In stock</span>
+                          ) : (
+                            <span className="availability-details low-stock-details">Only {product.bottle_count} left in stock</span>
+                          )}
+                        </p>
                     </div>
 
                     <div className="add-to-cart-section">
