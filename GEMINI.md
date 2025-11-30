@@ -96,6 +96,7 @@ Diesel is used to interact with the database, dealing with:
 *   Fetching data from the `products` table.
 *   Modifying, inserting, and deleting entries from the `products` table via authenticated admin endpoints.
 *   User management (fetching admin/regular users, creating, updating passwords, deleting) for authentication purposes.
+*   Validation of product creation and update fields to ensure data integrity and security, returning specific error types for different validation failures.
 
 
 ## Frontend
