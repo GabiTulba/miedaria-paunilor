@@ -59,7 +59,11 @@ use tower_http::cors::Any;
         .with_state(app_state)
         .layer(cors);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
+    let port = env::var("BACKEND_PORT")
+        .expect("BACKEND_PORT must be set")
+        .parse::<u16>()
+        .expect("BACKEND_PORT must be a valid port number");
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     println!("listening on {}", addr);
     axum::serve(listener, app.into_make_service()).await.unwrap();

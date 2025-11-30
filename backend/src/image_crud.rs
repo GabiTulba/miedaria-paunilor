@@ -18,9 +18,10 @@ pub async fn upload_image(
     conn: &mut PgConnection,
     mut multipart: Multipart,
 ) -> Result<Json<Image>, AppError> {
-    let upload_dir = "/app/images"; 
+    let upload_dir = std::env::var("IMAGE_UPLOAD_DIR")
+        .expect("IMAGE_UPLOAD_DIR must be set");
 
-    if let Err(e) = fs::create_dir_all(upload_dir).await {
+    if let Err(e) = fs::create_dir_all(&upload_dir).await {
         eprintln!("Error creating upload directory: {:?}", e);
         return Err(AppError::InternalServerError("Failed to create upload directory".to_string()));
     }

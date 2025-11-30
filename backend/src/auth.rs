@@ -46,7 +46,11 @@ pub async fn login(
     }
 
     let now = chrono::Utc::now();
-    let exp = (now + chrono::Duration::hours(24)).timestamp() as usize;
+    let jwt_expiration_hours = env::var("JWT_EXPIRATION_HOURS")
+        .expect("JWT_EXPIRATION_HOURS must be set")
+        .parse::<i64>()
+        .expect("JWT_EXPIRATION_HOURS must be a valid integer");
+    let exp = (now + chrono::Duration::hours(jwt_expiration_hours)).timestamp() as usize;
     let claims = Claims {
         sub: user.username.clone(),
         exp,

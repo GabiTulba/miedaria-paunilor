@@ -41,6 +41,21 @@ There is only one volume for the PostgreSQL database.
 ## Environment
 All Docker images utilize environment variables defined in a single `.env` file located at the project root. This centralizes configuration for all services.
 
+## Environment
+All Docker images utilize environment variables defined in a single `.env` file located at the project root. This centralizes configuration for all services.
+
+### New Environment Variables
+
+During refactoring, the following environment variables were introduced or clarified for stricter configuration management. These variables *must* be defined in the `.env` file for the application to run.
+
+*   **Backend:**
+    *   `BACKEND_PORT`: The port on which the Rust backend server will listen.
+    *   `IMAGE_UPLOAD_DIR`: The directory where product images will be stored on the filesystem within the Docker container.
+    *   `JWT_EXPIRATION_HOURS`: The number of hours until a generated JWT token expires.
+
+*   **Frontend:**
+    *   `VITE_API_BASE_URL`: The base URL for the backend API that the frontend will make requests to.
+
 # Logical Components
 ## Database
 ### Technologies
