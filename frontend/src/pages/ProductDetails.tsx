@@ -63,15 +63,17 @@ function ProductDetails() {
                 <Link to="/shop">&larr; Back to Shop</Link>
             </div>
             <div className="product-details-content">
-                {image ? (
-                    <img 
-                        src={`/images/${image.id}`} 
-                        alt={product.product_name} 
-                        className="product-detail-image" 
-                    />
-                ) : (
-                    <div className="placeholder-image product-detail-image">No Image</div>
-                )}
+                <div className="product-image-column">
+                    {image ? (
+                        <img 
+                            src={`/images/${image.id}`} 
+                            alt={product.product_name} 
+                            className="product-detail-image" 
+                        />
+                    ) : (
+                        <div className="placeholder-image product-detail-image">No Image</div>
+                    )}
+                </div>
                 <div className="product-info-section">
                     <h1>{product.product_name}</h1>
                     <p className="price-large">{product.price} €</p>

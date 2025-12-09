@@ -57,7 +57,7 @@
 
 /* Featured Products */
 .featured-products {
-    padding: 40px 20px;
+    padding: 20px 10px;
 }
 
 .section-content-container {
@@ -69,81 +69,15 @@
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
 }
 
-.product-card {
-    background-color: var(--white-color);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
 
-.product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
-}
-
-.product-card a {
-    text-decoration: none;
-    color: inherit;
-}
 
 /* Remove placeholder-image styling as it's now an actual image */
 
-.product-card-content {
-    padding: 20px;
-}
 
-.product-card-content h3 {
-    margin: 0 0 10px 0;
-    font-size: 1.4rem;
-    color: var(--primary-color);
-}
-
-.product-card .price {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: var(--accent-color);
-    margin-top: 10px;
-}
-
-.product-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 10px;
-    font-size: 0.85em;
-}
-
-.product-details span {
-    color: #666;
-    font-weight: 500;
-}
-
-.product-details .mead-type {
-    color: #333;
-    font-weight: 600;
-}
-
-.product-details .sweetness {
-    color: #333;
-}
-
-.product-details .abv {
-    color: #333;
-}
-
-.product-details .volume {
-    color: #333;
-}
-
-.product-details .separator {
-    color: #999;
-    margin: 0 4px;
-}
 
 
 /* About Teaser */
@@ -152,12 +86,6 @@
     padding: 60px 0; /* Adjusted padding as container will handle horizontal */
     text-align: center;
 }
-
-.teaser-content {
-    /* max-width: 700px; Handled by section-content-container */
-    /* margin: 0 auto; Handled by section-content-container */
-}
-
 
 .teaser-content h2 {
     font-size: 2.5rem;

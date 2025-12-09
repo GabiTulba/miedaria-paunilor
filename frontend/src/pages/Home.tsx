@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { ProductWithImage } from '../types'; // Import ProductWithImage
 import { api } from '../lib/api';
-import { getMeadTypeLabel, getSweetnessTypeLabel } from '../enums';
+import ProductCard from '../components/ProductCard';
 import './Home.css';
 
 function Home() {
@@ -33,40 +33,14 @@ function Home() {
             <section className="featured-products">
                 <div className="section-content-container">
                     <h2 className="section-title">Featured Products</h2>
-                    <div className="product-grid">
-                    {featuredProducts.map(productWithImage => ( // Iterate over ProductWithImage
-                        <div key={productWithImage.product.product_id} className="product-card">
-                            <Link to={`/shop/${productWithImage.product.product_id}`}>
-                                <div className="product-card-main">
-                                    <div className="product-card-image">
-                                        {productWithImage.image ? (
-                                            <img 
-                                                src={`/images/${productWithImage.image.id}`} 
-                                                alt={productWithImage.product.product_name} 
-                                                className="product-image" 
-                                            />
-                                        ) : (
-                                            <div className="placeholder-image">No Image</div>
-                                        )}
-                                    </div>
-                                    <div className="product-card-content">
-                                        <h3>{productWithImage.product.product_name}</h3>
-                                        <div className="product-details">
-                                            <span className="mead-type">{getMeadTypeLabel(productWithImage.product.product_type)}</span>
-                                            <span className="separator">|</span>
-                                            <span className="sweetness">{getSweetnessTypeLabel(productWithImage.product.sweetness)}</span>
-                                            <span className="separator">|</span>
-                                            <span className="abv">{productWithImage.product.abv}% ABV</span>
-                                            <span className="separator">|</span>
-                                            <span className="volume">{productWithImage.product.bottle_size}ml</span>
-                                        </div>
-                                        <p className="price">{productWithImage.product.price} €</p>
-                                    </div>
-                                </div>
-                            </Link>
-                        </div>
-                    ))}
-                </div>
+                     <div className="product-grid">
+                     {featuredProducts.map(productWithImage => ( // Iterate over ProductWithImage
+                         <ProductCard 
+                             key={productWithImage.product.product_id} 
+                             productWithImage={productWithImage} 
+                         />
+                     ))}
+                 </div>
                 </div>
             </section>
 
