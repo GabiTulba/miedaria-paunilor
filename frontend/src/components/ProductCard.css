@@ -65,26 +65,30 @@
 }
 
 .product-details span {
-    background-color: var(--color-secondary-light);
-    color: var(--color-text-primary);
-    padding: 3px 8px;
-    border-radius: 12px;
+    color: #666;
     font-weight: 500;
 }
 
 .product-details .mead-type {
-    background-color: var(--color-primary-light);
-    color: var(--color-primary-dark);
-}
-
-.product-details .sweetness {
-    background-color: var(--color-accent-light);
-    color: var(--color-accent-dark);
+    color: #333;
+    font-weight: 600;
 }
 
 .product-details .abv {
-    background-color: var(--color-secondary);
-    color: white;
+    color: #333;
+}
+
+.product-details .volume {
+    color: #333;
+}
+
+.product-details .sweetness {
+    color: #333;
+}
+
+.product-details .separator {
+    color: #999;
+    margin: 0 4px;
 }
 
 .product-card-content .price {
@@ -108,10 +112,10 @@
 }
 
 .availability {
-  font-size: 0.9em;
-  font-weight: bold;
+  font-size: 0.85em;
   text-align: right;
   margin-top: 5px;
+  color: #666;
 }
 
 .availability.in-stock {

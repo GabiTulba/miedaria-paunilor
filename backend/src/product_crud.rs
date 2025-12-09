@@ -13,6 +13,12 @@ pub enum ProductValidationError {
     EmptyIngredients,
     InvalidProductType,
     InvalidSweetnessType,
+
+    InvalidTurbidityType,
+    InvalidEffervescenceType,
+    InvalidAcidityType,
+    InvalidTaninsType,
+    InvalidBodyType,
     InvalidAbv,
     InvalidBottleCount,
     InvalidBottleSize,
@@ -53,6 +59,33 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
     // sweetness: String - must be a valid SweetnessType
     if !crate::enums::SweetnessType::from_str(&new_product.sweetness).is_some() {
         errors.push(ProductValidationError::InvalidSweetnessType);
+    }
+
+
+
+    // turbidity: String - must be a valid TurbidityType
+    if !crate::enums::TurbidityType::from_str(&new_product.turbidity).is_some() {
+        errors.push(ProductValidationError::InvalidTurbidityType);
+    }
+
+    // effervescence: String - must be a valid EffervescenceType
+    if !crate::enums::EffervescenceType::from_str(&new_product.effervescence).is_some() {
+        errors.push(ProductValidationError::InvalidEffervescenceType);
+    }
+
+    // acidity: String - must be a valid AcidityType
+    if !crate::enums::AcidityType::from_str(&new_product.acidity).is_some() {
+        errors.push(ProductValidationError::InvalidAcidityType);
+    }
+
+    // tanins: String - must be a valid TaninsType
+    if !crate::enums::TaninsType::from_str(&new_product.tanins).is_some() {
+        errors.push(ProductValidationError::InvalidTaninsType);
+    }
+
+    // body: String - must be a valid BodyType
+    if !crate::enums::BodyType::from_str(&new_product.body).is_some() {
+        errors.push(ProductValidationError::InvalidBodyType);
     }
 
     // abv: Decimal with one digit of precision, valid ranges from 0.0 to 99.9.
@@ -175,6 +208,12 @@ pub fn update_product(conn: &mut PgConnection, product: &Product) -> Result<Prod
         ingredients: product.ingredients.clone(),
         product_type: product.product_type.clone(),
         sweetness: product.sweetness.clone(),
+
+        turbidity: product.turbidity.clone(),
+        effervescence: product.effervescence.clone(),
+        acidity: product.acidity.clone(),
+        tanins: product.tanins.clone(),
+        body: product.body.clone(),
         abv: product.abv,
         bottle_count: product.bottle_count,
         bottle_size: product.bottle_size,

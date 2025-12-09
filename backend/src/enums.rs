@@ -107,3 +107,171 @@ impl SweetnessType {
         ]
     }
 }
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TurbidityType {
+    Crystalline,
+    Hazy,
+    Cloudy,
+}
+
+impl TurbidityType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TurbidityType::Crystalline => "crystalline",
+            TurbidityType::Hazy => "hazy",
+            TurbidityType::Cloudy => "cloudy",
+        }
+    }
+    
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "crystalline" => Some(TurbidityType::Crystalline),
+            "hazy" => Some(TurbidityType::Hazy),
+            "cloudy" => Some(TurbidityType::Cloudy),
+            _ => None,
+        }
+    }
+    
+    pub fn all() -> Vec<Self> {
+        vec![
+            TurbidityType::Crystalline,
+            TurbidityType::Hazy,
+            TurbidityType::Cloudy,
+        ]
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum EffervescenceType {
+    Flat,
+    Perlant,
+    Sparkling,
+}
+
+impl EffervescenceType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            EffervescenceType::Flat => "flat",
+            EffervescenceType::Perlant => "perlant",
+            EffervescenceType::Sparkling => "sparkling",
+        }
+    }
+    
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "flat" => Some(EffervescenceType::Flat),
+            "perlant" => Some(EffervescenceType::Perlant),
+            "sparkling" => Some(EffervescenceType::Sparkling),
+            _ => None,
+        }
+    }
+    
+    pub fn all() -> Vec<Self> {
+        vec![
+            EffervescenceType::Flat,
+            EffervescenceType::Perlant,
+            EffervescenceType::Sparkling,
+        ]
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum AcidityType {
+    Mild,
+    Moderate,
+    Strong,
+}
+
+impl AcidityType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            AcidityType::Mild => "mild",
+            AcidityType::Moderate => "moderate",
+            AcidityType::Strong => "strong",
+        }
+    }
+    
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "mild" => Some(AcidityType::Mild),
+            "moderate" => Some(AcidityType::Moderate),
+            "strong" => Some(AcidityType::Strong),
+            _ => None,
+        }
+    }
+    
+    pub fn all() -> Vec<Self> {
+        vec![
+            AcidityType::Mild,
+            AcidityType::Moderate,
+            AcidityType::Strong,
+        ]
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TaninsType {
+    Mild,
+    Moderate,
+}
+
+impl TaninsType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TaninsType::Mild => "mild",
+            TaninsType::Moderate => "moderate",
+        }
+    }
+    
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "mild" => Some(TaninsType::Mild),
+            "moderate" => Some(TaninsType::Moderate),
+            _ => None,
+        }
+    }
+    
+    pub fn all() -> Vec<Self> {
+        vec![
+            TaninsType::Mild,
+            TaninsType::Moderate,
+        ]
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum BodyType {
+    Light,
+    Medium,
+    Full,
+}
+
+impl BodyType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            BodyType::Light => "light",
+            BodyType::Medium => "medium",
+            BodyType::Full => "full",
+        }
+    }
+    
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "light" => Some(BodyType::Light),
+            "medium" => Some(BodyType::Medium),
+            "full" => Some(BodyType::Full),
+            _ => None,
+        }
+    }
+    
+    pub fn all() -> Vec<Self> {
+        vec![
+            BodyType::Light,
+            BodyType::Medium,
+            BodyType::Full,
+        ]
+    }
+}

@@ -26,6 +26,11 @@ diesel::table! {
         ingredients -> Text,
         product_type -> Varchar,
         sweetness -> Varchar,
+        turbidity -> Varchar,
+        effervescence -> Varchar,
+        acidity -> Varchar,
+        tanins -> Varchar,
+        body -> Varchar,
         abv -> Numeric,
         bottle_count -> Int4,
         bottle_size -> Int4,
@@ -44,5 +49,4 @@ diesel::table! {
 
 diesel::joinable!(products -> images (image_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    admin_users,images,products,users,);
+diesel::allow_tables_to_appear_in_same_query!(admin_users, images, products, users,);

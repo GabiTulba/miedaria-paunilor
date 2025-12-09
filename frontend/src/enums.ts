@@ -51,3 +51,90 @@ export function getSweetnessTypeLabel(value: string): string {
   const option = SweetnessTypeOptions.find(opt => opt.value === value);
   return option ? option.label : value;
 }
+
+
+
+export enum TurbidityType {
+  Crystalline = 'crystalline',
+  Hazy = 'hazy',
+  Cloudy = 'cloudy',
+}
+
+export const TurbidityTypeOptions = [
+  { value: TurbidityType.Crystalline, label: 'Crystalline' },
+  { value: TurbidityType.Hazy, label: 'Hazy' },
+  { value: TurbidityType.Cloudy, label: 'Cloudy' },
+];
+
+export enum EffervescenceType {
+  Flat = 'flat',
+  Perlant = 'perlant',
+  Sparkling = 'sparkling',
+}
+
+export const EffervescenceTypeOptions = [
+  { value: EffervescenceType.Flat, label: 'Flat' },
+  { value: EffervescenceType.Perlant, label: 'Perlant' },
+  { value: EffervescenceType.Sparkling, label: 'Sparkling' },
+];
+
+export enum AcidityType {
+  Mild = 'mild',
+  Moderate = 'moderate',
+  Strong = 'strong',
+}
+
+export const AcidityTypeOptions = [
+  { value: AcidityType.Mild, label: 'Mild' },
+  { value: AcidityType.Moderate, label: 'Moderate' },
+  { value: AcidityType.Strong, label: 'Strong' },
+];
+
+export enum TaninsType {
+  Mild = 'mild',
+  Moderate = 'moderate',
+}
+
+export const TaninsTypeOptions = [
+  { value: TaninsType.Mild, label: 'Mild' },
+  { value: TaninsType.Moderate, label: 'Moderate' },
+];
+
+export enum BodyType {
+  Light = 'light',
+  Medium = 'medium',
+  Full = 'full',
+}
+
+export const BodyTypeOptions = [
+  { value: BodyType.Light, label: 'Light' },
+  { value: BodyType.Medium, label: 'Medium' },
+  { value: BodyType.Full, label: 'Full' },
+];
+
+
+
+export function getTurbidityTypeLabel(value: string): string {
+  const option = TurbidityTypeOptions.find(opt => opt.value === value);
+  return option ? option.label : value;
+}
+
+export function getEffervescenceTypeLabel(value: string): string {
+  const option = EffervescenceTypeOptions.find(opt => opt.value === value);
+  return option ? option.label : value;
+}
+
+export function getAcidityTypeLabel(value: string): string {
+  const option = AcidityTypeOptions.find(opt => opt.value === value);
+  return option ? option.label : value;
+}
+
+export function getTaninsTypeLabel(value: string): string {
+  const option = TaninsTypeOptions.find(opt => opt.value === value);
+  return option ? option.label : value;
+}
+
+export function getBodyTypeLabel(value: string): string {
+  const option = BodyTypeOptions.find(opt => opt.value === value);
+  return option ? option.label : value;
+}

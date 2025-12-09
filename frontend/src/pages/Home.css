@@ -107,6 +107,42 @@
     font-size: 1.2rem;
     font-weight: bold;
     color: var(--accent-color);
+    margin-top: 10px;
+}
+
+.product-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.85em;
+}
+
+.product-details span {
+    color: #666;
+    font-weight: 500;
+}
+
+.product-details .mead-type {
+    color: #333;
+    font-weight: 600;
+}
+
+.product-details .sweetness {
+    color: #333;
+}
+
+.product-details .abv {
+    color: #333;
+}
+
+.product-details .volume {
+    color: #333;
+}
+
+.product-details .separator {
+    color: #999;
+    margin: 0 4px;
 }
 
 

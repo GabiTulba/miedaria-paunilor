@@ -129,6 +129,86 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                 />
             </div>
             <div className="form-row">
+                <SelectInput
+                    id="turbidity"
+                    name="turbidity"
+                    label="Turbidity"
+                    value={product.turbidity}
+                    onChange={handleChange}
+                    options={[
+                        { value: '', label: 'Select turbidity' },
+                        { value: 'crystalline', label: 'Crystalline' },
+                        { value: 'hazy', label: 'Hazy' },
+                        { value: 'cloudy', label: 'Cloudy' },
+                    ]}
+                    required
+                    error={errors.turbidity}
+                />
+            </div>
+            <div className="form-row">
+                <SelectInput
+                    id="effervescence"
+                    name="effervescence"
+                    label="Effervescence"
+                    value={product.effervescence}
+                    onChange={handleChange}
+                    options={[
+                        { value: '', label: 'Select effervescence' },
+                        { value: 'flat', label: 'Flat' },
+                        { value: 'perlant', label: 'Perlant' },
+                        { value: 'sparkling', label: 'Sparkling' },
+                    ]}
+                    required
+                    error={errors.effervescence}
+                />
+                <SelectInput
+                    id="acidity"
+                    name="acidity"
+                    label="Acidity"
+                    value={product.acidity}
+                    onChange={handleChange}
+                    options={[
+                        { value: '', label: 'Select acidity' },
+                        { value: 'mild', label: 'Mild' },
+                        { value: 'moderate', label: 'Moderate' },
+                        { value: 'strong', label: 'Strong' },
+                    ]}
+                    required
+                    error={errors.acidity}
+                />
+            </div>
+            <div className="form-row">
+                <SelectInput
+                    id="tanins"
+                    name="tanins"
+                    label="Tanins"
+                    value={product.tanins}
+                    onChange={handleChange}
+                    options={[
+                        { value: '', label: 'Select tanins' },
+                        { value: 'mild', label: 'Mild' },
+                        { value: 'moderate', label: 'Moderate' },
+                    ]}
+                    required
+                    error={errors.tanins}
+                />
+                <SelectInput
+                    id="body"
+                    name="body"
+                    label="Body"
+                    value={product.body}
+                    onChange={handleChange}
+                    options={[
+                        { value: '', label: 'Select body' },
+                        { value: 'light', label: 'Light' },
+                        { value: 'medium', label: 'Medium' },
+                        { value: 'full', label: 'Full' },
+                    ]}
+                    required
+                    error={errors.body}
+                />
+            </div>
+            <div className="form-row">
                 <NumberInput
                     id="abv"
                     name="abv"

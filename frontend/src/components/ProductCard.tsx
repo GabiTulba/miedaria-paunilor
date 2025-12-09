@@ -25,11 +25,15 @@ function ProductCard({ productWithImage }: ProductCardProps) {
           </div>
            <div className="product-card-content">
              <h3>{productWithImage.product.product_name}</h3>
-             <div className="product-details">
-               <span className="mead-type">{getMeadTypeLabel(productWithImage.product.product_type)}</span>
-               <span className="sweetness">{getSweetnessTypeLabel(productWithImage.product.sweetness)}</span>
-               <span className="abv">{productWithImage.product.abv}% ABV</span>
-             </div>
+               <div className="product-details">
+                <span className="mead-type">{getMeadTypeLabel(productWithImage.product.product_type)}</span>
+                <span className="separator">|</span>
+                <span className="sweetness">{getSweetnessTypeLabel(productWithImage.product.sweetness)}</span>
+                <span className="separator">|</span>
+                <span className="abv">{productWithImage.product.abv}% ABV</span>
+                <span className="separator">|</span>
+                <span className="volume">{productWithImage.product.bottle_size}ml</span>
+              </div>
              <p className="price">{productWithImage.product.price} €</p>
              {productWithImage.product.bottle_count === 0 ? (
                <p className="availability out-of-stock">Out of Stock</p>

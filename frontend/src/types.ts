@@ -13,6 +13,12 @@ export interface Product {
   ingredients: string;
   product_type: string;
   sweetness: string;
+
+  turbidity: string;
+  effervescence: string;
+  acidity: string;
+  tanins: string;
+  body: string;
   abv: string; // Decimal is a string on the frontend
   bottle_count: number;
   bottle_size: number;

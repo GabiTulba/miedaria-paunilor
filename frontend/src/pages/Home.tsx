@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { ProductWithImage } from '../types'; // Import ProductWithImage
 import { api } from '../lib/api';
+import { getMeadTypeLabel, getSweetnessTypeLabel } from '../enums';
 import './Home.css';
 
 function Home() {
@@ -50,6 +51,15 @@ function Home() {
                                     </div>
                                     <div className="product-card-content">
                                         <h3>{productWithImage.product.product_name}</h3>
+                                        <div className="product-details">
+                                            <span className="mead-type">{getMeadTypeLabel(productWithImage.product.product_type)}</span>
+                                            <span className="separator">|</span>
+                                            <span className="sweetness">{getSweetnessTypeLabel(productWithImage.product.sweetness)}</span>
+                                            <span className="separator">|</span>
+                                            <span className="abv">{productWithImage.product.abv}% ABV</span>
+                                            <span className="separator">|</span>
+                                            <span className="volume">{productWithImage.product.bottle_size}ml</span>
+                                        </div>
                                         <p className="price">{productWithImage.product.price} €</p>
                                     </div>
                                 </div>

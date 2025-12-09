@@ -53,7 +53,31 @@
 
 .product-description {
     line-height: 1.7;
-    margin-bottom: 2rem;
+    margin: 1.5rem 0;
+}
+
+.product-basic-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin: 1rem 0;
+}
+
+.basic-info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+
+.basic-info-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.basic-info-value {
+    font-weight: 500;
+    color: #333;
 }
 
 .product-meta {
@@ -65,6 +89,30 @@
 }
 
 .add-to-cart-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.cart-availability-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.availability-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+
+.availability-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.cart-controls {
     display: flex;
     align-items: center;
     gap: 1.5rem;
@@ -139,4 +187,56 @@
 
 .availability-details.out-of-stock-details {
     color: #dc3545; /* Red */
+}
+
+/* Collapsible sections spacing */
+.product-info-section > .collapsible-section {
+    margin-bottom: 2rem;
+}
+
+.product-ingredients {
+    line-height: 1.7;
+    white-space: pre-line;
+}
+
+.availability-section {
+    margin: 1.5rem 0;
+    font-size: 1rem;
+}
+
+/* Product details grid */
+.product-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.detail-value {
+    font-weight: 500;
+    color: #333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .product-details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .detail-item {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
 }
