@@ -12,6 +12,8 @@ function AdminProductCreate() {
         product_name: '',
         product_description: '',
         ingredients: '',
+        product_type: '',
+        sweetness: '',
         abv: '0.0',
         bottle_count: 0,
         bottle_size: 750,

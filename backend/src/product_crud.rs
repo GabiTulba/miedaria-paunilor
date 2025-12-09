@@ -11,6 +11,8 @@ pub enum ProductValidationError {
     EmptyProductName,
     EmptyProductDescription,
     EmptyIngredients,
+    InvalidProductType,
+    InvalidSweetnessType,
     InvalidAbv,
     InvalidBottleCount,
     InvalidBottleSize,
@@ -41,6 +43,16 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
     // ingredients: A text field for the ingredients of the product.
     if new_product.ingredients.is_empty() {
         errors.push(ProductValidationError::EmptyIngredients);
+    }
+
+    // product_type: String - must be a valid MeadType
+    if !crate::enums::MeadType::from_str(&new_product.product_type).is_some() {
+        errors.push(ProductValidationError::InvalidProductType);
+    }
+    
+    // sweetness: String - must be a valid SweetnessType
+    if !crate::enums::SweetnessType::from_str(&new_product.sweetness).is_some() {
+        errors.push(ProductValidationError::InvalidSweetnessType);
     }
 
     // abv: Decimal with one digit of precision, valid ranges from 0.0 to 99.9.
@@ -161,6 +173,8 @@ pub fn update_product(conn: &mut PgConnection, product: &Product) -> Result<Prod
         product_name: product.product_name.clone(),
         product_description: product.product_description.clone(),
         ingredients: product.ingredients.clone(),
+        product_type: product.product_type.clone(),
+        sweetness: product.sweetness.clone(),
         abv: product.abv,
         bottle_count: product.bottle_count,
         bottle_size: product.bottle_size,

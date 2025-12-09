@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useFetchProducts } from '../hooks/useFetchProducts';
 import ProductCard from '../components/ProductCard'; // Import the new ProductCard component
 import SelectInput from '../components/forms/SelectInput';
@@ -37,6 +36,7 @@ function Shop() {
 
                     <div className="filter-group">
                         <SelectInput
+                            id="orderBy"
                             label="Order By"
                             name="orderBy"
                             value={orderBy}
@@ -52,6 +52,7 @@ function Shop() {
                     {orderBy && ( // Only show order direction if an order by option is selected
                         <div className="filter-group">
                             <SelectInput
+                                id="orderDirection"
                                 label="Order Direction"
                                 name="orderDirection"
                                 value={orderDirection}

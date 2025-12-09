@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ProductWithImage } from '../types'; // Import ProductWithImage
 import { api } from '../lib/api';
 import { CartContext } from '../context/CartContext';
+import { getMeadTypeLabel, getSweetnessTypeLabel } from '../enums';
 import './ProductDetails.css';
 
 function ProductDetails() {
@@ -68,16 +69,18 @@ function ProductDetails() {
                     <p className="product-description">{product.product_description}</p>
                     
                     <div className="product-meta">
+                        <p><strong>Mead Type:</strong> {getMeadTypeLabel(product.product_type)}</p>
+                        <p><strong>Sweetness:</strong> {getSweetnessTypeLabel(product.sweetness)}</p>
                         <p><strong>ABV:</strong> {product.abv}%</p>
                         <p><strong>Volume:</strong> {product.bottle_size}ml</p>
                         <p><strong>Ingredients:</strong> {product.ingredients}</p>
                         <p><strong>Availability:</strong> 
                           {product.bottle_count === 0 ? (
-                            <span className="availability-details out-of-stock-details">Out of Stock</span>
+                            <span className="availability-details out-of-stock-details"> Out of Stock</span>
                           ) : product.bottle_count >= 24 ? (
-                            <span className="availability-details in-stock-details">In stock</span>
+                            <span className="availability-details in-stock-details"> In stock</span>
                           ) : (
-                            <span className="availability-details low-stock-details">Only {product.bottle_count} left in stock</span>
+                            <span className="availability-details low-stock-details"> Only {product.bottle_count} left in stock</span>
                           )}
                         </p>
                     </div>

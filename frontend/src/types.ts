@@ -11,6 +11,8 @@ export interface Product {
   product_name: string;
   product_description: string;
   ingredients: string;
+  product_type: string;
+  sweetness: string;
   abv: string; // Decimal is a string on the frontend
   bottle_count: number;
   bottle_size: number;

@@ -26,7 +26,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
         setProduct({ ...product, [name]: value === '' ? '' : Number(value) });
     };
 
-    const selectedImage = availableImages.find(img => img.id === product.image_id);
+
     
     return (
         <form onSubmit={onSubmit} className="admin-product-form">
@@ -86,6 +86,48 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                 required
                 error={errors.ingredients}
             />
+            <div className="form-row">
+                <SelectInput
+                    id="product_type"
+                    name="product_type"
+                    label="Mead Type"
+                    value={product.product_type}
+                    onChange={handleChange}
+                    options={[
+                        { value: '', label: 'Select mead type' },
+                        { value: 'hidromel', label: 'Hidromel' },
+                        { value: 'melomel', label: 'Melomel' },
+                        { value: 'metheglin', label: 'Metheglin' },
+                        { value: 'bochet', label: 'Bochet' },
+                        { value: 'braggot', label: 'Braggot' },
+                        { value: 'pyment', label: 'Pyment' },
+                        { value: 'cyser', label: 'Cyser' },
+                        { value: 'rhodomel', label: 'Rhodomel' },
+                        { value: 'capsicumel', label: 'Capsicumel' },
+                        { value: 'acerglyn', label: 'Acerglyn' },
+                    ]}
+                    required
+                    error={errors.product_type}
+                />
+                <SelectInput
+                    id="sweetness"
+                    name="sweetness"
+                    label="Sweetness"
+                    value={product.sweetness}
+                    onChange={handleChange}
+                    options={[
+                        { value: '', label: 'Select sweetness' },
+                        { value: 'bone-dry', label: 'Bone Dry' },
+                        { value: 'dry', label: 'Dry' },
+                        { value: 'semi-dry', label: 'Semi Dry' },
+                        { value: 'semi-sweet', label: 'Semi Sweet' },
+                        { value: 'sweet', label: 'Sweet' },
+                        { value: 'dessert', label: 'Dessert' },
+                    ]}
+                    required
+                    error={errors.sweetness}
+                />
+            </div>
             <div className="form-row">
                 <NumberInput
                     id="abv"

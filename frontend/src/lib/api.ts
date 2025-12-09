@@ -25,6 +25,7 @@ async function request(endpoint: string, options: RequestInit = {}) {
 
 export const api = {
     get: (endpoint: string) => request(endpoint),
+    getProducts: (): Promise<ProductWithImage[]> => request('/products'),
     getProductById: (id: string): Promise<ProductWithImage> => request(`/products/${id}`),
 
     adminLogin: async (credentials: any) => {
@@ -47,7 +48,7 @@ export const api = {
     },
 
     updateProduct: async (id: string, productData: Product, token: string) => {
-        return request(`/admin/products/${id}`, {
+        return request(`/api/admin/products/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

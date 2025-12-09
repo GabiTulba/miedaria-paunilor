@@ -1,5 +1,10 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; -- For UUID generation
 
+-- Note: Using text columns instead of ENUM types for simplicity
+-- ENUM types would require: CREATE TYPE mead_type_enum AS ENUM (...)
+-- and CREATE TYPE sweetness_type_enum as ENUM (...)
+
+
 CREATE TABLE IF NOT EXISTS images (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   file_name VARCHAR NOT NULL UNIQUE,
@@ -13,6 +18,8 @@ CREATE TABLE IF NOT EXISTS products (
   product_name VARCHAR NOT NULL,
   product_description TEXT NOT NULL,
   ingredients TEXT NOT NULL,
+  product_type VARCHAR NOT NULL,
+  sweetness VARCHAR NOT NULL,
   abv DECIMAL(3,1) NOT NULL,
   bottle_count INTEGER NOT NULL,
   bottle_size INTEGER NOT NULL,

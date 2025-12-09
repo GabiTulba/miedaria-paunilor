@@ -56,6 +56,37 @@
     color: var(--color-text-primary);
 }
 
+.product-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.85em;
+}
+
+.product-details span {
+    background-color: var(--color-secondary-light);
+    color: var(--color-text-primary);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.product-details .mead-type {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
+}
+
+.product-details .sweetness {
+    background-color: var(--color-accent-light);
+    color: var(--color-accent-dark);
+}
+
+.product-details .abv {
+    background-color: var(--color-secondary);
+    color: white;
+}
+
 .product-card-content .price {
     font-size: 1.1em;
     font-weight: bold;
