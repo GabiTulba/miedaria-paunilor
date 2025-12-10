@@ -270,7 +270,7 @@ The frontend `Product` and `ProductWithImage` types include all product attribut
 *   **Custom Hooks:** The `useFetchProducts` hook encapsulates logic for fetching product data with loading and error states, reducing code duplication in components that display product listings.
 *   **Reusable Components:** The `ProductCard` component provides a consistent UI structure for displaying individual product cards across different pages.
 *   **Modular Form Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) centralize input rendering, labeling, and error display logic.
-*   **Environment-Based Configuration:** The frontend uses `import.meta.env.VITE_API_BASE_URL` for API configuration, centralizing settings through environment variables.
+*   **Environment-Based Configuration:** The frontend uses `import.meta.env.VITE_API_BASE_URL` for API configuration, centralizing settings through environment variables. TypeScript environment type definitions are provided in `src/vite-env.d.ts`.
 
 ### Shopping Cart
 The application includes a fully functional shopping cart system with the following features:

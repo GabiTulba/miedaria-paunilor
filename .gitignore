@@ -1,6 +1,146 @@
+# Environment files
 .env
-backend/target/*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor and IDE files
+*.swp
+*.swo
+*.swn
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Rust backend
+backend/target/
+backend/Cargo.lock
 backend/migrations/.diesel_lock
 backend/migrations/*_diesel_initial_setup/*
-backend/Cargo.lock
-frontend/node_modules/*
+
+# Node.js/TypeScript frontend
+frontend/node_modules/
+frontend/dist/
+frontend/package-lock.json
+
+# Docker volumes (created by docker-compose)
+postgres-data/
+miedaria_paunilor_images/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+# Comment in the public line in if your project uses Gatsby and not Next.js
+# https://nextjs.org/blog/next-9-1#public-directory-support
+# public
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.rej
+
+# Docker
+docker-compose.override.yml
+
+# OS generated files
+ehthumbs.db
+Icon?
+ehthumbs.db
+[Tt]humbs.db
+
+# Local development databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Test data
+test-data/
+fixtures/
