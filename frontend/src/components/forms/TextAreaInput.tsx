@@ -10,6 +10,8 @@ interface TextAreaInputProps {
   required?: boolean;
   disabled?: boolean;
   rows?: number;
+  placeholder?: string;
+  helpText?: string;
 }
 
 const TextAreaInput: React.FC<TextAreaInputProps> = ({
@@ -22,6 +24,8 @@ const TextAreaInput: React.FC<TextAreaInputProps> = ({
   required = false,
   disabled = false,
   rows = 3,
+  placeholder,
+  helpText,
 }) => {
   return (
     <div className="form-group">
@@ -34,7 +38,9 @@ const TextAreaInput: React.FC<TextAreaInputProps> = ({
         required={required}
         disabled={disabled}
         rows={rows}
+        placeholder={placeholder}
       />
+      {helpText && <p className="help-text">{helpText}</p>}
       {error && <p className="error-message">{error}</p>}
     </div>
   );

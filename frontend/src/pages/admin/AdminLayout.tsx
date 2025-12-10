@@ -15,14 +15,30 @@ function AdminLayout() {
     return (
         <div className="admin-layout">
             <aside className="admin-sidebar">
-                <h2>Admin Panel</h2>
+                <div className="sidebar-header">
+                    <h2>Admin Panel</h2>
+                    <p className="sidebar-subtitle">Miedăria Păunilor</p>
+                </div>
                 <nav className="admin-nav">
-                    <NavLink to="/admin/dashboard">Dashboard</NavLink>
-                    <NavLink to="/admin/dashboard/products">Products</NavLink>
-                    <NavLink to="/admin/dashboard/images">Images</NavLink> {/* New NavLink */}
-                    {/* Add other admin links here */}
+                    <NavLink to="/admin/dashboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                        <span className="nav-icon dashboard-icon"></span>
+                        <span className="nav-text">Dashboard</span>
+                    </NavLink>
+                    <NavLink to="/admin/dashboard/products" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                        <span className="nav-icon products-icon"></span>
+                        <span className="nav-text">Products</span>
+                    </NavLink>
+                    <NavLink to="/admin/dashboard/images" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                        <span className="nav-icon images-icon"></span>
+                        <span className="nav-text">Images</span>
+                    </NavLink>
                 </nav>
-                <button onClick={handleLogout} className="button-secondary" style={{ width: '100%', marginTop: '2rem' }}>Logout</button>
+                <div className="sidebar-footer">
+                    <button onClick={handleLogout} className="logout-button">
+                        <span className="logout-icon"></span>
+                        <span>Logout</span>
+                    </button>
+                </div>
             </aside>
             <main className="admin-main-content">
                 <Outlet />

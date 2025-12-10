@@ -59,15 +59,34 @@
 
 .product-details {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
+    flex-direction: column;
+    gap: 2px;
     margin-bottom: 10px;
-    font-size: 0.85em;
+    font-size: 0.75em;
+}
+
+.product-details-line {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .product-details span {
     color: #666;
     font-weight: 500;
+    white-space: nowrap;
+}
+
+.product-details .mead-type,
+.product-details .sweetness,
+.product-details .abv,
+.product-details .volume {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0; /* Allow shrinking below content size */
 }
 
 .product-details .mead-type {
@@ -90,6 +109,7 @@
 .product-details .separator {
     color: #999;
     margin: 0 1px;
+    flex-shrink: 0; /* Prevent separator from shrinking */
 }
 
 .product-card-content .price {

@@ -4,6 +4,7 @@ import { ProductWithImage } from '../types'; // Import ProductWithImage
 import { api } from '../lib/api';
 import { CartContext } from '../context/CartContext';
 import { formatEnumLabel } from '../enums';
+import { getProductDetailsStockStatus, isInStock } from '../utils/stockAvailability';
 import CollapsibleSection from '../components/CollapsibleSection';
 import './ProductDetails.css';
 
@@ -120,34 +121,35 @@ function ProductDetails() {
                         </div>
                     </CollapsibleSection>
 
-                    <div className="add-to-cart-section">
-                        <div className="cart-availability-info">
-                            <div className="availability-info">
-                                <span className="availability-label">Availability:</span>
-                                {product.bottle_count === 0 ? (
-                                    <span className="availability-details out-of-stock-details">Out of Stock</span>
-                                ) : product.bottle_count >= 24 ? (
-                                    <span className="availability-details in-stock-details">In stock</span>
-                                ) : (
-                                    <span className="availability-details low-stock-details">Only {product.bottle_count} left</span>
-                                )}
-                            </div>
-                            <div className="cart-controls">
-                                <div className="quantity-selector">
-                                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
-                                    <span>{quantity}</span>
-                                    <button onClick={() => setQuantity(quantity + 1)}>+</button>
-                                </div>
-                                <button 
-                                    className="button add-to-cart-btn"
-                                    onClick={handleAddToCart}
-                                    disabled={product.bottle_count === 0}
-                                >
-                                    {product.bottle_count > 0 ? 'Add to Cart' : 'Out of Stock'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                     <div className="add-to-cart-section">
+                         <div className="cart-availability-info">
+                             <div className="availability-info">
+                                 <span className="availability-label">Availability:</span>
+                                 {(() => {
+                                     const stockStatus = getProductDetailsStockStatus(product.bottle_count);
+                                     return (
+                                         <span className={`availability-details ${stockStatus.cssClass}`}>
+                                             {stockStatus.description}
+                                         </span>
+                                     );
+                                 })()}
+                             </div>
+                             <div className="cart-controls">
+                                 <div className="quantity-selector">
+                                     <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
+                                     <span>{quantity}</span>
+                                     <button onClick={() => setQuantity(quantity + 1)}>+</button>
+                                 </div>
+                                 <button 
+                                     className="button add-to-cart-btn"
+                                     onClick={handleAddToCart}
+                                     disabled={!isInStock(product.bottle_count)}
+                                 >
+                                     {isInStock(product.bottle_count) ? 'Add to Cart' : 'Out of Stock'}
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
                 </div>
             </div>
         </div>

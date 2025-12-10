@@ -48,7 +48,7 @@ export const api = {
     },
 
     updateProduct: async (id: string, productData: Product, token: string) => {
-        return request(`/api/admin/products/${id}`, {
+        return request(`/admin/products/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

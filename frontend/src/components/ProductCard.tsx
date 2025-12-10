@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ProductWithImage } from '../types';
 import { formatEnumLabel } from '../enums';
+import { getShopStockStatus } from '../utils/stockAvailability';
 import './ProductCard.css'; // Assuming a CSS file for styling the card
 
 interface ProductCardProps {
@@ -8,6 +9,8 @@ interface ProductCardProps {
 }
 
 function ProductCard({ productWithImage }: ProductCardProps) {
+  const stockStatus = getShopStockStatus(productWithImage.product.bottle_count);
+  
   return (
     <div className="product-card">
       <Link to={`/shop/${productWithImage.product.product_id}`}>
@@ -25,23 +28,20 @@ function ProductCard({ productWithImage }: ProductCardProps) {
           </div>
            <div className="product-card-content">
              <h3>{productWithImage.product.product_name}</h3>
-               <div className="product-details">
-                <span className="mead-type">{formatEnumLabel(productWithImage.product.product_type)}</span>
-                <span className="separator">|</span>
-                <span className="sweetness">{formatEnumLabel(productWithImage.product.sweetness)}</span>
-                <span className="separator">|</span>
-                <span className="abv">{productWithImage.product.abv}% ABV</span>
-                <span className="separator">|</span>
-                <span className="volume">{productWithImage.product.bottle_size}ml</span>
-              </div>
+                <div className="product-details">
+                  <div className="product-details-line">
+                    <span className="mead-type">{formatEnumLabel(productWithImage.product.product_type)}</span>
+                    <span className="separator">|</span>
+                    <span className="sweetness">{formatEnumLabel(productWithImage.product.sweetness)}</span>
+                  </div>
+                  <div className="product-details-line">
+                    <span className="abv">{productWithImage.product.abv}% ABV</span>
+                    <span className="separator">|</span>
+                    <span className="volume">{productWithImage.product.bottle_size}ml</span>
+                  </div>
+                </div>
              <p className="price">{productWithImage.product.price} €</p>
-             {productWithImage.product.bottle_count === 0 ? (
-               <p className="availability out-of-stock">Out of Stock</p>
-             ) : productWithImage.product.bottle_count >= 24 ? (
-               <p className="availability in-stock">In stock</p>
-             ) : (
-               <p className="availability low-stock">Only {productWithImage.product.bottle_count} left in stock</p>
-             )}
+             <p className={`availability ${stockStatus.cssClass}`}>{stockStatus.description}</p>
            </div>
         </div>
       </Link>

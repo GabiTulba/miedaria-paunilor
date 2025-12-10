@@ -10,6 +10,8 @@ interface TextInputProps {
   required?: boolean;
   disabled?: boolean;
   type?: string; // e.g., 'text', 'email', 'password'
+  placeholder?: string;
+  helpText?: string;
 }
 
 const TextInput: React.FC<TextInputProps> = ({
@@ -22,6 +24,8 @@ const TextInput: React.FC<TextInputProps> = ({
   required = false,
   disabled = false,
   type = 'text',
+  placeholder,
+  helpText,
 }) => {
   return (
     <div className="form-group">
@@ -34,7 +38,9 @@ const TextInput: React.FC<TextInputProps> = ({
         onChange={onChange}
         required={required}
         disabled={disabled}
+        placeholder={placeholder}
       />
+      {helpText && <p className="help-text">{helpText}</p>}
       {error && <p className="error-message">{error}</p>}
     </div>
   );

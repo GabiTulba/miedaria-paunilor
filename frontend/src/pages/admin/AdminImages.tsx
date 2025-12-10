@@ -138,89 +138,165 @@ const AdminImages: React.FC = () => {
 
   return (
     <div className="admin-images-container">
-      <h1>Manage Product Images</h1>
-
-      <div className="upload-form card">
-        <h2>Upload New Image</h2>
-        <input type="file" onChange={handleFileChange} accept="image/*" />
-        <button onClick={handleFileUpload} disabled={!selectedFile || loading}>
-          {loading ? 'Uploading...' : 'Upload Image'}
-        </button>
-        {message && <p className="upload-message">{message}</p>}
+      <div className="page-header">
+        <div>
+          <h1>Manage Product Images</h1>
+          <p className="page-subtitle">Upload and manage images for your products</p>
+        </div>
       </div>
 
-      <div className="uploaded-images-list card">
-        <h2>Existing Images</h2>
-        {imagesLoading ? (
-          <p>Loading images...</p>
-        ) : imagesError ? (
-          <p className="error-message">{imagesError}</p>
-        ) : images.length === 0 ? (
-          <p>No images uploaded yet.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Preview</th>
-                <th>File Name</th>
-                <th>ID</th>
-                <th>Size (bytes)</th>
-                <th>Uploaded On</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+      <div className="images-grid">
+        <div className="upload-section card">
+          <div className="upload-header">
+            <h2>Upload New Image</h2>
+            <div className="upload-icon upload-icon-symbol"></div>
+          </div>
+          <div className="upload-area" onClick={() => document.getElementById('file-input')?.click()}>
+            <div className="upload-placeholder">
+              <div className="upload-placeholder-icon image-icon"></div>
+              <p>Click to select or drag and drop</p>
+              <p className="upload-hint">Supports JPG, PNG, GIF up to 5MB</p>
+            </div>
+            <input 
+              id="file-input"
+              type="file" 
+              onChange={handleFileChange} 
+              accept="image/*" 
+              style={{ display: 'none' }}
+            />
+          </div>
+          {selectedFile && (
+            <div className="selected-file">
+              <div className="file-info">
+                <span className="file-name">{selectedFile.name}</span>
+                <span className="file-size">({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+              </div>
+            </div>
+          )}
+          <button 
+            onClick={handleFileUpload} 
+            disabled={!selectedFile || loading}
+            className="button button-primary upload-button"
+          >
+            {loading ? 'Uploading...' : 'Upload Image'}
+          </button>
+          {message && (
+            <div className={`message ${message.includes('successful') ? 'message-success' : 'message-error'}`}>
+              {message}
+            </div>
+          )}
+        </div>
+
+        <div className="images-section card">
+          <div className="section-header">
+            <h2>Existing Images</h2>
+            <div className="section-info">
+              <span className="image-count">{images.length} images</span>
+              {images.length > 0 && (
+                <span className="total-size">
+                  Total: {(images.reduce((sum, img) => sum + img.file_size, 0) / (1024 * 1024)).toFixed(2)} MB
+                </span>
+              )}
+            </div>
+          </div>
+
+          {imagesLoading ? (
+            <div className="loading-state">
+              <div className="loading-spinner"></div>
+              <p>Loading images...</p>
+            </div>
+          ) : imagesError ? (
+            <div className="error-state">
+              <div className="error-icon warning-icon"></div>
+              <p className="error-message">{imagesError}</p>
+              <button onClick={fetchImages} className="button button-secondary">Retry</button>
+            </div>
+          ) : images.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon image-icon"></div>
+              <h3>No images uploaded yet</h3>
+              <p>Upload your first product image to get started</p>
+            </div>
+          ) : (
+            <div className="images-grid-view">
               {images.map((image) => (
-                <tr key={image.id}>
-                  <td>
+                <div key={image.id} className="image-card">
+                  <div className="image-preview">
                     <img
                       src={`/images/${image.id}`}
                       alt={image.file_name}
-                      style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                      className="image-thumbnail"
                     />
-                  </td>
-                  <td>
                     {renamingImageId === image.id ? (
-                      <input
-                        type="text"
-                        value={newFileName}
-                        onChange={(e) => setNewFileName(e.target.value)}
-                        disabled={renameLoading}
-                      />
-                    ) : (
-                      image.file_name
-                    )}
-                  </td>
-                  <td>{image.id}</td>
-                  <td>{image.file_size}</td>
-                  <td>{new Date(image.created_at).toLocaleDateString()}</td>
-                  <td>
-                    {renamingImageId === image.id ? (
+                      <div className="rename-overlay">
+                        <input
+                          type="text"
+                          value={newFileName}
+                          onChange={(e) => setNewFileName(e.target.value)}
+                          disabled={renameLoading}
+                          className="rename-input"
+                          autoFocus
+                        />
+                        <div className="rename-actions">
+                          <button 
+                            onClick={() => handleSaveRename(image.id)} 
+                            disabled={renameLoading}
+                            className="button button-small button-success"
+                          >
+                            Save
+                          </button>
+                          <button 
+                            onClick={handleCancelRename} 
+                            disabled={renameLoading}
+                            className="button button-small button-secondary"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="image-info">
+                    <div className="image-name">
+                      {renamingImageId === image.id ? (
+                        <div className="renaming-indicator">Renaming...</div>
+                      ) : (
+                        <>
+                          <span className="file-name">{image.file_name}</span>
+                          <span className="file-size">({(image.file_size / 1024).toFixed(1)} KB)</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="image-meta">
+                      <span className="image-id">ID: {image.id.substring(0, 8)}...</span>
+                      <span className="image-date">{new Date(image.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="image-actions">
+                    {renamingImageId === image.id ? null : (
                       <>
-                        <button onClick={() => handleSaveRename(image.id)} disabled={renameLoading}>
-                          Save
+                        <button 
+                          onClick={() => handleRenameClick(image)}
+                          className="button button-small button-secondary"
+                          disabled={deleteLoading === image.id}
+                        >
+                          Rename
                         </button>
-                        <button onClick={handleCancelRename} disabled={renameLoading}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => handleRenameClick(image)}>Rename</button>
                         <button
                           onClick={() => handleDeleteImage(image.id)}
                           disabled={deleteLoading === image.id}
+                          className="button button-small button-danger"
                         >
                           {deleteLoading === image.id ? 'Deleting...' : 'Delete'}
                         </button>
                       </>
                     )}
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

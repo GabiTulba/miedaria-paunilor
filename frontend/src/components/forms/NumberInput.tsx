@@ -12,6 +12,7 @@ interface NumberInputProps {
   step?: string;
   min?: string;
   max?: string;
+  helpText?: string;
 }
 
 const NumberInput: React.FC<NumberInputProps> = ({
@@ -26,6 +27,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
   step,
   min,
   max,
+  helpText,
 }) => {
   return (
     <div className="form-group">
@@ -42,6 +44,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
         min={min}
         max={max}
       />
+      {helpText && <p className="help-text">{helpText}</p>}
       {error && <p className="error-message">{error}</p>}
     </div>
   );

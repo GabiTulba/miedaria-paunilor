@@ -20,10 +20,10 @@ function AdminProductCreate() {
         acidity: '',
         tanins: '',
         body: '',
-        abv: '0.0',
+        abv: 0.0,
         bottle_count: 0,
         bottle_size: 750,
-        price: '0.00',
+        price: 0.00,
         image_id: '', // Use image_id instead of image_url
     });
     const [errors, setErrors] = useState<Record<string, string>>({});

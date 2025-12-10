@@ -31,32 +31,51 @@ function AdminLogin() {
 
     return (
         <div className="admin-login-page">
-            <div className="admin-form-container">
-                <h2>Admin Login</h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="username">Username</label>
-                        <input
-                            id="username"
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                        />
+            <div className="login-container">
+                <div className="login-card">
+                    <div className="login-card-header">
+                        <h2>Admin Login</h2>
+                        <p>Enter your credentials to access the admin panel</p>
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="password">Password</label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-                    {error && <p className="error-message">{error}</p>}
-                    <button type="submit" className="button">Login</button>
-                </form>
+                    
+                    <form onSubmit={handleSubmit} className="login-form">
+                        <div className="form-group">
+                            <label htmlFor="username">Username</label>
+                            <input
+                                id="username"
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required
+                                placeholder="Enter your username"
+                                className="login-input"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="password">Password</label>
+                            <input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                placeholder="Enter your password"
+                                className="login-input"
+                            />
+                        </div>
+                        
+                        {error && (
+                            <div className="login-error">
+                                <span className="error-icon warning-icon"></span>
+                                <span>{error}</span>
+                            </div>
+                        )}
+                        
+                        <button type="submit" className="button button-primary login-button">
+                            Sign In
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     );

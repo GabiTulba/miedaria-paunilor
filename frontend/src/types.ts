@@ -19,10 +19,10 @@ export interface Product {
   acidity: string;
   tanins: string;
   body: string;
-  abv: string; // Decimal is a string on the frontend
+  abv: number; // Decimal as number
   bottle_count: number;
   bottle_size: number;
-  price: string; // Decimal is a string on the frontend
+  price: number; // Decimal as number
   image_id: string; // Reference to Image.id
 }
 

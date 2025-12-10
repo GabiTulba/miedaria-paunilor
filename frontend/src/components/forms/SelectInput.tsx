@@ -15,6 +15,7 @@ interface SelectInputProps {
   error?: string;
   required?: boolean;
   disabled?: boolean;
+  helpText?: string;
 }
 
 const SelectInput: React.FC<SelectInputProps> = ({
@@ -27,6 +28,7 @@ const SelectInput: React.FC<SelectInputProps> = ({
   error,
   required = false,
   disabled = false,
+  helpText,
 }) => {
   return (
     <div className="form-group">
@@ -45,6 +47,7 @@ const SelectInput: React.FC<SelectInputProps> = ({
           </option>
         ))}
       </select>
+      {helpText && <p className="help-text">{helpText}</p>}
       {error && <p className="error-message">{error}</p>}
     </div>
   );

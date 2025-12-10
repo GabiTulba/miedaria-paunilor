@@ -270,9 +270,21 @@ The frontend `Product` and `ProductWithImage` types include all product attribut
 
 ### Frontend Architecture Patterns
 *   **Custom Hooks:** The `useFetchProducts` hook encapsulates logic for fetching product data with loading and error states, reducing code duplication in components that display product listings. The `useFetchEnums` hook fetches enum values from the backend API.
-*   **Reusable Components:** The `ProductCard` component provides a consistent UI structure for displaying individual product cards across different pages.
-*   **Modular Form Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) centralize input rendering, labeling, and error display logic.
+*   **Reusable Components:** The `ProductCard` component provides a consistent UI structure for displaying individual product cards across different pages with a clean two-line product summary layout (mead type and sweetness on the first line, ABV and volume on the second line with aligned pipe separators).
+*   **Modular Form Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) centralize input rendering, labeling, and error display logic with support for help text and placeholders.
 *   **Environment-Based Configuration:** The frontend uses `import.meta.env.VITE_API_BASE_URL` for API configuration, centralizing settings through environment variables. TypeScript environment type definitions are provided in `src/vite-env.d.ts`.
+*   **Stock Availability Utilities:** The `stockAvailability.ts` module provides utility functions (`getShopStockStatus`, `getProductDetailsStockStatus`, `isInStock`) for consistent stock status display across the application with appropriate CSS classes and descriptions.
+*   **Enhanced Admin UI:** The admin interface features a modern, intuitive design with:
+    *   **Dashboard:** Statistics cards showing product counts, inventory value, and low stock alerts
+    *   **Sidebar Navigation:** Visual hierarchy with icons and active state indicators
+    *   **Data Tables:** Product tables with image previews, status badges, and clear action buttons
+    *   **Image Management:** Grid-based image gallery with drag-and-drop upload and previews
+    *   **Form Organization:** Logical section grouping with help text and validation
+    *   **Loading States:** Spinner animations and skeleton states for better UX
+    *   **Error Handling:** User-friendly error messages with retry options
+    *   **Empty States:** Helpful guidance when no data is available
+    *   **Responsive Design:** Mobile-optimized layouts with adaptive navigation
+    *   **Simplified Login:** Clean, minimal admin login page with focused authentication interface
 
 ### Shopping Cart
 The application includes a fully functional shopping cart system with the following features:
