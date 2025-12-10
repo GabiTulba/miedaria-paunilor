@@ -188,7 +188,7 @@ The backend acts as a middle-man between the frontend and the database. It is bu
 *   [rust_decimal] (v1.39) - For precise decimal arithmetic with database support.
 *   [diesel-derive-enum] (v2.1.0) - For enum support in Diesel ORM.
 
-The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`).
+The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `auth`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `models`, `product_crud`, `schema`, `user_crud`, and `utils`.
 
 ### Enums and Product Attributes
 The backend defines comprehensive enums for product attributes in `enums.rs`:
@@ -200,11 +200,13 @@ The backend defines comprehensive enums for product attributes in `enums.rs`:
 *   **TaninsType:** Mild, Moderate
 *   **BodyType:** Light, Medium, Full
 
-These enums are mirrored in the frontend (`frontend/src/enums.ts`) with corresponding TypeScript enums and utility functions for display labels.
+**Enum API Endpoint:** The backend provides a `/api/enums` GET endpoint that returns all enum values with their string representations and display labels. This eliminates duplication between frontend and backend.
+
+**Frontend Enum Integration:** The frontend uses the `useFetchEnums` hook to fetch enum values from the backend. Form components like `ProductForm` use these dynamically fetched values for select options, while display components use the `formatEnumLabel` and `getEnumLabel` utility functions from `enums.ts` for consistent label formatting.
 
 ### Features
 Axum is used to interact with the frontend, dealing with:
-*   User requests to various API endpoints (e.g., `/api/products`, `/api/admin/login`).
+*   User requests to various API endpoints (e.g., `/api/products`, `/api/admin/login`, `/api/enums`).
 *   Routing, including dynamic path parameters (e.g., `/api/products/{product_id}`, `/images/{image_id}`).
 *   User authentication and authorization using JWTs, with an `Auth` extractor (`auth.rs`) to protect admin routes.
 *   CORS (Cross-Origin Resource Sharing) middleware is enabled and configured to allow communication with the frontend during development, applied specifically to admin routes to ensure proper preflight handling.
@@ -267,7 +269,7 @@ All pages are fully implemented and fetch data from the backend where applicable
 The frontend `Product` and `ProductWithImage` types include all product attributes and image management.
 
 ### Frontend Architecture Patterns
-*   **Custom Hooks:** The `useFetchProducts` hook encapsulates logic for fetching product data with loading and error states, reducing code duplication in components that display product listings.
+*   **Custom Hooks:** The `useFetchProducts` hook encapsulates logic for fetching product data with loading and error states, reducing code duplication in components that display product listings. The `useFetchEnums` hook fetches enum values from the backend API.
 *   **Reusable Components:** The `ProductCard` component provides a consistent UI structure for displaying individual product cards across different pages.
 *   **Modular Form Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) centralize input rendering, labeling, and error display logic.
 *   **Environment-Based Configuration:** The frontend uses `import.meta.env.VITE_API_BASE_URL` for API configuration, centralizing settings through environment variables. TypeScript environment type definitions are provided in `src/vite-env.d.ts`.

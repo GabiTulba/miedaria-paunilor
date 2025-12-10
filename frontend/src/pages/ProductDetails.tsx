@@ -3,15 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ProductWithImage } from '../types'; // Import ProductWithImage
 import { api } from '../lib/api';
 import { CartContext } from '../context/CartContext';
-import { 
-    getMeadTypeLabel, 
-    getSweetnessTypeLabel,
-    getTurbidityTypeLabel,
-    getEffervescenceTypeLabel,
-    getAcidityTypeLabel,
-    getTaninsTypeLabel,
-    getBodyTypeLabel
-} from '../enums';
+import { formatEnumLabel } from '../enums';
 import CollapsibleSection from '../components/CollapsibleSection';
 import './ProductDetails.css';
 
@@ -81,7 +73,7 @@ function ProductDetails() {
                     <div className="product-basic-info">
                         <div className="basic-info-item">
                             <span className="basic-info-label">Mead Type:</span>
-                            <span className="basic-info-value">{getMeadTypeLabel(product.product_type)}</span>
+                            <span className="basic-info-value">{formatEnumLabel(product.product_type)}</span>
                         </div>
                         <div className="basic-info-item">
                             <span className="basic-info-label">ABV:</span>
@@ -103,27 +95,27 @@ function ProductDetails() {
                         <div className="product-details-grid">
                             <div className="detail-item">
                                 <span className="detail-label">Sweetness:</span>
-                                <span className="detail-value">{getSweetnessTypeLabel(product.sweetness)}</span>
+                                <span className="detail-value">{formatEnumLabel(product.sweetness)}</span>
                             </div>
                             <div className="detail-item">
                                 <span className="detail-label">Turbidity:</span>
-                                <span className="detail-value">{getTurbidityTypeLabel(product.turbidity)}</span>
+                                <span className="detail-value">{formatEnumLabel(product.turbidity)}</span>
                             </div>
                             <div className="detail-item">
                                 <span className="detail-label">Effervescence:</span>
-                                <span className="detail-value">{getEffervescenceTypeLabel(product.effervescence)}</span>
+                                <span className="detail-value">{formatEnumLabel(product.effervescence)}</span>
                             </div>
                             <div className="detail-item">
                                 <span className="detail-label">Acidity:</span>
-                                <span className="detail-value">{getAcidityTypeLabel(product.acidity)}</span>
+                                <span className="detail-value">{formatEnumLabel(product.acidity)}</span>
                             </div>
                             <div className="detail-item">
                                 <span className="detail-label">Tanins:</span>
-                                <span className="detail-value">{getTaninsTypeLabel(product.tanins)}</span>
+                                <span className="detail-value">{formatEnumLabel(product.tanins)}</span>
                             </div>
                             <div className="detail-item">
                                 <span className="detail-label">Body:</span>
-                                <span className="detail-value">{getBodyTypeLabel(product.body)}</span>
+                                <span className="detail-value">{formatEnumLabel(product.body)}</span>
                             </div>
                         </div>
                     </CollapsibleSection>

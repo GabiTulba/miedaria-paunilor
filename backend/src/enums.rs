@@ -29,7 +29,7 @@ impl MeadType {
             MeadType::Acerglyn => "acerglyn",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "hidromel" => Some(MeadType::Hidromel),
@@ -45,7 +45,7 @@ impl MeadType {
             _ => None,
         }
     }
-    
+
     pub fn all() -> Vec<Self> {
         vec![
             MeadType::Hidromel,
@@ -75,15 +75,15 @@ pub enum SweetnessType {
 impl SweetnessType {
     pub fn as_str(&self) -> &'static str {
         match self {
-    SweetnessType::BoneDry => "bone-dry",
-    SweetnessType::Dry => "dry",
-    SweetnessType::SemiDry => "semi-dry",
-    SweetnessType::SemiSweet => "semi-sweet",
-    SweetnessType::Sweet => "sweet",
-    SweetnessType::Dessert => "dessert",
+            SweetnessType::BoneDry => "bone-dry",
+            SweetnessType::Dry => "dry",
+            SweetnessType::SemiDry => "semi-dry",
+            SweetnessType::SemiSweet => "semi-sweet",
+            SweetnessType::Sweet => "sweet",
+            SweetnessType::Dessert => "dessert",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "bone-dry" => Some(SweetnessType::BoneDry),
@@ -95,7 +95,7 @@ impl SweetnessType {
             _ => None,
         }
     }
-    
+
     pub fn all() -> Vec<Self> {
         vec![
             SweetnessType::BoneDry,
@@ -107,8 +107,6 @@ impl SweetnessType {
         ]
     }
 }
-
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TurbidityType {
@@ -125,7 +123,7 @@ impl TurbidityType {
             TurbidityType::Cloudy => "cloudy",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "crystalline" => Some(TurbidityType::Crystalline),
@@ -134,7 +132,7 @@ impl TurbidityType {
             _ => None,
         }
     }
-    
+
     pub fn all() -> Vec<Self> {
         vec![
             TurbidityType::Crystalline,
@@ -159,7 +157,7 @@ impl EffervescenceType {
             EffervescenceType::Sparkling => "sparkling",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "flat" => Some(EffervescenceType::Flat),
@@ -168,7 +166,7 @@ impl EffervescenceType {
             _ => None,
         }
     }
-    
+
     pub fn all() -> Vec<Self> {
         vec![
             EffervescenceType::Flat,
@@ -193,7 +191,7 @@ impl AcidityType {
             AcidityType::Strong => "strong",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "mild" => Some(AcidityType::Mild),
@@ -202,7 +200,7 @@ impl AcidityType {
             _ => None,
         }
     }
-    
+
     pub fn all() -> Vec<Self> {
         vec![
             AcidityType::Mild,
@@ -225,7 +223,7 @@ impl TaninsType {
             TaninsType::Moderate => "moderate",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "mild" => Some(TaninsType::Mild),
@@ -233,12 +231,9 @@ impl TaninsType {
             _ => None,
         }
     }
-    
+
     pub fn all() -> Vec<Self> {
-        vec![
-            TaninsType::Mild,
-            TaninsType::Moderate,
-        ]
+        vec![TaninsType::Mild, TaninsType::Moderate]
     }
 }
 
@@ -257,7 +252,7 @@ impl BodyType {
             BodyType::Full => "full",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "light" => Some(BodyType::Light),
@@ -266,12 +261,8 @@ impl BodyType {
             _ => None,
         }
     }
-    
+
     pub fn all() -> Vec<Self> {
-        vec![
-            BodyType::Light,
-            BodyType::Medium,
-            BodyType::Full,
-        ]
+        vec![BodyType::Light, BodyType::Medium, BodyType::Full]
     }
 }

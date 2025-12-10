@@ -1,11 +1,11 @@
+use crate::AppState;
+use axum::http::StatusCode;
+use diesel::Connection;
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
-use diesel::Connection;
 use dotenvy::dotenv;
 use std::env;
 use std::sync::Arc;
-use axum::http::StatusCode;
-use crate::AppState;
 
 pub type PgPool = Pool<ConnectionManager<PgConnection>>;
 
@@ -30,6 +30,8 @@ pub fn establish_pooled_connection() -> PgPool {
 pub fn get_db_connection(
     app_state: &Arc<AppState>,
 ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, StatusCode> {
-    app_state.pool.get().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+    app_state
+        .pool
+        .get()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
 }
-

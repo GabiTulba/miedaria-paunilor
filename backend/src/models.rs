@@ -1,8 +1,8 @@
+use crate::schema::*;
+use chrono;
 use diesel::prelude::*;
 use rust_decimal::Decimal;
-use crate::schema::*;
 use uuid;
-use chrono;
 
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = crate::schema::admin_users)]
@@ -11,7 +11,6 @@ pub struct AdminUser {
     pub username: String,
     pub salt: String,
     pub hashed_password: String,
-    
 }
 
 #[derive(Queryable, Selectable)]
@@ -21,16 +20,14 @@ pub struct User {
     pub username: String,
     pub salt: String,
     pub hashed_password: String,
-    
 }
-
 
 #[derive(Insertable)]
 #[diesel(table_name = admin_users)]
 pub struct NewAdminUser<'a> {
     pub username: &'a str,
     pub salt: &'a str,
-    pub hashed_password: &'a str
+    pub hashed_password: &'a str,
 }
 
 #[derive(Insertable)]
@@ -38,9 +35,8 @@ pub struct NewAdminUser<'a> {
 pub struct NewUser<'a> {
     pub username: &'a str,
     pub salt: &'a str,
-    pub hashed_password: &'a str
+    pub hashed_password: &'a str,
 }
-
 
 #[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug)]
 #[diesel(table_name = crate::schema::images)]
@@ -65,8 +61,8 @@ pub struct NewImage {
 #[diesel(table_name = images)]
 pub struct UpdateImage {
     pub file_name: Option<String>,
+    pub storage_path: Option<String>,
 }
-
 
 #[derive(Queryable, Selectable, AsChangeset, serde::Serialize, serde::Deserialize, Debug)]
 #[diesel(table_name = crate::schema::products)]

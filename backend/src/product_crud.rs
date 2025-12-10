@@ -1,7 +1,7 @@
-use diesel::prelude::*;
-use crate::models::{Product, NewProduct, Image};
+use crate::models::{Image, NewProduct, Product};
 use crate::schema::*;
-use diesel::result::{Error as DieselError, DatabaseErrorKind};
+use diesel::prelude::*;
+use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use rust_decimal::Decimal;
 use serde::Serialize;
 
@@ -31,7 +31,10 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
     let mut errors = Vec::new();
 
     // product_id: A short string composed of lowercase letters, dashes or underscores.
-    let product_id_is_valid = new_product.product_id.chars().all(|c| c.is_ascii_lowercase() || c == '-' || c == '_');
+    let product_id_is_valid = new_product
+        .product_id
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c == '-' || c == '_');
     if !product_id_is_valid || new_product.product_id.is_empty() {
         errors.push(ProductValidationError::InvalidProductId);
     }
@@ -45,7 +48,7 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
     if new_product.product_description.is_empty() {
         errors.push(ProductValidationError::EmptyProductDescription);
     }
-    
+
     // ingredients: A text field for the ingredients of the product.
     if new_product.ingredients.is_empty() {
         errors.push(ProductValidationError::EmptyIngredients);
@@ -55,13 +58,11 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
     if !crate::enums::MeadType::from_str(&new_product.product_type).is_some() {
         errors.push(ProductValidationError::InvalidProductType);
     }
-    
+
     // sweetness: String - must be a valid SweetnessType
     if !crate::enums::SweetnessType::from_str(&new_product.sweetness).is_some() {
         errors.push(ProductValidationError::InvalidSweetnessType);
     }
-
-
 
     // turbidity: String - must be a valid TurbidityType
     if !crate::enums::TurbidityType::from_str(&new_product.turbidity).is_some() {
@@ -131,18 +132,17 @@ impl From<DieselError> for ProductCreationError {
             DieselError::DatabaseError(kind, info) => {
                 if let DatabaseErrorKind::UniqueViolation = kind {
                     if let Some(constraint_name) = info.constraint_name() {
-                        if constraint_name == "products_pkey" { 
+                        if constraint_name == "products_pkey" {
                             return ProductCreationError::DuplicateProductId;
                         }
                     }
                 }
                 ProductCreationError::DatabaseError(format!("{:?} - {:?}", kind, info))
-            },
+            }
             _ => ProductCreationError::UnknownError,
         }
     }
 }
-
 
 #[derive(Debug, Serialize, Queryable, Selectable)]
 #[diesel(table_name = products)]
@@ -154,7 +154,10 @@ pub struct ProductWithImage {
     pub image: Option<Image>,
 }
 
-pub fn create_product(conn: &mut PgConnection, new_product: &NewProduct) -> Result<Product, ProductCreationError> {
+pub fn create_product(
+    conn: &mut PgConnection,
+    new_product: &NewProduct,
+) -> Result<Product, ProductCreationError> {
     let validation_errors = validate_product(new_product);
     if !validation_errors.is_empty() {
         return Err(ProductCreationError::ValidationErrors(validation_errors));
@@ -168,8 +171,8 @@ pub fn create_product(conn: &mut PgConnection, new_product: &NewProduct) -> Resu
 }
 
 pub fn get_product(conn: &mut PgConnection, id: &str) -> QueryResult<Option<ProductWithImage>> {
-    use crate::schema::products::dsl::*;
     use crate::schema::images::dsl::images;
+    use crate::schema::products::dsl::*;
 
     products
         .left_join(images)
@@ -199,8 +202,10 @@ impl From<DieselError> for ProductUpdateError {
     }
 }
 
-
-pub fn update_product(conn: &mut PgConnection, product: &Product) -> Result<Product, ProductUpdateError> {
+pub fn update_product(
+    conn: &mut PgConnection,
+    product: &Product,
+) -> Result<Product, ProductUpdateError> {
     let validation_errors = validate_product(&NewProduct {
         product_id: product.product_id.clone(),
         product_name: product.product_name.clone(),
@@ -218,7 +223,7 @@ pub fn update_product(conn: &mut PgConnection, product: &Product) -> Result<Prod
         bottle_count: product.bottle_count,
         bottle_size: product.bottle_size,
         price: product.price,
-        image_id: product.image_id
+        image_id: product.image_id,
     });
     if !validation_errors.is_empty() {
         return Err(ProductUpdateError::ValidationErrors(validation_errors));
@@ -234,9 +239,9 @@ pub fn update_product(conn: &mut PgConnection, product: &Product) -> Result<Prod
 
 pub fn delete_product(conn: &mut PgConnection, product_id: &str) -> QueryResult<()> {
     diesel::delete(products::table)
-    .filter(products::product_id.eq(product_id))
-    .execute(conn)
-    .map(|_| ())
+        .filter(products::product_id.eq(product_id))
+        .execute(conn)
+        .map(|_| ())
 }
 
 pub fn get_all_products(
@@ -245,8 +250,8 @@ pub fn get_all_products(
     in_stock: Option<bool>,
     order_direction: Option<&str>,
 ) -> QueryResult<Vec<ProductWithImage>> {
-    use crate::schema::products::dsl::*;
     use crate::schema::images::dsl::images;
+    use crate::schema::products::dsl::*;
     use diesel::ExpressionMethods; // Import ExpressionMethods to use .asc() and .desc()
 
     let mut query = products.left_join(images).into_boxed();
@@ -263,14 +268,14 @@ pub fn get_all_products(
                 } else {
                     query.order(price.asc())
                 }
-            },
+            }
             "volume" => {
                 if let Some("desc") = order_direction {
                     query.order(bottle_size.desc())
                 } else {
                     query.order(bottle_size.asc())
                 }
-            },
+            }
             _ => {
                 // If order_by is specified but not recognized, do nothing (no specific order)
                 query
@@ -279,7 +284,5 @@ pub fn get_all_products(
         query = sorted_query;
     }
 
-    query
-        .select(ProductWithImage::as_select())
-        .load(conn)
+    query.select(ProductWithImage::as_select()).load(conn)
 }

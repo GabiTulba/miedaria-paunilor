@@ -1,6 +1,6 @@
+use axum::Json;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::Json;
 use serde::Serialize;
 
 use crate::product_crud::{ProductCreationError, ProductUpdateError, ProductValidationError};
@@ -104,11 +104,9 @@ impl IntoResponse for AppError {
                 Json(ErrorResponse { message: msg }),
             )
                 .into_response(),
-            AppError::NotFound(msg) => (
-                StatusCode::NOT_FOUND,
-                Json(ErrorResponse { message: msg }),
-            )
-                .into_response(),
+            AppError::NotFound(msg) => {
+                (StatusCode::NOT_FOUND, Json(ErrorResponse { message: msg })).into_response()
+            }
             AppError::BadRequest(msg) => (
                 StatusCode::BAD_REQUEST,
                 Json(ErrorResponse { message: msg }),

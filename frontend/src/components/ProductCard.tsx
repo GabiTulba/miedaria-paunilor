@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ProductWithImage } from '../types';
-import { getMeadTypeLabel, getSweetnessTypeLabel } from '../enums';
+import { formatEnumLabel } from '../enums';
 import './ProductCard.css'; // Assuming a CSS file for styling the card
 
 interface ProductCardProps {
@@ -26,9 +26,9 @@ function ProductCard({ productWithImage }: ProductCardProps) {
            <div className="product-card-content">
              <h3>{productWithImage.product.product_name}</h3>
                <div className="product-details">
-                <span className="mead-type">{getMeadTypeLabel(productWithImage.product.product_type)}</span>
+                <span className="mead-type">{formatEnumLabel(productWithImage.product.product_type)}</span>
                 <span className="separator">|</span>
-                <span className="sweetness">{getSweetnessTypeLabel(productWithImage.product.sweetness)}</span>
+                <span className="sweetness">{formatEnumLabel(productWithImage.product.sweetness)}</span>
                 <span className="separator">|</span>
                 <span className="abv">{productWithImage.product.abv}% ABV</span>
                 <span className="separator">|</span>

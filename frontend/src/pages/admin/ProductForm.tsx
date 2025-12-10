@@ -3,6 +3,7 @@ import TextInput from '../../components/forms/TextInput';
 import TextAreaInput from '../../components/forms/TextAreaInput';
 import NumberInput from '../../components/forms/NumberInput';
 import SelectInput from '../../components/forms/SelectInput';
+import { useFetchEnums } from '../../hooks/useFetchEnums';
 
 interface ProductFormProps {
     product: Omit<Product, 'product_id'> & { product_id?: string };
@@ -15,6 +16,7 @@ interface ProductFormProps {
 }
 
 function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false, errors = {}, availableImages }: ProductFormProps) {
+    const { enums, loading, error } = useFetchEnums();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -26,7 +28,17 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
         setProduct({ ...product, [name]: value === '' ? '' : Number(value) });
     };
 
+    if (loading) {
+        return <div>Loading enum values...</div>;
+    }
 
+    if (error) {
+        return <div>Error loading enum values: {error}</div>;
+    }
+
+    if (!enums) {
+        return <div>No enum values available</div>;
+    }
     
     return (
         <form onSubmit={onSubmit} className="admin-product-form">
@@ -95,16 +107,10 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                     onChange={handleChange}
                     options={[
                         { value: '', label: 'Select mead type' },
-                        { value: 'hidromel', label: 'Hidromel' },
-                        { value: 'melomel', label: 'Melomel' },
-                        { value: 'metheglin', label: 'Metheglin' },
-                        { value: 'bochet', label: 'Bochet' },
-                        { value: 'braggot', label: 'Braggot' },
-                        { value: 'pyment', label: 'Pyment' },
-                        { value: 'cyser', label: 'Cyser' },
-                        { value: 'rhodomel', label: 'Rhodomel' },
-                        { value: 'capsicumel', label: 'Capsicumel' },
-                        { value: 'acerglyn', label: 'Acerglyn' },
+                        ...enums.mead_type.map((enumValue) => ({
+                            value: enumValue.value,
+                            label: enumValue.label,
+                        })),
                     ]}
                     required
                     error={errors.product_type}
@@ -117,12 +123,10 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                     onChange={handleChange}
                     options={[
                         { value: '', label: 'Select sweetness' },
-                        { value: 'bone-dry', label: 'Bone Dry' },
-                        { value: 'dry', label: 'Dry' },
-                        { value: 'semi-dry', label: 'Semi Dry' },
-                        { value: 'semi-sweet', label: 'Semi Sweet' },
-                        { value: 'sweet', label: 'Sweet' },
-                        { value: 'dessert', label: 'Dessert' },
+                        ...enums.sweetness.map((enumValue) => ({
+                            value: enumValue.value,
+                            label: enumValue.label,
+                        })),
                     ]}
                     required
                     error={errors.sweetness}
@@ -137,9 +141,10 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                     onChange={handleChange}
                     options={[
                         { value: '', label: 'Select turbidity' },
-                        { value: 'crystalline', label: 'Crystalline' },
-                        { value: 'hazy', label: 'Hazy' },
-                        { value: 'cloudy', label: 'Cloudy' },
+                        ...enums.turbidity.map((enumValue) => ({
+                            value: enumValue.value,
+                            label: enumValue.label,
+                        })),
                     ]}
                     required
                     error={errors.turbidity}
@@ -154,9 +159,10 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                     onChange={handleChange}
                     options={[
                         { value: '', label: 'Select effervescence' },
-                        { value: 'flat', label: 'Flat' },
-                        { value: 'perlant', label: 'Perlant' },
-                        { value: 'sparkling', label: 'Sparkling' },
+                        ...enums.effervescence.map((enumValue) => ({
+                            value: enumValue.value,
+                            label: enumValue.label,
+                        })),
                     ]}
                     required
                     error={errors.effervescence}
@@ -169,9 +175,10 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                     onChange={handleChange}
                     options={[
                         { value: '', label: 'Select acidity' },
-                        { value: 'mild', label: 'Mild' },
-                        { value: 'moderate', label: 'Moderate' },
-                        { value: 'strong', label: 'Strong' },
+                        ...enums.acidity.map((enumValue) => ({
+                            value: enumValue.value,
+                            label: enumValue.label,
+                        })),
                     ]}
                     required
                     error={errors.acidity}
@@ -186,8 +193,10 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                     onChange={handleChange}
                     options={[
                         { value: '', label: 'Select tanins' },
-                        { value: 'mild', label: 'Mild' },
-                        { value: 'moderate', label: 'Moderate' },
+                        ...enums.tanins.map((enumValue) => ({
+                            value: enumValue.value,
+                            label: enumValue.label,
+                        })),
                     ]}
                     required
                     error={errors.tanins}
@@ -200,9 +209,10 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                     onChange={handleChange}
                     options={[
                         { value: '', label: 'Select body' },
-                        { value: 'light', label: 'Light' },
-                        { value: 'medium', label: 'Medium' },
-                        { value: 'full', label: 'Full' },
+                        ...enums.body.map((enumValue) => ({
+                            value: enumValue.value,
+                            label: enumValue.label,
+                        })),
                     ]}
                     required
                     error={errors.body}

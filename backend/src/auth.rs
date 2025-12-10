@@ -1,20 +1,20 @@
-use axum::{
-    extract::{Request, State}, 
-    Json,
-    middleware::Next, 
-    response::Response, 
-};
-use jsonwebtoken::{encode, DecodingKey, EncodingKey, Header, Validation, decode};
-use serde::{Deserialize, Serialize};
-use std::env;
+use crate::AppError;
+use crate::AppState;
+use crate::db;
 use crate::user_crud;
 use crate::utils::verify_password;
+use axum::{
+    Json,
+    extract::{Request, State},
+    middleware::Next,
+    response::Response,
+};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use serde::{Deserialize, Serialize};
+use std::env;
 use std::sync::Arc;
-use crate::AppState;
-use crate::AppError;
-use crate::db;
 
-#[derive(Debug, Serialize, Deserialize, Clone)] 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     pub sub: String,
     pub exp: usize,
@@ -56,21 +56,25 @@ pub async fn login(
         exp,
     };
 
-    let secret = env::var("JWT_SECRET").map_err(|_| AppError::InternalServerError("JWT_SECRET not set".to_string()))?;
-    let token = encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_ref()))
-        .map_err(|_| AppError::InternalServerError("Failed to encode JWT".to_string()))?;
+    let secret = env::var("JWT_SECRET")
+        .map_err(|_| AppError::InternalServerError("JWT_SECRET not set".to_string()))?;
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(secret.as_ref()),
+    )
+    .map_err(|_| AppError::InternalServerError("Failed to encode JWT".to_string()))?;
 
     Ok(Json(LoginResponse { token }))
 }
 
-
-
 pub async fn auth_middleware(
-    State(_app_state): State<Arc<AppState>>, 
+    State(_app_state): State<Arc<AppState>>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, AppError> {
-    let auth_header = req.headers()
+    let auth_header = req
+        .headers()
         .get("Authorization")
         .and_then(|header| header.to_str().ok());
 
@@ -78,13 +82,18 @@ pub async fn auth_middleware(
         if header_value.starts_with("Bearer ") {
             header_value[7..].to_string()
         } else {
-            return Err(AppError::Unauthorized("Invalid authorization header format".to_string()));
+            return Err(AppError::Unauthorized(
+                "Invalid authorization header format".to_string(),
+            ));
         }
     } else {
-        return Err(AppError::Unauthorized("Authorization header missing".to_string()));
+        return Err(AppError::Unauthorized(
+            "Authorization header missing".to_string(),
+        ));
     };
 
-    let secret = env::var("JWT_SECRET").map_err(|_| AppError::InternalServerError("JWT_SECRET not set".to_string()))?;
+    let secret = env::var("JWT_SECRET")
+        .map_err(|_| AppError::InternalServerError("JWT_SECRET not set".to_string()))?;
     let token_data = decode::<Claims>(
         &token,
         &DecodingKey::from_secret(secret.as_ref()),

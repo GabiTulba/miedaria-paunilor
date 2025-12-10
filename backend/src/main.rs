@@ -1,28 +1,29 @@
 use axum::{
-    extract::{Path, State, Query},
+    Json, Router,
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post, put, delete},
-    Json, Router,
+    routing::{delete, get, post, put},
 };
 use diesel::r2d2::ConnectionManager;
 use dotenvy::dotenv;
 use std::{env, net::SocketAddr, sync::Arc};
 
 // Import everything from the backend library crate
-use backend::{auth, models, product_crud, AppState, db};
+use axum::extract::Extension;
+use axum::extract::Multipart; // Added for upload_image_handler
+use backend::AppError;
+use backend::enum_crud;
 use backend::image_crud;
 use backend::product_crud::ProductWithImage;
-use axum::extract::Extension; 
-use axum::extract::Multipart; // Added for upload_image_handler
-use backend::AppError; // Corrected AppError import
+use backend::{AppState, auth, db, models, product_crud}; // Corrected AppError import
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
 
-use tower_http::cors::CorsLayer;
-use tower_http::cors::Any;
+    use tower_http::cors::Any;
+    use tower_http::cors::CorsLayer;
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let manager = ConnectionManager::<diesel::pg::PgConnection>::new(database_url);
@@ -46,12 +47,16 @@ use tower_http::cors::Any;
         .route("/images", post(upload_image_handler)) // Updated to use wrapper
         .route("/images/{image_id}", put(update_image_meta_handler)) // Updated to use wrapper
         .route("/images/{image_id}", delete(delete_image_wrapper)) // Updated to use wrapper
-        .route_layer(axum::middleware::from_fn_with_state(app_state.clone(), auth::auth_middleware))
+        .route_layer(axum::middleware::from_fn_with_state(
+            app_state.clone(),
+            auth::auth_middleware,
+        ))
         .layer(cors.clone());
 
     let app = Router::new()
         .route("/images/{image_id}", get(serve_image_handler)) // Updated to use wrapper
         .route("/health", get(health_check))
+        .route("/api/enums", get(get_enum_values))
         .route("/api/products", get(get_all_products))
         .route("/api/products/{product_id}", get(get_product_by_id))
         .route("/api/admin/login", post(auth::login))
@@ -66,11 +71,18 @@ use tower_http::cors::Any;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     println!("listening on {}", addr);
-    axum::serve(listener, app.into_make_service()).await.unwrap();
+    axum::serve(listener, app.into_make_service())
+        .await
+        .unwrap();
 }
 
 async fn health_check() -> impl IntoResponse {
     (StatusCode::OK, "OK")
+}
+
+async fn get_enum_values() -> Result<Json<enum_crud::EnumValues>, AppError> {
+    let enum_values = enum_crud::get_all_enum_values();
+    Ok(Json(enum_values))
 }
 
 async fn upload_image_handler(
@@ -107,7 +119,6 @@ async fn delete_image_wrapper(
     image_crud::delete_image(&mut conn, image_id).await
 }
 
-
 #[derive(Debug, serde::Deserialize)]
 pub struct GetProductsQuery {
     order_by: Option<String>,
@@ -121,7 +132,12 @@ async fn get_all_products(
 ) -> Result<Json<Vec<ProductWithImage>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
-    let products = product_crud::get_all_products(&mut conn, query.order_by.as_deref(), query.in_stock, query.order_direction.as_deref())?;
+    let products = product_crud::get_all_products(
+        &mut conn,
+        query.order_by.as_deref(),
+        query.in_stock,
+        query.order_direction.as_deref(),
+    )?;
 
     Ok(Json(products))
 }
@@ -132,17 +148,15 @@ async fn get_product_by_id(
 ) -> Result<Json<ProductWithImage>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
-    let product = product_crud::get_product(&mut conn, &product_id)?
-        .ok_or(AppError::NotFound(format!("Product with id {} not found", product_id)))?;
+    let product = product_crud::get_product(&mut conn, &product_id)?.ok_or(AppError::NotFound(
+        format!("Product with id {} not found", product_id),
+    ))?;
 
     Ok(Json(product))
 }
 
 async fn protected_route(Extension(claims): Extension<auth::Claims>) -> Result<String, StatusCode> {
-    Ok(format!(
-        "Welcome to the protected area, {}!",
-        claims.sub
-    ))
+    Ok(format!("Welcome to the protected area, {}!", claims.sub))
 }
 
 async fn create_product(
@@ -180,7 +194,6 @@ async fn delete_product(
         .map(|_| StatusCode::NO_CONTENT)
         .map_err(AppError::from)
 }
-
 
 async fn list_images(
     State(app_state): State<Arc<AppState>>,

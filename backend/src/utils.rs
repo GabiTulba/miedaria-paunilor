@@ -1,4 +1,4 @@
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
 pub fn salt_and_hash(salt: &str, password: &str) -> String {
     let hash = Sha256::digest(format!("{}{}", salt, password).as_bytes());
