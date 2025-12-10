@@ -24,6 +24,50 @@ This document should always reflect the **current state** of the project, not hi
 4. Remove sections that summarize historical refactoring
 5. Present the project as a cohesive whole at a single point in time
 
+## Build/Lint/Test Commands
+**Backend (Rust):**
+- Build: `cd backend && cargo build`
+- Run: `cd backend && cargo run`
+- Check: `cd backend && cargo check`
+- Format: `cd backend && cargo fmt`
+- Lint: `cd backend && cargo clippy`
+- Test: `cd backend && cargo test` (no tests currently exist)
+
+**Frontend (React/TypeScript):**
+- Dev server: `cd frontend && npm run dev`
+- Build: `cd frontend && npm run build`
+- Lint: `cd frontend && npm run lint`
+- Preview: `cd frontend && npm run preview`
+
+**Docker:**
+- Start: `docker-compose up --build`
+- Stop: `docker-compose down`
+
+## Code Style Guidelines
+**Rust Backend:**
+- Use `cargo fmt` for consistent formatting
+- Follow Rust naming conventions: snake_case for variables/functions, PascalCase for types
+- Use `Result<T, AppError>` for error handling with unified `AppError` enum
+- Group imports: std, external crates, internal modules
+- Use `#[derive(...)]` for serialization/deserialization
+- Prefer `async/await` with `tokio` runtime
+
+**TypeScript/React Frontend:**
+- Use TypeScript strict mode with explicit types
+- Functional components with hooks, not classes
+- PascalCase for components, camelCase for variables/functions
+- Modular CSS: component-specific `.css` files
+- Use React Context for global state (Auth, Cart)
+- Prefer `react-router-dom` for routing
+- Use environment variables via `import.meta.env`
+
+**General:**
+- No inline comments unless explaining complex logic
+- Self-documenting code with descriptive names
+- Avoid code duplication - extract reusable components/functions
+- Security-first: validate inputs, handle errors gracefully
+- Follow existing patterns in each codebase
+
 
 # High Level Description
 This project is the source code for a full-stack application for a e-commerce website for a mead making company called "Miedăria Păunilor".
