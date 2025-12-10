@@ -14,7 +14,15 @@ You are concerned with security and possible vulnerabilities that the app could 
 You should feel free to use the latest versions of docker images and programming languages.
 
 ## Updating the Documentation
-Whenever you do significant feature or behaviour changes to the codebase, remember to update this GEMINI.md document. Your updates should be concise, summaries of the changes and always consider the rest of the information already present in this document, trying to keep the size of this document relatively small over time.
+Whenever you do significant feature or behaviour changes to the codebase, remember to update this AGENTS.md document. Your updates should be concise, summaries of the changes and always consider the rest of the information already present in this document, trying to keep the size of this document relatively small over time.
+
+### Documentation Philosophy
+This document should always reflect the **current state** of the project, not historical changes or diffs. When updating:
+1. Describe features and architecture as they exist now
+2. Avoid language like "new", "added", "removed", "updated", "changed" that describes transitions
+3. Integrate improvements into the main description of systems
+4. Remove sections that summarize historical refactoring
+5. Present the project as a cohesive whole at a single point in time
 
 
 # High Level Description
@@ -35,26 +43,42 @@ The backend is the middle-man between the frontend and the database. For securit
 * rust-postgres -- the backend and the database images share this network
 
 ## Volumes
-There is only one volume for the PostgreSQL database.
-*   **images:** A volume for storing uploaded product images, mounted at `/app/images` in both the backend and frontend (Nginx) containers.
+There are two volumes:
+*   **postgres-data:** A volume for the PostgreSQL database.
+*   **miedaria_paunilor_images:** A volume for storing uploaded product images, mounted at `/app/images` in both the backend and frontend (Nginx) containers.
 
 ## Environment
 All Docker images utilize environment variables defined in a single `.env` file located at the project root. This centralizes configuration for all services.
 
 ## Environment
-All Docker images utilize environment variables defined in a single `.env` file located at the project root. This centralizes configuration for all services.
+All Docker images utilize environment variables defined in a single `.env` file located at the project root. This centralizes configuration for all services. The project includes an `env.sample` file that serves as a template with all required environment variables and their default values.
 
-### New Environment Variables
+### Environment Variables
 
-During refactoring, the following environment variables were introduced or clarified for stricter configuration management. These variables *must* be defined in the `.env` file for the application to run.
+The following environment variables *must* be defined in the `.env` file for the application to run:
 
-*   **Backend:**
-    *   `BACKEND_PORT`: The port on which the Rust backend server will listen.
-    *   `IMAGE_UPLOAD_DIR`: The directory where product images will be stored on the filesystem within the Docker container.
-    *   `JWT_EXPIRATION_HOURS`: The number of hours until a generated JWT token expires.
+*   **Database Configuration:**
+    *   `POSTGRES_HOST`: PostgreSQL database host (default: `database`)
+    *   `POSTGRES_PORT`: PostgreSQL database port (default: `5432`)
+    *   `POSTGRES_USER`: PostgreSQL database user (default: `user`)
+    *   `POSTGRES_PASSWORD`: PostgreSQL database password (default: `password`)
+    *   `POSTGRES_DB`: PostgreSQL database name (default: `miedaria_paunilor`)
+    *   `DATABASE_URL`: Full database connection URL (default: `postgres://user:password@database/miedaria_paunilor`)
 
-*   **Frontend:**
-    *   `VITE_API_BASE_URL`: The base URL for the backend API that the frontend will make requests to.
+*   **Authentication & Security:**
+    *   `ADMIN_USERNAME`: Default administrator username for initial setup (default: `admin`)
+    *   `ADMIN_PASSWORD`: Default administrator password for initial setup (default: `password`)
+    *   `JWT_SECRET`: Secret key for JWT token generation and validation (default: `my-super-secret-key`)
+    *   `JWT_EXPIRATION_HOURS`: Number of hours until a generated JWT token expires (default: `24`)
+
+*   **Backend Configuration:**
+    *   `BACKEND_PORT`: The port on which the Rust backend server will listen (default: `8000`)
+    *   `IMAGE_UPLOAD_DIR`: The directory where product images will be stored on the filesystem within the Docker container (default: `/app/images`)
+
+*   **Frontend Configuration:**
+    *   `VITE_API_BASE_URL`: The base URL for the backend API that the frontend will make requests to (default: `http://localhost:8000/api`)
+
+**Setup Instructions:** To configure the application, copy `env.sample` to `.env` and update the values as needed for your environment. The `.env` file is excluded from version control via `.gitignore` to prevent sensitive information from being committed.
 
 # Logical Components
 ## Database
@@ -62,11 +86,10 @@ During refactoring, the following environment variables were introduced or clari
 This is a PostgreSQL database.
 
 ### Features
-The instance has a single database [miedaria_paunilor], with three tables:
+The instance has a single database [miedaria_paunilor], with four tables:
 1. [products]
 2. [users]
 3. [admin_users]
-And a new table:
 4. [images]
 
 [images] has the following schema:
@@ -81,6 +104,13 @@ And a new table:
 * product_name - A short string that supports any character. Represents the human-friendly name of the product
 * product_description - A long, free-form text string. Represents a detailed description of the product.
 * ingredients - A text field for the ingredients of the product.
+* product_type - String representing the type of mead (e.g., hidromel, melomel, metheglin, etc.)
+* sweetness - String representing sweetness level (e.g., bone-dry, dry, semi-dry, etc.)
+* turbidity - String representing clarity level (e.g., crystalline, hazy, cloudy)
+* effervescence - String representing carbonation level (e.g., flat, perlant, sparkling)
+* acidity - String representing acidity level (e.g., mild, moderate, strong)
+* tanins - String representing tannin level (e.g., mild, moderate)
+* body - String representing body/mouthfeel (e.g., light, medium, full)
 * abv - Decimal with one digit of precision, valid ranges from 0.0 to 99.9. Represents the alcohol by volume concentration of the mead.
 * bottle_count - Non-negative integer. Represents the number of bottles in stock.
 * bottle_size - Positive integer (mililiters of volume). Represents the net volume of the bottle of mead.
@@ -111,8 +141,22 @@ The backend acts as a middle-man between the frontend and the database. It is bu
 *   [uuid] (v1.8.0) - For UUID generation and handling, with the `v4`, `fast-rng`, and `serde` features enabled.
 *   [chrono] (v0.4.38) - For date and time handling, with the `serde` feature enabled.
 *   [mime_guess] (v2.0) - For guessing MIME types based on file extensions.
+*   [rust_decimal] (v1.39) - For precise decimal arithmetic with database support.
+*   [diesel-derive-enum] (v2.1.0) - For enum support in Diesel ORM.
 
 The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`).
+
+### Enums and Product Attributes
+The backend defines comprehensive enums for product attributes in `enums.rs`:
+*   **MeadType:** Hidromel, Melomel, Metheglin, Bochet, Braggot, Pyment, Cyser, Rhodomel, Capsicumel, Acerglyn
+*   **SweetnessType:** BoneDry, Dry, SemiDry, SemiSweet, Sweet, Dessert
+*   **TurbidityType:** Crystalline, Hazy, Cloudy
+*   **EffervescenceType:** Flat, Perlant, Sparkling
+*   **AcidityType:** Mild, Moderate, Strong
+*   **TaninsType:** Mild, Moderate
+*   **BodyType:** Light, Medium, Full
+
+These enums are mirrored in the frontend (`frontend/src/enums.ts`) with corresponding TypeScript enums and utility functions for display labels.
 
 ### Features
 Axum is used to interact with the frontend, dealing with:
@@ -120,20 +164,29 @@ Axum is used to interact with the frontend, dealing with:
 *   Routing, including dynamic path parameters (e.g., `/api/products/{product_id}`, `/images/{image_id}`).
 *   User authentication and authorization using JWTs, with an `Auth` extractor (`auth.rs`) to protect admin routes.
 *   CORS (Cross-Origin Resource Sharing) middleware is enabled and configured to allow communication with the frontend during development, applied specifically to admin routes to ensure proper preflight handling.
+*   **Unified Error Handling:** The `AppError` enum serves as a unified error type for all API handlers, providing `From` implementations for various specific errors (e.g., `diesel::result::Error`, product CRUD errors, authentication errors) and an `IntoResponse` implementation for consistent HTTP response generation.
+*   **Centralized Database Connection Acquisition:** The `db::get_db_connection` helper function centralizes the logic for acquiring a database connection from the application's connection pool, reducing boilerplate code in handler functions.
 
 Diesel is used to interact with the database, dealing with:
 *   Fetching data from the `products` and `images` tables.
 *   **Image Management:**
     *   Provides an API endpoint (`/api/admin/images` POST) for uploading product images.
     *   Saves uploaded images to a designated directory (`/app/images`) within the Docker container, mounted as a volume. Files are saved as `UUID.lowercase_extension`.
-    *   Stores image metadata (UUID, filename, storage path, creation time, file size) in the new `images` table.
+    *   Stores image metadata (UUID, filename, storage path, creation time, file size) in the `images` table.
     *   Offers API endpoints (`/api/admin/images` GET, `/api/admin/images/{image_id}` GET, `/api/admin/images/{image_id}` PUT, `/api/admin/images/{image_id}` DELETE) for full CRUD operations on image metadata.
-    *   **Image Deletion:** Implemented logic to check for foreign key references in the `products` table before deletion. If an image is still referenced by a product, the deletion is prevented, and a `409 Conflict` status is returned.
+    *   **Image Deletion:** Checks for foreign key references in the `products` table before deletion. If an image is still referenced by a product, the deletion is prevented, and a `409 Conflict` status is returned. Gracefully handles cases where an image file is already missing from the filesystem.
     *   **Image Serving:** Provides a public endpoint (`/images/{image_id}` GET) that serves the image file directly, looking up its `storage_path` and `Content-Type` from the `images` table.
+    *   **Consistent Database Interaction:** Image CRUD operations accept a mutable pooled database connection (`&mut PgConnection`) as an argument, aligning with product operations for consistent resource management.
 *   **Product Management:**
-    *   Fetching data from the `products` table, now including associated `image` data (`ProductWithImage`).
+    *   Fetching data from the `products` table, including associated `image` data (`ProductWithImage`).
     *   Modifying, inserting, and deleting entries from the `products` table via authenticated admin endpoints.
-    *   Validation of product creation and update fields to ensure data integrity and security, returning specific error types for different validation failures.
+    *   Comprehensive validation of product creation and update fields including:
+        *   Product ID format (lowercase letters, dashes, underscores)
+        *   Required fields (name, description, ingredients)
+        *   Enum validation for product attributes (mead type, sweetness, turbidity, effervescence, acidity, tannins, body)
+        *   Numeric validation (ABV range 0.0-99.9, bottle count non-negative, bottle size positive, price validation)
+        *   Precision validation (ABV with 1 decimal place, price with 2 decimal places)
+    *   Returning specific error types for different validation failures.
 
 ## Frontend
 ### UI/UX
@@ -155,44 +208,33 @@ The styling is managed through a modular and organized CSS architecture:
 The frontend website is structured as follows:
 ```
 / -- redirects to home/
-    home/ -- A visually appealing landing page with a hero section, featured products, and teasers for other sections. Now displays images using UUID-based URLs.
-    shop/ -- Displays all products in a grid, with a sidebar for filtering and sorting. Now displays images using UUID-based URLs.
-        shop/[product_id]/ -- A detailed view of a single product with an "Add to Cart" button and quantity selector. Now displays images using UUID-based URLs.
+    home/ -- A visually appealing landing page with a hero section, featured products, and teasers for other sections. Displays images using UUID-based URLs.
+    shop/ -- Displays all products in a grid, with a sidebar for filtering and sorting. Displays images using UUID-based URLs.
+        shop/[product_id]/ -- A detailed view of a single product with an "Add to Cart" button and quantity selector. Displays images using UUID-based URLs.
     cart/ -- A summary of the items in the shopping cart, with options to update quantities, remove items, or clear the cart.
     about-us/ -- A static page with a modern design telling the story of the meadery.
     contact/ -- A static page with contact information.
     admin/ -- A login page for administrators.
         admin/dashboard/ -- A protected admin section with a sidebar for navigation.
-            admin/dashboard/products -- A page to manage products (create, edit, delete) with a modern table view. Product forms now include image selection from uploaded images.
-            admin/dashboard/images -- A new page to manage images (upload, display, rename, delete). Displays a user-friendly error message if attempting to delete an image in use.
+            admin/dashboard/products -- A page to manage products (create, edit, delete) with a modern table view. Product forms include image selection from uploaded images.
+            admin/dashboard/images -- A page to manage images (upload, display, rename, delete). Displays a user-friendly error message if attempting to delete an image in use.
 ```
-All pages are fully implemented with the new design and fetch data from the backend where applicable.
-The frontend `Product` and `ProductWithImage` types have been updated to reflect the new image management.
+All pages are fully implemented and fetch data from the backend where applicable.
+The frontend `Product` and `ProductWithImage` types include all product attributes and image management.
 
-### UI Changes
-*   **Admin Link Removal:** The "Admin" link has been removed from the main sticky navigation bar at the top of the application for regular users.
-## Refactoring Changes (Summary)
+### Frontend Architecture Patterns
+*   **Custom Hooks:** The `useFetchProducts` hook encapsulates logic for fetching product data with loading and error states, reducing code duplication in components that display product listings.
+*   **Reusable Components:** The `ProductCard` component provides a consistent UI structure for displaying individual product cards across different pages.
+*   **Modular Form Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) centralize input rendering, labeling, and error display logic.
+*   **Environment-Based Configuration:** The frontend uses `import.meta.env.VITE_API_BASE_URL` for API configuration, centralizing settings through environment variables.
 
-This section summarizes the significant refactoring changes made to improve code quality, modularity, consistency, and maintainability across the full-stack application.
+### Shopping Cart
+The application includes a fully functional shopping cart system with the following features:
+*   **Cart Context:** React Context API manages cart state across the application
+*   **Cart Operations:** Add items, remove items, update quantities, clear cart
+*   **Cart Persistence:** Cart state is maintained during user session
+*   **Cart Display:** Cart page shows items with quantity controls, subtotals, and order summary
+*   **Cart Badge:** Navigation displays current item count
 
-### Backend Refactoring (Rust)
-
-*   **Centralized Database Connection Acquisition:** A new helper function, `db::get_db_connection`, was introduced. This function centralizes the logic for acquiring a database connection from the application's connection pool, significantly reducing boilerplate code in handler functions and improving consistency.
-*   **Generalized Error Handling:** A new `AppError` enum was created in `backend/src/error.rs`. This `AppError` now serves as a unified error type for all API handlers, providing `From` implementations for various specific errors (e.g., `diesel::result::Error`, product CRUD errors, authentication errors) and an `IntoResponse` implementation for consistent HTTP response generation. All product CRUD, image CRUD, and authentication handlers were updated to utilize this new error handling mechanism.
-*   **Consistent Image CRUD Operations:** Functions within `image_crud.rs` were modified to accept a mutable pooled database connection (`&mut PgConnection`) as an argument, rather than establishing new connections independently. This aligns image operations with product operations, ensuring consistent resource management and database interaction patterns.
-*   **Removed Dead Code:** The unused `_get_image` function was removed from `backend/src/main.rs`.
-*   **Cleaned Unnecessary Comments:** Redundant and development-specific comments were removed from `backend/src/main.rs` and `backend/src/auth.rs` to improve code clarity.
-*   **Improved Image Deletion Robustness:** The `delete_image` function in `image_crud.rs` was updated to gracefully handle cases where an image file is already missing from the filesystem during a deletion attempt. If `tokio::fs::remove_file` returns a `NotFound` error, a warning is logged, and the function proceeds to delete the database record, preventing an `InternalServerError` and maintaining consistency.
-
-### Frontend Refactoring (React/TypeScript)
-
-*   **Extracted Data Fetching Hook:** A custom hook, `useFetchProducts` (in `frontend/src/hooks/useFetchProducts.ts`), was created to encapsulate the logic for fetching product data, including loading and error states. This reduces code duplication and improves reusability in components that display product listings (e.g., `Shop.tsx`).
-*   **Reusable Product Card Component:** The common UI structure for displaying individual product cards was extracted into a dedicated `ProductCard` component (`frontend/src/components/ProductCard.tsx`). This enhances reusability and maintainability across different product display areas.
-*   **Modular Form Input Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) were created within `frontend/src/components/forms/`. These components centralize input rendering, labeling, and error display logic, significantly reducing boilerplate and improving consistency in complex forms like `ProductForm.tsx`.
-*   **Cleaned Unnecessary Comments:** Redundant comments were removed from `frontend/src/pages/Shop.tsx` and `frontend/src/context/AuthContext.tsx`.
-*   **Dependency Cleanup:** The unused `axios` dependency was removed from `frontend/package.json` and `npm install` was run to clean up `node_modules`.
-
-### Cross-Cutting Concerns
-
-*   **Configuration Management:** The frontend's `API_BASE_URL` in `frontend/src/lib/api.ts` was changed to dynamically use `import.meta.env.VITE_API_BASE_URL`. This eliminates a hardcoded URL and centralizes configuration through environment variables, aligning with the project's overall strategy.
-*   **Docker Configuration Optimization:** The `backend/Dockerfile` was corrected to `EXPOSE 8000` instead of `3000`, matching the actual port the Rust application listens on for improved clarity and correctness in image metadata. Additionally, the redundant `VITE_API_URL` build argument was removed from the `frontend` service in `docker-compose.yml`.
+### UI Design
+*   The main sticky navigation bar does not include an "Admin" link for regular users, keeping the admin interface separate from the public-facing site.
