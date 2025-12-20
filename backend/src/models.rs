@@ -2,6 +2,7 @@ use crate::schema::*;
 use chrono;
 use diesel::prelude::*;
 use rust_decimal::Decimal;
+
 use uuid;
 
 #[derive(Queryable, Selectable)]
@@ -79,9 +80,11 @@ pub struct Product {
     pub acidity: String,
     pub tanins: String,
     pub body: String,
+    #[serde(with = "rust_decimal::serde::float")]
     pub abv: Decimal,
     pub bottle_count: i32,
     pub bottle_size: i32,
+    #[serde(with = "rust_decimal::serde::float")]
     pub price: Decimal,
     pub image_id: uuid::Uuid,
 }
@@ -100,9 +103,11 @@ pub struct NewProduct {
     pub acidity: String,
     pub tanins: String,
     pub body: String,
+    #[serde(with = "rust_decimal::serde::float")]
     pub abv: Decimal,
     pub bottle_count: i32,
     pub bottle_size: i32,
+    #[serde(with = "rust_decimal::serde::float")]
     pub price: Decimal,
     pub image_id: uuid::Uuid,
 }

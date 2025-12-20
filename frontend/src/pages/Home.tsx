@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ProductWithImage } from '../types'; // Import ProductWithImage
+import { useTranslation } from 'react-i18next';
+import { ProductWithImage } from '../types';
 import { api } from '../lib/api';
 import ProductCard from '../components/ProductCard';
 import './Home.css';
 
 function Home() {
-    const [featuredProducts, setFeaturedProducts] = useState<ProductWithImage[]>([]); // Change type here
+    const [featuredProducts, setFeaturedProducts] = useState<ProductWithImage[]>([]);
+    const { t } = useTranslation();
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -24,17 +26,17 @@ function Home() {
         <div className="home-page">
             <section className="hero-section">
                 <div className="hero-content">
-                    <h1>Artisanal Mead, Crafted with Passion</h1>
-                    <p>Experience the ancient tradition of mead, reimagined for the modern palate. Made from 100% pure honey.</p>
-                    <Link to="/shop" className="button">Explore Our Collection</Link>
+                    <h1>{t('home.heroTitle')}</h1>
+                    <p>{t('home.heroDescription')}</p>
+                    <Link to="/shop" className="button">{t('home.exploreCollection')}</Link>
                 </div>
             </section>
 
             <section className="featured-products">
                 <div className="section-content-container">
-                    <h2 className="section-title">Featured Products</h2>
+                    <h2 className="section-title">{t('home.featuredProducts')}</h2>
                      <div className="product-grid">
-                     {featuredProducts.map(productWithImage => ( // Iterate over ProductWithImage
+                     {featuredProducts.map(productWithImage => (
                          <ProductCard 
                              key={productWithImage.product.product_id} 
                              productWithImage={productWithImage} 
@@ -47,9 +49,9 @@ function Home() {
             <section className="about-teaser">
                 <div className="section-content-container">
                     <div className="teaser-content">
-                        <h2>Our Story</h2>
-                        <p>Miedăria Păunilor is born from a love for nature, tradition, and the golden nectar of bees. We are a family-run business dedicated to producing the finest mead.</p>
-                        <Link to="/about-us" className="button button-secondary">Read More</Link>
+                        <h2>{t('home.ourStory')}</h2>
+                        <p>{t('home.ourStoryDescription')}</p>
+                        <Link to="/about-us" className="button button-secondary">{t('home.readMore')}</Link>
                     </div>
                 </div>
             </section>

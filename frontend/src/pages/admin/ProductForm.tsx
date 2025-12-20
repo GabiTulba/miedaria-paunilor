@@ -1,4 +1,5 @@
 import { Product, Image } from '../../types';
+import { useTranslation } from 'react-i18next';
 import TextInput from '../../components/forms/TextInput';
 import TextAreaInput from '../../components/forms/TextAreaInput';
 import NumberInput from '../../components/forms/NumberInput';
@@ -17,6 +18,7 @@ interface ProductFormProps {
 
 function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false, errors = {}, availableImages }: ProductFormProps) {
     const { enums, loading, error } = useFetchEnums();
+    const { t } = useTranslation();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -29,43 +31,43 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
     };
 
     if (loading) {
-        return <div>Loading enum values...</div>;
+        return <div>{t('common.loading')}</div>;
     }
 
     if (error) {
-        return <div>Error loading enum values: {error}</div>;
+        return <div>{t('errors.serverError')}: {error}</div>;
     }
 
     if (!enums) {
-        return <div>No enum values available</div>;
+        return <div>{t('errors.serverError')}</div>;
     }
     
     return (
         <form onSubmit={onSubmit} className="admin-product-form">
             <div className="form-header">
-                <h1>{isEdit ? 'Edit Product' : 'Create New Product'}</h1>
-                <p className="form-subtitle">Fill in the details for your mead product</p>
+                <h1>{isEdit ? t('admin.productForm.editTitle') : t('admin.productForm.createTitle')}</h1>
+                <p className="form-subtitle">{t('admin.productForm.basicInfo')}</p>
             </div>
 
             <div className="form-section">
-                <h2 className="section-title">Basic Information</h2>
+                <h2 className="section-title">{t('admin.productForm.basicInfo')}</h2>
                 <div className="section-content">
                     <TextInput
                         id="product_id"
                         name="product_id"
-                        label="Product ID"
+                        label={t('admin.productForm.productId')}
                         value={product.product_id || ''}
                         onChange={handleChange}
                         required
                         disabled={isEdit}
                         error={errors.product_id}
                         placeholder="e.g., classic-hidromel"
-                        helpText="Lowercase letters, dashes, and underscores only"
+                        helpText={t('admin.productForm.productIdHelp')}
                     />
                     <TextInput
                         id="product_name"
                         name="product_name"
-                        label="Product Name"
+                        label={t('admin.productForm.productName')}
                         value={product.product_name}
                         onChange={handleChange}
                         required
@@ -75,54 +77,54 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                     <TextAreaInput
                         id="product_description"
                         name="product_description"
-                        label="Description"
+                        label={t('admin.productForm.productDescription')}
                         value={product.product_description}
                         onChange={handleChange}
                         rows={4}
                         required
                         error={errors.product_description}
-                        placeholder="Describe your mead product..."
+                        placeholder={t('admin.productForm.productDescription')}
                     />
                     <TextAreaInput
                         id="ingredients"
                         name="ingredients"
-                        label="Ingredients"
+                        label={t('admin.productForm.ingredients')}
                         value={product.ingredients}
                         onChange={handleChange}
                         rows={3}
                         required
                         error={errors.ingredients}
-                        placeholder="List the ingredients..."
+                        placeholder={t('admin.productForm.ingredients')}
                     />
                 </div>
             </div>
 
             <div className="form-section">
-                <h2 className="section-title">Product Image</h2>
+                <h2 className="section-title">{t('admin.productForm.image')}</h2>
                 <div className="section-content">
                     <SelectInput
                         id="image_id"
                         name="image_id"
-                        label="Product Image"
+                        label={t('admin.productForm.selectImage')}
                         value={product.image_id || ''}
                         onChange={handleChange}
                         required
                         options={[
-                            { value: '', label: 'Select an image' },
+                            { value: '', label: t('admin.productForm.selectImage') },
                             ...availableImages.map((image) => ({
                                 value: image.id,
                                 label: `${image.file_name} (ID: ${image.id.substring(0, 8)}...)`,
                             })),
                         ]}
                         error={errors.image_id}
-                        helpText="Choose an image from your uploaded images"
+                        helpText={t('admin.productForm.selectImage')}
                     />
                     {availableImages.length === 0 && (
                         <div className="form-alert">
                             <span className="alert-icon warning-icon"></span>
                             <div className="alert-content">
-                                <p>No images available. Please upload images first.</p>
-                                <a href="/admin/dashboard/images" className="alert-link">Go to Images</a>
+                                <p>{t('admin.productForm.noImage')}</p>
+                                <a href="/admin/dashboard/images" className="alert-link">{t('navigation.images')}</a>
                             </div>
                         </div>
                     )}
@@ -130,17 +132,17 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
             </div>
 
             <div className="form-section">
-                <h2 className="section-title">Mead Characteristics</h2>
+                <h2 className="section-title">{t('admin.productForm.characteristics')}</h2>
                 <div className="section-content">
                     <div className="form-row">
                         <SelectInput
                             id="product_type"
                             name="product_type"
-                            label="Mead Type"
+                            label={t('admin.productForm.productType')}
                             value={product.product_type}
                             onChange={handleChange}
                             options={[
-                                { value: '', label: 'Select mead type' },
+                                { value: '', label: t('admin.productForm.productType') },
                                 ...enums.mead_type.map((enumValue) => ({
                                     value: enumValue.value,
                                     label: enumValue.label,
@@ -152,11 +154,11 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         <SelectInput
                             id="sweetness"
                             name="sweetness"
-                            label="Sweetness"
+                            label={t('admin.productForm.sweetness')}
                             value={product.sweetness}
                             onChange={handleChange}
                             options={[
-                                { value: '', label: 'Select sweetness' },
+                                { value: '', label: t('admin.productForm.sweetness') },
                                 ...enums.sweetness.map((enumValue) => ({
                                     value: enumValue.value,
                                     label: enumValue.label,
@@ -170,11 +172,11 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         <SelectInput
                             id="turbidity"
                             name="turbidity"
-                            label="Turbidity"
+                            label={t('admin.productForm.turbidity')}
                             value={product.turbidity}
                             onChange={handleChange}
                             options={[
-                                { value: '', label: 'Select turbidity' },
+                                { value: '', label: t('admin.productForm.turbidity') },
                                 ...enums.turbidity.map((enumValue) => ({
                                     value: enumValue.value,
                                     label: enumValue.label,
@@ -186,11 +188,11 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         <SelectInput
                             id="effervescence"
                             name="effervescence"
-                            label="Effervescence"
+                            label={t('admin.productForm.effervescence')}
                             value={product.effervescence}
                             onChange={handleChange}
                             options={[
-                                { value: '', label: 'Select effervescence' },
+                                { value: '', label: t('admin.productForm.effervescence') },
                                 ...enums.effervescence.map((enumValue) => ({
                                     value: enumValue.value,
                                     label: enumValue.label,
@@ -204,11 +206,11 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         <SelectInput
                             id="acidity"
                             name="acidity"
-                            label="Acidity"
+                            label={t('admin.productForm.acidity')}
                             value={product.acidity}
                             onChange={handleChange}
                             options={[
-                                { value: '', label: 'Select acidity' },
+                                { value: '', label: t('admin.productForm.acidity') },
                                 ...enums.acidity.map((enumValue) => ({
                                     value: enumValue.value,
                                     label: enumValue.label,
@@ -220,11 +222,11 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         <SelectInput
                             id="tanins"
                             name="tanins"
-                            label="Tanins"
+                            label={t('admin.productForm.tanins')}
                             value={product.tanins}
                             onChange={handleChange}
                             options={[
-                                { value: '', label: 'Select tanins' },
+                                { value: '', label: t('admin.productForm.tanins') },
                                 ...enums.tanins.map((enumValue) => ({
                                     value: enumValue.value,
                                     label: enumValue.label,
@@ -238,11 +240,11 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         <SelectInput
                             id="body"
                             name="body"
-                            label="Body"
+                            label={t('admin.productForm.body')}
                             value={product.body}
                             onChange={handleChange}
                             options={[
-                                { value: '', label: 'Select body' },
+                                { value: '', label: t('admin.productForm.body') },
                                 ...enums.body.map((enumValue) => ({
                                     value: enumValue.value,
                                     label: enumValue.label,
@@ -256,13 +258,13 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
             </div>
 
             <div className="form-section">
-                <h2 className="section-title">Pricing & Inventory</h2>
+                <h2 className="section-title">{t('admin.productForm.pricingInventory')}</h2>
                 <div className="section-content">
                     <div className="form-row">
                         <NumberInput
                             id="abv"
                             name="abv"
-                            label="ABV (%)"
+                            label={t('admin.productForm.abv')}
                             value={product.abv}
                             onChange={handleNumericChange}
                             required
@@ -270,43 +272,43 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                             min="0"
                             max="99.9"
                             error={errors.abv}
-                            helpText="0.0 to 99.9%"
+                            helpText={t('admin.productForm.abvHelp')}
                         />
                         <NumberInput
                             id="price"
                             name="price"
-                            label="Price (€)"
+                            label={t('admin.productForm.price')}
                             value={product.price}
                             onChange={handleNumericChange}
                             required
                             step="0.01"
                             min="0"
                             error={errors.price}
-                            helpText="Price in Euros"
+                            helpText={t('admin.productForm.priceHelp')}
                         />
                     </div>
                     <div className="form-row">
                         <NumberInput
                             id="bottle_count"
                             name="bottle_count"
-                            label="Bottle Count"
+                            label={t('admin.productForm.bottleCount')}
                             value={product.bottle_count}
                             onChange={handleNumericChange}
                             required
                             min="0"
                             error={errors.bottle_count}
-                            helpText="Number of bottles in stock"
+                            helpText={t('admin.productForm.bottleCount')}
                         />
                         <NumberInput
                             id="bottle_size"
                             name="bottle_size"
-                            label="Bottle Size (ml)"
+                            label={t('admin.productForm.bottleSize')}
                             value={product.bottle_size}
                             onChange={handleNumericChange}
                             required
                             min="1"
                             error={errors.bottle_size}
-                            helpText="Volume in milliliters"
+                            helpText={t('admin.productForm.bottleSizeHelp')}
                         />
                     </div>
                 </div>
@@ -316,7 +318,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                 <button type="submit" className="button button-primary">
                     {submitText}
                 </button>
-                <a href="/admin/dashboard/products" className="button button-secondary">Cancel</a>
+                <a href="/admin/dashboard/products" className="button button-secondary">{t('admin.productForm.cancel')}</a>
             </div>
         </form>
     );

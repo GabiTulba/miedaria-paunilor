@@ -1,5 +1,6 @@
 import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import ProductForm from './ProductForm';
@@ -24,10 +25,11 @@ function AdminProductCreate() {
         bottle_count: 0,
         bottle_size: 750,
         price: 0.00,
-        image_id: '', // Use image_id instead of image_url
+        image_id: '',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const { token } = useContext(AuthContext);
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     const [availableImages, setAvailableImages] = useState<Image[]>([]);
@@ -37,7 +39,7 @@ function AdminProductCreate() {
     useEffect(() => {
         const fetchImages = async () => {
             if (!token) {
-                setImagesError('Authentication token not found. Please log in.');
+                setImagesError(t('errors.unauthorized'));
                 setImagesLoading(false);
                 return;
             }
@@ -47,27 +49,27 @@ function AdminProductCreate() {
                 const fetchedImages = await api.getImages(token);
                 setAvailableImages(fetchedImages);
             } catch (error: any) {
-                setImagesError(`Failed to fetch images: ${error.response?.data?.message || error.message}`);
+                setImagesError(t('admin.images.error'));
             } finally {
                 setImagesLoading(false);
             }
         };
         fetchImages();
-    }, [token]);
+    }, [token, t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setErrors({}); // Clear previous errors
+        setErrors({});
         if (!token) {
-            alert('Authentication token not found. Please log in.');
+            alert(t('errors.unauthorized'));
             return;
         }
         if (imagesLoading) {
-            alert('Images are still loading. Please wait.');
+            alert(t('common.loading'));
             return;
         }
         if (imagesError) {
-            alert('Error loading images. Cannot create product.');
+            alert(t('admin.images.error'));
             return;
         }
         try {

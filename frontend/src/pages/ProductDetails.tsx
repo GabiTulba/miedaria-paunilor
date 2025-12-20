@@ -1,20 +1,23 @@
 import { useEffect, useState, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ProductWithImage } from '../types'; // Import ProductWithImage
+import { useTranslation } from 'react-i18next';
+import { ProductWithImage } from '../types';
 import { api } from '../lib/api';
 import { CartContext } from '../context/CartContext';
 import { formatEnumLabel } from '../enums';
 import { getProductDetailsStockStatus, isInStock } from '../utils/stockAvailability';
+import { toFixed } from '../utils/numberUtils';
 import CollapsibleSection from '../components/CollapsibleSection';
 import './ProductDetails.css';
 
 function ProductDetails() {
     const { productId } = useParams<{ productId: string }>();
-    const [productWithImage, setProductWithImage] = useState<ProductWithImage | null>(null); // Change type here
+    const [productWithImage, setProductWithImage] = useState<ProductWithImage | null>(null);
     const [quantity, setQuantity] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { addToCart } = useContext(CartContext);
+    const { t } = useTranslation();
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -24,7 +27,7 @@ function ProductDetails() {
                 const data = await api.getProductById(productId);
                 setProductWithImage(data);
             } catch (err) {
-                setError('Failed to fetch product details.');
+                setError(t('errors.serverError'));
                 console.error(err);
             } finally {
                 setIsLoading(false);
@@ -32,20 +35,20 @@ function ProductDetails() {
         };
 
         fetchProduct();
-    }, [productId]);
+    }, [productId, t]);
 
     const handleAddToCart = () => {
-        if (productWithImage?.product) { // Access product from productWithImage
+        if (productWithImage?.product) {
             addToCart(productWithImage.product, quantity);
         }
     };
 
     if (isLoading) {
-        return <div className="loader">Loading...</div>;
+        return <div className="loader">{t('common.loading')}</div>;
     }
 
     if (error || !productWithImage) {
-        return <div className="error-message">{error || 'Product not found.'}</div>;
+        return <div className="error-message">{error || t('errors.notFound')}</div>;
     }
 
     const { product, image } = productWithImage;
@@ -53,7 +56,7 @@ function ProductDetails() {
     return (
         <div className="product-details-page">
             <div className="back-to-shop">
-                <Link to="/shop">&larr; Back to Shop</Link>
+                <Link to="/shop">&larr; {t('common.back')} {t('navigation.shop')}</Link>
             </div>
             <div className="product-details-content">
                 <div className="product-image-column">
@@ -64,58 +67,58 @@ function ProductDetails() {
                             className="product-detail-image" 
                         />
                     ) : (
-                        <div className="placeholder-image product-detail-image">No Image</div>
+                        <div className="placeholder-image product-detail-image">{t('admin.productForm.noImage')}</div>
                     )}
                 </div>
                 <div className="product-info-section">
                     <h1>{product.product_name}</h1>
-                    <p className="price-large">{product.price} €</p>
+                     <p className="price-large">{toFixed(product.price)} {t('common.euro')}</p>
                     
                     <div className="product-basic-info">
                         <div className="basic-info-item">
-                            <span className="basic-info-label">Mead Type:</span>
+                            <span className="basic-info-label">{t('product.productType')}:</span>
                             <span className="basic-info-value">{formatEnumLabel(product.product_type)}</span>
                         </div>
                         <div className="basic-info-item">
-                            <span className="basic-info-label">ABV:</span>
+                            <span className="basic-info-label">{t('product.abv')}:</span>
                             <span className="basic-info-value">{product.abv}%</span>
                         </div>
                         <div className="basic-info-item">
-                            <span className="basic-info-label">Volume:</span>
-                            <span className="basic-info-value">{product.bottle_size}ml</span>
+                            <span className="basic-info-label">{t('product.bottleSize')}:</span>
+                            <span className="basic-info-value">{product.bottle_size}{t('common.milliliters')}</span>
                         </div>
                     </div>
                     
                     <p className="product-description">{product.product_description}</p>
                     
-                    <CollapsibleSection title="Ingredients" defaultCollapsed={true}>
+                    <CollapsibleSection title={t('product.ingredients')} defaultCollapsed={true}>
                         <p className="product-ingredients">{product.ingredients}</p>
                     </CollapsibleSection>
                     
-                    <CollapsibleSection title="Details" defaultCollapsed={true}>
+                    <CollapsibleSection title={t('common.details')} defaultCollapsed={true}>
                         <div className="product-details-grid">
                             <div className="detail-item">
-                                <span className="detail-label">Sweetness:</span>
+                                <span className="detail-label">{t('product.sweetness')}:</span>
                                 <span className="detail-value">{formatEnumLabel(product.sweetness)}</span>
                             </div>
                             <div className="detail-item">
-                                <span className="detail-label">Turbidity:</span>
+                                <span className="detail-label">{t('product.turbidity')}:</span>
                                 <span className="detail-value">{formatEnumLabel(product.turbidity)}</span>
                             </div>
                             <div className="detail-item">
-                                <span className="detail-label">Effervescence:</span>
+                                <span className="detail-label">{t('product.effervescence')}:</span>
                                 <span className="detail-value">{formatEnumLabel(product.effervescence)}</span>
                             </div>
                             <div className="detail-item">
-                                <span className="detail-label">Acidity:</span>
+                                <span className="detail-label">{t('product.acidity')}:</span>
                                 <span className="detail-value">{formatEnumLabel(product.acidity)}</span>
                             </div>
                             <div className="detail-item">
-                                <span className="detail-label">Tanins:</span>
+                                <span className="detail-label">{t('product.tanins')}:</span>
                                 <span className="detail-value">{formatEnumLabel(product.tanins)}</span>
                             </div>
                             <div className="detail-item">
-                                <span className="detail-label">Body:</span>
+                                <span className="detail-label">{t('product.body')}:</span>
                                 <span className="detail-value">{formatEnumLabel(product.body)}</span>
                             </div>
                         </div>
@@ -124,9 +127,9 @@ function ProductDetails() {
                      <div className="add-to-cart-section">
                          <div className="cart-availability-info">
                              <div className="availability-info">
-                                 <span className="availability-label">Availability:</span>
+                                  <span className="availability-label">{t('common.availability')}:</span>
                                  {(() => {
-                                     const stockStatus = getProductDetailsStockStatus(product.bottle_count);
+                                     const stockStatus = getProductDetailsStockStatus(product.bottle_count, t);
                                      return (
                                          <span className={`availability-details ${stockStatus.cssClass}`}>
                                              {stockStatus.description}
@@ -145,7 +148,7 @@ function ProductDetails() {
                                      onClick={handleAddToCart}
                                      disabled={!isInStock(product.bottle_count)}
                                  >
-                                     {isInStock(product.bottle_count) ? 'Add to Cart' : 'Out of Stock'}
+                                     {isInStock(product.bottle_count) ? t('product.addToCart') : t('common.outOfStock')}
                                  </button>
                              </div>
                          </div>

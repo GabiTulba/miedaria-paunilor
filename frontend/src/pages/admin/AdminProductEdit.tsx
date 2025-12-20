@@ -1,17 +1,19 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
-import { Product, Image, ProductWithImage } from '../../types'; // Import ProductWithImage
+import { Product, Image, ProductWithImage } from '../../types';
 import ProductForm from './ProductForm';
 import { errorMapping, errorMessageMapping } from './errorMappings';
 
 function AdminProductEdit() {
     const { productId } = useParams<{ productId: string }>();
-    const [productWithImage, setProductWithImage] = useState<ProductWithImage | null>(null); // Change state to ProductWithImage
+    const [productWithImage, setProductWithImage] = useState<ProductWithImage | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const { token } = useContext(AuthContext);
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const [availableImages, setAvailableImages] = useState<Image[]>([]);
     const [imagesLoading, setImagesLoading] = useState<boolean>(true);
@@ -21,7 +23,7 @@ function AdminProductEdit() {
     useEffect(() => {
         const fetchAllData = async () => {
             if (!token) {
-                setImagesError('Authentication token not found. Please log in.');
+                setImagesError(t('errors.unauthorized'));
                 setImagesLoading(false);
                 setProductLoading(false);
                 return;
@@ -95,7 +97,7 @@ function AdminProductEdit() {
         }
     };
 	
-    if (productLoading || imagesLoading) return <div className="loader">Loading...</div>;
+    if (productLoading || imagesLoading) return <div className="loader">{t('common.loading')}</div>;
     if (imagesError) return <div className="error-message">{imagesError}</div>;
     if (!productWithImage) return <div className="error-message">Product not found.</div>;
 

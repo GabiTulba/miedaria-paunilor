@@ -1,15 +1,18 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ProductWithImage } from '../types';
 import { formatEnumLabel } from '../enums';
 import { getShopStockStatus } from '../utils/stockAvailability';
-import './ProductCard.css'; // Assuming a CSS file for styling the card
+import { toFixed } from '../utils/numberUtils';
+import './ProductCard.css';
 
 interface ProductCardProps {
   productWithImage: ProductWithImage;
 }
 
 function ProductCard({ productWithImage }: ProductCardProps) {
-  const stockStatus = getShopStockStatus(productWithImage.product.bottle_count);
+  const { t } = useTranslation();
+  const stockStatus = getShopStockStatus(productWithImage.product.bottle_count, t);
   
   return (
     <div className="product-card">
@@ -23,7 +26,7 @@ function ProductCard({ productWithImage }: ProductCardProps) {
                 className="product-image" 
               />
             ) : (
-              <div className="placeholder-image">No Image</div>
+              <div className="placeholder-image">{t('admin.productForm.noImage')}</div>
             )}
           </div>
            <div className="product-card-content">
@@ -35,12 +38,12 @@ function ProductCard({ productWithImage }: ProductCardProps) {
                     <span className="sweetness">{formatEnumLabel(productWithImage.product.sweetness)}</span>
                   </div>
                   <div className="product-details-line">
-                    <span className="abv">{productWithImage.product.abv}% ABV</span>
+                    <span className="abv">{productWithImage.product.abv}% {t('product.abv')}</span>
                     <span className="separator">|</span>
-                    <span className="volume">{productWithImage.product.bottle_size}ml</span>
+                    <span className="volume">{productWithImage.product.bottle_size}{t('common.milliliters')}</span>
                   </div>
                 </div>
-             <p className="price">{productWithImage.product.price} €</p>
+              <p className="price">{toFixed(productWithImage.product.price)} {t('common.euro')}</p>
              <p className={`availability ${stockStatus.cssClass}`}>{stockStatus.description}</p>
            </div>
         </div>

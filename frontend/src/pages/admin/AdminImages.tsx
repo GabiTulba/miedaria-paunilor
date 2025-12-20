@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
-import { Image } from '../../types'; // Assuming you have an Image type
-import './Admin.css'; // Assuming common admin styles
+import { Image } from '../../types';
+import './Admin.css';
 
 const AdminImages: React.FC = () => {
   const { token } = useAuth();
+  const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -19,7 +21,7 @@ const AdminImages: React.FC = () => {
 
   const fetchImages = async () => {
     if (!token) {
-      setImagesError('Authentication token not found. Please log in.');
+      setImagesError(t('errors.unauthorized'));
       setImagesLoading(false);
       return;
     }
@@ -29,7 +31,7 @@ const AdminImages: React.FC = () => {
       const fetchedImages = await api.getImages(token);
       setImages(fetchedImages);
     } catch (error: any) {
-      setImagesError(`Failed to fetch images: ${error.response?.data?.message || error.message}`);
+      setImagesError(t('admin.images.error'));
     } finally {
       setImagesLoading(false);
     }
@@ -50,16 +52,16 @@ const AdminImages: React.FC = () => {
 
   const handleFileUpload = async () => {
     if (!selectedFile) {
-      setMessage('Please select a file first.');
+      setMessage(t('admin.images.upload'));
       return;
     }
     if (!token) {
-      setMessage('Authentication token not found. Please log in.');
+      setMessage(t('errors.unauthorized'));
       return;
     }
 
     setLoading(true);
-    setMessage('Uploading...');
+    setMessage(t('admin.images.upload'));
 
     const formData = new FormData();
     formData.append('image', selectedFile);
@@ -67,10 +69,10 @@ const AdminImages: React.FC = () => {
     try {
       const newImage = await api.uploadImage(formData, token);
       setImages((prevImages) => [...prevImages, newImage]);
-      setMessage(`Upload successful: ${newImage.file_name}`);
+      setMessage(`${t('common.success')}: ${newImage.file_name}`);
       setSelectedFile(null);
     } catch (error: any) {
-      setMessage(`Upload failed: ${error.response?.data?.message || error.message}`);
+      setMessage(`${t('common.error')}: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
     }
@@ -88,48 +90,48 @@ const AdminImages: React.FC = () => {
 
   const handleSaveRename = async (imageId: string) => {
     if (!newFileName.trim()) {
-      setMessage('File name cannot be empty.');
+      setMessage(t('admin.images.rename'));
       return;
     }
     if (!token) {
-      setMessage('Authentication token not found. Please log in.');
+      setMessage(t('errors.unauthorized'));
       return;
     }
     setRenameLoading(true);
-    setMessage('Renaming...');
+    setMessage(t('admin.images.rename'));
     try {
       const updatedImage = await api.updateImage(imageId, newFileName, token);
       setImages((prevImages) =>
         prevImages.map((img) => (img.id === imageId ? updatedImage : img))
       );
-      setMessage(`Image renamed to: ${updatedImage.file_name}`);
+      setMessage(`${t('common.success')}: ${updatedImage.file_name}`);
       handleCancelRename();
     } catch (error: any) {
-      setMessage(`Rename failed: ${error.response?.data?.message || error.message}`);
+      setMessage(`${t('common.error')}: ${error.response?.data?.message || error.message}`);
     } finally {
       setRenameLoading(false);
     }
   };
 
   const handleDeleteImage = async (imageId: string) => {
-    if (!window.confirm('Are you sure you want to delete this image?')) {
+    if (!window.confirm(t('admin.images.deleteConfirm'))) {
       return;
     }
     if (!token) {
-      setMessage('Authentication token not found. Please log in.');
+      setMessage(t('errors.unauthorized'));
       return;
     }
     setDeleteLoading(imageId);
-    setMessage('Deleting...');
+    setMessage(t('admin.images.delete'));
     try {
       await api.deleteImage(imageId, token);
       setImages((prevImages) => prevImages.filter((img) => img.id !== imageId));
-      setMessage('Image deleted successfully.');
+      setMessage(t('common.success'));
     } catch (error: any) {
       if (error.response && error.response.status === 409) {
-        setMessage('Delete failed: This image is currently in use by one or more products.');
+        setMessage(t('admin.images.deleteError'));
       } else {
-        setMessage(`Delete failed: ${error.response?.data?.message || error.message}`);
+        setMessage(`${t('common.error')}: ${error.response?.data?.message || error.message}`);
       }
     } finally {
       setDeleteLoading(null);
@@ -140,22 +142,22 @@ const AdminImages: React.FC = () => {
     <div className="admin-images-container">
       <div className="page-header">
         <div>
-          <h1>Manage Product Images</h1>
-          <p className="page-subtitle">Upload and manage images for your products</p>
+          <h1>{t('admin.images.title')}</h1>
+          <p className="page-subtitle">{t('admin.images.subtitle')}</p>
         </div>
       </div>
 
       <div className="images-grid">
         <div className="upload-section card">
           <div className="upload-header">
-            <h2>Upload New Image</h2>
+            <h2>{t('admin.images.upload')}</h2>
             <div className="upload-icon upload-icon-symbol"></div>
           </div>
           <div className="upload-area" onClick={() => document.getElementById('file-input')?.click()}>
             <div className="upload-placeholder">
               <div className="upload-placeholder-icon image-icon"></div>
-              <p>Click to select or drag and drop</p>
-              <p className="upload-hint">Supports JPG, PNG, GIF up to 5MB</p>
+              <p>{t('admin.images.dragDrop')}</p>
+              <p className="upload-hint">{t('admin.images.supportedFormats')}, {t('admin.images.maxSize')}</p>
             </div>
             <input 
               id="file-input"
@@ -178,10 +180,10 @@ const AdminImages: React.FC = () => {
             disabled={!selectedFile || loading}
             className="button button-primary upload-button"
           >
-            {loading ? 'Uploading...' : 'Upload Image'}
+            {loading ? t('admin.images.upload') : t('admin.images.upload')}
           </button>
           {message && (
-            <div className={`message ${message.includes('successful') ? 'message-success' : 'message-error'}`}>
+            <div className={`message ${message.includes(t('common.success')) ? 'message-success' : 'message-error'}`}>
               {message}
             </div>
           )}
@@ -189,12 +191,12 @@ const AdminImages: React.FC = () => {
 
         <div className="images-section card">
           <div className="section-header">
-            <h2>Existing Images</h2>
+            <h2>{t('admin.images.title')}</h2>
             <div className="section-info">
-              <span className="image-count">{images.length} images</span>
+              <span className="image-count">{images.length} {t('admin.images.images')}</span>
               {images.length > 0 && (
                 <span className="total-size">
-                  Total: {(images.reduce((sum, img) => sum + img.file_size, 0) / (1024 * 1024)).toFixed(2)} MB
+                  {t('common.total')}: {(images.reduce((sum, img) => sum + img.file_size, 0) / (1024 * 1024)).toFixed(2)} MB
                 </span>
               )}
             </div>
@@ -203,19 +205,19 @@ const AdminImages: React.FC = () => {
           {imagesLoading ? (
             <div className="loading-state">
               <div className="loading-spinner"></div>
-              <p>Loading images...</p>
+              <p>{t('admin.images.loading')}</p>
             </div>
           ) : imagesError ? (
             <div className="error-state">
               <div className="error-icon warning-icon"></div>
               <p className="error-message">{imagesError}</p>
-              <button onClick={fetchImages} className="button button-secondary">Retry</button>
+              <button onClick={fetchImages} className="button button-secondary">{t('admin.products.retry')}</button>
             </div>
           ) : images.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon image-icon"></div>
-              <h3>No images uploaded yet</h3>
-              <p>Upload your first product image to get started</p>
+              <h3>{t('admin.images.noImages')}</h3>
+              <p>{t('admin.images.noImagesDescription')}</p>
             </div>
           ) : (
             <div className="images-grid-view">
@@ -243,14 +245,14 @@ const AdminImages: React.FC = () => {
                             disabled={renameLoading}
                             className="button button-small button-success"
                           >
-                            Save
+                            {t('common.save')}
                           </button>
                           <button 
                             onClick={handleCancelRename} 
                             disabled={renameLoading}
                             className="button button-small button-secondary"
                           >
-                            Cancel
+                            {t('common.cancel')}
                           </button>
                         </div>
                       </div>
@@ -259,7 +261,7 @@ const AdminImages: React.FC = () => {
                   <div className="image-info">
                     <div className="image-name">
                       {renamingImageId === image.id ? (
-                        <div className="renaming-indicator">Renaming...</div>
+                        <div className="renaming-indicator">{t('admin.images.rename')}</div>
                       ) : (
                         <>
                           <span className="file-name">{image.file_name}</span>
@@ -280,14 +282,14 @@ const AdminImages: React.FC = () => {
                           className="button button-small button-secondary"
                           disabled={deleteLoading === image.id}
                         >
-                          Rename
+                          {t('admin.images.rename')}
                         </button>
                         <button
                           onClick={() => handleDeleteImage(image.id)}
                           disabled={deleteLoading === image.id}
                           className="button button-small button-danger"
                         >
-                          {deleteLoading === image.id ? 'Deleting...' : 'Delete'}
+                          {deleteLoading === image.id ? t('admin.images.delete') : t('admin.images.delete')}
                         </button>
                       </>
                     )}

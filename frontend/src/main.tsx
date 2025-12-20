@@ -2,6 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 
+// Import i18n configuration
+import './i18n/config';
+
 import App from './App';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -15,10 +18,9 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminProductEdit from './pages/admin/AdminProductEdit';
 import AdminProductCreate from './pages/admin/AdminProductCreate';
-import AdminImages from './pages/admin/AdminImages'; // New import
+import AdminImages from './pages/admin/AdminImages';
 
 import ProtectedRoute from './components/ProtectedRoute';
-// ... other imports
 
 const router = createBrowserRouter([
   {

@@ -185,7 +185,7 @@ The backend acts as a middle-man between the frontend and the database. It is bu
 *   [uuid] (v1.8.0) - For UUID generation and handling, with the `v4`, `fast-rng`, and `serde` features enabled.
 *   [chrono] (v0.4.38) - For date and time handling, with the `serde` feature enabled.
 *   [mime_guess] (v2.0) - For guessing MIME types based on file extensions.
-*   [rust_decimal] (v1.39) - For precise decimal arithmetic with database support.
+ *   [rust_decimal] (v1.39) - For precise decimal arithmetic with database support, with the `serde-with-float` feature enabled for JSON serialization as numbers.
 *   [diesel-derive-enum] (v2.1.0) - For enum support in Diesel ORM.
 
 The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `auth`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `models`, `product_crud`, `schema`, `user_crud`, and `utils`.
@@ -243,6 +243,7 @@ The frontend is written in `Vite + React + TypeScript`.
 *   `react-router-dom` is used for client-side routing.
 *   `Nginx` serves the built static assets in the production Docker environment and proxies image requests (`/images/UUID`) to the backend.
 *   `React Context` is used for state management, specifically for user authentication (JWTs) and shopping cart functionality.
+*   `react-i18next` and `i18next` provide internationalization support for multiple languages.
 
 ### CSS Architecture
 The styling is managed through a modular and organized CSS architecture:
@@ -273,7 +274,8 @@ The frontend `Product` and `ProductWithImage` types include all product attribut
 *   **Reusable Components:** The `ProductCard` component provides a consistent UI structure for displaying individual product cards across different pages with a clean two-line product summary layout (mead type and sweetness on the first line, ABV and volume on the second line with aligned pipe separators).
 *   **Modular Form Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) centralize input rendering, labeling, and error display logic with support for help text and placeholders.
 *   **Environment-Based Configuration:** The frontend uses `import.meta.env.VITE_API_BASE_URL` for API configuration, centralizing settings through environment variables. TypeScript environment type definitions are provided in `src/vite-env.d.ts`.
-*   **Stock Availability Utilities:** The `stockAvailability.ts` module provides utility functions (`getShopStockStatus`, `getProductDetailsStockStatus`, `isInStock`) for consistent stock status display across the application with appropriate CSS classes and descriptions.
+ *   **Stock Availability Utilities:** The `stockAvailability.ts` module provides utility functions (`getShopStockStatus`, `getProductDetailsStockStatus`, `isInStock`) for consistent stock status display across the application with appropriate CSS classes and descriptions.
+ *   **Number Utilities:** The `numberUtils.ts` module provides utility functions (`toNumber`, `toFixed`) for safely converting between string and number representations of decimal values, ensuring consistent handling of product prices and ABV values across the application.
 *   **Enhanced Admin UI:** The admin interface features a modern, intuitive design with:
     *   **Dashboard:** Statistics cards showing product counts, inventory value, and low stock alerts
     *   **Sidebar Navigation:** Visual hierarchy with icons and active state indicators
@@ -285,6 +287,11 @@ The frontend `Product` and `ProductWithImage` types include all product attribut
     *   **Empty States:** Helpful guidance when no data is available
     *   **Responsive Design:** Mobile-optimized layouts with adaptive navigation
     *   **Simplified Login:** Clean, minimal admin login page with focused authentication interface
+ *   **Internationalization (i18n):** The application supports multiple languages (English and Romanian) using `react-i18next` with:
+    *   **Language Switcher:** UI component in the header for switching between languages with flag emojis (🇬🇧/🇷🇴) and language codes
+    *   **Translation Files:** JSON-based translation files for all UI text
+    *   **Automatic Detection:** Browser language detection with localStorage persistence
+    *   **Comprehensive Coverage:** All UI text translated including navigation, forms, buttons, error messages, and product descriptions
 
 ### Shopping Cart
 The application includes a fully functional shopping cart system with the following features:

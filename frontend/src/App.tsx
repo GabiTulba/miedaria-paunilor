@@ -1,15 +1,21 @@
 import { Outlet, Link, NavLink } from "react-router-dom";
 import { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CartContext } from './context/CartContext';
+import LanguageSwitcher from './components/LanguageSwitcher';
 import './App.css';
+import './components/LanguageSwitcher.css';
 
 function App() {
   const { itemCount } = useContext(CartContext);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { t } = useTranslation();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const currentYear = new Date().getFullYear();
 
   return (
     <>
@@ -17,12 +23,12 @@ function App() {
         <div className="container">
           <Link to="/" className="logo">Miedăria Păunilor</Link>
           <nav className={`main-nav ${isMobileMenuOpen ? 'active' : ''}`}>
-            <NavLink to="/home" onClick={toggleMobileMenu}>Home</NavLink>
-            <NavLink to="/shop" onClick={toggleMobileMenu}>Shop</NavLink>
-            <NavLink to="/about-us" onClick={toggleMobileMenu}>About Us</NavLink>
-            <NavLink to="/contact" onClick={toggleMobileMenu}>Contact</NavLink>
-            <NavLink to="/cart" onClick={toggleMobileMenu}>Cart {itemCount > 0 && `(${itemCount})`}</NavLink>
-
+            <NavLink to="/home" onClick={toggleMobileMenu}>{t('navigation.home')}</NavLink>
+            <NavLink to="/shop" onClick={toggleMobileMenu}>{t('navigation.shop')}</NavLink>
+            <NavLink to="/about-us" onClick={toggleMobileMenu}>{t('navigation.aboutUs')}</NavLink>
+            <NavLink to="/contact" onClick={toggleMobileMenu}>{t('navigation.contact')}</NavLink>
+            <NavLink to="/cart" onClick={toggleMobileMenu}>{t('navigation.cart')} {itemCount > 0 && `(${itemCount})`}</NavLink>
+            <LanguageSwitcher />
           </nav>
           <button className="hamburger" onClick={toggleMobileMenu}>
             <span className="bar"></span>
@@ -36,7 +42,7 @@ function App() {
       </main>
       <footer className="footer">
         <div className="container">
-          <p>&copy; 2025 Miedăria Păunilor. All rights reserved.</p>
+          <p>{t('footer.copyright', { year: currentYear })}</p>
         </div>
       </footer>
     </>

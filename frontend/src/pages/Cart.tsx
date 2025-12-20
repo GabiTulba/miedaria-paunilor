@@ -1,25 +1,28 @@
 import { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
+import { toFixed, toNumber } from '../utils/numberUtils';
 import './Cart.css';
 
 function Cart() {
     const { cartItems, removeFromCart, updateQuantity, clearCart } = useContext(CartContext);
+    const { t } = useTranslation();
 
     const getTotalPrice = () => {
-        return cartItems.reduce((total, item) => total + parseFloat(item.price) * item.quantity, 0).toFixed(2);
+        return cartItems.reduce((total, item) => total + toNumber(item.price) * item.quantity, 0).toFixed(2);
     };
 
     return (
         <div className="cart-page">
             <header className="cart-header">
-                <h1>Your Shopping Cart</h1>
+                <h1>{t('cart.title')}</h1>
             </header>
 
             {cartItems.length === 0 ? (
                 <div className="empty-cart">
-                    <p>Your cart is empty.</p>
-                    <Link to="/shop" className="button">Continue Shopping</Link>
+                    <p>{t('cart.empty')}</p>
+                    <Link to="/shop" className="button">{t('cart.continueShopping')}</Link>
                 </div>
             ) : (
                 <div className="cart-content">
@@ -28,14 +31,14 @@ function Cart() {
                             <div key={item.product_id} className="cart-item">
                                 <div className="cart-item-details">
                                     <h3>{item.product_name}</h3>
-                                    <p className="cart-item-price">{item.price} €</p>
+                                     <p className="cart-item-price">{toFixed(item.price)} €</p>
                                     <div className="quantity-selector-cart">
                                         <button onClick={() => updateQuantity(item.product_id, item.quantity - 1)}>-</button>
                                         <span>{item.quantity}</span>
                                         <button onClick={() => updateQuantity(item.product_id, item.quantity + 1)}>+</button>
                                     </div>
                                     <p className="cart-item-subtotal">
-                                        Subtotal: {(parseFloat(item.price) * item.quantity).toFixed(2)} €
+                                         {t('cart.subtotal')}: {toFixed(toNumber(item.price) * item.quantity)} €
                                     </p>
                                 </div>
                                 <button className="remove-item-btn" onClick={() => removeFromCart(item.product_id)}>
@@ -46,14 +49,14 @@ function Cart() {
                     </div>
 
                     <aside className="cart-summary">
-                        <h3>Order Summary</h3>
+                        <h3>{t('cart.orderSummary')}</h3>
                         <div className="summary-total">
-                            <span>Total</span>
+                            <span>{t('cart.total')}</span>
                             <span>{getTotalPrice()} €</span>
                         </div>
-                        <button className="button checkout-btn">Proceed to Checkout</button>
+                        <button className="button checkout-btn">{t('cart.proceedToCheckout')}</button>
                         <button className="button-secondary clear-cart-btn" onClick={clearCart}>
-                            Clear Cart
+                            {t('cart.clearCart')}
                         </button>
                     </aside>
                 </div>
