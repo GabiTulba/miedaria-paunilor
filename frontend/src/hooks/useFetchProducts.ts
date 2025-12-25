@@ -9,7 +9,20 @@ interface UseFetchProductsResult {
   refetch: () => void; // Function to manually refetch products
 }
 
-export const useFetchProducts = (orderBy: string, inStock: boolean, orderDirection: string): UseFetchProductsResult => {
+
+
+export const useFetchProducts = (
+  orderBy: string,
+  inStock: boolean,
+  orderDirection: string,
+  productType: string,
+  sweetness: string,
+  turbidity: string,
+  effervescence: string,
+  acidity: string,
+  tanins: string,
+  body: string
+): UseFetchProductsResult => {
   const [products, setProducts] = useState<ProductWithImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +48,27 @@ export const useFetchProducts = (orderBy: string, inStock: boolean, orderDirecti
         if (orderBy && orderDirection) { // Only append order_direction if orderBy is also present
           params.append('order_direction', orderDirection);
         }
+        if (productType) {
+          params.append('product_type', productType);
+        }
+        if (sweetness) {
+          params.append('sweetness', sweetness);
+        }
+        if (turbidity) {
+          params.append('turbidity', turbidity);
+        }
+        if (effervescence) {
+          params.append('effervescence', effervescence);
+        }
+        if (acidity) {
+          params.append('acidity', acidity);
+        }
+        if (tanins) {
+          params.append('tanins', tanins);
+        }
+        if (body) {
+          params.append('body', body);
+        }
         if (params.toString()) {
           url = `${url}?${params.toString()}`;
         }
@@ -50,7 +84,7 @@ export const useFetchProducts = (orderBy: string, inStock: boolean, orderDirecti
     };
 
     fetchProducts();
-  }, [fetchTrigger, orderBy, inStock, orderDirection]); // Dependency on fetchTrigger for manual refetch
+  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tanins, body]); // Dependency on fetchTrigger for manual refetch
 
   return { products, isLoading, error, refetch };
 };

@@ -161,7 +161,22 @@
     "price": "Price",
     "volume": "Volume",
     "noProducts": "No products found",
-    "loadingProducts": "Loading products..."
+    "loadingProducts": "Loading products...",
+    "productType": "Product Type",
+    "allTypes": "All Types",
+    "sweetness": "Sweetness",
+    "allSweetness": "All Sweetness",
+    "turbidity": "Turbidity",
+    "allTurbidity": "All Turbidity",
+    "effervescence": "Effervescence",
+    "allEffervescence": "All Effervescence",
+    "acidity": "Acidity",
+    "allAcidity": "All Acidity",
+    "tanins": "Tanins",
+    "allTanins": "All Tanins",
+    "body": "Body",
+    "allBody": "All Body",
+    "clearFilters": "Clear All Filters"
   },
   "product": {
     "addToCart": "Add to Cart",

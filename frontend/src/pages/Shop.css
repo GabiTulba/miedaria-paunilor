@@ -29,18 +29,21 @@
 
 .filters-sidebar {
     background-color: var(--white-color);
-    padding: 20px;
+    padding: 24px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     height: fit-content;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .filters-sidebar h3 {
     margin-top: 0;
     font-size: 1.5rem;
     border-bottom: 2px solid var(--secondary-color);
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+    color: var(--primary-color);
+    font-family: var(--font-heading);
 }
 
 .filter-group {
@@ -50,6 +53,137 @@
 .filter-group h4 {
     margin-bottom: 0.8rem;
     font-size: 1.1rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    accent-color: var(--accent-color);
+}
+
+.checkbox-group input[type="checkbox"]:hover {
+    border-color: var(--primary-color);
+}
+
+.checkbox-group input[type="checkbox"]:checked {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.checkbox-group input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.2);
+}
+
+.checkbox-group label {
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text-color);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.clear-filters-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background-color 0.2s;
+}
+
+.clear-filters-btn:hover {
+    background-color: var(--primary-color);
+}
+
+/* Enhanced dropdown styles for better UI integration */
+.filter-group .form-group {
+    margin-bottom: 0;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+
+.filter-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--white-color);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 36px;
+}
+
+.filter-group select:hover {
+    border-color: var(--primary-color);
+    background-color: #f8fafc;
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
+}
+
+.filter-group select option {
+    padding: 8px;
+    background-color: var(--white-color);
+    color: var(--text-color);
+}
+
+.filter-group select option:checked {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.filter-group select option:hover {
+    background-color: #f0f7ff;
+}
+
+/* Help text styling */
+.filter-group .help-text {
+    margin: 6px 0 0 0;
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* Error message styling */
+.filter-group .error-message {
+    margin: 6px 0 0 0;
+    font-size: 0.85rem;
+    color: var(--error-color);
+    line-height: 1.4;
 }
 
 .product-display {
@@ -82,5 +216,15 @@
 @media (max-width: 768px) {
     .shop-header h1 {
         font-size: 2.5rem;
+    }
+    
+    .filter-group select {
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    .clear-filters-btn {
+        padding: 12px;
+        font-size: 1rem;
     }
 }

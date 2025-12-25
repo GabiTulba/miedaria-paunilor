@@ -161,7 +161,22 @@
     "price": "Preț",
     "volume": "Volum",
     "noProducts": "Nu s-au găsit produse",
-    "loadingProducts": "Se încarcă produsele..."
+    "loadingProducts": "Se încarcă produsele...",
+    "productType": "Tip Produs",
+    "allTypes": "Toate Tipurile",
+    "sweetness": "Dulceață",
+    "allSweetness": "Toate Nivelurile",
+    "turbidity": "Turbiditate",
+    "allTurbidity": "Toate Nivelurile",
+    "effervescence": "Efervescență",
+    "allEffervescence": "Toate Nivelurile",
+    "acidity": "Aciditate",
+    "allAcidity": "Toate Nivelurile",
+    "tanins": "Tanini",
+    "allTanins": "Toate Nivelurile",
+    "body": "Corp",
+    "allBody": "Toate Nivelurile",
+    "clearFilters": "Șterge Toate Filtrele"
   },
   "product": {
     "addToCart": "Adaugă în Coș",

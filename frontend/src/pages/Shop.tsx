@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFetchProducts } from '../hooks/useFetchProducts';
+import { useFetchEnums } from '../hooks/useFetchEnums';
 import ProductCard from '../components/ProductCard';
 import SelectInput from '../components/forms/SelectInput';
 import './Shop.css';
@@ -9,15 +10,34 @@ function Shop() {
     const [orderBy, setOrderBy] = useState<string>('');
     const [orderDirection, setOrderDirection] = useState<string>('asc');
     const [inStock, setInStock] = useState<boolean>(false);
+    const [productType, setProductType] = useState<string>('');
+    const [sweetness, setSweetness] = useState<string>('');
+    const [turbidity, setTurbidity] = useState<string>('');
+    const [effervescence, setEffervescence] = useState<string>('');
+    const [acidity, setAcidity] = useState<string>('');
+    const [tanins, setTanins] = useState<string>('');
+    const [body, setBody] = useState<string>('');
     const { t } = useTranslation();
 
-    const { products, isLoading, error, refetch } = useFetchProducts(orderBy, inStock, orderDirection);
+    const { enums, loading: enumsLoading } = useFetchEnums();
+    const { products, isLoading, error, refetch } = useFetchProducts(
+        orderBy, 
+        inStock, 
+        orderDirection,
+        productType,
+        sweetness,
+        turbidity,
+        effervescence,
+        acidity,
+        tanins,
+        body
+    );
 
     useEffect(() => {
         refetch();
-    }, [orderBy, inStock, orderDirection, refetch]);
+    }, [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tanins, body, refetch]);
 
-    if (isLoading) {
+    if (isLoading || enumsLoading) {
         return <div className="loader">{t('common.loading')}</div>;
     }
 
@@ -67,7 +87,7 @@ function Shop() {
                         </div>
                     )}
 
-                    <div className="filter-group checkbox-group">
+                     <div className="filter-group checkbox-group">
                         <input
                             type="checkbox"
                             id="inStock"
@@ -76,6 +96,149 @@ function Shop() {
                         />
                         <label htmlFor="inStock">{t('shop.inStockOnly')}</label>
                     </div>
+
+                    <div className="filter-group">
+                        <button 
+                            className="clear-filters-btn"
+                            onClick={() => {
+                                setOrderBy('');
+                                setOrderDirection('asc');
+                                setInStock(false);
+                                setProductType('');
+                                setSweetness('');
+                                setTurbidity('');
+                                setEffervescence('');
+                                setAcidity('');
+                                setTanins('');
+                                setBody('');
+                            }}
+                        >
+                            {t('shop.clearFilters')}
+                        </button>
+                    </div>
+
+                    {enums && (
+                        <>
+                            <div className="filter-group">
+                                <SelectInput
+                                    id="productType"
+                                    label={t('shop.productType')}
+                                    name="productType"
+                                    value={productType}
+                                    onChange={(e) => setProductType(e.target.value)}
+                                    options={[
+                                        { value: '', label: t('shop.allTypes') },
+                                        ...enums.mead_type.map(enumValue => ({
+                                            value: enumValue.value,
+                                            label: t(`enums.meadType.${enumValue.value}`)
+                                        }))
+                                    ]}
+                                />
+                            </div>
+
+                            <div className="filter-group">
+                                <SelectInput
+                                    id="sweetness"
+                                    label={t('shop.sweetness')}
+                                    name="sweetness"
+                                    value={sweetness}
+                                    onChange={(e) => setSweetness(e.target.value)}
+                                    options={[
+                                        { value: '', label: t('shop.allSweetness') },
+                                        ...enums.sweetness.map(enumValue => ({
+                                            value: enumValue.value,
+                                            label: t(`enums.sweetness.${enumValue.value}`)
+                                        }))
+                                    ]}
+                                />
+                            </div>
+
+                            <div className="filter-group">
+                                <SelectInput
+                                    id="turbidity"
+                                    label={t('shop.turbidity')}
+                                    name="turbidity"
+                                    value={turbidity}
+                                    onChange={(e) => setTurbidity(e.target.value)}
+                                    options={[
+                                        { value: '', label: t('shop.allTurbidity') },
+                                        ...enums.turbidity.map(enumValue => ({
+                                            value: enumValue.value,
+                                            label: t(`enums.turbidity.${enumValue.value}`)
+                                        }))
+                                    ]}
+                                />
+                            </div>
+
+                            <div className="filter-group">
+                                <SelectInput
+                                    id="effervescence"
+                                    label={t('shop.effervescence')}
+                                    name="effervescence"
+                                    value={effervescence}
+                                    onChange={(e) => setEffervescence(e.target.value)}
+                                    options={[
+                                        { value: '', label: t('shop.allEffervescence') },
+                                        ...enums.effervescence.map(enumValue => ({
+                                            value: enumValue.value,
+                                            label: t(`enums.effervescence.${enumValue.value}`)
+                                        }))
+                                    ]}
+                                />
+                            </div>
+
+                            <div className="filter-group">
+                                <SelectInput
+                                    id="acidity"
+                                    label={t('shop.acidity')}
+                                    name="acidity"
+                                    value={acidity}
+                                    onChange={(e) => setAcidity(e.target.value)}
+                                    options={[
+                                        { value: '', label: t('shop.allAcidity') },
+                                        ...enums.acidity.map(enumValue => ({
+                                            value: enumValue.value,
+                                            label: t(`enums.acidity.${enumValue.value}`)
+                                        }))
+                                    ]}
+                                />
+                            </div>
+
+                            <div className="filter-group">
+                                <SelectInput
+                                    id="tanins"
+                                    label={t('shop.tanins')}
+                                    name="tanins"
+                                    value={tanins}
+                                    onChange={(e) => setTanins(e.target.value)}
+                                    options={[
+                                        { value: '', label: t('shop.allTanins') },
+                                        ...enums.tanins.map(enumValue => ({
+                                            value: enumValue.value,
+                                            label: t(`enums.tanins.${enumValue.value}`)
+                                        }))
+                                    ]}
+                                />
+                            </div>
+
+                            <div className="filter-group">
+                                <SelectInput
+                                    id="body"
+                                    label={t('shop.body')}
+                                    name="body"
+                                    value={body}
+                                    onChange={(e) => setBody(e.target.value)}
+                                    options={[
+                                        { value: '', label: t('shop.allBody') },
+                                        ...enums.body.map(enumValue => ({
+                                            value: enumValue.value,
+                                            label: t(`enums.body.${enumValue.value}`)
+                                        }))
+                                    ]}
+                                />
+                            </div>
+                        </>
+                    )}
                 </aside>
 
                 <main className="product-display">

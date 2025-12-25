@@ -283,6 +283,13 @@ pub fn get_all_products(
     order_by: Option<&str>,
     in_stock: Option<bool>,
     order_direction: Option<&str>,
+    product_type_filter: Option<&str>,
+    sweetness_filter: Option<&str>,
+    turbidity_filter: Option<&str>,
+    effervescence_filter: Option<&str>,
+    acidity_filter: Option<&str>,
+    tanins_filter: Option<&str>,
+    body_filter: Option<&str>,
 ) -> QueryResult<Vec<ProductWithImage>> {
     use crate::schema::images::dsl::images;
     use crate::schema::products::dsl::*;
@@ -292,6 +299,34 @@ pub fn get_all_products(
 
     if let Some(true) = in_stock {
         query = query.filter(bottle_count.gt(0));
+    }
+
+    if let Some(filter_value) = product_type_filter {
+        query = query.filter(product_type.eq(filter_value));
+    }
+
+    if let Some(filter_value) = sweetness_filter {
+        query = query.filter(sweetness.eq(filter_value));
+    }
+
+    if let Some(filter_value) = turbidity_filter {
+        query = query.filter(turbidity.eq(filter_value));
+    }
+
+    if let Some(filter_value) = effervescence_filter {
+        query = query.filter(effervescence.eq(filter_value));
+    }
+
+    if let Some(filter_value) = acidity_filter {
+        query = query.filter(acidity.eq(filter_value));
+    }
+
+    if let Some(filter_value) = tanins_filter {
+        query = query.filter(tanins.eq(filter_value));
+    }
+
+    if let Some(filter_value) = body_filter {
+        query = query.filter(body.eq(filter_value));
     }
 
     if let Some(order_by_col) = order_by {

@@ -258,6 +258,17 @@ Diesel is used to interact with the database, dealing with:
         *   Numeric validation (ABV range 0.0-99.9, bottle count non-negative, bottle size positive, price validation)
         *   Precision validation (ABV with 1 decimal place, price with 2 decimal places)
     *   Returning specific error types for different validation failures.
+    *   **Enhanced Product Filtering:** The `/api/products` GET endpoint supports comprehensive filtering by all product attributes including:
+        *   `product_type` - Filter by mead type (hidromel, melomel, metheglin, etc.)
+        *   `sweetness` - Filter by sweetness level (bone-dry, dry, semi-dry, etc.)
+        *   `turbidity` - Filter by clarity level (crystalline, hazy, cloudy)
+        *   `effervescence` - Filter by carbonation level (flat, perlant, sparkling)
+        *   `acidity` - Filter by acidity level (mild, moderate, strong)
+        *   `tanins` - Filter by tannin level (mild, moderate, strong)
+        *   `body` - Filter by body/mouthfeel (light, medium, full)
+        *   `in_stock` - Filter to show only products with available inventory
+        *   `order_by` - Sort by price or volume
+        *   `order_direction` - Sort direction (asc/desc)
 
 ## Frontend
 ### UI/UX
@@ -281,7 +292,7 @@ The frontend website is structured as follows:
 ```
 / -- redirects to home/
     home/ -- A visually appealing landing page with a hero section, featured products, and teasers for other sections. Displays images using UUID-based URLs.
-    shop/ -- Displays all products in a grid, with a sidebar for filtering and sorting. Displays images using UUID-based URLs.
+    shop/ -- Displays all products in a grid, with a comprehensive sidebar for filtering by product attributes (mead type, sweetness, turbidity, effervescence, acidity, tannins, body), sorting (price, volume), and stock status. Displays images using UUID-based URLs.
         shop/[product_id]/ -- A detailed view of a single product with an "Add to Cart" button and quantity selector. Displays images using UUID-based URLs.
     blog/ -- Displays blog posts in reverse chronological order with markdown rendering and bilingual support.
         blog/[slug]/ -- A detailed view of a single blog post with full markdown content.
