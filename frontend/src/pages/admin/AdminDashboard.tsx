@@ -100,6 +100,13 @@ function AdminDashboard() {
                             <p>{t('admin.images.subtitle')}</p>
                         </div>
                     </Link>
+                    <Link to="blog/create" className="action-card">
+                        <div className="action-icon blog-action-icon"></div>
+                        <div className="action-content">
+                            <h3>{t('admin.blog.createNew')}</h3>
+                            <p>{t('admin.blog.subtitle')}</p>
+                        </div>
+                    </Link>
                 </div>
             </div>
 

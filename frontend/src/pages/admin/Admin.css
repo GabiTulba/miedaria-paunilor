@@ -1263,6 +1263,10 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='rgba(255,255,255,0.8)'%3E%3Cpath d='M4 6h16v2H4zm0 6h16v-2H4zm0 4h10v-2H4zm16 4H4v-2h16z'/%3E%3C/svg%3E");
 }
 
+.blog-action-icon {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234299e1'%3E%3Cpath d='M4 6h16v2H4zm0 6h16v-2H4zm0 4h10v-2H4zm16 4H4v-2h16z'/%3E%3C/svg%3E");
+}
+
 .stock-icon {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z'/%3E%3C/svg%3E");
 }
