@@ -21,7 +21,10 @@ function App() {
     <>
       <header className="header">
         <div className="container">
-          <Link to="/" className="logo">Miedăria Păunilor</Link>
+          <Link to="/" className="logo">
+            <img src="/logo.svg" alt="Miedăria Păunilor" className="logo-image" />
+            Miedăria Păunilor
+          </Link>
           <nav className={`main-nav ${isMobileMenuOpen ? 'active' : ''}`}>
             <NavLink to="/home" onClick={toggleMobileMenu}>{t('navigation.home')}</NavLink>
             <NavLink to="/shop" onClick={toggleMobileMenu}>{t('navigation.shop')}</NavLink>

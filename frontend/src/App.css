@@ -2,12 +2,13 @@
 .header {
   background-color: var(--primary-color);
   color: var(--white-color);
-  padding: 15px 0;
+  padding: 10px 0; /* Slightly more padding for balance */
   box-shadow: var(--shadow);
   position: sticky;
   top: 0;
   z-index: 1000;
   width: 100%;
+  min-height: 100px; /* Ensure header has enough height for large logo */
 }
 
 .header .container {
@@ -17,19 +18,41 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
+  height: 100%;
 }
 
 .logo {
   font-family: var(--font-heading);
   font-size: 1.8rem;
   font-weight: 700;
-  color: var(--white-color) !important;
+  color: var(--white-color);
   text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Increased gap for larger logo */
+  height: 100%;
+  transition: opacity 0.3s ease;
+}
+
+.logo-image {
+  height: 90px; /* Very tall logo to dominate header space */
+  width: auto;
+  filter: brightness(0) invert(1); /* Make logo white to match header */
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.logo {
+  transition: color 0.3s ease;
 }
 
 .logo:hover {
   text-decoration: none;
-  color: var(--secondary-color) !important;
+  color: rgba(255, 255, 255, 0.8); /* 80% opacity white */
+}
+
+.logo:hover .logo-image {
+  opacity: 0.8; /* Same 80% opacity for logo */
 }
 
 .main-nav {
@@ -97,10 +120,27 @@
 }
 
 @media (max-width: 768px) {
+  .header {
+    min-height: 80px; /* Reduced for tablet */
+  }
+  
+  .logo {
+    font-size: 1.4rem;
+    gap: 10px;
+  }
+  
+  .logo-image {
+    height: 65px; /* Large on tablet */
+  }
+  
+  .main-nav {
+    top: 90px; /* Adjusted for tablet header */
+  }
+
   .main-nav {
     position: absolute;
     left: -100%;
-    top: 68px; /* Should match header height */
+    top: 110px; /* Increased to match taller header */
     flex-direction: column;
     background-color: var(--primary-color);
     width: 100%;
@@ -127,5 +167,25 @@
 
   .hamburger {
     display: block;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    min-height: 70px; /* Reduced for phone */
+    padding: 8px 0;
+  }
+  
+  .logo {
+    font-size: 1.2rem;
+    gap: 8px;
+  }
+  
+  .logo-image {
+    height: 55px; /* Prominent on phone */
+  }
+  
+  .main-nav {
+    top: 78px; /* Adjusted for phone header */
   }
 }
