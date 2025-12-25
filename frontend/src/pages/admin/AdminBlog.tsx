@@ -86,8 +86,7 @@ function AdminBlog() {
                     <p>{t('admin.blog.subtitle')}</p>
                 </div>
                 <div className="header-actions">
-                    <Link to="/admin/dashboard/blog/create" className="primary-button">
-                        <span className="button-icon">+</span>
+                    <Link to="/admin/dashboard/blog/create" className="button">
                         {t('admin.blog.createNew')}
                     </Link>
                 </div>
@@ -98,7 +97,7 @@ function AdminBlog() {
                     <div className="empty-state-icon">📝</div>
                     <h3>{t('admin.blog.noPosts')}</h3>
                     <p>{t('admin.blog.noPostsDescription')}</p>
-                    <Link to="/admin/dashboard/blog/create" className="primary-button">
+                    <Link to="/admin/dashboard/blog/create" className="button">
                         {t('admin.blog.createFirst')}
                     </Link>
                 </div>
@@ -134,12 +133,12 @@ function AdminBlog() {
                                     </td>
                                     <td>
                                         <div className="action-buttons">
-                                            <Link to={`/admin/dashboard/blog/${post.id}/edit`} className="action-button edit-button">
+                                            <Link to={`/admin/dashboard/blog/${post.id}/edit`} className="button button-small button-secondary">
                                                 {t('common.edit')}
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(post.id)}
-                                                className="action-button delete-button"
+                                                className="button button-small button-danger"
                                             >
                                                 {t('common.delete')}
                                             </button>
