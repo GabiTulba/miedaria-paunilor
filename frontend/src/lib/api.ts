@@ -1,4 +1,4 @@
-import { Product, ProductWithImage } from '../types';
+import { BlogPost, NewBlogPost, Product, ProductWithImage, UpdateBlogPost } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 if (!API_BASE_URL) {
@@ -9,7 +9,15 @@ async function request(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
     const response = await fetch(url, options);
     if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+        // Try to parse as JSON first, fall back to text if it fails
+        const contentType = response.headers.get('content-type');
+        let errorBody;
+        if (contentType && contentType.includes('application/json')) {
+            errorBody = await response.json();
+        } else {
+            const text = await response.text();
+            errorBody = { message: text || 'Network response was not ok' };
+        }
         const error: any = new Error(errorBody.message || 'An error occurred');
         error.response = {
             status: response.status,
@@ -101,6 +109,47 @@ export const api = {
 
     deleteImage: async (id: string, token: string) => {
         return request(`/admin/images/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+    },
+
+    // Blog CRUD Operations
+    getBlogPosts: (): Promise<BlogPost[]> => request('/blog'),
+    getBlogPostByBlogId: (blog_id: string): Promise<BlogPost> => request(`/blog/${blog_id}`),
+    
+    // Admin blog operations
+    getBlogPostsAdmin: async (token: string): Promise<BlogPost[]> => {
+        return request('/admin/blog/admin', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+    },
+
+    createBlogPost: async (postData: NewBlogPost, token: string): Promise<BlogPost> => {
+        return request('/admin/blog', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(postData),
+        });
+    },
+
+    updateBlogPost: async (id: string, postData: UpdateBlogPost, token: string): Promise<BlogPost> => {
+        return request(`/admin/blog/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(postData),
+        });
+    },
+
+    deleteBlogPost: async (id: string, token: string) => {
+        return request(`/admin/blog/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` },
         });

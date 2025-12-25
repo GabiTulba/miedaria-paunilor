@@ -19,6 +19,10 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminProductEdit from './pages/admin/AdminProductEdit';
 import AdminProductCreate from './pages/admin/AdminProductCreate';
 import AdminImages from './pages/admin/AdminImages';
+import AdminBlog from './pages/admin/AdminBlog';
+import BlogForm from './pages/admin/BlogForm';
+import Blog from './pages/Blog';
+import BlogPostDetail from './pages/BlogPostDetail';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -32,6 +36,8 @@ const router = createBrowserRouter([
       { path: 'shop', element: <Shop /> },
       { path: 'shop/:productId', element: <ProductDetails /> },
       { path: 'cart', element: <Cart /> },
+      { path: 'blog', element: <Blog /> },
+      { path: 'blog/:blog_id', element: <BlogPostDetail /> },
       { path: 'about-us', element: <AboutUs /> },
       { path: 'contact', element: <Contact /> },
       {
@@ -47,6 +53,9 @@ const router = createBrowserRouter([
               { path: 'dashboard/products/:productId/edit', element: <AdminProductEdit /> },
               { path: 'dashboard/products/create', element: <AdminProductCreate /> },
               { path: 'dashboard/images', element: <AdminImages /> }, // New route for image upload
+              { path: 'dashboard/blog', element: <AdminBlog /> },
+              { path: 'dashboard/blog/create', element: <BlogForm /> },
+              { path: 'dashboard/blog/:id/edit', element: <BlogForm isEdit={true} /> },
             ],
           },
         ],

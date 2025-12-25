@@ -296,6 +296,45 @@
       "deleteError": "Nu se poate șterge imaginea: este folosită de un produs",
       "loading": "Se încarcă imaginile...",
       "error": "Încărcarea imaginilor a eșuat. Te rugăm să încerci din nou."
+    },
+    "blog": {
+      "title": "Gestionează Articole Blog",
+      "subtitle": "Creează, editează și șterge articole de blog",
+      "createNew": "Creează Articol Nou",
+      "noPosts": "Încă nu există postări",
+      "noPostsDescription": "Începe prin a crea prima ta postare",
+      "createFirst": "Creează Primul Articol",
+      "table": {
+        "title": "Titlu",
+        "author": "Autor",
+        "published": "Publicat",
+        "status": "Status",
+        "actions": "Acțiuni"
+      },
+      "status": {
+        "published": "Publicat",
+        "draft": "Ciornă"
+      },
+      "form": {
+        "createTitle": "Creează Articol Blog Nou",
+        "editTitle": "Editează Articol Blog",
+        "createSubtitle": "Adaugă un articol nou pe blogul tău",
+        "editSubtitle": "Actualizează detaliile articolului de blog",
+        "basicInfo": "Informații de Bază",
+        "titleEn": "Titlu (Engleză)",
+        "titleRo": "Titlu (Română)",
+        "blogId": "ID Blog",
+        "blogIdHelp": "Identificator pentru URL (doar litere mici, numere, liniuțe)",
+        "author": "Autor",
+        "status": "Status",
+        "content": "Conținut",
+        "excerptEn": "Rezumat (Engleză)",
+        "excerptRo": "Rezumat (Română)",
+        "excerptHelp": "Rezumat scurt afișat în lista de articole",
+        "contentEn": "Conținut (Engleză) - Markdown",
+        "contentRo": "Conținut (Română) - Markdown",
+        "contentHelp": "Scrie conținutul articolului folosind Markdown"
+      }
     }
   },
   "about": {
@@ -376,5 +415,17 @@
       "medium": "Mediu",
       "full": "Robust"
     }
+  },
+  "blog": {
+    "title": "Blog",
+    "description": "Citește despre călătoria noastră în producerea de miere, rețete și povești din stupină.",
+    "noPosts": "Încă nu există articole pe blog. Revino curând!",
+    "fetchError": "Nu s-au putut încărca articolele de pe blog. Te rugăm să încerci mai târziu.",
+    "invalidBlogId": "URL-ul articolului de pe blog este invalid.",
+    "notFound": "Articolul de pe blog nu a fost găsit.",
+    "readMore": "Citește mai mult",
+    "backToBlog": "Înapoi la Blog",
+    "byAuthor": "De {{author}}",
+    "updatedOn": "Actualizat la {{date}}"
   }
 }

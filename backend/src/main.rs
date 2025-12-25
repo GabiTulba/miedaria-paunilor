@@ -13,6 +13,7 @@ use std::{env, net::SocketAddr, sync::Arc};
 use axum::extract::Extension;
 use axum::extract::Multipart; // Added for upload_image_handler
 use backend::AppError;
+use backend::blog_crud;
 use backend::enum_crud;
 use backend::image_crud;
 use backend::product_crud::ProductWithImage;
@@ -43,6 +44,10 @@ async fn main() {
         .route("/products", post(create_product))
         .route("/products/{product_id}", put(update_product))
         .route("/products/{product_id}", delete(delete_product))
+        .route("/blog", post(create_blog_post))
+        .route("/blog/{id}", put(update_blog_post))
+        .route("/blog/{id}", delete(delete_blog_post))
+        .route("/blog/admin", get(get_all_blog_posts_admin))
         .route("/images", get(list_images))
         .route("/images", post(upload_image_handler)) // Updated to use wrapper
         .route("/images/{image_id}", put(update_image_meta_handler)) // Updated to use wrapper
@@ -59,6 +64,8 @@ async fn main() {
         .route("/api/enums", get(get_enum_values))
         .route("/api/products", get(get_all_products))
         .route("/api/products/{product_id}", get(get_product_by_id))
+        .route("/api/blog", get(get_all_blog_posts))
+        .route("/api/blog/{blog_id}", get(get_blog_post_by_blog_id))
         .route("/api/admin/login", post(auth::login))
         .nest("/api/admin", admin_routes)
         .with_state(app_state)
@@ -200,4 +207,58 @@ async fn list_images(
 ) -> Result<Json<Vec<models::Image>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
     image_crud::get_all_images(&mut conn).await
+}
+
+async fn get_all_blog_posts(
+    State(app_state): State<Arc<AppState>>,
+) -> Result<Json<Vec<models::BlogPost>>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    let posts = blog_crud::get_all_blog_posts(&mut conn)?;
+    Ok(Json(posts))
+}
+
+async fn get_all_blog_posts_admin(
+    State(app_state): State<Arc<AppState>>,
+) -> Result<Json<Vec<models::BlogPost>>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    let posts = blog_crud::get_all_blog_posts_admin(&mut conn)?;
+    Ok(Json(posts))
+}
+
+async fn get_blog_post_by_blog_id(
+    State(app_state): State<Arc<AppState>>,
+    Path(blog_id): Path<String>,
+) -> Result<Json<models::BlogPost>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    let post = blog_crud::get_blog_post_by_blog_id(&mut conn, &blog_id)?;
+    Ok(Json(post))
+}
+
+async fn create_blog_post(
+    State(app_state): State<Arc<AppState>>,
+    Json(new_post): Json<models::NewBlogPost>,
+) -> Result<Json<models::BlogPost>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    let post = blog_crud::create_blog_post(&mut conn, new_post)?;
+    Ok(Json(post))
+}
+
+async fn update_blog_post(
+    State(app_state): State<Arc<AppState>>,
+    Path(blog_id): Path<uuid::Uuid>,
+    Json(update_post): Json<models::UpdateBlogPost>,
+) -> Result<Json<models::BlogPost>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    let post = blog_crud::update_blog_post(&mut conn, blog_id, update_post)?;
+    Ok(Json(post))
+}
+
+async fn delete_blog_post(
+    State(app_state): State<Arc<AppState>>,
+    Path(blog_id): Path<uuid::Uuid>,
+) -> Result<StatusCode, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    blog_crud::delete_blog_post(&mut conn, blog_id)
+        .map(|_| StatusCode::NO_CONTENT)
+        .map_err(AppError::from)
 }

@@ -121,3 +121,49 @@ pub struct NewProduct {
     pub price_ron: Decimal,
     pub image_id: uuid::Uuid,
 }
+
+#[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug)]
+#[diesel(table_name = crate::schema::blog_posts)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct BlogPost {
+    pub id: uuid::Uuid,
+    pub title: String,
+    pub title_ro: String,
+    pub blog_id: String,
+    pub content_markdown: String,
+    pub content_markdown_ro: String,
+    pub excerpt: String,
+    pub excerpt_ro: String,
+    pub author: String,
+    pub published_at: chrono::NaiveDateTime,
+    pub updated_at: chrono::NaiveDateTime,
+    pub is_published: bool,
+}
+
+#[derive(Insertable, serde::Deserialize)]
+#[diesel(table_name = blog_posts)]
+pub struct NewBlogPost {
+    pub title: String,
+    pub title_ro: String,
+    pub blog_id: String,
+    pub content_markdown: String,
+    pub content_markdown_ro: String,
+    pub excerpt: String,
+    pub excerpt_ro: String,
+    pub author: String,
+    pub is_published: bool,
+}
+
+#[derive(serde::Deserialize, AsChangeset, Debug)]
+#[diesel(table_name = blog_posts)]
+pub struct UpdateBlogPost {
+    pub title: Option<String>,
+    pub title_ro: Option<String>,
+    pub blog_id: Option<String>,
+    pub content_markdown: Option<String>,
+    pub content_markdown_ro: Option<String>,
+    pub excerpt: Option<String>,
+    pub excerpt_ro: Option<String>,
+    pub author: Option<String>,
+    pub is_published: Option<bool>,
+}

@@ -34,6 +34,10 @@ function AdminLayout() {
                         <span className="nav-icon images-icon"></span>
                         <span className="nav-text">{t('navigation.images')}</span>
                     </NavLink>
+                    <NavLink to="/admin/dashboard/blog" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                        <span className="nav-icon blog-icon"></span>
+                        <span className="nav-text">{t('blog.title')}</span>
+                    </NavLink>
                 </nav>
                 <div className="sidebar-footer">
                     <button onClick={handleLogout} className="logout-button">

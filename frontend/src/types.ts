@@ -34,3 +34,42 @@ export interface ProductWithImage {
   product: Product;
   image: Image | null;
 }
+
+export interface BlogPost {
+  id: string; // UUID as string
+  title: string;
+  title_ro: string;
+  blog_id: string;
+  content_markdown: string;
+  content_markdown_ro: string;
+  excerpt: string;
+  excerpt_ro: string;
+  author: string;
+  published_at: string; // NaiveDateTime as string
+  updated_at: string; // NaiveDateTime as string
+  is_published: boolean;
+}
+
+export interface NewBlogPost {
+  title: string;
+  title_ro: string;
+  blog_id: string;
+  content_markdown: string;
+  content_markdown_ro: string;
+  excerpt: string;
+  excerpt_ro: string;
+  author: string;
+  is_published: boolean;
+}
+
+export interface UpdateBlogPost {
+  title?: string;
+  title_ro?: string;
+  blog_id?: string;
+  content_markdown?: string;
+  content_markdown_ro?: string;
+  excerpt?: string;
+  excerpt_ro?: string;
+  author?: string;
+  is_published?: boolean;
+}

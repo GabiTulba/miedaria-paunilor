@@ -296,6 +296,45 @@
       "deleteError": "Cannot delete image: it is being used by a product",
       "loading": "Loading images...",
       "error": "Failed to load images. Please try again."
+    },
+    "blog": {
+      "title": "Manage Blog Posts",
+      "subtitle": "Create, edit, and delete blog posts",
+      "createNew": "Create New Post",
+      "noPosts": "No blog posts yet",
+      "noPostsDescription": "Get started by creating your first blog post",
+      "createFirst": "Create First Post",
+      "table": {
+        "title": "Title",
+        "author": "Author",
+        "published": "Published",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "published": "Published",
+        "draft": "Draft"
+      },
+      "form": {
+        "createTitle": "Create New Blog Post",
+        "editTitle": "Edit Blog Post",
+        "createSubtitle": "Add a new blog post to your website",
+        "editSubtitle": "Update your blog post details",
+        "basicInfo": "Basic Information",
+        "titleEn": "Title (English)",
+        "titleRo": "Title (Romanian)",
+        "blogId": "Blog ID",
+        "blogIdHelp": "URL-friendly identifier (lowercase letters, numbers, hyphens only)",
+        "author": "Author",
+        "status": "Status",
+        "content": "Content",
+        "excerptEn": "Excerpt (English)",
+        "excerptRo": "Excerpt (Romanian)",
+        "excerptHelp": "Short summary displayed in blog listing",
+        "contentEn": "Content (English) - Markdown",
+        "contentRo": "Content (Romanian) - Markdown",
+        "contentHelp": "Write your blog post content using Markdown"
+      }
     }
   },
   "about": {
@@ -376,5 +415,17 @@
       "medium": "Medium",
       "full": "Full"
     }
+  },
+  "blog": {
+    "title": "Blog",
+    "description": "Read about our mead-making journey, recipes, and stories from the apiary.",
+    "noPosts": "No blog posts yet. Check back soon!",
+    "fetchError": "Failed to load blog posts. Please try again later.",
+    "invalidBlogId": "Invalid blog post URL.",
+    "notFound": "Blog post not found.",
+    "readMore": "Read More",
+    "backToBlog": "Back to Blog",
+    "byAuthor": "By {{author}}",
+    "updatedOn": "Updated on {{date}}"
   }
 }

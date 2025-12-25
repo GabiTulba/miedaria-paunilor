@@ -3,6 +3,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use serde::Serialize;
 
+use crate::blog_crud::{BlogCreationError, BlogUpdateError, BlogValidationError};
 use crate::product_crud::{ProductCreationError, ProductUpdateError, ProductValidationError};
 
 #[derive(Debug, Serialize)]
@@ -16,8 +17,16 @@ pub struct ValidationErrorResponse {
     pub errors: Vec<ProductValidationError>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct BlogValidationErrorResponse {
+    pub message: String,
+    pub errors: Vec<BlogValidationError>,
+}
+
 #[derive(Debug)]
 pub enum AppError {
+    BlogCreation(BlogCreationError),
+    BlogUpdate(BlogUpdateError),
     ProductCreation(ProductCreationError),
     ProductUpdate(ProductUpdateError),
     DatabaseConnectionError,
@@ -30,6 +39,68 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
         match self {
+            AppError::BlogCreation(err) => match err {
+                BlogCreationError::ValidationErrors(validation_errors) => (
+                    StatusCode::BAD_REQUEST,
+                    Json(BlogValidationErrorResponse {
+                        message: "Validation failed".to_string(),
+                        errors: validation_errors,
+                    }),
+                )
+                    .into_response(),
+                BlogCreationError::DuplicateBlogId => (
+                    StatusCode::CONFLICT,
+                    Json(ErrorResponse {
+                        message: "Blog post with this blog ID already exists.".to_string(),
+                    }),
+                )
+                    .into_response(),
+                BlogCreationError::DatabaseError(msg) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse {
+                        message: format!("Database error: {}", msg),
+                    }),
+                )
+                    .into_response(),
+                BlogCreationError::UnknownError => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse {
+                        message: "An unknown error occurred during blog post creation.".to_string(),
+                    }),
+                )
+                    .into_response(),
+            },
+            AppError::BlogUpdate(err) => match err {
+                BlogUpdateError::ValidationErrors(validation_errors) => (
+                    StatusCode::BAD_REQUEST,
+                    Json(BlogValidationErrorResponse {
+                        message: "Validation failed".to_string(),
+                        errors: validation_errors,
+                    }),
+                )
+                    .into_response(),
+                BlogUpdateError::NotFound => (
+                    StatusCode::NOT_FOUND,
+                    Json(ErrorResponse {
+                        message: "Blog post not found".to_string(),
+                    }),
+                )
+                    .into_response(),
+                BlogUpdateError::DatabaseError(msg) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse {
+                        message: format!("Database error: {}", msg),
+                    }),
+                )
+                    .into_response(),
+                BlogUpdateError::UnknownError => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse {
+                        message: "An unknown error occurred during blog post update.".to_string(),
+                    }),
+                )
+                    .into_response(),
+            },
             AppError::ProductCreation(err) => match err {
                 ProductCreationError::ValidationErrors(validation_errors) => (
                     StatusCode::BAD_REQUEST,
@@ -118,6 +189,18 @@ impl IntoResponse for AppError {
             )
                 .into_response(),
         }
+    }
+}
+
+impl From<BlogCreationError> for AppError {
+    fn from(error: BlogCreationError) -> Self {
+        AppError::BlogCreation(error)
+    }
+}
+
+impl From<BlogUpdateError> for AppError {
+    fn from(error: BlogUpdateError) -> Self {
+        AppError::BlogUpdate(error)
     }
 }
 

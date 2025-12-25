@@ -44,6 +44,23 @@ diesel::table! {
 }
 
 diesel::table! {
+    blog_posts (id) {
+        id -> Uuid,
+        title -> Varchar,
+        title_ro -> Varchar,
+        blog_id -> Varchar,
+        content_markdown -> Text,
+        content_markdown_ro -> Text,
+        excerpt -> Varchar,
+        excerpt_ro -> Varchar,
+        author -> Varchar,
+        published_at -> Timestamp,
+        updated_at -> Timestamp,
+        is_published -> Bool,
+    }
+}
+
+diesel::table! {
     users (username) {
         username -> Varchar,
         salt -> Varchar,
@@ -53,4 +70,4 @@ diesel::table! {
 
 diesel::joinable!(products -> images (image_id));
 
-diesel::allow_tables_to_appear_in_same_query!(admin_users, images, products, users,);
+diesel::allow_tables_to_appear_in_same_query!(admin_users, blog_posts, images, products, users,);

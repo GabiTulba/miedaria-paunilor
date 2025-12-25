@@ -25,6 +25,7 @@ function App() {
           <nav className={`main-nav ${isMobileMenuOpen ? 'active' : ''}`}>
             <NavLink to="/home" onClick={toggleMobileMenu}>{t('navigation.home')}</NavLink>
             <NavLink to="/shop" onClick={toggleMobileMenu}>{t('navigation.shop')}</NavLink>
+            <NavLink to="/blog" onClick={toggleMobileMenu}>{t('blog.title')}</NavLink>
             <NavLink to="/about-us" onClick={toggleMobileMenu}>{t('navigation.aboutUs')}</NavLink>
             <NavLink to="/contact" onClick={toggleMobileMenu}>{t('navigation.contact')}</NavLink>
             <NavLink to="/cart" onClick={toggleMobileMenu}>{t('navigation.cart')} {itemCount > 0 && `(${itemCount})`}</NavLink>

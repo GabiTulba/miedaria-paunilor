@@ -48,3 +48,22 @@ CREATE TABLE IF NOT EXISTS users (
   salt VARCHAR NOT NULL,
   hashed_password VARCHAR NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title VARCHAR NOT NULL,
+  title_ro VARCHAR NOT NULL,
+  blog_id VARCHAR NOT NULL UNIQUE,
+  content_markdown TEXT NOT NULL,
+  content_markdown_ro TEXT NOT NULL,
+  excerpt VARCHAR NOT NULL,
+  excerpt_ro VARCHAR NOT NULL,
+  author VARCHAR NOT NULL,
+  published_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  is_published BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX idx_blog_posts_published_at ON blog_posts(published_at DESC);
+CREATE INDEX idx_blog_posts_blog_id ON blog_posts(blog_id);
+CREATE INDEX idx_blog_posts_is_published ON blog_posts(is_published);

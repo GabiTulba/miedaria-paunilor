@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod blog_crud;
 pub mod db;
 pub mod enum_crud;
 pub mod enums;
@@ -20,6 +21,10 @@ pub struct AppState {
 // Export modules and their contents
 pub use crate::auth::{Claims, LoginPayload, LoginResponse};
 pub use crate::models::{AdminUser, NewAdminUser, NewProduct, NewUser, Product, User};
+pub use crate::blog_crud::{
+    create_blog_post, delete_blog_post, get_all_blog_posts, get_all_blog_posts_admin,
+    get_blog_post_by_blog_id, get_blog_post_by_id, update_blog_post,
+};
 pub use crate::product_crud::{
     create_product, delete_product, get_all_products, get_product, update_product,
 };

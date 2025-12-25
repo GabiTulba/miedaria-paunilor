@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS blog_posts;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS images;
 DROP TABLE IF EXISTS admin_users;
