@@ -71,8 +71,11 @@ pub struct UpdateImage {
 pub struct Product {
     pub product_id: String,
     pub product_name: String,
+    pub product_name_ro: String,
     pub product_description: String,
+    pub product_description_ro: String,
     pub ingredients: String,
+    pub ingredients_ro: String,
     pub product_type: String,
     pub sweetness: String,
     pub turbidity: String,
@@ -86,6 +89,8 @@ pub struct Product {
     pub bottle_size: i32,
     #[serde(with = "rust_decimal::serde::float")]
     pub price: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub price_ron: Decimal,
     pub image_id: uuid::Uuid,
 }
 
@@ -94,8 +99,11 @@ pub struct Product {
 pub struct NewProduct {
     pub product_id: String,
     pub product_name: String,
+    pub product_name_ro: String,
     pub product_description: String,
+    pub product_description_ro: String,
     pub ingredients: String,
+    pub ingredients_ro: String,
     pub product_type: String,
     pub sweetness: String,
     pub turbidity: String,
@@ -109,5 +117,7 @@ pub struct NewProduct {
     pub bottle_size: i32,
     #[serde(with = "rust_decimal::serde::float")]
     pub price: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    pub price_ron: Decimal,
     pub image_id: uuid::Uuid,
 }

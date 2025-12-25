@@ -10,7 +10,8 @@ import './Admin.css';
 function AdminDashboard() {
     const [products, setProducts] = useState<ProductWithImage[]>([]);
     const [loading, setLoading] = useState(true);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const currentLanguage = i18n.language;
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -32,7 +33,10 @@ function AdminDashboard() {
         const stockStatus = getAdminStockStatus(pwi.product.bottle_count, t);
         return stockStatus.status === 'low_stock';
     }).length;
-    const totalValue = products.reduce((sum, pwi) => sum + (Number(pwi.product.price) * pwi.product.bottle_count), 0);
+    const totalValue = products.reduce((sum, pwi) => {
+        const price = currentLanguage === 'ro' ? Number(pwi.product.price_ron) : Number(pwi.product.price);
+        return sum + (price * pwi.product.bottle_count);
+    }, 0);
 
     return (
         <div className="admin-dashboard">
@@ -66,7 +70,7 @@ function AdminDashboard() {
                 <div className="stat-card">
                     <div className="stat-icon value-icon"></div>
                     <div className="stat-content">
-                        <h3>{loading ? '...' : `€${totalValue.toFixed(2)}`}</h3>
+                         <h3>{loading ? '...' : currentLanguage === 'ro' ? `${totalValue.toFixed(2)} ${t('common.ron')}` : `€${totalValue.toFixed(2)}`}</h3>
                         <p>{t('admin.dashboard.totalValue')}</p>
                     </div>
                 </div>
@@ -118,16 +122,27 @@ function AdminDashboard() {
                                         <td>
                                             <div className="product-info">
                                                 {productWithImage.image && (
-                                                    <img 
+                                                     <img 
                                                         src={`/images/${productWithImage.image.id}`} 
-                                                        alt={productWithImage.product.product_name}
+                                                        alt={currentLanguage === 'ro' && productWithImage.product.product_name_ro 
+                                                            ? productWithImage.product.product_name_ro 
+                                                            : productWithImage.product.product_name}
                                                         className="product-thumbnail"
                                                     />
                                                 )}
-                                                <span>{productWithImage.product.product_name}</span>
+                                                <span>
+                                                    {currentLanguage === 'ro' && productWithImage.product.product_name_ro 
+                                                        ? productWithImage.product.product_name_ro 
+                                                        : productWithImage.product.product_name}
+                                                </span>
                                             </div>
                                         </td>
-                                        <td>€{toFixed(productWithImage.product.price)}</td>
+                                         <td>
+                                             {currentLanguage === 'ro' 
+                                                 ? `${toFixed(productWithImage.product.price_ron)} ${t('common.ron')}`
+                                                 : `€${toFixed(productWithImage.product.price)}`
+                                             }
+                                         </td>
                                         <td>{productWithImage.product.bottle_count}</td>
                                         <td>
                                             {(() => {

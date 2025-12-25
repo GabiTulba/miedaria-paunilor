@@ -9,8 +9,11 @@ use serde::Serialize;
 pub enum ProductValidationError {
     InvalidProductId,
     EmptyProductName,
+    EmptyProductNameRo,
     EmptyProductDescription,
+    EmptyProductDescriptionRo,
     EmptyIngredients,
+    EmptyIngredientsRo,
     InvalidProductType,
     InvalidSweetnessType,
 
@@ -23,8 +26,10 @@ pub enum ProductValidationError {
     InvalidBottleCount,
     InvalidBottleSize,
     InvalidPrice,
+    InvalidPriceRon,
     InvalidAbvPrecision,
     InvalidPricePrecision,
+    InvalidPriceRonPrecision,
 }
 
 fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
@@ -44,14 +49,29 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
         errors.push(ProductValidationError::EmptyProductName);
     }
 
+    // product_name_ro: Romanian product name.
+    if new_product.product_name_ro.is_empty() {
+        errors.push(ProductValidationError::EmptyProductNameRo);
+    }
+
     // product_description: A long, free-form text string.
     if new_product.product_description.is_empty() {
         errors.push(ProductValidationError::EmptyProductDescription);
     }
 
+    // product_description_ro: Romanian product description.
+    if new_product.product_description_ro.is_empty() {
+        errors.push(ProductValidationError::EmptyProductDescriptionRo);
+    }
+
     // ingredients: A text field for the ingredients of the product.
     if new_product.ingredients.is_empty() {
         errors.push(ProductValidationError::EmptyIngredients);
+    }
+
+    // ingredients_ro: Romanian ingredients.
+    if new_product.ingredients_ro.is_empty() {
+        errors.push(ProductValidationError::EmptyIngredientsRo);
     }
 
     // product_type: String - must be a valid MeadType
@@ -113,6 +133,16 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
     }
     if new_product.price.scale() > 2 {
         errors.push(ProductValidationError::InvalidPricePrecision);
+    }
+
+    // price_ron: Decimal with two digits of precision.
+    if new_product.price_ron < Decimal::new(0, 2)
+        || new_product.price_ron > Decimal::new(9999999, 2)
+    {
+        errors.push(ProductValidationError::InvalidPriceRon);
+    }
+    if new_product.price_ron.scale() > 2 {
+        errors.push(ProductValidationError::InvalidPriceRonPrecision);
     }
 
     errors
@@ -209,8 +239,11 @@ pub fn update_product(
     let validation_errors = validate_product(&NewProduct {
         product_id: product.product_id.clone(),
         product_name: product.product_name.clone(),
+        product_name_ro: product.product_name_ro.clone(),
         product_description: product.product_description.clone(),
+        product_description_ro: product.product_description_ro.clone(),
         ingredients: product.ingredients.clone(),
+        ingredients_ro: product.ingredients_ro.clone(),
         product_type: product.product_type.clone(),
         sweetness: product.sweetness.clone(),
 
@@ -223,6 +256,7 @@ pub fn update_product(
         bottle_count: product.bottle_count,
         bottle_size: product.bottle_size,
         price: product.price,
+        price_ron: product.price_ron,
         image_id: product.image_id,
     });
     if !validation_errors.is_empty() {

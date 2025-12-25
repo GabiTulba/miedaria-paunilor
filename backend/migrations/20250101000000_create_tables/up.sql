@@ -16,8 +16,11 @@ CREATE TABLE IF NOT EXISTS images (
 CREATE TABLE IF NOT EXISTS products (
   product_id VARCHAR NOT NULL PRIMARY KEY,
   product_name VARCHAR NOT NULL,
+  product_name_ro VARCHAR NOT NULL,
   product_description TEXT NOT NULL,
+  product_description_ro TEXT NOT NULL,
   ingredients TEXT NOT NULL,
+  ingredients_ro TEXT NOT NULL,
   product_type VARCHAR NOT NULL,
   sweetness VARCHAR NOT NULL,
   turbidity VARCHAR NOT NULL,
@@ -29,6 +32,7 @@ CREATE TABLE IF NOT EXISTS products (
   bottle_count INTEGER NOT NULL,
   bottle_size INTEGER NOT NULL,
   price DECIMAL(5,2) NOT NULL,
+  price_ron DECIMAL(7,2) NOT NULL,
   image_id UUID REFERENCES images(id) NOT NULL
 );
 

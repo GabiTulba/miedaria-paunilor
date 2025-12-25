@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:20-slim as build
+FROM node:20-slim AS build
 WORKDIR /app
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL

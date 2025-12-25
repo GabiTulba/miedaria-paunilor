@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ProductWithImage } from '../types';
-import { formatEnumLabel } from '../enums';
+import { getEnumLabel } from '../enums';
 import { getShopStockStatus } from '../utils/stockAvailability';
 import { toFixed } from '../utils/numberUtils';
+
 import './ProductCard.css';
 
 interface ProductCardProps {
@@ -11,8 +12,15 @@ interface ProductCardProps {
 }
 
 function ProductCard({ productWithImage }: ProductCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
   const stockStatus = getShopStockStatus(productWithImage.product.bottle_count, t);
+  const currentLanguage = i18n.language;
+  
+  // Get product name based on language
+  const productName = currentLanguage === 'ro' && productWithImage.product.product_name_ro 
+    ? productWithImage.product.product_name_ro 
+    : productWithImage.product.product_name;
   
   return (
     <div className="product-card">
@@ -22,7 +30,7 @@ function ProductCard({ productWithImage }: ProductCardProps) {
             {productWithImage.image ? (
               <img 
                 src={`/images/${productWithImage.image.id}`} 
-                alt={productWithImage.product.product_name} 
+                alt={productName} 
                 className="product-image" 
               />
             ) : (
@@ -30,12 +38,16 @@ function ProductCard({ productWithImage }: ProductCardProps) {
             )}
           </div>
            <div className="product-card-content">
-             <h3>{productWithImage.product.product_name}</h3>
+             <h3>{productName}</h3>
                 <div className="product-details">
                   <div className="product-details-line">
-                    <span className="mead-type">{formatEnumLabel(productWithImage.product.product_type)}</span>
-                    <span className="separator">|</span>
-                    <span className="sweetness">{formatEnumLabel(productWithImage.product.sweetness)}</span>
+                     <span className="mead-type">
+                       {getEnumLabel(productWithImage.product.product_type, 'mead_type', t)}
+                     </span>
+                     <span className="separator">|</span>
+                     <span className="sweetness">
+                       {getEnumLabel(productWithImage.product.sweetness, 'sweetness', t)}
+                     </span>
                   </div>
                   <div className="product-details-line">
                     <span className="abv">{productWithImage.product.abv}% {t('product.abv')}</span>
@@ -43,7 +55,12 @@ function ProductCard({ productWithImage }: ProductCardProps) {
                     <span className="volume">{productWithImage.product.bottle_size}{t('common.milliliters')}</span>
                   </div>
                 </div>
-              <p className="price">{toFixed(productWithImage.product.price)} {t('common.euro')}</p>
+              <p className="price">
+                {currentLanguage === 'ro' 
+                  ? `${toFixed(productWithImage.product.price_ron)} ${t('common.ron')}`
+                  : `${toFixed(productWithImage.product.price)} ${t('common.euro')}`
+                }
+              </p>
              <p className={`availability ${stockStatus.cssClass}`}>{stockStatus.description}</p>
            </div>
         </div>

@@ -9,8 +9,11 @@ export interface Image {
 export interface Product {
   product_id: string;
   product_name: string;
+  product_name_ro: string;
   product_description: string;
+  product_description_ro: string;
   ingredients: string;
+  ingredients_ro: string;
   product_type: string;
   sweetness: string;
 
@@ -23,6 +26,7 @@ export interface Product {
   bottle_count: number;
   bottle_size: number;
   price: number | string; // Decimal as number or string
+  price_ron: number | string; // Decimal as number or string
   image_id: string; // Reference to Image.id
 }
 

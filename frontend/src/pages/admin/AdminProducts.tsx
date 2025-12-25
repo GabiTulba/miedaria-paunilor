@@ -13,7 +13,8 @@ function AdminProducts() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { token } = useContext(AuthContext);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const currentLanguage = i18n.language;
 
     useEffect(() => {
         const getProducts = async () => {
@@ -100,15 +101,21 @@ function AdminProducts() {
                                     <tr key={productWithImage.product.product_id}>
                                         <td>
                                             <div className="product-cell">
-                                                {productWithImage.image && (
+                                                 {productWithImage.image && (
                                                     <img 
                                                         src={`/images/${productWithImage.image.id}`} 
-                                                        alt={productWithImage.product.product_name}
+                                                        alt={currentLanguage === 'ro' && productWithImage.product.product_name_ro 
+                                                            ? productWithImage.product.product_name_ro 
+                                                            : productWithImage.product.product_name}
                                                         className="product-image"
                                                     />
                                                 )}
                                                 <div className="product-details">
-                                                    <div className="product-name">{productWithImage.product.product_name}</div>
+                                                    <div className="product-name">
+                                                        {currentLanguage === 'ro' && productWithImage.product.product_name_ro 
+                                                            ? productWithImage.product.product_name_ro 
+                                                            : productWithImage.product.product_name}
+                                                    </div>
                                                     <div className="product-id">ID: {productWithImage.product.product_id}</div>
                                                 </div>
                                             </div>
@@ -116,8 +123,13 @@ function AdminProducts() {
                                         <td>
                                             <span className="product-type">{productWithImage.product.product_type}</span>
                                         </td>
-                                        <td>
-                                             <span className="product-price">€{toFixed(productWithImage.product.price)}</span>
+                                         <td>
+                                             <span className="product-price">
+                                                 {currentLanguage === 'ro' 
+                                                     ? `${toFixed(productWithImage.product.price_ron)} ${t('common.ron')}`
+                                                     : `€${toFixed(productWithImage.product.price)}`
+                                                 }
+                                             </span>
                                         </td>
                                         <td>
                                             <div className="stock-cell">

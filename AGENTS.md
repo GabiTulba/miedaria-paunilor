@@ -145,9 +145,12 @@ The instance has a single database [miedaria_paunilor], with four tables:
 
 [products] has the following schema:
 * product_id - (Primary Key) A short string composed of lowercase letters, dashes or underscores. Represents the machine-friendly name of the product.
-* product_name - A short string that supports any character. Represents the human-friendly name of the product
-* product_description - A long, free-form text string. Represents a detailed description of the product.
-* ingredients - A text field for the ingredients of the product.
+* product_name - A short string that supports any character. Represents the human-friendly name of the product in English.
+* product_name_ro - A short string that supports any character. Represents the human-friendly name of the product in Romanian.
+* product_description - A long, free-form text string. Represents a detailed description of the product in English.
+* product_description_ro - A long, free-form text string. Represents a detailed description of the product in Romanian.
+* ingredients - A text field for the ingredients of the product in English.
+* ingredients_ro - A text field for the ingredients of the product in Romanian.
 * product_type - String representing the type of mead (e.g., hidromel, melomel, metheglin, etc.)
 * sweetness - String representing sweetness level (e.g., bone-dry, dry, semi-dry, etc.)
 * turbidity - String representing clarity level (e.g., crystalline, hazy, cloudy)
@@ -159,6 +162,7 @@ The instance has a single database [miedaria_paunilor], with four tables:
 * bottle_count - Non-negative integer. Represents the number of bottles in stock.
 * bottle_size - Positive integer (mililiters of volume). Represents the net volume of the bottle of mead.
 * price - Decimal with two digits of precision. Represents the price of the product in Euros.
+* price_ron - Decimal with two digits of precision. Represents the price of the product in Romanian Lei.
 * image_id - (Foreign Key) A UUID referencing the `id` from the `images` table.
 
 [users] and [admin_users] have the following schema:
@@ -200,9 +204,9 @@ The backend defines comprehensive enums for product attributes in `enums.rs`:
 *   **TaninsType:** Mild, Moderate
 *   **BodyType:** Light, Medium, Full
 
-**Enum API Endpoint:** The backend provides a `/api/enums` GET endpoint that returns all enum values with their string representations and display labels. This eliminates duplication between frontend and backend.
+**Enum API Endpoint:** The backend provides a `/api/enums` GET endpoint that returns all enum values with their string representations and bilingual display labels (English and Romanian). This eliminates duplication between frontend and backend.
 
-**Frontend Enum Integration:** The frontend uses the `useFetchEnums` hook to fetch enum values from the backend. Form components like `ProductForm` use these dynamically fetched values for select options, while display components use the `formatEnumLabel` and `getEnumLabel` utility functions from `enums.ts` for consistent label formatting.
+**Frontend Enum Integration:** The frontend uses the `useFetchEnums` hook to fetch enum values from the backend. Form components like `ProductForm` use these dynamically fetched values for select options, while display components use the `getEnumLabel` utility function from `enums.ts` with language support for consistent label formatting across both languages.
 
 ### Features
 Axum is used to interact with the frontend, dealing with:
@@ -292,6 +296,9 @@ The frontend `Product` and `ProductWithImage` types include all product attribut
     *   **Translation Files:** JSON-based translation files for all UI text
     *   **Automatic Detection:** Browser language detection with localStorage persistence
     *   **Comprehensive Coverage:** All UI text translated including navigation, forms, buttons, error messages, and product descriptions
+    *   **Bilingual Product Data:** Product names, descriptions, and ingredients are stored in both English and Romanian, with automatic language switching based on user preference
+    *   **Dual Currency Support:** Product prices displayed in both Euros and Romanian Lei based on user language preference
+    *   **Translated Enums:** Product attribute enums (mead type, sweetness, turbidity, etc.) are translated automatically based on user language
 
 ### Shopping Cart
 The application includes a fully functional shopping cart system with the following features:

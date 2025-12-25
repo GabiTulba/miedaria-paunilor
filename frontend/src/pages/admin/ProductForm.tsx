@@ -67,17 +67,27 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                     <TextInput
                         id="product_name"
                         name="product_name"
-                        label={t('admin.productForm.productName')}
+                        label={t('admin.productForm.productName') + ' (EN)'}
                         value={product.product_name}
                         onChange={handleChange}
                         required
                         error={errors.product_name}
                         placeholder="e.g., Classic Hidromel"
                     />
+                    <TextInput
+                        id="product_name_ro"
+                        name="product_name_ro"
+                        label={t('admin.productForm.productName') + ' (RO)'}
+                        value={product.product_name_ro || ''}
+                        onChange={handleChange}
+                        required
+                        error={errors.product_name_ro}
+                        placeholder="e.g., Hidromel Clasic"
+                    />
                     <TextAreaInput
                         id="product_description"
                         name="product_description"
-                        label={t('admin.productForm.productDescription')}
+                        label={t('admin.productForm.productDescription') + ' (EN)'}
                         value={product.product_description}
                         onChange={handleChange}
                         rows={4}
@@ -86,14 +96,36 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         placeholder={t('admin.productForm.productDescription')}
                     />
                     <TextAreaInput
+                        id="product_description_ro"
+                        name="product_description_ro"
+                        label={t('admin.productForm.productDescription') + ' (RO)'}
+                        value={product.product_description_ro || ''}
+                        onChange={handleChange}
+                        rows={4}
+                        required
+                        error={errors.product_description_ro}
+                        placeholder={t('admin.productForm.productDescription')}
+                    />
+                    <TextAreaInput
                         id="ingredients"
                         name="ingredients"
-                        label={t('admin.productForm.ingredients')}
+                        label={t('admin.productForm.ingredients') + ' (EN)'}
                         value={product.ingredients}
                         onChange={handleChange}
                         rows={3}
                         required
                         error={errors.ingredients}
+                        placeholder={t('admin.productForm.ingredients')}
+                    />
+                    <TextAreaInput
+                        id="ingredients_ro"
+                        name="ingredients_ro"
+                        label={t('admin.productForm.ingredients') + ' (RO)'}
+                        value={product.ingredients_ro || ''}
+                        onChange={handleChange}
+                        rows={3}
+                        required
+                        error={errors.ingredients_ro}
                         placeholder={t('admin.productForm.ingredients')}
                     />
                 </div>
@@ -145,7 +177,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.productType') },
                                 ...enums.mead_type.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: enumValue.label,
+                                    label: t(`enums.meadType.${enumValue.value}`),
                                 })),
                             ]}
                             required
@@ -161,7 +193,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.sweetness') },
                                 ...enums.sweetness.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: enumValue.label,
+                                    label: t(`enums.sweetness.${enumValue.value}`),
                                 })),
                             ]}
                             required
@@ -179,7 +211,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.turbidity') },
                                 ...enums.turbidity.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: enumValue.label,
+                                    label: t(`enums.turbidity.${enumValue.value}`),
                                 })),
                             ]}
                             required
@@ -195,7 +227,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.effervescence') },
                                 ...enums.effervescence.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: enumValue.label,
+                                    label: t(`enums.effervescence.${enumValue.value}`),
                                 })),
                             ]}
                             required
@@ -213,7 +245,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.acidity') },
                                 ...enums.acidity.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: enumValue.label,
+                                    label: t(`enums.acidity.${enumValue.value}`),
                                 })),
                             ]}
                             required
@@ -229,7 +261,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.tanins') },
                                 ...enums.tanins.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: enumValue.label,
+                                    label: t(`enums.tanins.${enumValue.value}`),
                                 })),
                             ]}
                             required
@@ -247,7 +279,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.body') },
                                 ...enums.body.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: enumValue.label,
+                                    label: t(`enums.body.${enumValue.value}`),
                                 })),
                             ]}
                             required
@@ -277,7 +309,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         <NumberInput
                             id="price"
                             name="price"
-                            label={t('admin.productForm.price')}
+                            label={t('admin.productForm.price') + ' (EUR)'}
                             value={product.price}
                             onChange={handleNumericChange}
                             required
@@ -285,6 +317,20 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                             min="0"
                             error={errors.price}
                             helpText={t('admin.productForm.priceHelp')}
+                        />
+                    </div>
+                    <div className="form-row">
+                        <NumberInput
+                            id="price_ron"
+                            name="price_ron"
+                            label={t('admin.productForm.price') + ' (RON)'}
+                            value={product.price_ron || 0}
+                            onChange={handleNumericChange}
+                            required
+                            step="0.01"
+                            min="0"
+                            error={errors.price_ron}
+                            helpText={t('admin.productForm.priceRonHelp')}
                         />
                     </div>
                     <div className="form-row">

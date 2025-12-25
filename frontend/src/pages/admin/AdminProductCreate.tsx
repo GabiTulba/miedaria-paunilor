@@ -11,8 +11,11 @@ function AdminProductCreate() {
     const [product, setProduct] = useState<Omit<Product, 'product_id'> & { product_id?: string }>({
         product_id: '',
         product_name: '',
+        product_name_ro: '',
         product_description: '',
+        product_description_ro: '',
         ingredients: '',
+        ingredients_ro: '',
         product_type: '',
         sweetness: '',
 
@@ -25,6 +28,7 @@ function AdminProductCreate() {
         bottle_count: 0,
         bottle_size: 750,
         price: 0.00,
+        price_ron: 0.00,
         image_id: '',
     });
     const [errors, setErrors] = useState<Record<string, string>>({});

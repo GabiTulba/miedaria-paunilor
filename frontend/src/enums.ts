@@ -3,7 +3,6 @@
 
 export interface EnumValue {
     value: string;
-    label: string;
 }
 
 export interface EnumValues {
@@ -16,10 +15,18 @@ export interface EnumValues {
     body: EnumValue[];
 }
 
-// Helper function to get enum label from value
-export function getEnumLabel(value: string, enumValues: EnumValue[]): string {
-    const enumValue = enumValues.find(e => e.value === value);
-    return enumValue ? enumValue.label : value;
+// Helper function to get enum label from value based on language
+// Uses translation files for labels
+export function getEnumLabel(value: string, enumType: keyof EnumValues, t: (key: string) => string): string {
+    const translationKey = `enums.${enumType}.${value}`;
+    const translated = t(translationKey);
+    
+    // If translation is not found, fall back to formatted value
+    if (translated === translationKey) {
+        return formatEnumLabel(value);
+    }
+    
+    return translated;
 }
 
 // Fallback formatting for enum labels when enum values are not available

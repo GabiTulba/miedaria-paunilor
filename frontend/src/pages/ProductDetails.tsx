@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { ProductWithImage } from '../types';
 import { api } from '../lib/api';
 import { CartContext } from '../context/CartContext';
-import { formatEnumLabel } from '../enums';
+import { getEnumLabel } from '../enums';
 import { getProductDetailsStockStatus, isInStock } from '../utils/stockAvailability';
 import { toFixed } from '../utils/numberUtils';
 import CollapsibleSection from '../components/CollapsibleSection';
+
 import './ProductDetails.css';
 
 function ProductDetails() {
@@ -17,7 +18,8 @@ function ProductDetails() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { addToCart } = useContext(CartContext);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -52,6 +54,20 @@ function ProductDetails() {
     }
 
     const { product, image } = productWithImage;
+    const currentLanguage = i18n.language;
+    
+    // Get bilingual content based on language
+    const productName = currentLanguage === 'ro' && product.product_name_ro 
+        ? product.product_name_ro 
+        : product.product_name;
+    const productDescription = currentLanguage === 'ro' && product.product_description_ro 
+        ? product.product_description_ro 
+        : product.product_description;
+    const ingredients = currentLanguage === 'ro' && product.ingredients_ro 
+        ? product.ingredients_ro 
+        : product.ingredients;
+    const price = currentLanguage === 'ro' ? product.price_ron : product.price;
+    const currency = currentLanguage === 'ro' ? t('common.ron') : t('common.euro');
 
     return (
         <div className="product-details-page">
@@ -63,7 +79,7 @@ function ProductDetails() {
                     {image ? (
                         <img 
                             src={`/images/${image.id}`} 
-                            alt={product.product_name} 
+                            alt={productName} 
                             className="product-detail-image" 
                         />
                     ) : (
@@ -71,13 +87,15 @@ function ProductDetails() {
                     )}
                 </div>
                 <div className="product-info-section">
-                    <h1>{product.product_name}</h1>
-                     <p className="price-large">{toFixed(product.price)} {t('common.euro')}</p>
+                    <h1>{productName}</h1>
+                     <p className="price-large">{toFixed(price)} {currency}</p>
                     
                     <div className="product-basic-info">
                         <div className="basic-info-item">
                             <span className="basic-info-label">{t('product.productType')}:</span>
-                            <span className="basic-info-value">{formatEnumLabel(product.product_type)}</span>
+                            <span className="basic-info-value">
+                                 {getEnumLabel(product.product_type, 'mead_type', t)}
+                            </span>
                         </div>
                         <div className="basic-info-item">
                             <span className="basic-info-label">{t('product.abv')}:</span>
@@ -89,37 +107,49 @@ function ProductDetails() {
                         </div>
                     </div>
                     
-                    <p className="product-description">{product.product_description}</p>
+                    <p className="product-description">{productDescription}</p>
                     
                     <CollapsibleSection title={t('product.ingredients')} defaultCollapsed={true}>
-                        <p className="product-ingredients">{product.ingredients}</p>
+                        <p className="product-ingredients">{ingredients}</p>
                     </CollapsibleSection>
                     
                     <CollapsibleSection title={t('common.details')} defaultCollapsed={true}>
                         <div className="product-details-grid">
                             <div className="detail-item">
                                 <span className="detail-label">{t('product.sweetness')}:</span>
-                                <span className="detail-value">{formatEnumLabel(product.sweetness)}</span>
+                                <span className="detail-value">
+                                     {getEnumLabel(product.sweetness, 'sweetness', t)}
+                                </span>
                             </div>
                             <div className="detail-item">
                                 <span className="detail-label">{t('product.turbidity')}:</span>
-                                <span className="detail-value">{formatEnumLabel(product.turbidity)}</span>
+                                <span className="detail-value">
+                                     {getEnumLabel(product.turbidity, 'turbidity', t)}
+                                </span>
                             </div>
                             <div className="detail-item">
                                 <span className="detail-label">{t('product.effervescence')}:</span>
-                                <span className="detail-value">{formatEnumLabel(product.effervescence)}</span>
+                                <span className="detail-value">
+                                     {getEnumLabel(product.effervescence, 'effervescence', t)}
+                                </span>
                             </div>
                             <div className="detail-item">
                                 <span className="detail-label">{t('product.acidity')}:</span>
-                                <span className="detail-value">{formatEnumLabel(product.acidity)}</span>
+                                <span className="detail-value">
+                                     {getEnumLabel(product.acidity, 'acidity', t)}
+                                </span>
                             </div>
                             <div className="detail-item">
                                 <span className="detail-label">{t('product.tanins')}:</span>
-                                <span className="detail-value">{formatEnumLabel(product.tanins)}</span>
+                                <span className="detail-value">
+                                     {getEnumLabel(product.tanins, 'tanins', t)}
+                                </span>
                             </div>
                             <div className="detail-item">
                                 <span className="detail-label">{t('product.body')}:</span>
-                                <span className="detail-value">{formatEnumLabel(product.body)}</span>
+                                <span className="detail-value">
+                                     {getEnumLabel(product.body, 'body', t)}
+                                </span>
                             </div>
                         </div>
                     </CollapsibleSection>

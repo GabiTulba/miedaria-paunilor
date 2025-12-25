@@ -3,8 +3,11 @@ import { Product } from '../../types';
 export const errorMapping: Record<string, keyof Product> = {
     InvalidProductId: "product_id",
     EmptyProductName: "product_name",
+    EmptyProductNameRo: "product_name_ro",
     EmptyProductDescription: "product_description",
+    EmptyProductDescriptionRo: "product_description_ro",
     EmptyIngredients: "ingredients",
+    EmptyIngredientsRo: "ingredients_ro",
     InvalidProductType: "product_type",
     InvalidSweetnessType: "sweetness",
 
@@ -17,15 +20,20 @@ export const errorMapping: Record<string, keyof Product> = {
     InvalidBottleCount: "bottle_count",
     InvalidBottleSize: "bottle_size",
     InvalidPrice: "price",
+    InvalidPriceRon: "price_ron",
     InvalidAbvPrecision: "abv",
     InvalidPricePrecision: "price",
+    InvalidPriceRonPrecision: "price_ron",
 };
 
 export const errorMessageMapping: Record<string, string> = {
     InvalidProductId: "Product ID can only contain lowercase letters, dashes and underscores.",
-    EmptyProductName: "Product name cannot be empty.",
-    EmptyProductDescription: "Product description cannot be empty.",
-    EmptyIngredients: "Ingredients cannot be empty.",
+    EmptyProductName: "English product name cannot be empty.",
+    EmptyProductNameRo: "Romanian product name cannot be empty.",
+    EmptyProductDescription: "English product description cannot be empty.",
+    EmptyProductDescriptionRo: "Romanian product description cannot be empty.",
+    EmptyIngredients: "English ingredients cannot be empty.",
+    EmptyIngredientsRo: "Romanian ingredients cannot be empty.",
     InvalidProductType: "Invalid mead type selected.",
     InvalidSweetnessType: "Invalid sweetness type selected.",
 
@@ -37,7 +45,9 @@ export const errorMessageMapping: Record<string, string> = {
     InvalidAbv: "ABV must be between 0.0 and 99.9.",
     InvalidBottleCount: "Bottle count must be a non-negative integer.",
     InvalidBottleSize: "Bottle size must be a positive integer.",
-    InvalidPrice: "Price must be between 0.00 and 999.99.",
+    InvalidPrice: "EUR price must be between 0.00 and 999.99.",
+    InvalidPriceRon: "RON price must be between 0.00 and 99999.99.",
     InvalidAbvPrecision: "ABV must have at most 1 decimal place.",
-    InvalidPricePrecision: "Price must have at most 2 decimal places.",
+    InvalidPricePrecision: "EUR price must have at most 2 decimal places.",
+    InvalidPriceRonPrecision: "RON price must have at most 2 decimal places.",
 };

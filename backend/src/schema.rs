@@ -22,8 +22,11 @@ diesel::table! {
     products (product_id) {
         product_id -> Varchar,
         product_name -> Varchar,
+        product_name_ro -> Varchar,
         product_description -> Text,
+        product_description_ro -> Text,
         ingredients -> Text,
+        ingredients_ro -> Text,
         product_type -> Varchar,
         sweetness -> Varchar,
         turbidity -> Varchar,
@@ -35,6 +38,7 @@ diesel::table! {
         bottle_count -> Int4,
         bottle_size -> Int4,
         price -> Numeric,
+        price_ron -> Numeric,
         image_id -> Uuid,
     }
 }

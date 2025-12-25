@@ -214,6 +214,7 @@ impl AcidityType {
 pub enum TaninsType {
     Mild,
     Moderate,
+    Strong,
 }
 
 impl TaninsType {
@@ -221,6 +222,7 @@ impl TaninsType {
         match self {
             TaninsType::Mild => "mild",
             TaninsType::Moderate => "moderate",
+            TaninsType::Strong => "strong",
         }
     }
 
@@ -228,12 +230,13 @@ impl TaninsType {
         match s {
             "mild" => Some(TaninsType::Mild),
             "moderate" => Some(TaninsType::Moderate),
+            "strong" => Some(TaninsType::Strong),
             _ => None,
         }
     }
 
     pub fn all() -> Vec<Self> {
-        vec![TaninsType::Mild, TaninsType::Moderate]
+        vec![TaninsType::Mild, TaninsType::Moderate, TaninsType::Strong]
     }
 }
 

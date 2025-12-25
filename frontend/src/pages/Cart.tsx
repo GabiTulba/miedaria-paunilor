@@ -7,10 +7,14 @@ import './Cart.css';
 
 function Cart() {
     const { cartItems, removeFromCart, updateQuantity, clearCart } = useContext(CartContext);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const currentLanguage = i18n.language;
 
     const getTotalPrice = () => {
-        return cartItems.reduce((total, item) => total + toNumber(item.price) * item.quantity, 0).toFixed(2);
+        return cartItems.reduce((total, item) => {
+            const price = currentLanguage === 'ro' ? toNumber(item.price_ron) : toNumber(item.price);
+            return total + price * item.quantity;
+        }, 0).toFixed(2);
     };
 
     return (
@@ -27,32 +31,40 @@ function Cart() {
             ) : (
                 <div className="cart-content">
                     <div className="cart-items-list">
-                        {cartItems.map(item => (
-                            <div key={item.product_id} className="cart-item">
-                                <div className="cart-item-details">
-                                    <h3>{item.product_name}</h3>
-                                     <p className="cart-item-price">{toFixed(item.price)} €</p>
-                                    <div className="quantity-selector-cart">
-                                        <button onClick={() => updateQuantity(item.product_id, item.quantity - 1)}>-</button>
-                                        <span>{item.quantity}</span>
-                                        <button onClick={() => updateQuantity(item.product_id, item.quantity + 1)}>+</button>
+                         {cartItems.map(item => {
+                            const productName = currentLanguage === 'ro' && item.product_name_ro 
+                                ? item.product_name_ro 
+                                : item.product_name;
+                            const price = currentLanguage === 'ro' ? item.price_ron : item.price;
+                            const currency = currentLanguage === 'ro' ? t('common.ron') : t('common.euro');
+                            
+                            return (
+                                <div key={item.product_id} className="cart-item">
+                                    <div className="cart-item-details">
+                                        <h3>{productName}</h3>
+                                         <p className="cart-item-price">{toFixed(price)} {currency}</p>
+                                        <div className="quantity-selector-cart">
+                                            <button onClick={() => updateQuantity(item.product_id, item.quantity - 1)}>-</button>
+                                            <span>{item.quantity}</span>
+                                            <button onClick={() => updateQuantity(item.product_id, item.quantity + 1)}>+</button>
+                                        </div>
+                                        <p className="cart-item-subtotal">
+                                             {t('cart.subtotal')}: {toFixed(toNumber(price) * item.quantity)} {currency}
+                                        </p>
                                     </div>
-                                    <p className="cart-item-subtotal">
-                                         {t('cart.subtotal')}: {toFixed(toNumber(item.price) * item.quantity)} €
-                                    </p>
+                                    <button className="remove-item-btn" onClick={() => removeFromCart(item.product_id)}>
+                                        &times;
+                                    </button>
                                 </div>
-                                <button className="remove-item-btn" onClick={() => removeFromCart(item.product_id)}>
-                                    &times;
-                                </button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
-                    <aside className="cart-summary">
+                     <aside className="cart-summary">
                         <h3>{t('cart.orderSummary')}</h3>
                         <div className="summary-total">
                             <span>{t('cart.total')}</span>
-                            <span>{getTotalPrice()} €</span>
+                            <span>{getTotalPrice()} {currentLanguage === 'ro' ? t('common.ron') : t('common.euro')}</span>
                         </div>
                         <button className="button checkout-btn">{t('cart.proceedToCheckout')}</button>
                         <button className="button-secondary clear-cart-btn" onClick={clearCart}>

@@ -120,6 +120,7 @@
     "milliliters": "ml",
     "percent": "%",
     "euro": "€",
+    "ron": "RON",
     "dollar": "$",
     "pound": "£"
   },
@@ -257,6 +258,7 @@
       "bottleSizeHelp": "Volume in milliliters",
       "price": "Price",
       "priceHelp": "Price in Euros",
+      "priceRonHelp": "Price in Romanian Lei",
       "image": "Image",
       "selectImage": "Select Image",
       "noImage": "No image selected",
@@ -327,5 +329,52 @@
     "validationError": "Validation error",
     "unauthorized": "Unauthorized access",
     "forbidden": "Access forbidden"
+  },
+  "enums": {
+    "meadType": {
+      "hidromel": "Hidromel",
+      "melomel": "Melomel",
+      "metheglin": "Metheglin",
+      "bochet": "Bochet",
+      "braggot": "Braggot",
+      "pyment": "Pyment",
+      "cyser": "Cyser",
+      "rhodomel": "Rhodomel",
+      "capsicumel": "Capsicumel",
+      "acerglyn": "Acerglyn"
+    },
+    "sweetness": {
+      "bone-dry": "Bone Dry",
+      "dry": "Dry",
+      "semi-dry": "Semi Dry",
+      "semi-sweet": "Semi Sweet",
+      "sweet": "Sweet",
+      "dessert": "Dessert"
+    },
+    "turbidity": {
+      "crystalline": "Crystalline",
+      "hazy": "Hazy",
+      "cloudy": "Cloudy"
+    },
+    "effervescence": {
+      "flat": "Flat",
+      "perlant": "Perlant",
+      "sparkling": "Sparkling"
+    },
+    "acidity": {
+      "mild": "Mild",
+      "moderate": "Moderate",
+      "strong": "Strong"
+    },
+    "tanins": {
+      "mild": "Mild",
+      "moderate": "Moderate",
+      "strong": "Strong"
+    },
+    "body": {
+      "light": "Light",
+      "medium": "Medium",
+      "full": "Full"
+    }
   }
 }
