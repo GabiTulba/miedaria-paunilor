@@ -82,7 +82,7 @@
 }
 
 .blog-post-title a:hover {
-    color: var(--color-primary-dark);
+    color: var(--accent-color);
 }
 
 .blog-post-meta {
@@ -131,20 +131,19 @@
 .read-more-btn {
     display: inline-block;
     padding: 0.75rem 1.5rem;
-    background-color: var(--color-primary);
+    background-color: var(--accent-color);
     color: white;
     text-decoration: none;
     border-radius: 6px;
     font-weight: 600;
-    transition: background-color 0.2s ease, transform 0.2s ease;
+    transition: background-color 0.2s ease;
     border: none;
     cursor: pointer;
     font-size: 0.95rem;
 }
 
 .read-more-btn:hover {
-    background-color: var(--color-primary-dark);
-    transform: translateY(-2px);
+    background-color: #d35400;
 }
 
 /* Blog post detail page styles */
