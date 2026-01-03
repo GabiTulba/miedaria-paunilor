@@ -17,18 +17,10 @@ function AboutUs() {
                     <p>
                         {t('home.ourStoryDescription')}
                     </p>
-                    <p>
-                        {t('about.story')}: {t('about.values')}
-                    </p>
                 </section>
                 <section className="about-section">
                     <h2>{t('about.values')}</h2>
-                    <p>
-                        {t('about.team')}: {t('about.mission')}
-                    </p>
-                    <p>
-                        {t('about.story')}: {t('about.values')}
-                    </p>
+                    <p>{t('about.valuesDescription')}</p>
                 </section>
             </div>
         </div>

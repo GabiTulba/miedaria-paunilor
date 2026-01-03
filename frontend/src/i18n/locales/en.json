@@ -101,7 +101,7 @@
     "username": "Username",
     "firstName": "First Name",
     "lastName": "Last Name",
-    "phone": "Phone",
+    "phone": "Phone/WhatsApp",
     "address": "Address",
     "city": "City",
     "country": "Country",
@@ -368,12 +368,13 @@
     "story": "Our Story",
     "mission": "Our Mission",
     "values": "Our Values",
+    "valuesDescription":"values description",
     "team": "Our Team"
   },
   "contact": {
     "title": "Contact Us",
     "address": "Address",
-    "phone": "Phone",
+    "phone": "Phone/WhatsApp",
     "email": "Email",
     "hours": "Business Hours",
     "formTitle": "Send us a Message",

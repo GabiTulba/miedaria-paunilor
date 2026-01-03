@@ -12,20 +12,18 @@ function Contact() {
             </header>
             <div className="contact-content">
                 <div className="contact-info">
-                    <h3>{t('contact.title')}</h3>
-                    <p>{t('contact.formTitle')}</p>
                     <ul>
                         <li>
                             <i className="icon-phone"></i>
-                            <span>{t('contact.phone')}: +40 123 456 789</span>
+                            <span>{t('contact.phone')}: +40 760 297 145</span>
                         </li>
                         <li>
                             <i className="icon-email"></i>
-                            <span>{t('contact.email')}: contact@miedaria-paunilor.ro</span>
+                            <span>{t('contact.email')}: tulbalecuh@gmail.com</span>
                         </li>
                         <li>
                             <i className="icon-location"></i>
-                            <span>{t('contact.address')}: Str. Fagului, Nr. 1, Brașov, Romania</span>
+                            <span>{t('contact.address')}: Str. Principală, Nr. 429B, Urleta, Prahova, România</span>
                         </li>
                     </ul>
                 </div>
