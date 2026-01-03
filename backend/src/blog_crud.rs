@@ -137,14 +137,20 @@ pub fn get_all_blog_posts_admin(conn: &mut PgConnection) -> Result<Vec<BlogPost>
         .load::<BlogPost>(conn)
 }
 
-pub fn get_blog_post_by_blog_id(conn: &mut PgConnection, blog_id: &str) -> Result<BlogPost, DieselError> {
+pub fn get_blog_post_by_blog_id(
+    conn: &mut PgConnection,
+    blog_id: &str,
+) -> Result<BlogPost, DieselError> {
     blog_posts::table
         .filter(blog_posts::blog_id.eq(blog_id))
         .filter(blog_posts::is_published.eq(true))
         .first::<BlogPost>(conn)
 }
 
-pub fn get_blog_post_by_id(conn: &mut PgConnection, id: uuid::Uuid) -> Result<BlogPost, DieselError> {
+pub fn get_blog_post_by_id(
+    conn: &mut PgConnection,
+    id: uuid::Uuid,
+) -> Result<BlogPost, DieselError> {
     blog_posts::table
         .filter(blog_posts::id.eq(id))
         .first::<BlogPost>(conn)

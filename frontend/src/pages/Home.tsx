@@ -25,6 +25,9 @@ function Home() {
     return (
         <div className="home-page">
             <section className="hero-section">
+                <div className="logo-container">
+                    <img src="/logo.svg" alt="Miedăria Păunilor" className="hero-logo" />
+                </div>
                 <div className="hero-content">
                     <h1>{t('home.heroTitle')}</h1>
                     <p>{t('home.heroDescription')}</p>
