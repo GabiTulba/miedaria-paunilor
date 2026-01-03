@@ -37,15 +37,17 @@ function Home() {
 
             <section className="featured-products">
                 <div className="section-content-container">
-                    <h2 className="section-title">{t('home.featuredProducts')}</h2>
-                     <div className="product-grid">
-                     {featuredProducts.map(productWithImage => (
-                         <ProductCard 
-                             key={productWithImage.product.product_id} 
-                             productWithImage={productWithImage} 
-                         />
-                     ))}
-                 </div>
+                    <div className="featured-content">
+                        <h2>{t('home.featuredProducts')}</h2>
+                         <div className="product-grid">
+                         {featuredProducts.map(productWithImage => (
+                             <ProductCard 
+                                 key={productWithImage.product.product_id} 
+                                 productWithImage={productWithImage} 
+                             />
+                         ))}
+                     </div>
+                    </div>
                 </div>
             </section>
 
