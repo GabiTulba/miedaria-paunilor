@@ -73,11 +73,27 @@
 }
 
 .quantity-selector-cart button {
-    background: none;
+    background: var(--white-color);
     border: none;
     padding: 8px 12px;
     cursor: pointer;
     font-size: 1rem;
+    color: #999;
+    transition: all 0.2s ease;
+}
+
+.quantity-selector-cart button:hover:not(:disabled) {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.quantity-selector-cart button:disabled {
+    color: #ddd;
+    cursor: not-allowed;
+}
+
+.quantity-selector-cart button:disabled:hover {
+    background-color: var(--white-color);
 }
 
 .quantity-selector-cart span {
@@ -87,6 +103,13 @@
 
 .cart-item-subtotal {
     font-weight: bold;
+}
+
+.cart-max-quantity-message {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: #e74c3c;
+    font-style: italic;
 }
 
 .remove-item-btn {

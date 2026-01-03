@@ -41,7 +41,7 @@ function ProductDetails() {
 
     const handleAddToCart = () => {
         if (productWithImage?.product) {
-            addToCart(productWithImage.product, quantity);
+            addToCart(productWithImage.product, quantity, product.bottle_count);
         }
     };
 
@@ -167,20 +167,28 @@ function ProductDetails() {
                                      );
                                  })()}
                              </div>
-                             <div className="cart-controls">
-                                 <div className="quantity-selector">
-                                     <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
-                                     <span>{quantity}</span>
-                                     <button onClick={() => setQuantity(quantity + 1)}>+</button>
-                                 </div>
-                                 <button 
-                                     className="button add-to-cart-btn"
-                                     onClick={handleAddToCart}
-                                     disabled={!isInStock(product.bottle_count)}
-                                 >
-                                     {isInStock(product.bottle_count) ? t('product.addToCart') : t('common.outOfStock')}
-                                 </button>
-                             </div>
+                              <div className="cart-controls">
+                                  <div className="quantity-selector">
+                                      <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
+                                      <span>{quantity}</span>
+                                      <button 
+                                          onClick={() => setQuantity(Math.min(product.bottle_count, quantity + 1))}
+                                          disabled={quantity >= product.bottle_count}
+                                      >+</button>
+                                  </div>
+                                  <button 
+                                      className="button add-to-cart-btn"
+                                      onClick={handleAddToCart}
+                                      disabled={!isInStock(product.bottle_count)}
+                                  >
+                                      {isInStock(product.bottle_count) ? t('product.addToCart') : t('common.outOfStock')}
+                                  </button>
+                              </div>
+                              {quantity >= product.bottle_count && product.bottle_count > 0 && (
+                                  <div className="max-quantity-message">
+                                      {t('product.maxQuantityReached', { count: product.bottle_count })}
+                                  </div>
+                              )}
                          </div>
                      </div>
                 </div>

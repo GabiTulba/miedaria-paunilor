@@ -154,12 +154,27 @@
 }
 
 .quantity-selector button {
-    background: none;
+    background: var(--white-color);
     border: none;
     padding: 10px 15px;
     cursor: pointer;
     font-size: 1.2rem;
-    color: var(--primary-color);
+    color: #999;
+    transition: all 0.2s ease;
+}
+
+.quantity-selector button:hover:not(:disabled) {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.quantity-selector button:disabled {
+    color: #ddd;
+    cursor: not-allowed;
+}
+
+.quantity-selector button:disabled:hover {
+    background-color: var(--white-color);
 }
 
 .quantity-selector span {
@@ -176,6 +191,13 @@
     background-color: #ccc;
     cursor: not-allowed;
     transform: none;
+}
+
+.max-quantity-message {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #e74c3c;
+    font-style: italic;
 }
 
 @media (max-width: 992px) {

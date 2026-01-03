@@ -43,14 +43,22 @@ function Cart() {
                                     <div className="cart-item-details">
                                         <h3>{productName}</h3>
                                          <p className="cart-item-price">{toFixed(price)} {currency}</p>
-                                        <div className="quantity-selector-cart">
-                                            <button onClick={() => updateQuantity(item.product_id, item.quantity - 1)}>-</button>
-                                            <span>{item.quantity}</span>
-                                            <button onClick={() => updateQuantity(item.product_id, item.quantity + 1)}>+</button>
-                                        </div>
-                                        <p className="cart-item-subtotal">
-                                             {t('cart.subtotal')}: {toFixed(toNumber(price) * item.quantity)} {currency}
-                                        </p>
+                                         <div className="quantity-selector-cart">
+                                             <button onClick={() => updateQuantity(item.product_id, item.quantity - 1)}>-</button>
+                                             <span>{item.quantity}</span>
+                                             <button 
+                                                 onClick={() => updateQuantity(item.product_id, item.quantity + 1, item.availableStock)}
+                                                 disabled={item.quantity >= item.availableStock}
+                                             >+</button>
+                                         </div>
+                                         {item.quantity >= item.availableStock && item.availableStock > 0 && (
+                                             <div className="cart-max-quantity-message">
+                                                 {t('product.maxQuantityReached', { count: item.availableStock })}
+                                             </div>
+                                         )}
+                                         <p className="cart-item-subtotal">
+                                              {t('cart.subtotal')}: {toFixed(toNumber(price) * item.quantity)} {currency}
+                                         </p>
                                     </div>
                                     <button className="remove-item-btn" onClick={() => removeFromCart(item.product_id)}>
                                         &times;
