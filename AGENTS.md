@@ -342,6 +342,11 @@ The application includes a fully functional shopping cart system with the follow
 *   **Cart Persistence:** Cart state is maintained during user session
 *   **Cart Display:** Cart page shows items with quantity controls, subtotals, and order summary
 *   **Cart Badge:** Navigation displays current item count
+*   **Stock Validation:** Prevents ordering more bottles than available stock with visual feedback and disabled controls
+*   **Quantity Controls:** Plus/minus buttons with light gray symbols on white background that change to white symbols on dark blue background when hovered
+*   **Max Quantity Feedback:** Clear messages indicate when maximum available quantity is reached
 
 ### UI Design
 *   The main sticky navigation bar does not include an "Admin" link for regular users, keeping the admin interface separate from the public-facing site.
+*   **Improved Button Contrast:** "Clear All Filters" button features dark gray text on light gray background (unhovered) and white text on dark blue background (hovered) for optimal readability
+*   **Consistent Interactive Elements:** All quantity control buttons (+/-) use consistent styling with light gray symbols on white background (unhovered) and white symbols on dark blue background (hovered)
