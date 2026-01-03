@@ -179,8 +179,8 @@ The instance has a single database [miedaria_paunilor], with five tables:
  * price - Decimal with two digits of precision. Represents the price of the product in Euros.
  * price_ron - Decimal with two digits of precision. Represents the price of the product in Romanian Lei.
  * image_id - (Foreign Key) A UUID referencing the `id` from the `images` table.
- * bottling_date - Date when the mead was bottled. Required field.
- * lot_number - Production lot number as a positive integer. Required field.
+ * bottling_date - Date when the mead was bottled. Required field with validation (cannot be in the future).
+ * lot_number - Production lot number as a positive integer. Required field with validation (must be > 0).
 
 [users] and [admin_users] have the following schema:
 * username - (Primary Key) ASCII printable string, limited to 256 characters.
@@ -259,6 +259,8 @@ Diesel is used to interact with the database, dealing with:
         *   Enum validation for product attributes (mead type, sweetness, turbidity, effervescence, acidity, tannins, body)
         *   Numeric validation (ABV range 0.0-99.9, bottle count non-negative, bottle size positive, price validation)
         *   Precision validation (ABV with 1 decimal place, price with 2 decimal places)
+        *   Date validation (bottling date cannot be in the future)
+        *   Lot number validation (must be positive integer)
     *   Returning specific error types for different validation failures.
     *   **Enhanced Product Filtering:** The `/api/products` GET endpoint supports comprehensive filtering by all product attributes including:
         *   `product_type` - Filter by mead type (hidromel, melomel, metheglin, etc.)
@@ -269,7 +271,7 @@ Diesel is used to interact with the database, dealing with:
         *   `tanins` - Filter by tannin level (mild, moderate, strong)
         *   `body` - Filter by body/mouthfeel (light, medium, full)
         *   `in_stock` - Filter to show only products with available inventory
-        *   `order_by` - Sort by price or volume
+        *   `order_by` - Sort by price, volume, or bottling_date
         *   `order_direction` - Sort direction (asc/desc)
 
 ## Frontend
@@ -293,8 +295,8 @@ The styling is managed through a modular and organized CSS architecture:
 The frontend website is structured as follows:
 ```
 / -- redirects to home/
-    home/ -- A visually appealing landing page with a hero section, featured products, latest blog posts, and teasers for other sections. Displays images using UUID-based URLs.
-    shop/ -- Displays all products in a grid, with a comprehensive sidebar for filtering by product attributes (mead type, sweetness, turbidity, effervescence, acidity, tannins, body), sorting (price, volume), and stock status. Displays images using UUID-based URLs.
+    home/ -- A visually appealing landing page with a hero section, featured products (showing the 3 latest meads by bottling date), latest blog posts, and teasers for other sections. Displays images using UUID-based URLs.
+    shop/ -- Displays all products in a grid, with a comprehensive sidebar for filtering by product attributes (mead type, sweetness, turbidity, effervescence, acidity, tannins, body), sorting (price, volume, or bottling_date), and stock status. Displays images using UUID-based URLs.
         shop/[product_id]/ -- A detailed view of a single product with an "Add to Cart" button and quantity selector. Displays images using UUID-based URLs.
     blog/ -- Displays blog posts in reverse chronological order with markdown rendering and bilingual support.
         blog/[slug]/ -- A detailed view of a single blog post with full markdown content.
@@ -316,13 +318,15 @@ The frontend `Product` and `ProductWithImage` types include all product attribut
 *   **Modular Form Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) centralize input rendering, labeling, and error display logic with support for help text and placeholders.
 *   **Environment-Based Configuration:** The frontend uses `import.meta.env.VITE_API_BASE_URL` for API configuration, centralizing settings through environment variables. TypeScript environment type definitions are provided in `src/vite-env.d.ts`.
  *   **Stock Availability Utilities:** The `stockAvailability.ts` module provides utility functions (`getShopStockStatus`, `getProductDetailsStockStatus`, `isInStock`) for consistent stock status display across the application with appropriate CSS classes and descriptions.
- *   **Number Utilities:** The `numberUtils.ts` module provides utility functions (`toNumber`, `toFixed`) for safely converting between string and number representations of decimal values, ensuring consistent handling of product prices and ABV values across the application.
+  *   **Number Utilities:** The `numberUtils.ts` module provides utility functions (`toNumber`, `toFixed`) for safely converting between string and number representations of decimal values, ensuring consistent handling of product prices and ABV values across the application.
+  *   **Date Utilities:** The `dateUtils.ts` module provides comprehensive date formatting and parsing utilities (`formatDateForDisplay`, `parseDateForBackend`, `isValidDisplayDate`) for converting between backend YYYY-MM-DD format and UI DD/MM/YYYY format with validation.
 *   **Enhanced Admin UI:** The admin interface features a modern, intuitive design with:
     *   **Dashboard:** Statistics cards showing product counts, inventory value, and low stock alerts
     *   **Sidebar Navigation:** Visual hierarchy with icons and active state indicators
     *   **Data Tables:** Product tables with image previews, status badges, and clear action buttons
     *   **Image Management:** Grid-based image gallery with drag-and-drop upload and previews
     *   **Form Organization:** Logical section grouping with help text and validation
+    *   **Date Input Format:** Admin product forms use DD/MM/YYYY date format with automatic conversion to/from backend YYYY-MM-DD format
     *   **Loading States:** Spinner animations and skeleton states for better UX
     *   **Error Handling:** User-friendly error messages with retry options
     *   **Empty States:** Helpful guidance when no data is available

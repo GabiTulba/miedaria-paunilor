@@ -67,7 +67,6 @@ function Home() {
                 <div className="section-content-container">
                     <div className="teaser-content">
                         <h2>{t('home.latestBlogPosts')}</h2>
-                        <p>{t('home.readOurBlog')}</p>
                         <div className="blog-grid">
                             {latestBlogPosts.map(post => {
                                 const isRomanian = i18n.language === 'ro';
