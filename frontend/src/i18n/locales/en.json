@@ -140,14 +140,14 @@
     "settings": "Settings"
   },
   "home": {
-    "heroTitle": "Artisanal Mead, Crafted with Passion",
-    "heroDescription": "Experience the ancient tradition of mead, reimagined for the modern palate. Made from 100% pure honey.",
+    "heroTitle": "Authentic Mead. Purity Perfected.",
+    "heroDescription": "Discover the elixir of the gods, born from 100% natural honey and slow-fermented to perfection. Ancient tradition, reinterpreted for the modern palate.",
     "exploreCollection": "Explore Our Collection",
     "featuredProducts": "Featured Products",
     "latestBlogPosts": "Latest Blog Posts",
     "viewAllPosts": "View All Posts",
     "ourStory": "Our Story",
-    "ourStoryDescription": "Miedăria Păunilor is born from a love for nature, tradition, and the golden nectar of bees. We are a family-run business dedicated to producing the finest mead.",
+    "ourStoryDescription": "Our journey started with the curiosity for fermentation and the love for the sweet taste of honey. We chose to turn this curiosity into a mission: to rescue mead from the history books and bring it into our modern days. By combining traditional techniques with a contemporary vision, we’ve crafted a drink that preserves the legendary spirit of our ancestors while delivering the refinement expected today. We don’t just make mead; we reinvent the pleasure of savoring nature, one glass at a time.",
     "readMore": "Read More"
   },
   "shop": {
@@ -365,10 +365,10 @@
   },
   "about": {
     "title": "About Us",
-    "story": "Our Story",
+    "story": "Modern Alchemy",
     "mission": "Our Mission",
     "values": "Our Values",
-    "valuesDescription":"values description",
+    "valuesDescription":"Our values are the compass that guides us every day. We are committed to using only natural ingredients, refusing any compromise that might affect the integrity of flavor. We work with honesty and professionalism, prioritizing quality over quantity to offer you more than just a drink—an authentic experience, consistently excellent in every way.",
     "team": "Our Team"
   },
   "contact": {
