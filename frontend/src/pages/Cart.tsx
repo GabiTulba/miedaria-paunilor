@@ -23,6 +23,11 @@ function Cart() {
                 <h1>{t('cart.title')}</h1>
             </header>
 
+            <div className="cart-warning">
+                <h3>{t('cart.workInProgress')}</h3>
+                <p>{t('cart.workInProgressMessage')}</p>
+            </div>
+
             {cartItems.length === 0 ? (
                 <div className="empty-cart">
                     <p>{t('cart.empty')}</p>

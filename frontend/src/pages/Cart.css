@@ -15,6 +15,35 @@
     font-size: 3rem;
 }
 
+.cart-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.cart-warning h3 {
+    color: #856404;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cart-warning h3::before {
+    content: "⚠️";
+}
+
+.cart-warning p {
+    color: #856404;
+    margin: 0;
+    line-height: 1.5;
+}
+
 .empty-cart {
     text-align: center;
     padding: 40px;

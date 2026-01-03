@@ -216,7 +216,9 @@
     "proceedToCheckout": "Proceed to Checkout",
     "clearCart": "Clear Cart",
     "remove": "Remove",
-    "update": "Update"
+    "update": "Update",
+    "workInProgress": "Work in Progress",
+    "workInProgressMessage": "This cart page is currently under development. Until the checkout system is ready, please send your order via WhatsApp message with the items in your cart. Thank you for your understanding!"
   },
   "admin": {
     "login": {

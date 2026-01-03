@@ -7,13 +7,15 @@ services:
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     ports:
-      - "3000:80"
+      - "80:80"   # HTTP port for redirect to HTTPS
+      - "443:443" # HTTPS port
     networks:
       - react-rust
     env_file:
       - .env
     volumes:
-      - 'miedaria_paunilor_images:/app/images' 
+      - 'miedaria_paunilor_images:/app/images'
+      - './ssl:/etc/nginx/ssl:ro'  # Mount SSL certificates 
 
   backend:
     build: ./backend

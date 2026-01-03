@@ -124,6 +124,15 @@ The following environment variables *must* be defined in the `.env` file for the
 
 **Setup Instructions:** To configure the application, copy `env.sample` to `.env` and update the values as needed for your environment. The `.env` file is excluded from version control via `.gitignore` to prevent sensitive information from being committed.
 
+### HTTPS Configuration
+The application is configured to serve content over HTTPS on the default port 443. For development, self-signed certificates are automatically generated using the `generate-ssl.sh` script. For production deployment, replace the self-signed certificates in the `ssl/` directory with certificates from a trusted Certificate Authority (CA) such as Let's Encrypt.
+
+**SSL Certificate Generation:**
+- Run `./generate-ssl.sh` to generate self-signed certificates for development
+- Certificates are stored in the `ssl/` directory and mounted to the Nginx container
+- The Nginx configuration automatically redirects HTTP (port 80) to HTTPS (port 443)
+- For production, obtain certificates from Let's Encrypt using certbot or another trusted CA
+
 # Logical Components
 ## Database
 ### Technologies
@@ -300,7 +309,7 @@ The frontend website is structured as follows:
         shop/[product_id]/ -- A detailed view of a single product with an "Add to Cart" button and quantity selector. Displays images using UUID-based URLs.
     blog/ -- Displays blog posts in reverse chronological order with markdown rendering and bilingual support.
         blog/[slug]/ -- A detailed view of a single blog post with full markdown content.
-    cart/ -- A summary of the items in the shopping cart, with options to update quantities, remove items, or clear the cart.
+    cart/ -- A summary of the items in the shopping cart, with options to update quantities, remove items, or clear the cart. Includes a warning message indicating the checkout system is under development and instructing users to send orders via WhatsApp.
     about-us/ -- A static page with a modern design telling the story of the meadery.
     contact/ -- A static page with contact information.
     admin/ -- A login page for administrators.
@@ -352,6 +361,7 @@ The application includes a fully functional shopping cart system with the follow
 *   **Stock Validation:** Prevents ordering more bottles than available stock with visual feedback and disabled controls
 *   **Quantity Controls:** Plus/minus buttons with light gray symbols on white background that change to white symbols on dark blue background when hovered
 *   **Max Quantity Feedback:** Clear messages indicate when maximum available quantity is reached
+*   **Development Warning:** The cart page displays a prominent warning message indicating that the checkout system is under development and instructing users to send their orders via WhatsApp until the checkout system is ready
 
 ### UI Design
 *   The main sticky navigation bar does not include an "Admin" link for regular users, keeping the admin interface separate from the public-facing site.

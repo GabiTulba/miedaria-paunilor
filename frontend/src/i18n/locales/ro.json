@@ -216,7 +216,9 @@
     "proceedToCheckout": "Finalizează Comanda",
     "clearCart": "Golește Coșul",
     "remove": "Elimină",
-    "update": "Actualizează"
+    "update": "Anunț",
+    "workInProgress": "În Curs de Dezvoltare",
+    "workInProgressMessage": "Această pagină de coș este în curs de dezvoltare. Până când sistemul de finalizare a comenzii va fi gata, te rugăm să ne trimiți comanda prin mesaj WhatsApp cu produsele din coș. Vă mulțumim pentru înțelegere!"
   },
   "admin": {
     "login": {

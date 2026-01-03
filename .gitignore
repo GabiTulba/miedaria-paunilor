@@ -130,6 +130,10 @@ dist
 # Docker
 docker-compose.override.yml
 
+# SSL certificates (self-signed for development)
+ssl/cert.pem
+ssl/key.pem
+
 # OS generated files
 ehthumbs.db
 Icon?
