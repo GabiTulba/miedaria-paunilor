@@ -295,7 +295,7 @@ The styling is managed through a modular and organized CSS architecture:
 The frontend website is structured as follows:
 ```
 / -- redirects to home/
-    home/ -- A visually appealing landing page with a hero section, featured products (showing the 3 latest meads by bottling date), latest blog posts, and teasers for other sections. Displays images using UUID-based URLs.
+    home/ -- A visually appealing landing page with a hero section, featured products (showing the 3 latest in-stock meads by bottling date), latest blog posts, and teasers for other sections. Displays images using UUID-based URLs.
     shop/ -- Displays all products in a grid, with a comprehensive sidebar for filtering by product attributes (mead type, sweetness, turbidity, effervescence, acidity, tannins, body), sorting (price, volume, or bottling_date), and stock status. Displays images using UUID-based URLs.
         shop/[product_id]/ -- A detailed view of a single product with an "Add to Cart" button and quantity selector. Displays images using UUID-based URLs.
     blog/ -- Displays blog posts in reverse chronological order with markdown rendering and bilingual support.

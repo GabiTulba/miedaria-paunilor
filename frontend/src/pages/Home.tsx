@@ -14,11 +14,12 @@ function Home() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch products sorted by bottling date (newest first)
+                // Fetch in-stock products sorted by bottling date (newest first)
                 // Using the same approach as useFetchProducts hook
                 const params = new URLSearchParams();
                 params.append('order_by', 'bottling_date');
                 params.append('order_direction', 'desc');
+                params.append('in_stock', 'true'); // Filter out out-of-stock products
                 const queryString = params.toString();
                 const url = `/products${queryString ? `?${queryString}` : ''}`;
                 const products = await api.get(url);
