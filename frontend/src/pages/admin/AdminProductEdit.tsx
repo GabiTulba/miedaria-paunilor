@@ -59,16 +59,35 @@ function AdminProductEdit() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrors({}); // Clear previous errors
+        
+        // Client-side validation
+        const newErrors: Record<string, string> = {};
+        
+        // Validate bottling_date format
+        if (productWithImage && productWithImage.product.bottling_date) {
+            const dateObj = new Date(productWithImage.product.bottling_date);
+            if (isNaN(dateObj.getTime())) {
+                newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
+            }
+        } else {
+            newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
+        }
+        
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+        
         if (!token) {
-            alert('Authentication token not found. Please log in.');
+            alert(t('errors.unauthorized'));
             return;
         }
         if (productLoading || imagesLoading) {
-            alert('Data is still loading. Please wait.');
+            alert(t('common.loading'));
             return;
         }
         if (imagesError) {
-            alert('Error loading images. Cannot update product.');
+            alert(t('admin.images.error'));
             return;
         }
         if (productWithImage && productId) { // Check productWithImage
@@ -80,18 +99,18 @@ function AdminProductEdit() {
             } catch (error: any) {
                 console.error("Failed to update product:", error);
                 if (error.response && error.response.data && error.response.data.errors) {
-                    const newErrors: Record<string, string> = {};
+                    const backendErrors: Record<string, string> = {};
                     error.response.data.errors.forEach((err: any) => {
                         const fieldName = errorMapping[err];
                         if (fieldName) {
-                            newErrors[fieldName] = errorMessageMapping[err];
+                            backendErrors[fieldName] = errorMessageMapping[err];
                         }
                     });
-                    setErrors(newErrors);
+                    setErrors(backendErrors);
                 } else if (error.response && error.response.data && error.response.data.message) {
                     setErrors({ form: error.response.data.message });
                 } else {
-                    alert('Failed to update product. Check console for details.');
+                    alert(t('admin.products.error'));
                 }
             }
         }

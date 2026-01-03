@@ -67,6 +67,7 @@ function Shop() {
                                 { value: '', label: t('shop.none') },
                                 { value: 'price', label: t('shop.price') },
                                 { value: 'volume', label: t('shop.volume') },
+                                { value: 'bottling_date', label: t('shop.bottlingDate') },
                             ]}
                         />
                     </div>

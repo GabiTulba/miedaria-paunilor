@@ -39,22 +39,22 @@ function ProductCard({ productWithImage }: ProductCardProps) {
           </div>
            <div className="product-card-content">
              <h3>{productName}</h3>
-                <div className="product-details">
-                  <div className="product-details-line">
-                     <span className="mead-type">
-                       {getEnumLabel(productWithImage.product.product_type, 'mead_type', t)}
-                     </span>
-                     <span className="separator">|</span>
-                     <span className="sweetness">
-                       {getEnumLabel(productWithImage.product.sweetness, 'sweetness', t)}
-                     </span>
-                  </div>
-                  <div className="product-details-line">
-                    <span className="abv">{productWithImage.product.abv}% {t('product.abv')}</span>
-                    <span className="separator">|</span>
-                    <span className="volume">{productWithImage.product.bottle_size}{t('common.milliliters')}</span>
-                  </div>
-                </div>
+                 <div className="product-details">
+                   <div className="product-details-line">
+                      <span className="mead-type">
+                        {getEnumLabel(productWithImage.product.product_type, 'mead_type', t)}
+                      </span>
+                      <span className="separator">|</span>
+                      <span className="sweetness">
+                        {getEnumLabel(productWithImage.product.sweetness, 'sweetness', t)}
+                      </span>
+                   </div>
+                    <div className="product-details-line">
+                      <span className="abv">{productWithImage.product.abv}% {t('product.abv')}</span>
+                      <span className="separator">|</span>
+                      <span className="volume">{productWithImage.product.bottle_size}{t('common.milliliters')}</span>
+                    </div>
+                 </div>
               <p className="price">
                 {currentLanguage === 'ro' 
                   ? `${toFixed(productWithImage.product.price_ron)} ${t('common.ron')}`

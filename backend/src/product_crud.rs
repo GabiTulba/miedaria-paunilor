@@ -1,5 +1,6 @@
 use crate::models::{Image, NewProduct, Product};
 use crate::schema::*;
+use chrono;
 use diesel::prelude::*;
 use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use rust_decimal::Decimal;
@@ -30,6 +31,8 @@ pub enum ProductValidationError {
     InvalidAbvPrecision,
     InvalidPricePrecision,
     InvalidPriceRonPrecision,
+    InvalidBottlingDate,
+    InvalidLotNumber,
 }
 
 fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
@@ -145,6 +148,17 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
         errors.push(ProductValidationError::InvalidPriceRonPrecision);
     }
 
+    // bottling_date: Date - should not be in the future
+    let today = chrono::Utc::now().naive_utc().date();
+    if new_product.bottling_date > today {
+        errors.push(ProductValidationError::InvalidBottlingDate);
+    }
+
+    // lot_number: Positive integer
+    if new_product.lot_number <= 0 {
+        errors.push(ProductValidationError::InvalidLotNumber);
+    }
+
     errors
 }
 
@@ -258,6 +272,8 @@ pub fn update_product(
         price: product.price,
         price_ron: product.price_ron,
         image_id: product.image_id,
+        bottling_date: product.bottling_date,
+        lot_number: product.lot_number,
     });
     if !validation_errors.is_empty() {
         return Err(ProductUpdateError::ValidationErrors(validation_errors));
@@ -343,6 +359,13 @@ pub fn get_all_products(
                     query.order(bottle_size.desc())
                 } else {
                     query.order(bottle_size.asc())
+                }
+            }
+            "bottling_date" => {
+                if let Some("desc") = order_direction {
+                    query.order(bottling_date.desc())
+                } else {
+                    query.order(bottling_date.asc())
                 }
             }
             _ => {

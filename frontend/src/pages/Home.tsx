@@ -14,7 +14,14 @@ function Home() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const products = await api.getProducts();
+                // Fetch products sorted by bottling date (newest first)
+                // Using the same approach as useFetchProducts hook
+                const params = new URLSearchParams();
+                params.append('order_by', 'bottling_date');
+                params.append('order_direction', 'desc');
+                const queryString = params.toString();
+                const url = `/products${queryString ? `?${queryString}` : ''}`;
+                const products = await api.get(url);
                 setFeaturedProducts(products.slice(0, 3));
                 
                 const blogPosts = await api.getBlogPosts();

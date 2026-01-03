@@ -176,9 +176,11 @@ The instance has a single database [miedaria_paunilor], with five tables:
 * abv - Decimal with one digit of precision, valid ranges from 0.0 to 99.9. Represents the alcohol by volume concentration of the mead.
 * bottle_count - Non-negative integer. Represents the number of bottles in stock.
 * bottle_size - Positive integer (mililiters of volume). Represents the net volume of the bottle of mead.
-* price - Decimal with two digits of precision. Represents the price of the product in Euros.
-* price_ron - Decimal with two digits of precision. Represents the price of the product in Romanian Lei.
-* image_id - (Foreign Key) A UUID referencing the `id` from the `images` table.
+ * price - Decimal with two digits of precision. Represents the price of the product in Euros.
+ * price_ron - Decimal with two digits of precision. Represents the price of the product in Romanian Lei.
+ * image_id - (Foreign Key) A UUID referencing the `id` from the `images` table.
+ * bottling_date - Date when the mead was bottled. Required field.
+ * lot_number - Production lot number as a positive integer. Required field.
 
 [users] and [admin_users] have the following schema:
 * username - (Primary Key) ASCII printable string, limited to 256 characters.

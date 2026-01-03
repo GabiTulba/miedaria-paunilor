@@ -163,6 +163,7 @@
     "none": "None",
     "price": "Price",
     "volume": "Volume",
+    "bottlingDate": "Bottling Date",
     "noProducts": "No products found",
     "loadingProducts": "Loading products...",
     "productType": "Product Type",
@@ -196,6 +197,8 @@
         "abv": "ABV",
         "bottleSize": "Bottle Size",
         "bottleCount": "Bottle Count",
+        "bottlingDate": "Bottling Date",
+        "lotNumber": "Lot Number",
         "price": "Price",
         "inStock": "In Stock",
         "outOfStock": "Out of Stock",
@@ -273,9 +276,13 @@
       "abv": "ABV",
       "abvHelp": "Alcohol by volume (0.0 - 99.9)",
       "bottleCount": "Bottle Count",
-      "bottleSize": "Bottle Size",
-      "bottleSizeHelp": "Volume in milliliters",
-      "price": "Price",
+       "bottleSize": "Bottle Size",
+       "bottleSizeHelp": "Volume in milliliters",
+       "bottlingDate": "Bottling Date",
+       "bottlingDateHelp": "Date when the mead was bottled",
+       "lotNumber": "Lot Number",
+       "lotNumberHelp": "Production lot number (positive integer)",
+       "price": "Price",
       "priceHelp": "Price in Euros",
       "priceRonHelp": "Price in Romanian Lei",
       "image": "Image",
@@ -292,7 +299,8 @@
         "invalidAbv": "ABV must be between 0.0 and 99.9",
         "invalidBottleCount": "Bottle count must be non-negative",
         "invalidBottleSize": "Bottle size must be positive",
-        "invalidPrice": "Price must be valid"
+        "invalidPrice": "Price must be valid",
+        "invalidBottlingDate": "Bottling date must be in DD/MM/YYYY format and valid"
       }
     },
     "images": {

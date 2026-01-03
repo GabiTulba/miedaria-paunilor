@@ -33,7 +33,35 @@ async function request(endpoint: string, options: RequestInit = {}) {
 
 export const api = {
     get: (endpoint: string) => request(endpoint),
-    getProducts: (): Promise<ProductWithImage[]> => request('/products'),
+    getProducts: (params?: {
+        order_by?: string;
+        order_direction?: string;
+        in_stock?: boolean;
+        product_type?: string;
+        sweetness?: string;
+        turbidity?: string;
+        effervescence?: string;
+        acidity?: string;
+        tanins?: string;
+        body?: string;
+    }): Promise<ProductWithImage[]> => {
+        const queryParams = new URLSearchParams();
+        if (params) {
+            if (params.order_by) queryParams.append('order_by', params.order_by);
+            // Only append order_direction if order_by is also present
+            if (params.order_by && params.order_direction) queryParams.append('order_direction', params.order_direction);
+            if (params.in_stock !== undefined) queryParams.append('in_stock', params.in_stock.toString());
+            if (params.product_type) queryParams.append('product_type', params.product_type);
+            if (params.sweetness) queryParams.append('sweetness', params.sweetness);
+            if (params.turbidity) queryParams.append('turbidity', params.turbidity);
+            if (params.effervescence) queryParams.append('effervescence', params.effervescence);
+            if (params.acidity) queryParams.append('acidity', params.acidity);
+            if (params.tanins) queryParams.append('tanins', params.tanins);
+            if (params.body) queryParams.append('body', params.body);
+        }
+        const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+        return request(`/products${queryString}`);
+    },
     getProductById: (id: string): Promise<ProductWithImage> => request(`/products/${id}`),
 
     adminLogin: async (credentials: any) => {

@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 import ProductForm from './ProductForm';
 import { Product, Image } from '../../types';
 import { errorMapping, errorMessageMapping } from './errorMappings';
+import { getTodayIsoDate } from '../../utils/dateUtils';
 
 function AdminProductCreate() {
     const [product, setProduct] = useState<Omit<Product, 'product_id'> & { product_id?: string }>({
@@ -30,6 +31,8 @@ function AdminProductCreate() {
         price: 0.00,
         price_ron: 0.00,
         image_id: '',
+        bottling_date: getTodayIsoDate(), // Today's date in YYYY-MM-DD format
+        lot_number: 1,
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const { token } = useContext(AuthContext);
@@ -64,6 +67,28 @@ function AdminProductCreate() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrors({});
+        
+        // Client-side validation
+        const newErrors: Record<string, string> = {};
+        
+        // Validate bottling_date format
+        if (!product.bottling_date || product.bottling_date.trim() === '') {
+            newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
+        } else {
+            // The product.bottling_date should already be in YYYY-MM-DD format
+            // from the ProductForm's parseDateForBackend conversion
+            // But let's validate it's a valid date
+            const dateObj = new Date(product.bottling_date);
+            if (isNaN(dateObj.getTime())) {
+                newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
+            }
+        }
+        
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+        
         if (!token) {
             alert(t('errors.unauthorized'));
             return;
@@ -82,14 +107,14 @@ function AdminProductCreate() {
         } catch (error: any) {
             console.error("Failed to create product:", error);
             if (error.response && error.response.data && error.response.data.errors) {
-                const newErrors: Record<string, string> = {};
+                const backendErrors: Record<string, string> = {};
                 error.response.data.errors.forEach((err: any) => {
                     const fieldName = errorMapping[err];
                     if (fieldName) {
-                        newErrors[fieldName] = errorMessageMapping[err];
+                        backendErrors[fieldName] = errorMessageMapping[err];
                     }
                 });
-                setErrors(newErrors);
+                setErrors(backendErrors);
             } else if (error.response && error.response.data && error.response.data.message) {
                 setErrors({ form: error.response.data.message });
             } else {

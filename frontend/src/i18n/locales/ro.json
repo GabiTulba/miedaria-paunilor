@@ -163,6 +163,7 @@
     "none": "Niciuna",
     "price": "Preț",
     "volume": "Volum",
+    "bottlingDate": "Data de Îmbuteliere",
     "noProducts": "Nu s-au găsit produse",
     "loadingProducts": "Se încarcă produsele...",
     "productType": "Tip Produs",
@@ -196,6 +197,8 @@
         "abv": "Alcool",
         "bottleSize": "Dimensiune Sticlă",
         "bottleCount": "Număr Sticle",
+        "bottlingDate": "Data de Îmbuteliere",
+        "lotNumber": "Număr Lot",
         "price": "Preț",
         "inStock": "În Stoc",
         "outOfStock": "Stoc Epuizat",
@@ -273,9 +276,13 @@
       "abv": "Alcool",
       "abvHelp": "Concentrație de alcool (0.0 - 99.9)",
       "bottleCount": "Număr Sticle",
-      "bottleSize": "Dimensiune Sticlă",
-      "bottleSizeHelp": "Volum în mililitri",
-      "price": "Preț",
+       "bottleSize": "Dimensiune Sticlă",
+       "bottleSizeHelp": "Volum în mililitri",
+       "bottlingDate": "Data de Îmbuteliere",
+       "bottlingDateHelp": "Data când mierea a fost îmbuteliată",
+       "lotNumber": "Număr Lot",
+       "lotNumberHelp": "Numărul lotului de producție (număr întreg pozitiv)",
+       "price": "Preț",
       "priceHelp": "Preț în Euro",
       "priceRonHelp": "Preț în Lei Românești",
       "image": "Imagine",
@@ -292,7 +299,8 @@
         "invalidAbv": "Alcoolul trebuie să fie între 0.0 și 99.9",
         "invalidBottleCount": "Numărul de sticle trebuie să fie nenegativ",
         "invalidBottleSize": "Dimensiunea sticlei trebuie să fie pozitivă",
-        "invalidPrice": "Prețul trebuie să fie valid"
+        "invalidPrice": "Prețul trebuie să fie valid",
+        "invalidBottlingDate": "Data de îmbuteliere trebuie să fie în format ZZ/LL/AAAA și validă"
       }
     },
     "images": {

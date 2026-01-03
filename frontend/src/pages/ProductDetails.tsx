@@ -55,6 +55,15 @@ function ProductDetails() {
 
     const { product, image } = productWithImage;
     const currentLanguage = i18n.language;
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString(currentLanguage, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
     
     // Get bilingual content based on language
     const productName = currentLanguage === 'ro' && product.product_name_ro 
@@ -104,6 +113,14 @@ function ProductDetails() {
                         <div className="basic-info-item">
                             <span className="basic-info-label">{t('product.bottleSize')}:</span>
                             <span className="basic-info-value">{product.bottle_size}{t('common.milliliters')}</span>
+                        </div>
+                        <div className="basic-info-item">
+                            <span className="basic-info-label">{t('product.bottlingDate')}:</span>
+                            <span className="basic-info-value">{formatDate(product.bottling_date)}</span>
+                        </div>
+                        <div className="basic-info-item">
+                            <span className="basic-info-label">{t('product.lotNumber')}:</span>
+                            <span className="basic-info-value">{product.lot_number}</span>
                         </div>
                     </div>
                     

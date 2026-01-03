@@ -92,6 +92,8 @@ pub struct Product {
     #[serde(with = "rust_decimal::serde::float")]
     pub price_ron: Decimal,
     pub image_id: uuid::Uuid,
+    pub bottling_date: chrono::NaiveDate,
+    pub lot_number: i32,
 }
 
 #[derive(Insertable, serde::Deserialize)]
@@ -120,6 +122,8 @@ pub struct NewProduct {
     #[serde(with = "rust_decimal::serde::float")]
     pub price_ron: Decimal,
     pub image_id: uuid::Uuid,
+    pub bottling_date: chrono::NaiveDate,
+    pub lot_number: i32,
 }
 
 #[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug)]

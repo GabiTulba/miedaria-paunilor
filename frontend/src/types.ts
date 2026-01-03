@@ -28,6 +28,8 @@ export interface Product {
   price: number | string; // Decimal as number or string
   price_ron: number | string; // Decimal as number or string
   image_id: string; // Reference to Image.id
+  bottling_date: string; // Date in ISO format (YYYY-MM-DD)
+  lot_number: number; // Positive integer
 }
 
 export interface ProductWithImage {

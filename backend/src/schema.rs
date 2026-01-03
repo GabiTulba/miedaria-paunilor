@@ -40,6 +40,8 @@ diesel::table! {
         price -> Numeric,
         price_ron -> Numeric,
         image_id -> Uuid,
+        bottling_date -> Date,
+        lot_number -> Int4,
     }
 }
 

@@ -5,6 +5,7 @@ import TextAreaInput from '../../components/forms/TextAreaInput';
 import NumberInput from '../../components/forms/NumberInput';
 import SelectInput from '../../components/forms/SelectInput';
 import { useFetchEnums } from '../../hooks/useFetchEnums';
+import { formatDateForDisplay, parseDateForBackend } from '../../utils/dateUtils';
 
 interface ProductFormProps {
     product: Omit<Product, 'product_id'> & { product_id?: string };
@@ -22,7 +23,16 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setProduct({ ...product, [name]: value });
+        
+        // Special handling for bottling_date field
+        if (name === 'bottling_date') {
+            // For display, we show DD/MM/YYYY, but store as YYYY-MM-DD
+            // Convert from DD/MM/YYYY to YYYY-MM-DD for storage
+            const backendDate = parseDateForBackend(value);
+            setProduct({ ...product, [name]: backendDate });
+        } else {
+            setProduct({ ...product, [name]: value });
+        }
     };
 
     const handleNumericChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -355,6 +365,41 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                             min="1"
                             error={errors.bottle_size}
                             helpText={t('admin.productForm.bottleSizeHelp')}
+                        />
+                    </div>
+                     <div className="form-row">
+                        <div className="form-group">
+                            <label htmlFor="bottling_date" className="form-label">
+                                {t('admin.productForm.bottlingDate')}
+                                <span className="required-indicator">*</span>
+                            </label>
+                            <input
+                                id="bottling_date"
+                                name="bottling_date"
+                                type="text"
+                                value={formatDateForDisplay(product.bottling_date || '')}
+                                onChange={handleChange}
+                                required
+                                className={`form-input ${errors.bottling_date ? 'input-error' : ''}`}
+                                placeholder="DD/MM/YYYY"
+                                pattern="\d{2}/\d{2}/\d{4}"
+                                title="Please enter date in DD/MM/YYYY format"
+                            />
+                            {errors.bottling_date && (
+                                <div className="error-message">{errors.bottling_date}</div>
+                            )}
+                            <div className="help-text">{t('admin.productForm.bottlingDateHelp')}</div>
+                        </div>
+                        <NumberInput
+                            id="lot_number"
+                            name="lot_number"
+                            label={t('admin.productForm.lotNumber')}
+                            value={product.lot_number || 1}
+                            onChange={handleNumericChange}
+                            required
+                            min="1"
+                            error={errors.lot_number}
+                            helpText={t('admin.productForm.lotNumberHelp')}
                         />
                     </div>
                 </div>
