@@ -5,7 +5,11 @@ import TextAreaInput from '../../components/forms/TextAreaInput';
 import NumberInput from '../../components/forms/NumberInput';
 import SelectInput from '../../components/forms/SelectInput';
 import { useFetchEnums } from '../../hooks/useFetchEnums';
-import { formatDateForDisplay, parseDateForBackend } from '../../utils/dateUtils';
+import DatePicker from 'react-datepicker';
+import { registerLocale } from 'react-datepicker';
+import { ro } from 'date-fns/locale/ro';
+import { enUS } from 'date-fns/locale/en-US';
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface ProductFormProps {
     product: Omit<Product, 'product_id'> & { product_id?: string };
@@ -19,20 +23,43 @@ interface ProductFormProps {
 
 function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false, errors = {}, availableImages }: ProductFormProps) {
     const { enums, loading, error } = useFetchEnums();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    
+    // Register locales for date picker
+    registerLocale('en', enUS);
+    registerLocale('ro', ro);
+    
+    // Convert bottling_date string to Date object for date picker
+    const getDatePickerValue = () => {
+        if (!product.bottling_date || product.bottling_date.trim() === '') {
+            return null;
+        }
+        try {
+            // The product.bottling_date is in YYYY-MM-DD format
+            const [year, month, day] = product.bottling_date.split('-').map(Number);
+            return new Date(year, month - 1, day); // month is 0-indexed in Date
+        } catch (error) {
+            console.error('Error parsing date:', error);
+            return null;
+        }
+    };
+    
+    const handleDateChange = (date: Date | null) => {
+        if (date) {
+            // Convert Date object to YYYY-MM-DD format
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // month is 0-indexed
+            const day = String(date.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+            setProduct({ ...product, bottling_date: formattedDate });
+        } else {
+            setProduct({ ...product, bottling_date: '' });
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        
-        // Special handling for bottling_date field
-        if (name === 'bottling_date') {
-            // For display, we show DD/MM/YYYY, but store as YYYY-MM-DD
-            // Convert from DD/MM/YYYY to YYYY-MM-DD for storage
-            const backendDate = parseDateForBackend(value);
-            setProduct({ ...product, [name]: backendDate });
-        } else {
-            setProduct({ ...product, [name]: value });
-        }
+        setProduct({ ...product, [name]: value });
     };
 
     const handleNumericChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -373,17 +400,19 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 {t('admin.productForm.bottlingDate')}
                                 <span className="required-indicator">*</span>
                             </label>
-                            <input
+                            <DatePicker
                                 id="bottling_date"
-                                name="bottling_date"
-                                type="text"
-                                value={formatDateForDisplay(product.bottling_date || '')}
-                                onChange={handleChange}
-                                required
+                                selected={getDatePickerValue()}
+                                onChange={handleDateChange}
+                                dateFormat="dd/MM/yyyy"
+                                locale={i18n.language === 'ro' ? 'ro' : 'en'}
                                 className={`form-input ${errors.bottling_date ? 'input-error' : ''}`}
-                                placeholder="DD/MM/YYYY"
-                                pattern="\d{2}/\d{2}/\d{4}"
-                                title="Please enter date in DD/MM/YYYY format"
+                                placeholderText="DD/MM/YYYY"
+                                isClearable
+                                showYearDropdown
+                                yearDropdownItemNumber={10}
+                                scrollableYearDropdown
+                                required
                             />
                             {errors.bottling_date && (
                                 <div className="error-message">{errors.bottling_date}</div>
