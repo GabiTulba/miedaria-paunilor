@@ -291,7 +291,7 @@ The styling is managed through a modular and organized CSS architecture:
 The frontend website is structured as follows:
 ```
 / -- redirects to home/
-    home/ -- A visually appealing landing page with a hero section, featured products, and teasers for other sections. Displays images using UUID-based URLs.
+    home/ -- A visually appealing landing page with a hero section, featured products, latest blog posts, and teasers for other sections. Displays images using UUID-based URLs.
     shop/ -- Displays all products in a grid, with a comprehensive sidebar for filtering by product attributes (mead type, sweetness, turbidity, effervescence, acidity, tannins, body), sorting (price, volume), and stock status. Displays images using UUID-based URLs.
         shop/[product_id]/ -- A detailed view of a single product with an "Add to Cart" button and quantity selector. Displays images using UUID-based URLs.
     blog/ -- Displays blog posts in reverse chronological order with markdown rendering and bilingual support.
@@ -334,6 +334,7 @@ The frontend `Product` and `ProductWithImage` types include all product attribut
     *   **Bilingual Product Data:** Product names, descriptions, and ingredients are stored in both English and Romanian, with automatic language switching based on user preference
     *   **Dual Currency Support:** Product prices displayed in both Euros and Romanian Lei based on user language preference
     *   **Translated Enums:** Product attribute enums (mead type, sweetness, turbidity, etc.) are translated automatically based on user language
+*   **Home Page Blog Integration:** The home page features a "Latest Blog Posts" section that displays the three most recent published blog posts in a vertical stack with bilingual support, formatted dates, author attribution, and excerpts. The section uses consistent card styling with the featured products section (white background, gray border, hover effects) but arranges posts vertically rather than in a grid. The section includes a "View All Posts" button linking to the full blog page. Blog posts are fetched from the backend API which returns them in reverse chronological order (newest first), ensuring the home page always shows the most recent content.
 
 ### Shopping Cart
 The application includes a fully functional shopping cart system with the following features:

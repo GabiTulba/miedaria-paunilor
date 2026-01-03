@@ -54,7 +54,7 @@
     font-size: 1.2em;
     margin-top: 0;
     margin-bottom: 10px;
-    color: var(--color-text-primary);
+    color: var(--text-color);
 }
 
 .product-details {
