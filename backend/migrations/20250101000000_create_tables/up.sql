@@ -33,7 +33,9 @@ CREATE TABLE IF NOT EXISTS products (
   bottle_size INTEGER NOT NULL,
   price DECIMAL(5,2) NOT NULL,
   price_ron DECIMAL(7,2) NOT NULL,
-  image_id UUID REFERENCES images(id) NOT NULL
+  image_id UUID REFERENCES images(id) NOT NULL,
+  bottling_date DATE NOT NULL,
+  lot_number INTEGER NOT NULL
 );
 
 -- Existing admin_users and users tables
