@@ -1,6 +1,6 @@
 use axum::{
     Json, Router,
-    extract::{Path, Query, State},
+    extract::{DefaultBodyLimit, Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{delete, get, post, put},
@@ -69,6 +69,7 @@ async fn main() {
         .route("/api/admin/login", post(auth::login))
         .nest("/api/admin", admin_routes)
         .with_state(app_state)
+        .layer(DefaultBodyLimit::max(52_428_800)) // 50MB limit
         .layer(cors);
 
     let port = env::var("BACKEND_PORT")

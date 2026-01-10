@@ -310,7 +310,7 @@
       "upload": "Upload Image",
       "dragDrop": "Drag & drop or click to upload",
       "supportedFormats": "Supported formats: JPG, PNG, WebP",
-      "maxSize": "Max size: 5MB",
+      "maxSize": "Max size: 50MB",
       "noImages": "No images uploaded yet",
       "noImagesDescription": "Upload your first product image",
       "uploadFirst": "Upload First Image",

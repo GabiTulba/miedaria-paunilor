@@ -310,7 +310,7 @@
       "upload": "Încarcă Imagine",
       "dragDrop": "Trage & plasează sau click pentru a încărca",
       "supportedFormats": "Formate acceptate: JPG, PNG, WebP",
-      "maxSize": "Dimensiune maximă: 5MB",
+      "maxSize": "Dimensiune maximă: 50MB",
       "noImages": "Încă nu au fost încărcate imagini",
       "noImagesDescription": "Încarcă prima ta imagine de produs",
       "uploadFirst": "Încarcă Prima Imagine",
