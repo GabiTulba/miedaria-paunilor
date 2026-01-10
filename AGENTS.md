@@ -218,7 +218,7 @@ The backend acts as a middle-man between the frontend and the database. It is bu
  *   [rust_decimal] (v1.39) - For precise decimal arithmetic with database support, with the `serde-with-float` feature enabled for JSON serialization as numbers.
 *   [diesel-derive-enum] (v2.1.0) - For enum support in Diesel ORM.
 
-The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `auth`, `blog_crud`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `models`, `product_crud`, `schema`, `user_crud`, and `utils`.
+The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `auth`, `blog_crud`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `models`, `product_crud`, `schema`, `sitemap_crud`, `user_crud`, and `utils`.
 
 ### Enums and Product Attributes
 The backend defines comprehensive enums for product attributes in `enums.rs`:
@@ -362,6 +362,29 @@ The application includes a fully functional shopping cart system with the follow
 *   **Quantity Controls:** Plus/minus buttons with light gray symbols on white background that change to white symbols on dark blue background when hovered
 *   **Max Quantity Feedback:** Clear messages indicate when maximum available quantity is reached
 *   **Development Warning:** The cart page displays a prominent warning message indicating that the checkout system is under development and instructing users to send their orders via WhatsApp until the checkout system is ready
+
+### SEO and Search Engine Optimization
+The application includes SEO-friendly features:
+*   **robots.txt:** Located at `/robots.txt`, guides search engine crawlers on which pages to index and which to avoid (admin area, API endpoints)
+*   **Dynamic Sitemap:** Located at `/sitemap.xml`, provides search engines with a comprehensive list of all pages including:
+    *   Static pages (home, shop, blog, about-us, contact, cart)
+    *   All product pages (`/shop/{product_id}`)
+    *   All published blog posts (`/blog/{blog_id}`)
+    *   Each URL includes metadata about update frequency and priority
+*   **Sitemap API Endpoint:** The backend provides `/api/sitemap-data` GET endpoint that returns structured data for sitemap generation
+*   **Automated Sitemap Generation:** A cron job runs every 10 minutes to regenerate the sitemap with current product and blog post data
+*   **Static File Serving:** Both files are served directly by Nginx from the public directory and are included in the production build
+
+### Sitemap Generation System
+The application includes a simplified sitemap generation system:
+*   **Backend Support:** New `sitemap_crud.rs` module with `get_sitemap_data()` function that fetches all products and published blog posts
+*   **Frontend Integration:** The frontend Docker container includes:
+    *   Cron daemon running in background
+    *   `curl` and `jq` dependencies installed
+    *   Simple `generate-sitemap.sh` script that fetches data from backend and generates sitemap.xml
+    *   Cron job configured to run every 10 minutes
+*   **Automatic Updates:** Sitemap is automatically regenerated every 10 minutes with current product and blog post data
+*   **Direct Serving:** Generated sitemap.xml is placed directly in the nginx web root (`/usr/share/nginx/html/`) for immediate serving
 
 ### UI Design
 *   The main sticky navigation bar does not include an "Admin" link for regular users, keeping the admin interface separate from the public-facing site.

@@ -8,6 +8,7 @@ pub mod image_crud;
 pub mod models;
 pub mod product_crud;
 pub mod schema;
+pub mod sitemap_crud;
 pub mod user_crud;
 pub mod utils;
 

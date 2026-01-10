@@ -17,6 +17,7 @@ use backend::blog_crud;
 use backend::enum_crud;
 use backend::image_crud;
 use backend::product_crud::ProductWithImage;
+use backend::sitemap_crud;
 use backend::{AppState, auth, db, models, product_crud}; // Corrected AppError import
 
 #[tokio::main]
@@ -66,6 +67,7 @@ async fn main() {
         .route("/api/products/{product_id}", get(get_product_by_id))
         .route("/api/blog", get(get_all_blog_posts))
         .route("/api/blog/{blog_id}", get(get_blog_post_by_blog_id))
+        .route("/api/sitemap-data", get(get_sitemap_data))
         .route("/api/admin/login", post(auth::login))
         .nest("/api/admin", admin_routes)
         .with_state(app_state)
@@ -247,6 +249,14 @@ async fn get_blog_post_by_blog_id(
     let mut conn = db::get_db_connection(&app_state)?;
     let post = blog_crud::get_blog_post_by_blog_id(&mut conn, &blog_id)?;
     Ok(Json(post))
+}
+
+async fn get_sitemap_data(
+    State(app_state): State<Arc<AppState>>,
+) -> Result<Json<sitemap_crud::SitemapData>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    let sitemap_data = sitemap_crud::get_sitemap_data(&mut conn)?;
+    Ok(Json(sitemap_data))
 }
 
 async fn create_blog_post(
