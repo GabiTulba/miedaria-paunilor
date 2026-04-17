@@ -1,0 +1,463 @@
+= MIEDARIA PAUNILOR - TODO =
+Generated: 2026-04-17
+
+== BUGS ==
+
+[HIGH] backend/src/image_crud.rs:142
+  Hardcoded /app/images instead of IMAGE_UPLOAD_DIR env var.
+  File ops fail if env differs.
+
+[HIGH] backend/src/auth.rs:49-52
+  .expect() on JWT_EXPIRATION_HOURS parse.
+  Invalid env var panics server at login time.
+
+[HIGH] backend/src/image_crud.rs:26
+  .unwrap() on multipart field iteration.
+  Bad multipart request panics server instead of returning error.
+
+[HIGH] backend/src/main.rs:82,86
+  .unwrap() on startup code.
+  Panic kills entire app process.
+
+[MEDIUM] backend/src/product_crud.rs:152
+  Uses Utc::now().naive_utc().date() vs NaiveDate bottling_date.
+  Timezone mismatch breaks future-date validation.
+
+[MEDIUM] frontend/src/pages/ProductDetails.tsx:44
+  Possible undefined access when adding to cart (product.bottle_count).
+
+
+== SECURITY ==
+
+[CRITICAL] .env
+  Default weak secrets (POSTGRES_PASSWORD, ADMIN_PASSWORD, JWT_SECRET).
+  Must be changed before any production deployment.
+
+[CRITICAL] docker-compose.yml:34-35
+  PostgreSQL port 5432 exposed to host network.
+  Remove port mapping - only backend needs DB access via internal network.
+
+[CRITICAL] docker-compose.yml:23
+  Backend port 8000 exposed to host network.
+  Should only be accessible via nginx internal network.
+
+[CRITICAL] generate-ssl.sh:12-15
+  RSA-2048 self-signed cert, 365-day expiry.
+  Not suitable for production. Use Let's Encrypt.
+
+[HIGH] backend/src/utils.rs
+  SHA256 used for password hashing. Weak - no iterations, trivially brute-forced.
+  Replace with Argon2 or bcrypt.
+
+[HIGH] backend/src/auth.rs
+  No rate limiting on /api/admin/login.
+  Brute force attack trivially possible.
+
+[HIGH] backend/Dockerfile, frontend/Dockerfile
+  No USER directive. Containers run as root.
+  Container escape gives attacker root on host.
+
+[HIGH] frontend/Dockerfile:27
+  Cron job runs as root (sitemap generation).
+  Any exploit in script executes with root privileges.
+
+[HIGH] backend/entrypoint.sh
+  Entrypoint script runs DB setup and app launch as root.
+  Add user switching after setup steps.
+
+[HIGH] backend/src/image_crud.rs:50-55
+  File upload validates MIME type/extension only.
+  No magic bytes check. Upload malicious file disguised as image.
+
+[HIGH] backend/src/main.rs:38-41
+  CORS set to allow_origin(Any). All origins allowed.
+  Restrict to specific domain in production.
+
+[MEDIUM] docker-compose.yml
+  No resource limits (CPU, memory) on any container.
+  Single container can DoS entire host.
+
+[MEDIUM] docker-compose.yml
+  No healthcheck directives on any service.
+  Failed services stay running without detection.
+
+[MEDIUM] frontend/nginx.conf
+  server_tokens not disabled.
+  Leaks nginx version in error pages and headers.
+
+[MEDIUM] frontend/nginx.conf
+  Missing security headers:
+    X-Frame-Options: SAMEORIGIN
+    X-Content-Type-Options: nosniff
+    X-XSS-Protection: 1; mode=block
+    Referrer-Policy: strict-origin-when-cross-origin
+
+[MEDIUM] (root dir)
+  No .dockerignore file.
+  Build context includes .git, .env, node_modules - leaks secrets into image layers.
+
+[MEDIUM] frontend/nginx.conf:14,38,60
+  client_max_body_size 50M with no backend file size enforcement.
+  Validate file size in backend before accepting upload.
+
+[LOW] frontend/nginx.conf:22
+  ssl_prefer_server_ciphers off - client chooses cipher, may pick weak one.
+  Set to on.
+
+[LOW] frontend/nginx.conf
+  No autoindex off directive.
+  Could expose directory listings.
+
+[LOW] frontend/Dockerfile:27
+  Cron log /var/log/sitemap-cron.log has no rotation.
+  Log grows unbounded, can fill container filesystem.
+
+[LOW] backend/src/auth.rs:100
+  Verify JWT validation explicitly checks exp claim.
+  Some jsonwebtoken versions require explicit Validation config.
+
+
+== IMPROVEMENTS ==
+
+[MEDIUM] backend/src/product_crud.rs, backend/src/blog_crud.rs
+  No pagination on get_all_products or get_all_blog_posts.
+  Full table scan per request. Add LIMIT/OFFSET.
+
+[MEDIUM] backend/Dockerfile:2, frontend/Dockerfile:2,13
+  Unversioned base images (rust:latest, nginx:stable-alpine).
+  Pin to specific versions for reproducible builds.
+
+[MEDIUM] frontend/src/context/AuthContext.tsx:16-18
+  JWT loaded from localStorage with no format validation.
+  Validate token structure on load.
+
+[MEDIUM] frontend/src/pages/ProductDetails.tsx:60-66
+  No try-catch on date parsing from backend.
+  Add fallback format.
+
+[LOW] backend/src/schema.rs
+  No VARCHAR length limits on string fields.
+  DoS via very large string inputs.
+
+[LOW] frontend/src/pages/admin/AdminImages.tsx:183
+  Upload button shows same text during loading.
+  Show "Uploading..." state.
+
+
+== CODE QUALITY ==
+
+--- Rust Backend ---
+
+[HIGH] Migrate product enum columns from VARCHAR to PostgreSQL ENUM types
+  Affects: DB migration, backend/src/enums.rs, backend/src/schema.rs,
+           backend/src/models.rs, backend/src/product_crud.rs, backend/src/enum_crud.rs
+  Note: diesel-derive-enum v2.1.0 already in Cargo.toml - crate is ready, just unused.
+  Frontend: no changes needed (API still returns same string values).
+
+  Step 1 — DB migration:
+    CREATE TYPE mead_type_enum      AS ENUM ('hidromel','melomel','metheglin','bochet','braggot','pyment','cyser','rhodomel','capsicumel','acerglyn');
+    CREATE TYPE sweetness_type_enum AS ENUM ('bone-dry','dry','semi-dry','semi-sweet','sweet','dessert');
+    CREATE TYPE turbidity_type_enum AS ENUM ('crystalline','hazy','cloudy');
+    CREATE TYPE effervescence_type_enum AS ENUM ('flat','perlant','sparkling');
+    CREATE TYPE acidity_type_enum   AS ENUM ('mild','moderate','strong');
+    CREATE TYPE tanins_type_enum    AS ENUM ('mild','moderate','strong');
+    CREATE TYPE body_type_enum      AS ENUM ('light','medium','full');
+    ALTER TABLE products
+      ALTER COLUMN product_type   TYPE mead_type_enum        USING product_type::mead_type_enum,
+      ALTER COLUMN sweetness      TYPE sweetness_type_enum   USING sweetness::sweetness_type_enum,
+      ALTER COLUMN turbidity      TYPE turbidity_type_enum   USING turbidity::turbidity_type_enum,
+      ALTER COLUMN effervescence  TYPE effervescence_type_enum USING effervescence::effervescence_type_enum,
+      ALTER COLUMN acidity        TYPE acidity_type_enum     USING acidity::acidity_type_enum,
+      ALTER COLUMN tanins         TYPE tanins_type_enum      USING tanins::tanins_type_enum,
+      ALTER COLUMN body           TYPE body_type_enum        USING body::body_type_enum;
+
+  Step 2 — enums.rs:
+    Add #[derive(diesel_derive_enum::DbEnum)] to each enum.
+    Add #[ExistingTypePath = "crate::schema::sql_types::MeadTypeEnum"] (etc.) per diesel-derive-enum v2 API.
+    Remove all manual as_str(), from_str() implementations — diesel-derive-enum handles DB mapping.
+    Keep all() methods for enum_crud use. Consider strum EnumIter to eliminate those too.
+    Result: ~250 lines collapse to ~50.
+
+  Step 3 — schema.rs:
+    Add sql_types module with custom SQL types generated by diesel-derive-enum.
+    Change column types: product_type -> crate::schema::sql_types::MeadTypeEnum, etc.
+
+  Step 4 — models.rs:
+    Change Product/NewProduct fields from String to enum types:
+      product_type: MeadType  (was String)
+      sweetness: SweetnessType
+      turbidity: TurbidityType
+      effervescence: EffervescenceType
+      acidity: AcidityType
+      tanins: TaninsType
+      body: BodyType
+    Diesel handles DB↔Rust conversion. Serde serializes enums as strings (configure with rename_all = "kebab-case").
+
+  Step 5 — product_crud.rs:
+    Remove 7 manual enum validation blocks (lines 81-113).
+    InvalidProductType, InvalidSweetnessType, etc. error variants become unnecessary - delete them.
+    Enum validation is now compile-time + DB-level, not app-level.
+
+  Step 6 — enum_crud.rs:
+    as_str() calls replaced with serde serialization of enum variants.
+    Can simplify map_enum_values() to just collect serialized values.
+
+[MEDIUM] backend/src/user_crud.rs
+  create_admin() and create_regular() nearly identical. Same for get/update/delete.
+  Only difference is table. Parameterize by table type or use trait.
+
+[MEDIUM] backend/src/product_crud.rs:134-149
+  Magic decimals: Decimal::new(999, 1) for ABV max, Decimal::new(9999999, 2) for price.
+  Extract as named constants with comments explaining business logic.
+
+[MEDIUM] backend/src/sitemap_crud.rs:35-72
+  Hardcoded domain URL, priorities (1.0, 0.9, 0.8), changefreq strings.
+  Move to constants or env vars.
+
+[MEDIUM] backend/src/product_crud.rs:253-277
+  Update validation clones every field individually (many .clone() calls).
+  Create helper or use references where possible.
+
+[MEDIUM] backend/src/image_crud.rs (throughout)
+  eprintln!() used for error logging. Won't work properly in production.
+  Replace with tracing::error!() or log::error!(). Add tower_http TraceLayer.
+
+[LOW] backend/src/blog_crud.rs:80-86 vs backend/src/product_crud.rs:42-48
+  Slug/ID validation rules inconsistent: product_id allows _ and -, blog slug allows digits but not _.
+  Unify in shared validation module or document difference explicitly.
+
+[LOW] backend/src/error.rs:220-227
+  From<diesel::result::Error> maps all errors to generic message, losing detail.
+  Add structured variants for different Diesel error types.
+
+[LOW] backend/src/main.rs
+  No request/response logging middleware.
+  Add tower_http::trace::TraceLayer.
+
+--- TypeScript Frontend ---
+
+[HIGH] frontend/src/pages/ProductDetails.tsx:44
+  BUG: addToCart() passes undefined variable `product` - should be `productWithImage.product`.
+  Also in code quality because it reflects missing type safety catching this at compile time.
+  Fix: addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count)
+
+[HIGH] frontend/src/lib/api.ts:21,67,75 and frontend/src/pages/admin/ProductForm.tsx:16
+  `any` types used instead of proper interfaces.
+  Replace with typed interfaces from types.ts.
+
+[MEDIUM] frontend/src/utils/stockAvailability.ts:23-123
+  getAdminStockStatus(), getShopStockStatus(), getProductDetailsStockStatus() repeat identical logic.
+  Only CSS class names differ. Merge into single function with variant parameter.
+
+[MEDIUM] frontend/src/pages/ProductDetails.tsx:57-80
+  productName, productDescription, price, currency computed on every render based on i18n.language.
+  Wrap in useMemo([i18n.language]).
+
+[MEDIUM] frontend/src/pages/admin/BlogForm.tsx:145-151
+  is_published converted string→boolean in two different places.
+  Normalize once in handleChange.
+
+[MEDIUM] frontend/src/App.tsx
+  No error boundary. Component crash brings down entire app.
+  Wrap routes in <ErrorBoundary>.
+
+[MEDIUM] frontend/src/pages/admin/AdminProducts.tsx:36-46
+  Delete button no loading/disabled state during async operation.
+  User can double-click and fire multiple deletes. Add loading state.
+
+[MEDIUM] frontend/src/hooks/useFetchProducts.ts vs useFetchEnums.ts
+  useFetchProducts returns named interface, useFetchEnums returns unnamed object.
+  Create UseFetchEnumsResult interface for consistency.
+
+[LOW] frontend/src/pages/admin/BlogForm.tsx:106
+  Validation error string 'Blog ID can only contain...' not translated.
+  Other errors use t(). Add i18n key.
+
+[LOW] frontend/src/context/CartContext.tsx:36
+  Math.min() call on availableStock with no null guard.
+  Use availableStock ?? product.bottle_count.
+
+--- Architectural ---
+
+[MEDIUM] (all files)
+  Typo "tanins" (missing second n) preserved across entire codebase - DB schema, backend, frontend.
+  Either fix everywhere with migration, or document as intentional and add comment.
+
+[MEDIUM] backend/src/error.rs, frontend/src/lib/api.ts
+  Inconsistent API error response shapes:
+    login: { message }
+    product validation: { message, errors: [] }
+    some deletes: 204 No Content, others: 200 with null
+  Define and enforce standard response envelope.
+
+[MEDIUM] backend/src/main.rs
+  Missing env var validation at startup. .expect() calls scatter across codebase.
+  Create init function that validates all required env vars before server starts.
+
+[LOW] (multiple frontend files)
+  Image URL /images/${id} constructed inline in multiple components.
+  Extract to getImageUrl(id: string) helper in lib/api.ts.
+
+
+== MOBILE / RESPONSIVE UI ==
+
+[HIGH] Redesign frontend for proper mobile support
+  Current state: media queries exist but layout is desktop-first and janky on mobile browsers.
+  Full responsive redesign needed, not just breakpoint patches.
+
+  Priority areas:
+    - Navigation: hamburger menu needs audit; sticky nav height eats screen space on mobile
+    - Shop page: sidebar filters overlay/drawer pattern instead of side-by-side layout
+    - Product grid: single column on small screens, card sizing and image aspect ratio
+    - Product details: attribute table, quantity controls, add-to-cart button sizing
+    - Cart page: table layout breaks on narrow screens; needs card-based mobile layout
+    - Admin dashboard: tables unreadable on mobile; consider responsive table or card view
+    - Admin forms: input fields, date picker, image grid all need mobile treatment
+    - Blog: content width, typography scale, image sizing
+    - Typography: font sizes, line heights, spacing scale for small screens
+    - Touch targets: buttons/links must be >= 44x44px tap targets
+    - Images: lazy loading, responsive srcset, avoid oversized images on mobile
+
+  Approach:
+    - Audit with Chrome DevTools device simulation across: 375px (iPhone SE), 390px (iPhone 14), 768px (iPad)
+    - Switch to mobile-first CSS (min-width breakpoints instead of max-width)
+    - Consider CSS container queries for component-level responsiveness
+    - Test on real devices, not just browser emulation
+
+
+== I18N ARCHITECTURE ==
+
+Current state: 36 direct i18n.language checks across 12 files. Same bilingual field
+selection pattern repeated in 8+ components. Language concern leaks into every UI component.
+
+[ARCH] Migrate to Accept-Language header pattern (Option B)
+  Backend reads Accept-Language header, returns single-language fields (no _ro suffix).
+  Frontend sends header on every API request. Types become clean - no dual fields.
+  Extensible to 3rd language with no frontend type changes.
+
+  Backend changes:
+    - Read Accept-Language header in all product/blog handlers
+    - Return product_name (localized), not both product_name + product_name_ro
+    - Same for: product_description, ingredients, title, excerpt, content_markdown
+    - price/price_ron: keep both or add currency field; OR return { price, currency } based on header
+    - Add vary: Accept-Language to response headers for cache correctness
+
+  Frontend changes:
+    - Add Accept-Language header to all api.ts fetch calls based on i18n.language
+    - Simplify Product and BlogPost types - remove all _ro fields
+    - Remove all i18n.language === 'ro' checks from components (36 total)
+    - Remove bilingual field selection logic from ProductCard, ProductDetails,
+      Cart, Blog, BlogPostDetail, Home, AdminProducts, AdminDashboard, AdminBlog
+    - Admin forms (ProductForm, BlogForm) still need dual-language fields for editing both versions
+
+  Note: Admin forms are a special case - they must edit both language versions simultaneously.
+  Solution: Admin API endpoints return both versions regardless of Accept-Language header.
+  Or: use ?lang=both query param for admin endpoints only.
+
+[HIGH] Add type Language = 'en' | 'ro'
+  frontend/src/i18n/config.ts or types.ts
+  i18n.language is untyped string today. All language checks are unchecked strings.
+  Add: export type Language = 'en' | 'ro';
+  Use cast or type guard at single point: useLanguage() hook returns Language.
+
+[MEDIUM] Extract useFormattedDate(dateStr: string) hook
+  frontend/src/utils/dateUtils.ts or hooks/useFormattedDate.ts
+  Same toLocaleDateString(i18n.language, { year: 'numeric', month: 'long', day: 'numeric' })
+  repeated in Blog.tsx:35, BlogPostDetail.tsx:46, Home.tsx:85, AdminBlog.tsx:37.
+  Single hook eliminates all 4 duplicates.
+
+[MEDIUM] Extract useLocalizedPrice(product) hook
+  Price + currency selection duplicated in ProductCard, ProductDetails, Cart, AdminDashboard (5+ files).
+  Returns { price: number, currency: string } based on current language.
+  Collapses after Option B migration - becomes trivial.
+
+[LOW] Normalize getEnumLabel() call sites
+  frontend/src/enums.ts
+  Some callers pass t(), some construct key manually, some use formatEnumLabel() fallback.
+  Standardize: always use getEnumLabel(value, enumType, t) with t from useTranslation().
+
+
+== DATABASE SCHEMA ==
+
+[HIGH] Add CHECK constraints - backend validates these but DB has no guardrails
+  backend/migrations/20250101000000_create_tables/up.sql
+  Missing constraints:
+    abv          DECIMAL(3,1) CHECK (abv >= 0 AND abv <= 99.9)
+    bottle_count INTEGER      CHECK (bottle_count >= 0)
+    bottle_size  INTEGER      CHECK (bottle_size > 0)
+    price        DECIMAL(5,2) CHECK (price > 0)
+    price_ron    DECIMAL(7,2) CHECK (price_ron > 0)
+    lot_number   INTEGER      CHECK (lot_number > 0)
+    bottling_date DATE        CHECK (bottling_date <= CURRENT_DATE)
+  Direct DB inserts bypass all application validation silently.
+
+[HIGH] Enum columns unconstrained VARCHAR
+  products: product_type, sweetness, turbidity, effervescence, acidity, tanins, body
+  Any string accepted at DB level. Add PostgreSQL ENUM types or CHECK constraints.
+  Example: product_type VARCHAR CHECK (product_type IN ('hidromel','melomel','metheglin',...))
+
+[HIGH] images.file_name UNIQUE constraint wrong
+  file_name UNIQUE means same filename (e.g. photo.jpg) can't be uploaded twice.
+  storage_path is already UUID-based and unique - that's the stable identifier.
+  Remove UNIQUE from file_name.
+
+[HIGH] No VARCHAR length limits anywhere
+  username, salt, hashed_password, product_name, author, file_name, storage_path all unbounded.
+  DoS via huge string inserts. Add explicit limits:
+    username VARCHAR(256), salt VARCHAR(256), hashed_password VARCHAR(64)
+    product_name VARCHAR(256), author VARCHAR(256)
+    file_name VARCHAR(512), storage_path VARCHAR(1024)
+
+[MEDIUM] blog_posts.published_at DEFAULT NOW() on creation
+  Drafts (is_published=false) get published_at = creation time, not publish time.
+  Fix: published_at is NULL by default, set when is_published flips to true.
+  Requires backend logic to set it on first publish.
+
+[MEDIUM] No updated_at trigger on blog_posts
+  updated_at must be set manually by app. Will drift if any direct DB update happens.
+  Add trigger:
+    CREATE OR REPLACE FUNCTION update_updated_at()
+    RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
+    CREATE TRIGGER trg_blog_posts_updated_at
+    BEFORE UPDATE ON blog_posts FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+[MEDIUM] No updated_at on products table
+  No way to know when a product was last modified. Useful for cache invalidation, admin audit.
+  Add: updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW() with same trigger pattern.
+
+[MEDIUM] TIMESTAMP instead of TIMESTAMPTZ
+  images.created_at, blog_posts.published_at, blog_posts.updated_at all TIMESTAMP (no tz).
+  Server timezone change or future internationalisation will cause silent data corruption.
+  Migrate all timestamp columns to TIMESTAMPTZ.
+
+[MEDIUM] No indexes on products for common query patterns
+  Current: no indexes on products table at all.
+  Add indexes for filter/sort operations:
+    CREATE INDEX idx_products_product_type ON products(product_type);
+    CREATE INDEX idx_products_bottle_count ON products(bottle_count);
+    CREATE INDEX idx_products_bottling_date ON products(bottling_date DESC);
+    CREATE INDEX idx_products_sweetness ON products(sweetness);
+  Partial index for in-stock filter:
+    CREATE INDEX idx_products_in_stock ON products(bottling_date DESC) WHERE bottle_count > 0;
+
+[MEDIUM] image_id NOT NULL forces image on every product
+  Cannot create product without an image. Blocks admin workflow.
+  Make nullable: image_id UUID REFERENCES images(id) NULL
+  Handle NULL image_id in frontend with placeholder image.
+
+[MEDIUM] users and admin_users are identical tables
+  Same schema, separate tables. Username 'gabi' in users != 'gabi' in admin_users - confusing.
+  Consider: single users table with role column (role VARCHAR CHECK (role IN ('user','admin'))).
+  Or keep separate but add cross-table uniqueness if usernames should be globally unique.
+
+[LOW] price DECIMAL(5,2) max is 999.99 EUR
+  Premium/aged meads can exceed this. Widen to DECIMAL(7,2) (max 99999.99).
+
+[LOW] No soft delete on products
+  Hard delete breaks order history when checkout is implemented.
+  Add: deleted_at TIMESTAMPTZ NULL. Filter WHERE deleted_at IS NULL in queries.
+  Revisit when orders table is designed.
+
+[LOW] blog_id column should be named slug
+  AGENTS.md calls it slug, SEO convention calls it slug, but column is blog_id.
+  Rename column to slug for clarity. Requires migration + backend + frontend update.
