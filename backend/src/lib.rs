@@ -31,6 +31,7 @@ pub fn build_login_limiter() -> Arc<LoginRateLimiter> {
 pub struct AppState {
     pub pool: db::PgPool,
     pub login_limiter: Arc<LoginRateLimiter>,
+    pub site_url: String,
 }
 
 // Export modules and their contents

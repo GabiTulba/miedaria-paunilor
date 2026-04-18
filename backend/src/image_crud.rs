@@ -45,21 +45,21 @@ pub async fn upload_image(
     let upload_dir = std::env::var("IMAGE_UPLOAD_DIR").expect("IMAGE_UPLOAD_DIR must be set");
 
     if let Err(e) = fs::create_dir_all(&upload_dir).await {
-        eprintln!("Error creating upload directory: {:?}", e);
+        tracing::error!("Error creating upload directory: {:?}", e);
         return Err(AppError::InternalServerError(
             "Failed to create upload directory".to_string(),
         ));
     }
 
     while let Some(field) = multipart.next_field().await.map_err(|e| {
-        eprintln!("Error reading multipart field: {:?}", e);
+        tracing::error!("Error reading multipart field: {:?}", e);
         AppError::BadRequest("Invalid multipart request".to_string())
     })? {
         let file_name = field.file_name().map(|s| s.to_string());
 
         if let Some(original_filename) = file_name {
             let data = field.bytes().await.map_err(|e| {
-                eprintln!("Error reading file bytes: {:?}", e);
+                tracing::error!("Error reading file bytes: {:?}", e);
                 AppError::InternalServerError("Failed to read file data".to_string())
             })?;
 
@@ -83,7 +83,7 @@ pub async fn upload_image(
             let storage_path = format!("{}/{}", upload_dir, storage_filename);
 
             if let Err(e) = fs::write(&storage_path, &data).await {
-                eprintln!("Error writing file to disk: {:?}", e);
+                tracing::error!("Error writing file to disk: {:?}", e);
                 return Err(AppError::InternalServerError(
                     "Failed to write image file to disk".to_string(),
                 ));
@@ -99,7 +99,7 @@ pub async fn upload_image(
                 .values(&new_image)
                 .get_result(conn)
                 .map_err(|e| {
-                    eprintln!("Error inserting image into DB: {:?}", e);
+                    tracing::error!("Error inserting image into DB: {:?}", e);
                     AppError::InternalServerError(
                         "Failed to save image metadata to database".to_string(),
                     )
@@ -118,7 +118,7 @@ pub async fn get_all_images(conn: &mut PgConnection) -> Result<Json<Vec<Image>>,
     images::table
         .load::<Image>(conn)
         .map_err(|e| {
-            eprintln!("Error fetching all images: {:?}", e);
+            tracing::error!("Error fetching all images: {:?}", e);
             AppError::InternalServerError("Failed to fetch all images".to_string())
         })
         .map(Json)
@@ -136,7 +136,7 @@ pub async fn get_image_by_id(
                 AppError::NotFound(format!("Image with id {} not found", image_id))
             }
             _ => {
-                eprintln!("Error fetching image by ID: {:?}", e);
+                tracing::error!("Error fetching image by ID: {:?}", e);
                 AppError::InternalServerError("Failed to fetch image by ID".to_string())
             }
         })
@@ -157,7 +157,7 @@ pub async fn update_image(
                 AppError::NotFound(format!("Image with id {} not found", image_id))
             }
             _ => {
-                eprintln!("Error finding image for update: {:?}", e);
+                tracing::error!("Error finding image for update: {:?}", e);
                 AppError::InternalServerError("Failed to find image for update".to_string())
             }
         })?;
@@ -173,7 +173,7 @@ pub async fn update_image(
             let new_storage_path = format!("{}/{}", upload_dir, new_storage_filename);
 
             if let Err(e) = tokio::fs::rename(&old_storage_path, &new_storage_path).await {
-                eprintln!(
+                tracing::error!(
                     "Error renaming file from {} to {}: {:?}",
                     old_storage_path, new_storage_path, e
                 );
@@ -190,7 +190,7 @@ pub async fn update_image(
         .set(&updated_image_data)
         .get_result(conn)
         .map_err(|e| {
-            eprintln!("Error updating image in DB: {:?}", e);
+            tracing::error!("Error updating image in DB: {:?}", e);
             AppError::InternalServerError("Failed to update image metadata in database".to_string())
         })?;
 
@@ -207,7 +207,7 @@ pub async fn delete_image(
         .select(count(products::product_id))
         .first::<i64>(conn)
         .map_err(|e| {
-            eprintln!(
+            tracing::error!(
                 "Error checking product references for image {}: {:?}",
                 image_id, e
             );
@@ -233,7 +233,7 @@ pub async fn delete_image(
                     AppError::NotFound(format!("Image with id {} not found", image_id))
                 }
                 _ => {
-                    eprintln!("Error finding image for deletion: {:?}", e);
+                    tracing::error!("Error finding image for deletion: {:?}", e);
                     AppError::InternalServerError("Failed to find image for deletion".to_string())
                 }
             })?;
@@ -241,12 +241,12 @@ pub async fn delete_image(
     // Delete file from filesystem
     if let Err(e) = tokio::fs::remove_file(&image_to_delete.storage_path).await {
         if e.kind() == std::io::ErrorKind::NotFound {
-            eprintln!(
-                "Warning: Image file {} not found on filesystem but record exists in DB. Proceeding with DB deletion.",
+            tracing::warn!(
+                "Image file {} not found on filesystem but record exists in DB. Proceeding with DB deletion.",
                 image_to_delete.storage_path
             );
         } else {
-            eprintln!(
+            tracing::error!(
                 "Error deleting file {}: {:?}",
                 image_to_delete.storage_path, e
             );
@@ -260,7 +260,7 @@ pub async fn delete_image(
     diesel::delete(images::table.find(image_id))
         .execute(conn)
         .map_err(|e| {
-            eprintln!("Error deleting image from DB: {:?}", e);
+            tracing::error!("Error deleting image from DB: {:?}", e);
             AppError::InternalServerError("Failed to delete image record from database".to_string())
         })?;
 
@@ -280,7 +280,7 @@ pub async fn serve_image(
                     AppError::NotFound(format!("Image with id {} not found", image_id))
                 }
                 _ => {
-                    eprintln!("Error finding image record to serve: {:?}", e);
+                    tracing::error!("Error finding image record to serve: {:?}", e);
                     AppError::InternalServerError(
                         "Failed to find image record to serve".to_string(),
                     )
@@ -290,7 +290,7 @@ pub async fn serve_image(
     let path = image_record.storage_path;
 
     let file_content = tokio::fs::read(&path).await.map_err(|e| {
-        eprintln!("Error reading image file {}: {:?}", path, e);
+        tracing::error!("Error reading image file {}: {:?}", path, e);
         AppError::InternalServerError("Failed to read image file".to_string())
     })?;
 

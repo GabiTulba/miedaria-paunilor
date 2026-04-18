@@ -4,6 +4,17 @@ use chrono::Utc;
 use diesel::prelude::*;
 use serde::Serialize;
 
+const PRIORITY_HOME: f32 = 1.0;
+const PRIORITY_SHOP: f32 = 0.9;
+const PRIORITY_BLOG_INDEX: f32 = 0.8;
+const PRIORITY_PRODUCT: f32 = 0.8;
+const PRIORITY_SECONDARY: f32 = 0.7; // about-us, contact, blog posts
+const PRIORITY_CART: f32 = 0.5;
+
+const CHANGEFREQ_DAILY: &str = "daily";
+const CHANGEFREQ_WEEKLY: &str = "weekly";
+const CHANGEFREQ_MONTHLY: &str = "monthly";
+
 #[derive(Debug, Serialize)]
 pub struct SitemapUrl {
     pub loc: String,
@@ -19,77 +30,77 @@ pub struct SitemapData {
     pub blog_urls: Vec<SitemapUrl>,
 }
 
-pub fn get_sitemap_data(conn: &mut PgConnection) -> Result<SitemapData, diesel::result::Error> {
-    // Get all products
+pub fn get_sitemap_data(
+    conn: &mut PgConnection,
+    site_url: &str,
+) -> Result<SitemapData, diesel::result::Error> {
     let products = products::table
         .select(Product::as_select())
         .load::<Product>(conn)?;
 
-    // Get all published blog posts
     let blog_posts = blog_posts::table
         .filter(blog_posts::is_published.eq(true))
         .select(BlogPost::as_select())
         .load::<BlogPost>(conn)?;
 
-    // Static URLs
+    let today = Utc::now().format("%Y-%m-%d").to_string();
+
     let static_urls = vec![
         SitemapUrl {
-            loc: "https://miedaria-paunilor.ro/home".to_string(),
-            lastmod: Utc::now().format("%Y-%m-%d").to_string(),
-            changefreq: "weekly".to_string(),
-            priority: 1.0,
+            loc: format!("{}/home", site_url),
+            lastmod: today.clone(),
+            changefreq: CHANGEFREQ_WEEKLY.to_string(),
+            priority: PRIORITY_HOME,
         },
         SitemapUrl {
-            loc: "https://miedaria-paunilor.ro/shop".to_string(),
-            lastmod: Utc::now().format("%Y-%m-%d").to_string(),
-            changefreq: "daily".to_string(),
-            priority: 0.9,
+            loc: format!("{}/shop", site_url),
+            lastmod: today.clone(),
+            changefreq: CHANGEFREQ_DAILY.to_string(),
+            priority: PRIORITY_SHOP,
         },
         SitemapUrl {
-            loc: "https://miedaria-paunilor.ro/blog".to_string(),
-            lastmod: Utc::now().format("%Y-%m-%d").to_string(),
-            changefreq: "weekly".to_string(),
-            priority: 0.8,
+            loc: format!("{}/blog", site_url),
+            lastmod: today.clone(),
+            changefreq: CHANGEFREQ_WEEKLY.to_string(),
+            priority: PRIORITY_BLOG_INDEX,
         },
         SitemapUrl {
-            loc: "https://miedaria-paunilor.ro/about-us".to_string(),
-            lastmod: Utc::now().format("%Y-%m-%d").to_string(),
-            changefreq: "monthly".to_string(),
-            priority: 0.7,
+            loc: format!("{}/about-us", site_url),
+            lastmod: today.clone(),
+            changefreq: CHANGEFREQ_MONTHLY.to_string(),
+            priority: PRIORITY_SECONDARY,
         },
         SitemapUrl {
-            loc: "https://miedaria-paunilor.ro/contact".to_string(),
-            lastmod: Utc::now().format("%Y-%m-%d").to_string(),
-            changefreq: "monthly".to_string(),
-            priority: 0.7,
+            loc: format!("{}/contact", site_url),
+            lastmod: today.clone(),
+            changefreq: CHANGEFREQ_MONTHLY.to_string(),
+            priority: PRIORITY_SECONDARY,
         },
         SitemapUrl {
-            loc: "https://miedaria-paunilor.ro/cart".to_string(),
-            lastmod: Utc::now().format("%Y-%m-%d").to_string(),
-            changefreq: "monthly".to_string(),
-            priority: 0.5,
+            loc: format!("{}/cart", site_url),
+            lastmod: today,
+            changefreq: CHANGEFREQ_MONTHLY.to_string(),
+            priority: PRIORITY_CART,
         },
     ];
 
-    // Product URLs
     let product_urls = products
         .iter()
         .map(|product| SitemapUrl {
-            loc: format!("https://miedaria-paunilor.ro/shop/{}", product.product_id),
+            loc: format!("{}/shop/{}", site_url, product.product_id),
             lastmod: product.bottling_date.format("%Y-%m-%d").to_string(),
-            changefreq: "monthly".to_string(),
-            priority: 0.8,
+            changefreq: CHANGEFREQ_MONTHLY.to_string(),
+            priority: PRIORITY_PRODUCT,
         })
         .collect();
 
-    // Blog post URLs
     let blog_urls = blog_posts
         .iter()
         .map(|blog_post| SitemapUrl {
-            loc: format!("https://miedaria-paunilor.ro/blog/{}", blog_post.blog_id),
+            loc: format!("{}/blog/{}", site_url, blog_post.blog_id),
             lastmod: blog_post.updated_at.format("%Y-%m-%d").to_string(),
-            changefreq: "monthly".to_string(),
-            priority: 0.7,
+            changefreq: CHANGEFREQ_MONTHLY.to_string(),
+            priority: PRIORITY_SECONDARY,
         })
         .collect();
 

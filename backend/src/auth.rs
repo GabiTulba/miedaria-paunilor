@@ -121,7 +121,7 @@ pub async fn auth_middleware(
         &validation,
     )
     .map_err(|e| {
-        eprintln!("JWT decoding error: {:?}", e);
+        tracing::error!("JWT decoding error: {:?}", e);
         AppError::Unauthorized("Invalid or expired token".to_string())
     })?;
 

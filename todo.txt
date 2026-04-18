@@ -36,26 +36,6 @@ Generated: 2026-04-17
 
 --- Rust Backend ---
 
-[MEDIUM] backend/src/user_crud.rs
-  create_admin() and create_regular() nearly identical. Same for get/update/delete.
-  Only difference is table. Parameterize by table type or use trait.
-
-[MEDIUM] backend/src/product_crud.rs:134-149
-  Magic decimals: Decimal::new(999, 1) for ABV max, Decimal::new(9999999, 2) for price.
-  Extract as named constants with comments explaining business logic.
-
-[MEDIUM] backend/src/sitemap_crud.rs:35-72
-  Hardcoded domain URL, priorities (1.0, 0.9, 0.8), changefreq strings.
-  Move to constants or env vars.
-
-[MEDIUM] backend/src/product_crud.rs:253-277
-  Update validation clones every field individually (many .clone() calls).
-  Create helper or use references where possible.
-
-[MEDIUM] backend/src/image_crud.rs (throughout)
-  eprintln!() used for error logging. Won't work properly in production.
-  Replace with tracing::error!() or log::error!(). Add tower_http TraceLayer.
-
 [LOW] backend/src/blog_crud.rs:80-86 vs backend/src/product_crud.rs:42-48
   Slug/ID validation rules inconsistent: product_id allows _ and -, blog slug allows digits but not _.
   Unify in shared validation module or document difference explicitly.
@@ -63,10 +43,6 @@ Generated: 2026-04-17
 [LOW] backend/src/error.rs:220-227
   From<diesel::result::Error> maps all errors to generic message, losing detail.
   Add structured variants for different Diesel error types.
-
-[LOW] backend/src/main.rs
-  No request/response logging middleware.
-  Add tower_http::trace::TraceLayer.
 
 --- TypeScript Frontend ---
 

@@ -24,6 +24,12 @@ use backend::{AppState, auth, build_login_limiter, db, models, product_crud};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "backend=info,tower_http=info".parse().unwrap()),
+        )
+        .init();
 
     use axum::http::HeaderValue;
     use tower_http::cors::Any;
@@ -35,12 +41,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build(manager)
         .expect("Failed to create pool.");
 
-    let app_state = Arc::new(AppState { pool, login_limiter: build_login_limiter() });
-
-    let allowed_origin = env::var("ALLOWED_ORIGIN")
-        .expect("ALLOWED_ORIGIN must be set")
+    let allowed_origin_str = env::var("ALLOWED_ORIGIN").expect("ALLOWED_ORIGIN must be set");
+    let allowed_origin = allowed_origin_str
         .parse::<HeaderValue>()
         .expect("ALLOWED_ORIGIN is not a valid header value");
+
+    let app_state = Arc::new(AppState {
+        pool,
+        login_limiter: build_login_limiter(),
+        site_url: allowed_origin_str,
+    });
 
     let cors = CorsLayer::new()
         .allow_origin(allowed_origin)
@@ -79,7 +89,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/api/admin", admin_routes)
         .with_state(app_state)
         .layer(DefaultBodyLimit::max(52_428_800)) // 50MB limit
-        .layer(cors);
+        .layer(cors)
+        .layer(tower_http::trace::TraceLayer::new_for_http());
 
     let port = env::var("BACKEND_PORT")
         .expect("BACKEND_PORT must be set")
@@ -294,7 +305,7 @@ async fn get_sitemap_data(
     State(app_state): State<Arc<AppState>>,
 ) -> Result<Json<sitemap_crud::SitemapData>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    let sitemap_data = sitemap_crud::get_sitemap_data(&mut conn)?;
+    let sitemap_data = sitemap_crud::get_sitemap_data(&mut conn, &app_state.site_url)?;
     Ok(Json(sitemap_data))
 }
 

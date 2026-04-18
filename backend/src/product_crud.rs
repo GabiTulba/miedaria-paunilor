@@ -28,92 +28,158 @@ pub enum ProductValidationError {
     InvalidLotNumber,
 }
 
-fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
+struct ProductValidationInput<'a> {
+    product_id: &'a str,
+    product_name: &'a str,
+    product_name_ro: &'a str,
+    product_description: &'a str,
+    product_description_ro: &'a str,
+    ingredients: &'a str,
+    ingredients_ro: &'a str,
+    abv: Decimal,
+    bottle_count: i32,
+    bottle_size: i32,
+    price: Decimal,
+    price_ron: Decimal,
+    bottling_date: chrono::NaiveDate,
+    lot_number: i32,
+}
+
+impl<'a> From<&'a NewProduct> for ProductValidationInput<'a> {
+    fn from(p: &'a NewProduct) -> Self {
+        Self {
+            product_id: &p.product_id,
+            product_name: &p.product_name,
+            product_name_ro: &p.product_name_ro,
+            product_description: &p.product_description,
+            product_description_ro: &p.product_description_ro,
+            ingredients: &p.ingredients,
+            ingredients_ro: &p.ingredients_ro,
+            abv: p.abv,
+            bottle_count: p.bottle_count,
+            bottle_size: p.bottle_size,
+            price: p.price,
+            price_ron: p.price_ron,
+            bottling_date: p.bottling_date,
+            lot_number: p.lot_number,
+        }
+    }
+}
+
+impl<'a> From<&'a Product> for ProductValidationInput<'a> {
+    fn from(p: &'a Product) -> Self {
+        Self {
+            product_id: &p.product_id,
+            product_name: &p.product_name,
+            product_name_ro: &p.product_name_ro,
+            product_description: &p.product_description,
+            product_description_ro: &p.product_description_ro,
+            ingredients: &p.ingredients,
+            ingredients_ro: &p.ingredients_ro,
+            abv: p.abv,
+            bottle_count: p.bottle_count,
+            bottle_size: p.bottle_size,
+            price: p.price,
+            price_ron: p.price_ron,
+            bottling_date: p.bottling_date,
+            lot_number: p.lot_number,
+        }
+    }
+}
+
+fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationError> {
+    // ABV: 0.0–99.9 (DECIMAL(3,1))
+    let abv_min = Decimal::new(0, 1);
+    let abv_max = Decimal::new(999, 1);
+    // EUR price: 0.00–999.99 (DECIMAL(5,2))
+    let price_min = Decimal::new(0, 2);
+    let price_max_eur = Decimal::new(99999, 2);
+    // RON price: 0.00–99999.99 (DECIMAL(7,2))
+    let price_max_ron = Decimal::new(9999999, 2);
+
     let mut errors = Vec::new();
 
     // product_id: A short string composed of lowercase letters, dashes or underscores.
-    let product_id_is_valid = new_product
+    let product_id_is_valid = input
         .product_id
         .chars()
         .all(|c| c.is_ascii_lowercase() || c == '-' || c == '_');
-    if !product_id_is_valid || new_product.product_id.is_empty() {
+    if !product_id_is_valid || input.product_id.is_empty() {
         errors.push(ProductValidationError::InvalidProductId);
     }
 
     // product_name: A short string that supports any character.
-    if new_product.product_name.is_empty() {
+    if input.product_name.is_empty() {
         errors.push(ProductValidationError::EmptyProductName);
     }
 
     // product_name_ro: Romanian product name.
-    if new_product.product_name_ro.is_empty() {
+    if input.product_name_ro.is_empty() {
         errors.push(ProductValidationError::EmptyProductNameRo);
     }
 
     // product_description: A long, free-form text string.
-    if new_product.product_description.is_empty() {
+    if input.product_description.is_empty() {
         errors.push(ProductValidationError::EmptyProductDescription);
     }
 
     // product_description_ro: Romanian product description.
-    if new_product.product_description_ro.is_empty() {
+    if input.product_description_ro.is_empty() {
         errors.push(ProductValidationError::EmptyProductDescriptionRo);
     }
 
     // ingredients: A text field for the ingredients of the product.
-    if new_product.ingredients.is_empty() {
+    if input.ingredients.is_empty() {
         errors.push(ProductValidationError::EmptyIngredients);
     }
 
     // ingredients_ro: Romanian ingredients.
-    if new_product.ingredients_ro.is_empty() {
+    if input.ingredients_ro.is_empty() {
         errors.push(ProductValidationError::EmptyIngredientsRo);
     }
 
     // abv: Decimal with one digit of precision, valid ranges from 0.0 to 99.9.
-    if new_product.abv < Decimal::new(0, 1) || new_product.abv > Decimal::new(999, 1) {
+    if input.abv < abv_min || input.abv > abv_max {
         errors.push(ProductValidationError::InvalidAbv);
     }
-    if new_product.abv.scale() > 1 {
+    if input.abv.scale() > 1 {
         errors.push(ProductValidationError::InvalidAbvPrecision);
     }
 
     // bottle_count: Non-negative integer.
-    if new_product.bottle_count < 0 {
+    if input.bottle_count < 0 {
         errors.push(ProductValidationError::InvalidBottleCount);
     }
 
     // bottle_size: Positive integer (mililiters of volume).
-    if new_product.bottle_size <= 0 {
+    if input.bottle_size <= 0 {
         errors.push(ProductValidationError::InvalidBottleSize);
     }
 
     // price: Decimal with two digits of precision.
-    if new_product.price < Decimal::new(0, 2) || new_product.price > Decimal::new(99999, 2) {
+    if input.price < price_min || input.price > price_max_eur {
         errors.push(ProductValidationError::InvalidPrice);
     }
-    if new_product.price.scale() > 2 {
+    if input.price.scale() > 2 {
         errors.push(ProductValidationError::InvalidPricePrecision);
     }
 
     // price_ron: Decimal with two digits of precision.
-    if new_product.price_ron < Decimal::new(0, 2)
-        || new_product.price_ron > Decimal::new(9999999, 2)
-    {
+    if input.price_ron < price_min || input.price_ron > price_max_ron {
         errors.push(ProductValidationError::InvalidPriceRon);
     }
-    if new_product.price_ron.scale() > 2 {
+    if input.price_ron.scale() > 2 {
         errors.push(ProductValidationError::InvalidPriceRonPrecision);
     }
 
     // bottling_date: Date - should not be in the future
     let today = chrono::Local::now().date_naive();
-    if new_product.bottling_date > today {
+    if input.bottling_date > today {
         errors.push(ProductValidationError::InvalidBottlingDate);
     }
 
     // lot_number: Positive integer
-    if new_product.lot_number <= 0 {
+    if input.lot_number <= 0 {
         errors.push(ProductValidationError::InvalidLotNumber);
     }
 
@@ -160,7 +226,7 @@ pub fn create_product(
     conn: &mut PgConnection,
     new_product: &NewProduct,
 ) -> Result<Product, ProductCreationError> {
-    let validation_errors = validate_product(new_product);
+    let validation_errors = validate_product(&ProductValidationInput::from(new_product));
     if !validation_errors.is_empty() {
         return Err(ProductCreationError::ValidationErrors(validation_errors));
     }
@@ -208,30 +274,7 @@ pub fn update_product(
     conn: &mut PgConnection,
     product: &Product,
 ) -> Result<Product, ProductUpdateError> {
-    let validation_errors = validate_product(&NewProduct {
-        product_id: product.product_id.clone(),
-        product_name: product.product_name.clone(),
-        product_name_ro: product.product_name_ro.clone(),
-        product_description: product.product_description.clone(),
-        product_description_ro: product.product_description_ro.clone(),
-        ingredients: product.ingredients.clone(),
-        ingredients_ro: product.ingredients_ro.clone(),
-        product_type: product.product_type,
-        sweetness: product.sweetness,
-        turbidity: product.turbidity,
-        effervescence: product.effervescence,
-        acidity: product.acidity,
-        tanins: product.tanins,
-        body: product.body,
-        abv: product.abv,
-        bottle_count: product.bottle_count,
-        bottle_size: product.bottle_size,
-        price: product.price,
-        price_ron: product.price_ron,
-        image_id: product.image_id,
-        bottling_date: product.bottling_date,
-        lot_number: product.lot_number,
-    });
+    let validation_errors = validate_product(&ProductValidationInput::from(product));
     if !validation_errors.is_empty() {
         return Err(ProductUpdateError::ValidationErrors(validation_errors));
     }
