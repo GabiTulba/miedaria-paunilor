@@ -55,7 +55,3 @@ Generated: 2026-04-17
   Consider: single users table with role column (role VARCHAR CHECK (role IN ('user','admin'))).
   Or keep separate but add cross-table uniqueness if usernames should be globally unique.
 
-[LOW] No soft delete on products
-  Hard delete breaks order history when checkout is implemented.
-  Add: deleted_at TIMESTAMPTZ NULL. Filter WHERE deleted_at IS NULL in queries.
-  Revisit when orders table is designed.
