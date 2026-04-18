@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { LocalizedProductWithImage } from '../types';
+import { useLanguage } from './useLanguage';
 
 interface UseFetchProductsResult {
   products: LocalizedProductWithImage[];
@@ -27,6 +28,7 @@ export const useFetchProducts = (
   body: string,
   page: number
 ): UseFetchProductsResult => {
+  const language = useLanguage();
   const [products, setProducts] = useState<LocalizedProductWithImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export const useFetchProducts = (
     };
 
     fetchProducts();
-  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, page]);
+  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, page, language]);
 
   return { products, isLoading, error, hasMore, refetch };
 };

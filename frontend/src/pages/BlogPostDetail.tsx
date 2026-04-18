@@ -13,7 +13,7 @@ function BlogPostDetail() {
     const [blogPost, setBlogPost] = useState<LocalizedBlogPost | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const formatDateOptions = useMemo(() => ({
         year: 'numeric' as const,
         month: 'long' as const,
@@ -48,7 +48,7 @@ function BlogPostDetail() {
             }
         };
         fetchBlogPost();
-    }, [slug, t]);
+    }, [slug, i18n.language]);
 
     if (loading) return null;
 

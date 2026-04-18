@@ -19,7 +19,7 @@ function Blog() {
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const formatDate = useFormattedDate();
 
     useEffect(() => {
@@ -38,7 +38,7 @@ function Blog() {
             }
         };
         fetchBlogPosts();
-    }, [t, page]);
+    }, [i18n.language, page]);
 
     if (error) {
         return (

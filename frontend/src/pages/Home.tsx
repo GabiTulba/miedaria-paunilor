@@ -10,7 +10,7 @@ import './Home.css';
 function Home() {
     const [featuredProducts, setFeaturedProducts] = useState<LocalizedProductWithImage[]>([]);
     const [latestBlogPosts, setLatestBlogPosts] = useState<LocalizedBlogPost[]>([]);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const formatDate = useFormattedDate();
 
     useEffect(() => {
@@ -35,7 +35,7 @@ function Home() {
             }
         };
         fetchData();
-    }, []);
+    }, [i18n.language]);
 
     return (
         <div className="home-page">

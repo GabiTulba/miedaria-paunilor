@@ -20,7 +20,7 @@ function ProductDetails() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { addToCart } = useContext(CartContext);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const formatDate = useFormattedDate();
 
     useEffect(() => {
@@ -39,7 +39,7 @@ function ProductDetails() {
         };
 
         fetchProduct();
-    }, [productId, t]);
+    }, [productId, i18n.language]);
 
     const handleAddToCart = () => {
         if (productWithImage?.product) {
