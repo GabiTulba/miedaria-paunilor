@@ -11,22 +11,24 @@ interface PaginationProps {
 function Pagination({ page, hasMore, onPrevPage, onNextPage }: PaginationProps) {
     const { t } = useTranslation();
     return (
-        <div className="pagination">
-            <button
-                className="pagination-btn"
-                onClick={onPrevPage}
-                disabled={page === 1}
-            >
-                ← {t('common.previous')}
-            </button>
-            <span className="pagination-page">{t('common.page')} {page}</span>
-            <button
-                className="pagination-btn"
-                onClick={onNextPage}
-                disabled={!hasMore}
-            >
-                {t('common.next')} →
-            </button>
+        <div className="pagination-section">
+            <div className="pagination">
+                <button
+                    className="pagination-btn"
+                    onClick={onPrevPage}
+                    disabled={page === 1}
+                >
+                    ← {t('common.previous')}
+                </button>
+                <span className="pagination-page">{t('common.page')} {page}</span>
+                <button
+                    className="pagination-btn"
+                    onClick={onNextPage}
+                    disabled={!hasMore}
+                >
+                    {t('common.next')} →
+                </button>
+            </div>
         </div>
     );
 }

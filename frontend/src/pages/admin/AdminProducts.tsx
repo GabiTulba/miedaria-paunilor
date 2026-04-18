@@ -159,6 +159,7 @@ function AdminProducts() {
                     )}
                 </div>
             ) : (
+                <>
                 <div className="products-table-container">
                     <div className="table-header">
                         <div className="table-info">
@@ -273,13 +274,14 @@ function AdminProducts() {
                             </tbody>
                         </table>
                     </div>
-                    <Pagination
-                        page={page}
-                        hasMore={hasMore}
-                        onPrevPage={() => setPage(page - 1)}
-                        onNextPage={() => setPage(page + 1)}
-                    />
                 </div>
+                <Pagination
+                    page={page}
+                    hasMore={hasMore}
+                    onPrevPage={() => setPage(page - 1)}
+                    onNextPage={() => setPage(page + 1)}
+                />
+                </>
             )}
         </div>
     );

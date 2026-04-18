@@ -58,6 +58,7 @@ function Blog() {
                     <p>{t('blog.description')}</p>
                 </header>
 
+                <div className="blog-content">
                 {blogPosts.length === 0 && !loading ? (
                     <div className="no-posts">
                         <p>{t('blog.noPosts')}</p>
@@ -145,6 +146,7 @@ function Blog() {
                     onPrevPage={() => { setPage(page - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                     onNextPage={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 />
+                </div>
             </div>
         </div>
     );

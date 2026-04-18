@@ -107,6 +107,7 @@ function AdminBlog() {
                     </Link>
                 </div>
             ) : (
+                <>
                 <div className="admin-table-container">
                     <table className="admin-table">
                         <thead>
@@ -153,13 +154,14 @@ function AdminBlog() {
                             ))}
                         </tbody>
                     </table>
-                    <Pagination
-                        page={page}
-                        hasMore={hasMore}
-                        onPrevPage={() => setPage(page - 1)}
-                        onNextPage={() => setPage(page + 1)}
-                    />
                 </div>
+                <Pagination
+                    page={page}
+                    hasMore={hasMore}
+                    onPrevPage={() => setPage(page - 1)}
+                    onNextPage={() => setPage(page + 1)}
+                />
+                </>
             )}
         </div>
     );
