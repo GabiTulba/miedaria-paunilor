@@ -13,7 +13,7 @@ pub mod user_crud;
 pub mod utils;
 
 pub use crate::db::get_db_connection;
-pub use crate::error::{AppError, ErrorResponse, ValidationErrorResponse};
+pub use crate::error::{AppError, ErrorResponse};
 
 use governor::{Quota, RateLimiter, clock::DefaultClock, state::keyed::DefaultKeyedStateStore};
 use std::net::IpAddr;
@@ -32,6 +32,9 @@ pub struct AppState {
     pub pool: db::PgPool,
     pub login_limiter: Arc<LoginRateLimiter>,
     pub site_url: String,
+    pub jwt_secret: String,
+    pub jwt_expiration_hours: i64,
+    pub image_upload_dir: String,
 }
 
 // Export modules and their contents

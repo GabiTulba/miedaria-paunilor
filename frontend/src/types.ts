@@ -75,3 +75,22 @@ export interface UpdateBlogPost {
   author?: string;
   is_published?: boolean;
 }
+
+export type ProductFormData = Omit<Product, 'product_id'> & { product_id?: string };
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface ApiErrorResponse {
+  message?: string;
+  errors?: string[];
+}
+
+export interface ApiError extends Error {
+  response: {
+    status: number;
+    data: ApiErrorResponse;
+  };
+}

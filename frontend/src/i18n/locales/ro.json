@@ -355,6 +355,7 @@
         "titleRo": "Titlu (Română)",
         "blogId": "ID Blog",
         "blogIdHelp": "Identificator pentru URL (doar litere mici, numere, liniuțe)",
+        "blogIdInvalid": "ID-ul blogului poate conține doar litere mici, cifre și liniuțe",
         "author": "Autor",
         "status": "Status",
         "content": "Conținut",

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
-import { Product, Image, ProductWithImage } from '../../types';
+import { Product, Image, ProductFormData, ProductWithImage } from '../../types';
 import ProductForm from './ProductForm';
 import { errorMapping, errorMessageMapping } from './errorMappings';
 
@@ -121,7 +121,7 @@ function AdminProductEdit() {
     if (!productWithImage) return <div className="error-message">Product not found.</div>;
 
     // Pass the product part of productWithImage to ProductForm
-    const productToPassToForm: Omit<Product, 'product_id'> & { product_id?: string } = {
+    const productToPassToForm: ProductFormData = {
         ...productWithImage.product,
         product_id: productWithImage.product.product_id, // Ensure product_id is present
     };
@@ -131,7 +131,7 @@ function AdminProductEdit() {
             {errors.form && <p className="error-message">{errors.form}</p>}
             <ProductForm
                 product={productToPassToForm} // Pass the extracted product
-                setProduct={(updatedProduct: Product) => {
+                setProduct={(updatedProduct: ProductFormData) => {
                     // When ProductForm updates the product, update productWithImage accordingly
                     setProductWithImage((prev) => 
                         prev ? { ...prev, product: updatedProduct } : null

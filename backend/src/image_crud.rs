@@ -41,8 +41,8 @@ fn detect_image_format(data: &[u8]) -> Option<&'static str> {
 pub async fn upload_image(
     conn: &mut PgConnection,
     mut multipart: Multipart,
+    upload_dir: &str,
 ) -> Result<Json<Image>, AppError> {
-    let upload_dir = std::env::var("IMAGE_UPLOAD_DIR").expect("IMAGE_UPLOAD_DIR must be set");
 
     if let Err(e) = fs::create_dir_all(&upload_dir).await {
         tracing::error!("Error creating upload directory: {:?}", e);
@@ -147,6 +147,7 @@ pub async fn update_image(
     conn: &mut PgConnection,
     image_id: uuid::Uuid,
     mut updated_image_data: UpdateImage,
+    upload_dir: &str,
 ) -> Result<Json<Image>, AppError> {
     // Check if the image exists
     let existing_image: Image = images::table
@@ -166,8 +167,6 @@ pub async fn update_image(
     if let Some(new_file_name) = updated_image_data.file_name.clone() {
         if new_file_name != existing_image.file_name {
             let old_storage_path = existing_image.storage_path;
-            let upload_dir = std::env::var("IMAGE_UPLOAD_DIR")
-                .map_err(|_| AppError::InternalServerError("IMAGE_UPLOAD_DIR not set".to_string()))?;
             let extension = old_storage_path.split('.').last().unwrap_or("png");
             let new_storage_filename = format!("{}.{}", image_id, extension);
             let new_storage_path = format!("{}/{}", upload_dir, new_storage_filename);

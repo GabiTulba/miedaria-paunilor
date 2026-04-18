@@ -3,8 +3,8 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use serde::Serialize;
 
-use crate::blog_crud::{BlogCreationError, BlogUpdateError, BlogValidationError};
-use crate::product_crud::{ProductCreationError, ProductUpdateError, ProductValidationError};
+use crate::blog_crud::{BlogCreationError, BlogUpdateError};
+use crate::product_crud::{ProductCreationError, ProductUpdateError};
 
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
@@ -12,15 +12,9 @@ pub struct ErrorResponse {
 }
 
 #[derive(Debug, Serialize)]
-pub struct ValidationErrorResponse {
-    pub message: String,
-    pub errors: Vec<ProductValidationError>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct BlogValidationErrorResponse {
-    pub message: String,
-    pub errors: Vec<BlogValidationError>,
+struct ValidationErrorResponse<E: Serialize> {
+    message: String,
+    errors: Vec<E>,
 }
 
 #[derive(Debug)]
@@ -43,7 +37,7 @@ impl IntoResponse for AppError {
             AppError::BlogCreation(err) => match err {
                 BlogCreationError::ValidationErrors(validation_errors) => (
                     StatusCode::BAD_REQUEST,
-                    Json(BlogValidationErrorResponse {
+                    Json(ValidationErrorResponse {
                         message: "Validation failed".to_string(),
                         errors: validation_errors,
                     }),
@@ -74,7 +68,7 @@ impl IntoResponse for AppError {
             AppError::BlogUpdate(err) => match err {
                 BlogUpdateError::ValidationErrors(validation_errors) => (
                     StatusCode::BAD_REQUEST,
-                    Json(BlogValidationErrorResponse {
+                    Json(ValidationErrorResponse {
                         message: "Validation failed".to_string(),
                         errors: validation_errors,
                     }),

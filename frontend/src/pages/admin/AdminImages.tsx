@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
-import { api } from '../../lib/api';
+import { api, getImageUrl } from '../../lib/api';
 import { Image } from '../../types';
 import './Admin.css';
 
@@ -225,7 +225,7 @@ const AdminImages: React.FC = () => {
                 <div key={image.id} className="image-card">
                   <div className="image-preview">
                     <img
-                      src={`/images/${image.id}`}
+                      src={getImageUrl(image.id)}
                       alt={image.file_name}
                       className="image-thumbnail"
                     />

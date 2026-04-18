@@ -21,6 +21,61 @@ use backend::sitemap_crud;
 use backend::enums::*;
 use backend::{AppState, auth, build_login_limiter, db, models, product_crud};
 
+struct Config {
+    database_url: String,
+    allowed_origin: String,
+    backend_port: u16,
+    jwt_secret: String,
+    jwt_expiration_hours: i64,
+    image_upload_dir: String,
+}
+
+impl Config {
+    fn from_env() -> Result<Self, String> {
+        let mut missing = Vec::<&str>::new();
+
+        macro_rules! require {
+            ($name:literal) => {
+                env::var($name).unwrap_or_else(|_| {
+                    missing.push($name);
+                    String::new()
+                })
+            };
+        }
+
+        let database_url = require!("DATABASE_URL");
+        let allowed_origin = require!("ALLOWED_ORIGIN");
+        let backend_port_str = require!("BACKEND_PORT");
+        let jwt_secret = require!("JWT_SECRET");
+        let jwt_expiration_hours_str = require!("JWT_EXPIRATION_HOURS");
+        let image_upload_dir = require!("IMAGE_UPLOAD_DIR");
+
+        if !missing.is_empty() {
+            return Err(format!(
+                "Missing required environment variables: {}",
+                missing.join(", ")
+            ));
+        }
+
+        let backend_port = backend_port_str
+            .parse::<u16>()
+            .map_err(|_| "BACKEND_PORT must be a valid port number (0-65535)".to_string())?;
+
+        let jwt_expiration_hours = jwt_expiration_hours_str
+            .parse::<i64>()
+            .map_err(|_| "JWT_EXPIRATION_HOURS must be a valid integer".to_string())?;
+
+        Ok(Config {
+            database_url,
+            allowed_origin,
+            backend_port,
+            jwt_secret,
+            jwt_expiration_hours,
+            image_upload_dir,
+        })
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
@@ -31,25 +86,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .init();
 
+    let config = Config::from_env().unwrap_or_else(|e| {
+        tracing::error!("{}", e);
+        std::process::exit(1);
+    });
+
     use axum::http::HeaderValue;
     use tower_http::cors::Any;
     use tower_http::cors::CorsLayer;
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = ConnectionManager::<diesel::pg::PgConnection>::new(database_url);
+    let manager = ConnectionManager::<diesel::pg::PgConnection>::new(&config.database_url);
     let pool = r2d2::Pool::builder()
         .build(manager)
         .expect("Failed to create pool.");
 
-    let allowed_origin_str = env::var("ALLOWED_ORIGIN").expect("ALLOWED_ORIGIN must be set");
-    let allowed_origin = allowed_origin_str
+    let allowed_origin = config
+        .allowed_origin
         .parse::<HeaderValue>()
         .expect("ALLOWED_ORIGIN is not a valid header value");
 
     let app_state = Arc::new(AppState {
         pool,
         login_limiter: build_login_limiter(),
-        site_url: allowed_origin_str,
+        site_url: config.allowed_origin.clone(),
+        jwt_secret: config.jwt_secret,
+        jwt_expiration_hours: config.jwt_expiration_hours,
+        image_upload_dir: config.image_upload_dir,
     });
 
     let cors = CorsLayer::new()
@@ -92,11 +154,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(cors)
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
-    let port = env::var("BACKEND_PORT")
-        .expect("BACKEND_PORT must be set")
-        .parse::<u16>()
-        .expect("BACKEND_PORT must be a valid port number");
-    let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    let addr = SocketAddr::from(([0, 0, 0, 0], config.backend_port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     println!("listening on {}", addr);
     axum::serve(listener, app.into_make_service()).await?;
@@ -117,7 +175,7 @@ async fn upload_image_handler(
     multipart: Multipart,
 ) -> Result<Json<models::Image>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    image_crud::upload_image(&mut conn, multipart).await
+    image_crud::upload_image(&mut conn, multipart, &app_state.image_upload_dir).await
 }
 
 async fn serve_image_handler(
@@ -135,7 +193,7 @@ async fn update_image_meta_handler(
     Json(updated_image): Json<models::UpdateImage>,
 ) -> Result<Json<models::Image>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    image_crud::update_image(&mut conn, image_id, updated_image).await
+    image_crud::update_image(&mut conn, image_id, updated_image, &app_state.image_upload_dir).await
 }
 
 async fn delete_image_wrapper(

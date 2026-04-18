@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { ProductWithImage } from '../../types';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
-import { getAdminStockStatus } from '../../utils/stockAvailability';
+import { getStockStatus } from '../../utils/stockAvailability';
+import { getImageUrl } from '../../lib/api';
 import { toFixed } from '../../utils/numberUtils';
 import Pagination from '../../components/Pagination';
 import './Admin.css';
@@ -15,6 +16,7 @@ function AdminProducts() {
     const [products, setProducts] = useState<ProductWithImage[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
     const [fetchTrigger, setFetchTrigger] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -43,18 +45,20 @@ function AdminProducts() {
     }, [t, page, fetchTrigger]);
 
     const handleDelete = async (productId: string) => {
-        if (token && window.confirm(t('admin.products.deleteConfirm'))) {
-            try {
-                await api.deleteProduct(productId, token);
-                if (products.length === 1 && page > 1) {
-                    setPage(page - 1);
-                } else {
-                    setFetchTrigger(n => n + 1);
-                }
-            } catch (error) {
-                console.error("Failed to delete product:", error);
-                alert(t('admin.products.error'));
+        if (!token || deletingId || !window.confirm(t('admin.products.deleteConfirm'))) return;
+        try {
+            setDeletingId(productId);
+            await api.deleteProduct(productId, token);
+            if (products.length === 1 && page > 1) {
+                setPage(page - 1);
+            } else {
+                setFetchTrigger(n => n + 1);
             }
+        } catch (error) {
+            console.error("Failed to delete product:", error);
+            alert(t('admin.products.error'));
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -116,7 +120,7 @@ function AdminProducts() {
                                             <div className="product-cell">
                                                  {productWithImage.image && (
                                                     <img 
-                                                        src={`/images/${productWithImage.image.id}`} 
+                                                        src={getImageUrl(productWithImage.image.id)}
                                                         alt={currentLanguage === 'ro' && productWithImage.product.product_name_ro 
                                                             ? productWithImage.product.product_name_ro 
                                                             : productWithImage.product.product_name}
@@ -151,7 +155,7 @@ function AdminProducts() {
                                         </td>
                                         <td>
                                             {(() => {
-                                                const stockStatus = getAdminStockStatus(productWithImage.product.bottle_count, t);
+                                                const stockStatus = getStockStatus(productWithImage.product.bottle_count, 'admin', t);
                                                 return (
                                                     <span className={`status-badge ${stockStatus.cssClass}`}>
                                                         {stockStatus.label}
@@ -164,11 +168,12 @@ function AdminProducts() {
                                                 <Link to={`${productWithImage.product.product_id}/edit`} className="button button-small button-secondary">
                                                     {t('admin.products.edit')}
                                                 </Link>
-                                                <button 
-                                                    onClick={() => handleDelete(productWithImage.product.product_id)} 
+                                                <button
+                                                    onClick={() => handleDelete(productWithImage.product.product_id)}
                                                     className="button button-small button-danger"
+                                                    disabled={deletingId === productWithImage.product.product_id}
                                                 >
-                                                    {t('admin.products.delete')}
+                                                    {deletingId === productWithImage.product.product_id ? t('common.loading') : t('admin.products.delete')}
                                                 </button>
                                             </div>
                                         </td>

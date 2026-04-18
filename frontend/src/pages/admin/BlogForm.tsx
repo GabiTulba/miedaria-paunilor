@@ -103,7 +103,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
         if (!formData.blog_id?.trim()) {
             errors.blog_id = t('common.required');
         } else if (!/^[a-z0-9-]+$/.test(formData.blog_id)) {
-            errors.blog_id = 'Blog ID can only contain lowercase letters, numbers, and hyphens';
+            errors.blog_id = t('admin.blog.form.blogIdInvalid');
         }
 
         if (!formData.content_markdown?.trim()) {
@@ -141,22 +141,10 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
             setLoading(true);
             setError(null);
 
-            // Helper function to ensure is_published is boolean
-            const prepareSubmitData = (data: any) => {
-                return {
-                    ...data,
-                    is_published: typeof data.is_published === 'string' 
-                        ? data.is_published === 'true'
-                        : Boolean(data.is_published)
-                };
-            };
-
             if (isEdit && id) {
-                const updateData = prepareSubmitData(formData);
-                await api.updateBlogPost(id, updateData as UpdateBlogPost, token);
+                await api.updateBlogPost(id, formData as UpdateBlogPost, token);
             } else {
-                const newPostData = prepareSubmitData(formData) as NewBlogPost;
-                await api.createBlogPost(newPostData, token);
+                await api.createBlogPost(formData as NewBlogPost, token);
             }
 
             navigate('/admin/dashboard/blog');

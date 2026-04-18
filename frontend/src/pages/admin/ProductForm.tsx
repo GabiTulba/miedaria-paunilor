@@ -1,4 +1,4 @@
-import { Product, Image } from '../../types';
+import { Product, Image, ProductFormData } from '../../types';
 import { useTranslation } from 'react-i18next';
 import TextInput from '../../components/forms/TextInput';
 import TextAreaInput from '../../components/forms/TextAreaInput';
@@ -12,8 +12,8 @@ import { enUS } from 'date-fns/locale/en-US';
 import 'react-datepicker/dist/react-datepicker.css';
 
 interface ProductFormProps {
-    product: Omit<Product, 'product_id'> & { product_id?: string };
-    setProduct: (product: any) => void;
+    product: ProductFormData;
+    setProduct: (product: ProductFormData) => void;
     onSubmit: (e: React.FormEvent) => void;
     submitText: string;
     isEdit?: boolean;

@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { EnumValues } from '../enums';
 
-export function useFetchEnums() {
+interface UseFetchEnumsResult {
+    enums: EnumValues | null;
+    loading: boolean;
+    error: string | null;
+}
+
+export function useFetchEnums(): UseFetchEnumsResult {
     const [enums, setEnums] = useState<EnumValues | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

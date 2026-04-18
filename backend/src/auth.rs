@@ -12,7 +12,6 @@ use axum::{
 };
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::net::IpAddr;
 use std::sync::Arc;
 
@@ -65,22 +64,16 @@ pub async fn login(
     }
 
     let now = chrono::Utc::now();
-    let jwt_expiration_hours = env::var("JWT_EXPIRATION_HOURS")
-        .map_err(|_| AppError::InternalServerError("JWT_EXPIRATION_HOURS not set".to_string()))?
-        .parse::<i64>()
-        .map_err(|_| AppError::InternalServerError("JWT_EXPIRATION_HOURS must be a valid integer".to_string()))?;
-    let exp = (now + chrono::Duration::hours(jwt_expiration_hours)).timestamp() as usize;
+    let exp = (now + chrono::Duration::hours(app_state.jwt_expiration_hours)).timestamp() as usize;
     let claims = Claims {
         sub: user.username.clone(),
         exp,
     };
 
-    let secret = env::var("JWT_SECRET")
-        .map_err(|_| AppError::InternalServerError("JWT_SECRET not set".to_string()))?;
     let token = encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(secret.as_ref()),
+        &EncodingKey::from_secret(app_state.jwt_secret.as_ref()),
     )
     .map_err(|_| AppError::InternalServerError("Failed to encode JWT".to_string()))?;
 
@@ -88,7 +81,7 @@ pub async fn login(
 }
 
 pub async fn auth_middleware(
-    State(_app_state): State<Arc<AppState>>,
+    State(app_state): State<Arc<AppState>>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, AppError> {
@@ -111,13 +104,11 @@ pub async fn auth_middleware(
         ));
     };
 
-    let secret = env::var("JWT_SECRET")
-        .map_err(|_| AppError::InternalServerError("JWT_SECRET not set".to_string()))?;
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = true;
     let token_data = decode::<Claims>(
         &token,
-        &DecodingKey::from_secret(secret.as_ref()),
+        &DecodingKey::from_secret(app_state.jwt_secret.as_ref()),
         &validation,
     )
     .map_err(|e| {

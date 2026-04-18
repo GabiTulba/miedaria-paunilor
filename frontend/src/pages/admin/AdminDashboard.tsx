@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ProductWithImage } from '../../types';
 import { api } from '../../lib/api';
-import { getAdminStockStatus } from '../../utils/stockAvailability';
+import { getStockStatus } from '../../utils/stockAvailability';
+import { getImageUrl } from '../../lib/api';
 import { toFixed } from '../../utils/numberUtils';
 import './Admin.css';
 
@@ -30,7 +31,7 @@ function AdminDashboard() {
     const totalProducts = products.length;
     const totalStock = products.reduce((sum, pwi) => sum + pwi.product.bottle_count, 0);
     const lowStockProducts = products.filter(pwi => {
-        const stockStatus = getAdminStockStatus(pwi.product.bottle_count, t);
+        const stockStatus = getStockStatus(pwi.product.bottle_count, 'admin', t);
         return stockStatus.status === 'low_stock';
     }).length;
     const totalValue = products.reduce((sum, pwi) => {
@@ -130,7 +131,7 @@ function AdminDashboard() {
                                             <div className="product-info">
                                                 {productWithImage.image && (
                                                      <img 
-                                                        src={`/images/${productWithImage.image.id}`} 
+                                                        src={getImageUrl(productWithImage.image.id)}
                                                         alt={currentLanguage === 'ro' && productWithImage.product.product_name_ro 
                                                             ? productWithImage.product.product_name_ro 
                                                             : productWithImage.product.product_name}
@@ -153,7 +154,7 @@ function AdminDashboard() {
                                         <td>{productWithImage.product.bottle_count}</td>
                                         <td>
                                             {(() => {
-                                                const stockStatus = getAdminStockStatus(productWithImage.product.bottle_count, t);
+                                                const stockStatus = getStockStatus(productWithImage.product.bottle_count, 'admin', t);
                                                 return (
                                                     <span className={`status-badge ${stockStatus.cssClass}`}>
                                                         {stockStatus.label}

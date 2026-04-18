@@ -1,11 +1,12 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ProductWithImage } from '../types';
 import { api } from '../lib/api';
 import { CartContext } from '../context/CartContext';
 import { getEnumLabel } from '../enums';
-import { getProductDetailsStockStatus, isInStock } from '../utils/stockAvailability';
+import { getStockStatus, isInStock } from '../utils/stockAvailability';
+import { getImageUrl } from '../lib/api';
 import { toFixed } from '../utils/numberUtils';
 import CollapsibleSection from '../components/CollapsibleSection';
 
@@ -39,6 +40,19 @@ function ProductDetails() {
         fetchProduct();
     }, [productId, t]);
 
+    const localized = useMemo(() => {
+        if (!productWithImage) return null;
+        const { product } = productWithImage;
+        const isRo = i18n.language === 'ro';
+        return {
+            productName: isRo && product.product_name_ro ? product.product_name_ro : product.product_name,
+            productDescription: isRo && product.product_description_ro ? product.product_description_ro : product.product_description,
+            ingredients: isRo && product.ingredients_ro ? product.ingredients_ro : product.ingredients,
+            price: isRo ? product.price_ron : product.price,
+            currency: isRo ? t('common.ron') : t('common.euro'),
+        };
+    }, [i18n.language, productWithImage, t]);
+
     const handleAddToCart = () => {
         if (productWithImage?.product) {
             addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count);
@@ -54,13 +68,13 @@ function ProductDetails() {
     }
 
     const { product, image } = productWithImage;
-    const currentLanguage = i18n.language;
+    const { productName, productDescription, ingredients, price, currency } = localized!;
 
     const formatDate = (dateString: string) => {
         try {
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return dateString;
-            return date.toLocaleDateString(currentLanguage, {
+            return date.toLocaleDateString(i18n.language, {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
@@ -69,19 +83,6 @@ function ProductDetails() {
             return dateString;
         }
     };
-    
-    // Get bilingual content based on language
-    const productName = currentLanguage === 'ro' && product.product_name_ro 
-        ? product.product_name_ro 
-        : product.product_name;
-    const productDescription = currentLanguage === 'ro' && product.product_description_ro 
-        ? product.product_description_ro 
-        : product.product_description;
-    const ingredients = currentLanguage === 'ro' && product.ingredients_ro 
-        ? product.ingredients_ro 
-        : product.ingredients;
-    const price = currentLanguage === 'ro' ? product.price_ron : product.price;
-    const currency = currentLanguage === 'ro' ? t('common.ron') : t('common.euro');
 
     return (
         <div className="product-details-page">
@@ -92,7 +93,7 @@ function ProductDetails() {
                 <div className="product-image-column">
                     {image ? (
                         <img 
-                            src={`/images/${image.id}`} 
+                            src={getImageUrl(image.id)}
                             alt={productName} 
                             className="product-detail-image" 
                         />
@@ -181,7 +182,7 @@ function ProductDetails() {
                              <div className="availability-info">
                                   <span className="availability-label">{t('common.availability')}:</span>
                                  {(() => {
-                                     const stockStatus = getProductDetailsStockStatus(product.bottle_count, t);
+                                     const stockStatus = getStockStatus(product.bottle_count, 'product-details', t);
                                      return (
                                          <span className={`availability-details ${stockStatus.cssClass}`}>
                                              {stockStatus.description}

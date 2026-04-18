@@ -1,8 +1,6 @@
 /**
  * Stock availability utility functions
- * 
- * Unified logic for determining stock status across the application
- * 
+ *
  * Thresholds (consistent across all pages):
  * - Out of Stock: bottle_count === 0
  * - Low Stock: bottle_count < 24
@@ -16,115 +14,53 @@ export interface StockStatus {
   cssClass: string;
 }
 
-/**
- * Get stock status for admin pages
- * Uses consistent thresholds: <24 = low stock
- */
-export function getAdminStockStatus(bottleCount: number, t?: (key: string) => string): StockStatus {
+export type StockVariant = 'admin' | 'shop' | 'product-details';
+
+const CSS_CLASSES: Record<StockVariant, Record<'out_of_stock' | 'low_stock' | 'in_stock', string>> = {
+  admin: { out_of_stock: 'status-error', low_stock: 'status-warning', in_stock: 'status-success' },
+  shop: { out_of_stock: 'out-of-stock', low_stock: 'low-stock', in_stock: 'in-stock' },
+  'product-details': { out_of_stock: 'out-of-stock-details', low_stock: 'low-stock-details', in_stock: 'in-stock-details' },
+};
+
+export function getStockStatus(bottleCount: number, variant: StockVariant, t?: (key: string) => string): StockStatus {
   const translate = t || ((key: string) => key);
-  
+  const classes = CSS_CLASSES[variant];
+  const isAdmin = variant === 'admin';
+
   if (bottleCount === 0) {
     return {
       status: 'out_of_stock',
       label: translate('common.outOfStock'),
-      description: translate('common.unavailable'),
-      cssClass: 'status-error'
+      description: isAdmin ? translate('common.unavailable') : translate('common.outOfStock'),
+      cssClass: classes.out_of_stock,
     };
   }
-  
+
   if (bottleCount < 24) {
     return {
       status: 'low_stock',
       label: translate('common.lowStock'),
-      description: `${bottleCount} ${translate('common.bottles')} ${translate('common.available')}`,
-      cssClass: 'status-warning'
+      description: isAdmin
+        ? `${bottleCount} ${translate('common.bottles')} ${translate('common.available')}`
+        : `${translate('common.lowStock')}: ${bottleCount}`,
+      cssClass: classes.low_stock,
     };
   }
-  
+
   return {
     status: 'in_stock',
     label: translate('common.inStock'),
-    description: `${bottleCount} ${translate('common.bottles')} ${translate('common.available')}`,
-    cssClass: 'status-success'
+    description: isAdmin
+      ? `${bottleCount} ${translate('common.bottles')} ${translate('common.available')}`
+      : translate('common.inStock'),
+    cssClass: classes.in_stock,
   };
 }
 
-/**
- * Get stock status for shop pages
- * Uses consistent thresholds: <24 = low stock
- */
-export function getShopStockStatus(bottleCount: number, t?: (key: string) => string): StockStatus {
-  const translate = t || ((key: string) => key);
-  
-  if (bottleCount === 0) {
-    return {
-      status: 'out_of_stock',
-      label: translate('common.outOfStock'),
-      description: translate('common.outOfStock'),
-      cssClass: 'out-of-stock'
-    };
-  }
-  
-  if (bottleCount < 24) {
-    return {
-      status: 'low_stock',
-      label: translate('common.lowStock'),
-      description: `${translate('common.lowStock')}: ${bottleCount}`,
-      cssClass: 'low-stock'
-    };
-  }
-  
-  return {
-    status: 'in_stock',
-    label: translate('common.inStock'),
-    description: translate('common.inStock'),
-    cssClass: 'in-stock'
-  };
-}
-
-/**
- * Get stock status for product details page
- * Uses consistent thresholds: <24 = low stock
- */
-export function getProductDetailsStockStatus(bottleCount: number, t?: (key: string) => string): StockStatus {
-  const translate = t || ((key: string) => key);
-  
-  if (bottleCount === 0) {
-    return {
-      status: 'out_of_stock',
-      label: translate('common.outOfStock'),
-      description: translate('common.outOfStock'),
-      cssClass: 'out-of-stock-details'
-    };
-  }
-  
-  if (bottleCount < 24) {
-    return {
-      status: 'low_stock',
-      label: translate('common.lowStock'),
-      description: `${translate('common.lowStock')}: ${bottleCount}`,
-      cssClass: 'low-stock-details'
-    };
-  }
-  
-  return {
-    status: 'in_stock',
-    label: translate('common.inStock'),
-    description: translate('common.inStock'),
-    cssClass: 'in-stock-details'
-  };
-}
-
-/**
- * Check if product is in stock (for add to cart buttons)
- */
 export function isInStock(bottleCount: number): boolean {
   return bottleCount > 0;
 }
 
-/**
- * Get maximum quantity that can be added to cart
- */
 export function getMaxCartQuantity(bottleCount: number): number {
-  return Math.min(bottleCount, 99); // Limit to 99 per order
+  return Math.min(bottleCount, 99);
 }

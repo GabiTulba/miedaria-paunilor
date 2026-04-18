@@ -3,6 +3,7 @@ import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from './context/CartContext';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 import './components/LanguageSwitcher.css';
 
@@ -42,7 +43,9 @@ function App() {
         </div>
       </header>
       <main>
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       <footer className="footer">
         <div className="container">

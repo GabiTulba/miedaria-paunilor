@@ -355,6 +355,7 @@
         "titleRo": "Title (Romanian)",
         "blogId": "Blog ID",
         "blogIdHelp": "URL-friendly identifier (lowercase letters, numbers, hyphens only)",
+        "blogIdInvalid": "Blog ID can only contain lowercase letters, numbers, and hyphens",
         "author": "Author",
         "status": "Status",
         "content": "Content",

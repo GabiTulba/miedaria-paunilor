@@ -1,4 +1,8 @@
-import { BlogPost, NewBlogPost, Product, ProductWithImage, UpdateBlogPost } from '../types';
+import { ApiError, ApiErrorResponse, BlogPost, LoginCredentials, NewBlogPost, Product, ProductFormData, ProductWithImage, UpdateBlogPost } from '../types';
+
+export function getImageUrl(id: string): string {
+    return `/images/${id}`;
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 if (!API_BASE_URL) {
@@ -11,14 +15,14 @@ async function request(endpoint: string, options: RequestInit = {}) {
     if (!response.ok) {
         // Try to parse as JSON first, fall back to text if it fails
         const contentType = response.headers.get('content-type');
-        let errorBody;
+        let errorBody: ApiErrorResponse;
         if (contentType && contentType.includes('application/json')) {
-            errorBody = await response.json();
+            errorBody = await response.json() as ApiErrorResponse;
         } else {
             const text = await response.text();
             errorBody = { message: text || 'Network response was not ok' };
         }
-        const error: any = new Error(errorBody.message || 'An error occurred');
+        const error = new Error(errorBody.message || 'An error occurred') as ApiError;
         error.response = {
             status: response.status,
             data: errorBody,
@@ -69,7 +73,7 @@ export const api = {
     },
     getProductById: (id: string): Promise<ProductWithImage> => request(`/products/${id}`),
 
-    adminLogin: async (credentials: any) => {
+    adminLogin: async (credentials: LoginCredentials) => {
         return request('/admin/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -77,7 +81,7 @@ export const api = {
         });
     },
 
-    createProduct: async (productData: any, token: string) => {
+    createProduct: async (productData: ProductFormData, token: string) => {
         return request('/admin/products', {
             method: 'POST',
             headers: {

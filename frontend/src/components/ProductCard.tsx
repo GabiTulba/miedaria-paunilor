@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ProductWithImage } from '../types';
 import { getEnumLabel } from '../enums';
-import { getShopStockStatus } from '../utils/stockAvailability';
+import { getStockStatus } from '../utils/stockAvailability';
 import { toFixed } from '../utils/numberUtils';
+import { getImageUrl } from '../lib/api';
 
 import './ProductCard.css';
 
@@ -14,7 +15,7 @@ interface ProductCardProps {
 function ProductCard({ productWithImage }: ProductCardProps) {
   const { t, i18n } = useTranslation();
 
-  const stockStatus = getShopStockStatus(productWithImage.product.bottle_count, t);
+  const stockStatus = getStockStatus(productWithImage.product.bottle_count, 'shop', t);
   const currentLanguage = i18n.language;
   
   // Get product name based on language
@@ -29,7 +30,7 @@ function ProductCard({ productWithImage }: ProductCardProps) {
           <div className="product-card-image">
             {productWithImage.image ? (
               <img 
-                src={`/images/${productWithImage.image.id}`} 
+                src={getImageUrl(productWithImage.image.id)}
                 alt={productName} 
                 className="product-image" 
               />

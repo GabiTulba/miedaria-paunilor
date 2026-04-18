@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import ProductForm from './ProductForm';
-import { Product, Image } from '../../types';
+import { ProductFormData, Image } from '../../types';
 import { errorMapping, errorMessageMapping } from './errorMappings';
 import { getTodayIsoDate } from '../../utils/dateUtils';
 
 function AdminProductCreate() {
-    const [product, setProduct] = useState<Omit<Product, 'product_id'> & { product_id?: string }>({
+    const [product, setProduct] = useState<ProductFormData>({
         product_id: '',
         product_name: '',
         product_name_ro: '',
