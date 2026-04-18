@@ -50,7 +50,9 @@ function BlogPostDetail() {
         fetchBlogPost();
     }, [slug, t]);
 
-    if (!loading && (error || !blogPost)) {
+    if (loading) return null;
+
+    if (error || !blogPost) {
         return (
             <div className="blog-page">
                 <div className="blog-container">
