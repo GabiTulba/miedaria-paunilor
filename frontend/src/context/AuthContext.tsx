@@ -12,9 +12,19 @@ export const AuthContext = createContext<AuthContextType>({
     logout: () => {},
 });
 
+function isValidJwtFormat(value: string): boolean {
+    const parts = value.split('.');
+    return parts.length === 3 && parts.every(part => part.length > 0);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [token, setTokenInternal] = useState<string | null>(() => {
-        return localStorage.getItem('jwt_token');
+        const stored = localStorage.getItem('jwt_token');
+        if (!stored || !isValidJwtFormat(stored)) {
+            if (stored) localStorage.removeItem('jwt_token');
+            return null;
+        }
+        return stored;
     });
 
     const setToken = useCallback((newToken: string | null) => {

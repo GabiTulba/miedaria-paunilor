@@ -309,6 +309,7 @@
       "title": "Gestionează Imagini",
       "subtitle": "Încarcă și gestionează imaginile produselor",
       "upload": "Încarcă Imagine",
+      "uploading": "Se încarcă...",
       "dragDrop": "Trage & plasează sau click pentru a încărca",
       "supportedFormats": "Formate acceptate: JPG, PNG, WebP",
       "maxSize": "Dimensiune maximă: 50MB",

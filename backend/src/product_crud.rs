@@ -10,8 +10,11 @@ use serde::Serialize;
 #[derive(Debug, Serialize)]
 pub enum ProductValidationError {
     InvalidProductId,
+    ProductIdTooLong,
     EmptyProductName,
+    ProductNameTooLong,
     EmptyProductNameRo,
+    ProductNameRoTooLong,
     EmptyProductDescription,
     EmptyProductDescriptionRo,
     EmptyIngredients,
@@ -106,16 +109,22 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
         .all(|c| c.is_ascii_lowercase() || c == '-' || c == '_');
     if !product_id_is_valid || input.product_id.is_empty() {
         errors.push(ProductValidationError::InvalidProductId);
+    } else if input.product_id.len() > 128 {
+        errors.push(ProductValidationError::ProductIdTooLong);
     }
 
     // product_name: A short string that supports any character.
     if input.product_name.is_empty() {
         errors.push(ProductValidationError::EmptyProductName);
+    } else if input.product_name.len() > 256 {
+        errors.push(ProductValidationError::ProductNameTooLong);
     }
 
     // product_name_ro: Romanian product name.
     if input.product_name_ro.is_empty() {
         errors.push(ProductValidationError::EmptyProductNameRo);
+    } else if input.product_name_ro.len() > 256 {
+        errors.push(ProductValidationError::ProductNameRoTooLong);
     }
 
     // product_description: A long, free-form text string.

@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:20-slim AS build
+FROM node:20.20.2-slim AS build
 WORKDIR /app
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
@@ -10,7 +10,7 @@ RUN npm run build
 RUN ls -l /app/dist
 
 # Stage 2: Production
-FROM nginx:stable-alpine
+FROM nginx:1.30.0-alpine
 
 # Install cron and dependencies for sitemap generation
 RUN apk add --no-cache curl jq tzdata

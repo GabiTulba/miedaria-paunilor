@@ -180,7 +180,7 @@ const AdminImages: React.FC = () => {
             disabled={!selectedFile || loading}
             className="button button-primary upload-button"
           >
-            {loading ? t('admin.images.upload') : t('admin.images.upload')}
+            {loading ? t('admin.images.uploading') : t('admin.images.upload')}
           </button>
           {message && (
             <div className={`message ${message.includes(t('common.success')) ? 'message-success' : 'message-error'}`}>

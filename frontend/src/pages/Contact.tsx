@@ -19,7 +19,7 @@ function Contact() {
                         </li>
                         <li>
                             <i className="icon-email"></i>
-                            <span>{t('contact.email')}: tulbalecuh@gmail.com</span>
+                            <span>{t('contact.email')}: miedaria.paunilor@gmail.com</span>
                         </li>
                         <li>
                             <i className="icon-location"></i>

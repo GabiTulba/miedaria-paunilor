@@ -7,14 +7,20 @@ use serde::Serialize;
 #[derive(Debug, Serialize)]
 pub enum BlogValidationError {
     EmptyTitle,
+    TitleTooLong,
     EmptyTitleRo,
+    TitleRoTooLong,
     EmptyBlogId,
+    BlogIdTooLong,
     InvalidBlogId,
     EmptyContent,
     EmptyContentRo,
     EmptyExcerpt,
+    ExcerptTooLong,
     EmptyExcerptRo,
+    ExcerptRoTooLong,
     EmptyAuthor,
+    AuthorTooLong,
 }
 
 #[derive(Debug)]
@@ -68,14 +74,20 @@ fn validate_blog_post(new_post: &NewBlogPost) -> Vec<BlogValidationError> {
 
     if new_post.title.is_empty() {
         errors.push(BlogValidationError::EmptyTitle);
+    } else if new_post.title.len() > 512 {
+        errors.push(BlogValidationError::TitleTooLong);
     }
 
     if new_post.title_ro.is_empty() {
         errors.push(BlogValidationError::EmptyTitleRo);
+    } else if new_post.title_ro.len() > 512 {
+        errors.push(BlogValidationError::TitleRoTooLong);
     }
 
     if new_post.blog_id.is_empty() {
         errors.push(BlogValidationError::EmptyBlogId);
+    } else if new_post.blog_id.len() > 256 {
+        errors.push(BlogValidationError::BlogIdTooLong);
     } else {
         let blog_id_is_valid = new_post
             .blog_id
@@ -96,14 +108,20 @@ fn validate_blog_post(new_post: &NewBlogPost) -> Vec<BlogValidationError> {
 
     if new_post.excerpt.is_empty() {
         errors.push(BlogValidationError::EmptyExcerpt);
+    } else if new_post.excerpt.len() > 1024 {
+        errors.push(BlogValidationError::ExcerptTooLong);
     }
 
     if new_post.excerpt_ro.is_empty() {
         errors.push(BlogValidationError::EmptyExcerptRo);
+    } else if new_post.excerpt_ro.len() > 1024 {
+        errors.push(BlogValidationError::ExcerptRoTooLong);
     }
 
     if new_post.author.is_empty() {
         errors.push(BlogValidationError::EmptyAuthor);
+    } else if new_post.author.len() > 256 {
+        errors.push(BlogValidationError::AuthorTooLong);
     }
 
     errors

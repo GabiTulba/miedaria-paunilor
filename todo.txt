@@ -11,26 +11,6 @@ Generated: 2026-04-17
 == IMPROVEMENTS ==
 
 
-[MEDIUM] backend/Dockerfile:2, frontend/Dockerfile:2,13
-  Unversioned base images (rust:latest, nginx:stable-alpine).
-  Pin to specific versions for reproducible builds.
-
-[MEDIUM] frontend/src/context/AuthContext.tsx:16-18
-  JWT loaded from localStorage with no format validation.
-  Validate token structure on load.
-
-[MEDIUM] frontend/src/pages/ProductDetails.tsx:60-66
-  No try-catch on date parsing from backend.
-  Add fallback format.
-
-[LOW] backend/src/schema.rs
-  No VARCHAR length limits on string fields.
-  DoS via very large string inputs.
-
-[LOW] frontend/src/pages/admin/AdminImages.tsx:183
-  Upload button shows same text during loading.
-  Show "Uploading..." state.
-
 
 == CODE QUALITY ==
 

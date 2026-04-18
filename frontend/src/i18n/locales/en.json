@@ -309,6 +309,7 @@
       "title": "Manage Images",
       "subtitle": "Upload and manage product images",
       "upload": "Upload Image",
+      "uploading": "Uploading...",
       "dragDrop": "Drag & drop or click to upload",
       "supportedFormats": "Supported formats: JPG, PNG, WebP",
       "maxSize": "Max size: 50MB",

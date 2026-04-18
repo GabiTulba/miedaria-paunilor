@@ -10,16 +10,16 @@ CREATE TYPE body_type_enum AS ENUM ('light','medium','full');
 
 CREATE TABLE IF NOT EXISTS images (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  file_name VARCHAR NOT NULL UNIQUE,
-  storage_path VARCHAR NOT NULL UNIQUE,
+  file_name VARCHAR(512) NOT NULL UNIQUE,
+  storage_path VARCHAR(1024) NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   file_size BIGINT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS products (
-  product_id VARCHAR NOT NULL PRIMARY KEY,
-  product_name VARCHAR NOT NULL,
-  product_name_ro VARCHAR NOT NULL,
+  product_id VARCHAR(128) NOT NULL PRIMARY KEY,
+  product_name VARCHAR(256) NOT NULL,
+  product_name_ro VARCHAR(256) NOT NULL,
   product_description TEXT NOT NULL,
   product_description_ro TEXT NOT NULL,
   ingredients TEXT NOT NULL,
@@ -43,25 +43,25 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- Existing admin_users and users tables
 CREATE TABLE IF NOT EXISTS admin_users (
-  username VARCHAR NOT NULL PRIMARY KEY,
-  hashed_password VARCHAR NOT NULL
+  username VARCHAR(256) NOT NULL PRIMARY KEY,
+  hashed_password VARCHAR(512) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS users (
-  username VARCHAR NOT NULL PRIMARY KEY,
-  hashed_password VARCHAR NOT NULL
+  username VARCHAR(256) NOT NULL PRIMARY KEY,
+  hashed_password VARCHAR(512) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS blog_posts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title VARCHAR NOT NULL,
-  title_ro VARCHAR NOT NULL,
-  blog_id VARCHAR NOT NULL UNIQUE,
+  title VARCHAR(512) NOT NULL,
+  title_ro VARCHAR(512) NOT NULL,
+  blog_id VARCHAR(256) NOT NULL UNIQUE,
   content_markdown TEXT NOT NULL,
   content_markdown_ro TEXT NOT NULL,
-  excerpt VARCHAR NOT NULL,
-  excerpt_ro VARCHAR NOT NULL,
-  author VARCHAR NOT NULL,
+  excerpt VARCHAR(1024) NOT NULL,
+  excerpt_ro VARCHAR(1024) NOT NULL,
+  author VARCHAR(256) NOT NULL,
   published_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   is_published BOOLEAN NOT NULL DEFAULT TRUE
