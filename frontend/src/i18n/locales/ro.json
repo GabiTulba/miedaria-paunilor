@@ -176,7 +176,7 @@
     "allEffervescence": "Toate Nivelurile",
     "acidity": "Aciditate",
     "allAcidity": "Toate Nivelurile",
-    "tanins": "Taninuri",
+    "tannins": "Taninuri",
     "allTanins": "Toate Nivelurile",
     "body": "Corp",
     "allBody": "Toate Nivelurile",
@@ -192,7 +192,7 @@
         "turbidity": "Turbiditate",
         "effervescence": "Efervescență",
         "acidity": "Aciditate",
-        "tanins": "Taninuri",
+        "tannins": "Taninuri",
         "body": "Corp",
         "abv": "Alcool",
         "bottleSize": "Dimensiune Sticlă",
@@ -272,7 +272,7 @@
       "turbidity": "Turbiditate",
       "effervescence": "Efervescență",
       "acidity": "Aciditate",
-      "tanins": "Taninuri",
+      "tannins": "Taninuri",
       "body": "Corp",
       "pricingInventory": "Preț & Inventar",
       "abv": "Alcool",
@@ -436,7 +436,7 @@
       "moderate": "Moderat",
       "strong": "Puternic"
     },
-    "tanins": {
+    "tannins": {
       "mild": "Slab",
       "moderate": "Moderat",
       "strong": "Puternic"

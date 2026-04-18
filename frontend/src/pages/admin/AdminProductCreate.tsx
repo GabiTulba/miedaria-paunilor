@@ -23,7 +23,7 @@ function AdminProductCreate() {
         turbidity: '',
         effervescence: '',
         acidity: '',
-        tanins: '',
+        tannins: '',
         body: '',
         abv: 0.0,
         bottle_count: 0,

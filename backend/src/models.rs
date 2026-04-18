@@ -78,7 +78,7 @@ pub struct Product {
     pub turbidity: TurbidityType,
     pub effervescence: EffervescenceType,
     pub acidity: AcidityType,
-    pub tanins: TaninsType,
+    pub tannins: TanninsType,
     pub body: BodyType,
     #[serde(with = "rust_decimal::serde::float")]
     pub abv: Decimal,
@@ -108,7 +108,7 @@ pub struct NewProduct {
     pub turbidity: TurbidityType,
     pub effervescence: EffervescenceType,
     pub acidity: AcidityType,
-    pub tanins: TaninsType,
+    pub tannins: TanninsType,
     pub body: BodyType,
     #[serde(with = "rust_decimal::serde::float")]
     pub abv: Decimal,

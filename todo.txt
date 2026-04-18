@@ -56,10 +56,6 @@ Generated: 2026-04-17
 
 --- Architectural ---
 
-[MEDIUM] (all files)
-  Typo "tanins" (missing second n) preserved across entire codebase - DB schema, backend, frontend.
-  Either fix everywhere with migration, or document as intentional and add comment.
-
 [MEDIUM] backend/src/error.rs, frontend/src/lib/api.ts
   Inconsistent API error response shapes:
     login: { message }

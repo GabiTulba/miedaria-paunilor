@@ -176,7 +176,7 @@
     "allEffervescence": "All Effervescence",
     "acidity": "Acidity",
     "allAcidity": "All Acidity",
-    "tanins": "Tanins",
+    "tannins": "Tannins",
     "allTanins": "All Tanins",
     "body": "Body",
     "allBody": "All Body",
@@ -192,7 +192,7 @@
         "turbidity": "Turbidity",
         "effervescence": "Effervescence",
         "acidity": "Acidity",
-        "tanins": "Tanins",
+        "tannins": "Tannins",
         "body": "Body",
         "abv": "ABV",
         "bottleSize": "Bottle Size",
@@ -272,7 +272,7 @@
       "turbidity": "Turbidity",
       "effervescence": "Effervescence",
       "acidity": "Acidity",
-      "tanins": "Tanins",
+      "tannins": "Tannins",
       "body": "Body",
       "pricingInventory": "Pricing & Inventory",
       "abv": "ABV",
@@ -436,7 +436,7 @@
       "moderate": "Moderate",
       "strong": "Strong"
     },
-    "tanins": {
+    "tannins": {
       "mild": "Mild",
       "moderate": "Moderate",
       "strong": "Strong"

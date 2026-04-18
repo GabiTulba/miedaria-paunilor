@@ -309,7 +309,7 @@ pub fn get_all_products(
     turbidity_filter: Option<TurbidityType>,
     effervescence_filter: Option<EffervescenceType>,
     acidity_filter: Option<AcidityType>,
-    tanins_filter: Option<TaninsType>,
+    tannins_filter: Option<TanninsType>,
     body_filter: Option<BodyType>,
     limit: i64,
     offset: i64,
@@ -344,8 +344,8 @@ pub fn get_all_products(
         query = query.filter(acidity.eq(filter_value));
     }
 
-    if let Some(filter_value) = tanins_filter {
-        query = query.filter(tanins.eq(filter_value));
+    if let Some(filter_value) = tannins_filter {
+        query = query.filter(tannins.eq(filter_value));
     }
 
     if let Some(filter_value) = body_filter {

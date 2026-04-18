@@ -20,7 +20,7 @@ export interface Product {
   turbidity: string;
   effervescence: string;
   acidity: string;
-  tanins: string;
+  tannins: string;
   body: string;
   abv: number | string; // Decimal as number or string
   bottle_count: number;

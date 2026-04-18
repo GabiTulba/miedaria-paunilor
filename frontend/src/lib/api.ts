@@ -42,7 +42,7 @@ export const api = {
         turbidity?: string;
         effervescence?: string;
         acidity?: string;
-        tanins?: string;
+        tannins?: string;
         body?: string;
         page?: number;
         per_page?: number;
@@ -58,7 +58,7 @@ export const api = {
             if (params.turbidity) queryParams.append('turbidity', params.turbidity);
             if (params.effervescence) queryParams.append('effervescence', params.effervescence);
             if (params.acidity) queryParams.append('acidity', params.acidity);
-            if (params.tanins) queryParams.append('tanins', params.tanins);
+            if (params.tannins) queryParams.append('tannins', params.tannins);
             if (params.body) queryParams.append('body', params.body);
             if (params.page !== undefined) queryParams.append('page', String(params.page));
             if (params.per_page !== undefined) queryParams.append('per_page', String(params.per_page));

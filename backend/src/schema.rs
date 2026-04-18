@@ -22,8 +22,8 @@ pub mod sql_types {
     pub struct SweetnessTypeEnum;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
-    #[diesel(postgres_type(name = "tanins_type_enum"))]
-    pub struct TaninsTypeEnum;
+    #[diesel(postgres_type(name = "tannins_type_enum"))]
+    pub struct TanninsTypeEnum;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "turbidity_type_enum"))]
@@ -84,7 +84,7 @@ diesel::table! {
         turbidity -> TurbidityTypeEnum,
         effervescence -> EffervescenceTypeEnum,
         acidity -> AcidityTypeEnum,
-        tanins -> TaninsTypeEnum,
+        tannins -> TanninsTypeEnum,
         body -> BodyTypeEnum,
         abv -> Numeric,
         bottle_count -> Int4,

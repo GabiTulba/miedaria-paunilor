@@ -289,20 +289,20 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                             error={errors.acidity}
                         />
                         <SelectInput
-                            id="tanins"
-                            name="tanins"
-                            label={t('admin.productForm.tanins')}
-                            value={product.tanins}
+                            id="tannins"
+                            name="tannins"
+                            label={t('admin.productForm.tannins')}
+                            value={product.tannins}
                             onChange={handleChange}
                             options={[
-                                { value: '', label: t('admin.productForm.tanins') },
-                                ...enums.tanins.map((enumValue) => ({
+                                { value: '', label: t('admin.productForm.tannins') },
+                                ...enums.tannins.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: t(`enums.tanins.${enumValue.value}`),
+                                    label: t(`enums.tannins.${enumValue.value}`),
                                 })),
                             ]}
                             required
-                            error={errors.tanins}
+                            error={errors.tannins}
                         />
                     </div>
                     <div className="form-row">

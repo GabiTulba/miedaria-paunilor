@@ -23,7 +23,7 @@ export const useFetchProducts = (
   turbidity: string,
   effervescence: string,
   acidity: string,
-  tanins: string,
+  tannins: string,
   body: string,
   page: number
 ): UseFetchProductsResult => {
@@ -68,8 +68,8 @@ export const useFetchProducts = (
         if (acidity) {
           params.append('acidity', acidity);
         }
-        if (tanins) {
-          params.append('tanins', tanins);
+        if (tannins) {
+          params.append('tannins', tannins);
         }
         if (body) {
           params.append('body', body);
@@ -91,7 +91,7 @@ export const useFetchProducts = (
     };
 
     fetchProducts();
-  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tanins, body, page]);
+  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, page]);
 
   return { products, isLoading, error, hasMore, refetch };
 };

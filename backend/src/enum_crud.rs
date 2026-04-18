@@ -14,7 +14,7 @@ pub struct EnumValues {
     pub turbidity: Vec<EnumValue>,
     pub effervescence: Vec<EnumValue>,
     pub acidity: Vec<EnumValue>,
-    pub tanins: Vec<EnumValue>,
+    pub tannins: Vec<EnumValue>,
     pub body: Vec<EnumValue>,
 }
 
@@ -37,7 +37,7 @@ pub fn get_all_enum_values() -> EnumValues {
         turbidity: map_enum_values(TurbidityType::all()),
         effervescence: map_enum_values(EffervescenceType::all()),
         acidity: map_enum_values(AcidityType::all()),
-        tanins: map_enum_values(TaninsType::all()),
+        tannins: map_enum_values(TanninsType::all()),
         body: map_enum_values(BodyType::all()),
     }
 }

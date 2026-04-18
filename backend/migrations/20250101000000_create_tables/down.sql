@@ -9,5 +9,5 @@ DROP TYPE IF EXISTS sweetness_type_enum;
 DROP TYPE IF EXISTS turbidity_type_enum;
 DROP TYPE IF EXISTS effervescence_type_enum;
 DROP TYPE IF EXISTS acidity_type_enum;
-DROP TYPE IF EXISTS tanins_type_enum;
+DROP TYPE IF EXISTS tannins_type_enum;
 DROP TYPE IF EXISTS body_type_enum;

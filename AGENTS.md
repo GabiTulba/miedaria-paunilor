@@ -181,7 +181,7 @@ The instance has a single database [miedaria_paunilor], with five tables:
 * turbidity - PostgreSQL ENUM (`turbidity_type_enum`): crystalline, hazy, cloudy
 * effervescence - PostgreSQL ENUM (`effervescence_type_enum`): flat, perlant, sparkling
 * acidity - PostgreSQL ENUM (`acidity_type_enum`): mild, moderate, strong
-* tanins - PostgreSQL ENUM (`tanins_type_enum`): mild, moderate, strong
+* tannins - PostgreSQL ENUM (`tannins_type_enum`): mild, moderate, strong
 * body - PostgreSQL ENUM (`body_type_enum`): light, medium, full
 * abv - Decimal with one digit of precision, valid ranges from 0.0 to 99.9. Represents the alcohol by volume concentration of the mead.
 * bottle_count - Non-negative integer. Represents the number of bottles in stock.
@@ -231,7 +231,7 @@ Product attribute enums are defined in `enums.rs` as Rust enums backed by Postgr
 *   **TurbidityType** (`turbidity_type_enum`): Crystalline, Hazy, Cloudy
 *   **EffervescenceType** (`effervescence_type_enum`): Flat, Perlant, Sparkling
 *   **AcidityType** (`acidity_type_enum`): Mild, Moderate, Strong
-*   **TaninsType** (`tanins_type_enum`): Mild, Moderate, Strong
+*   **TanninsType** (`tannins_type_enum`): Mild, Moderate, Strong
 *   **BodyType** (`body_type_enum`): Light, Medium, Full
 
 Enum validation is handled at two levels: serde rejects invalid values during JSON/query parameter deserialization (before any handler code runs), and PostgreSQL ENUM types reject invalid values at the database level. No manual enum validation exists in application code.
@@ -287,7 +287,7 @@ Diesel is used to interact with the database, dealing with:
         *   `turbidity` - Filter by clarity level (crystalline, hazy, cloudy)
         *   `effervescence` - Filter by carbonation level (flat, perlant, sparkling)
         *   `acidity` - Filter by acidity level (mild, moderate, strong)
-        *   `tanins` - Filter by tannin level (mild, moderate, strong)
+        *   `tannins` - Filter by tannin level (mild, moderate, strong)
         *   `body` - Filter by body/mouthfeel (light, medium, full)
         *   `in_stock` - Filter to show only products with available inventory
         *   `order_by` - Sort by price, volume, or bottling_date

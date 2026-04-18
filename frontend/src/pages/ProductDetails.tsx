@@ -162,9 +162,9 @@ function ProductDetails() {
                                 </span>
                             </div>
                             <div className="detail-item">
-                                <span className="detail-label">{t('product.tanins')}:</span>
+                                <span className="detail-label">{t('product.tannins')}:</span>
                                 <span className="detail-value">
-                                     {getEnumLabel(product.tanins, 'tanins', t)}
+                                     {getEnumLabel(product.tannins, 'tannins', t)}
                                 </span>
                             </div>
                             <div className="detail-item">

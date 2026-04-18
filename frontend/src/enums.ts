@@ -11,7 +11,7 @@ export interface EnumValues {
     turbidity: EnumValue[];
     effervescence: EnumValue[];
     acidity: EnumValue[];
-    tanins: EnumValue[];
+    tannins: EnumValue[];
     body: EnumValue[];
 }
 

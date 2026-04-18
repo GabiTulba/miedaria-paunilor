@@ -5,7 +5,7 @@ CREATE TYPE sweetness_type_enum AS ENUM ('bone-dry','dry','semi-dry','semi-sweet
 CREATE TYPE turbidity_type_enum AS ENUM ('crystalline','hazy','cloudy');
 CREATE TYPE effervescence_type_enum AS ENUM ('flat','perlant','sparkling');
 CREATE TYPE acidity_type_enum AS ENUM ('mild','moderate','strong');
-CREATE TYPE tanins_type_enum AS ENUM ('mild','moderate','strong');
+CREATE TYPE tannins_type_enum AS ENUM ('mild','moderate','strong');
 CREATE TYPE body_type_enum AS ENUM ('light','medium','full');
 
 CREATE TABLE IF NOT EXISTS images (
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS products (
   turbidity turbidity_type_enum NOT NULL,
   effervescence effervescence_type_enum NOT NULL,
   acidity acidity_type_enum NOT NULL,
-  tanins tanins_type_enum NOT NULL,
+  tannins tannins_type_enum NOT NULL,
   body body_type_enum NOT NULL,
   abv DECIMAL(3,1) NOT NULL,
   bottle_count INTEGER NOT NULL,

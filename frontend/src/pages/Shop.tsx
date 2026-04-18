@@ -17,7 +17,7 @@ function Shop() {
     const [turbidity, setTurbidity] = useState<string>('');
     const [effervescence, setEffervescence] = useState<string>('');
     const [acidity, setAcidity] = useState<string>('');
-    const [tanins, setTanins] = useState<string>('');
+    const [tannins, setTannins] = useState<string>('');
     const [body, setBody] = useState<string>('');
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
@@ -35,7 +35,7 @@ function Shop() {
         turbidity,
         effervescence,
         acidity,
-        tanins,
+        tannins,
         body,
         page
     );
@@ -47,7 +47,7 @@ function Shop() {
         }
         setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tanins, body]);
+    }, [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body]);
 
     if (isLoading || enumsLoading) {
         return <div className="loader">{t('common.loading')}</div>;
@@ -122,7 +122,7 @@ function Shop() {
                                 setTurbidity('');
                                 setEffervescence('');
                                 setAcidity('');
-                                setTanins('');
+                                setTannins('');
                                 setBody('');
                                 setPage(1);
                             }}
@@ -220,16 +220,16 @@ function Shop() {
 
                             <div className="filter-group">
                                 <SelectInput
-                                    id="tanins"
-                                    label={t('shop.tanins')}
-                                    name="tanins"
-                                    value={tanins}
-                                    onChange={(e) => setTanins(e.target.value)}
+                                    id="tannins"
+                                    label={t('shop.tannins')}
+                                    name="tannins"
+                                    value={tannins}
+                                    onChange={(e) => setTannins(e.target.value)}
                                     options={[
                                         { value: '', label: t('shop.allTanins') },
-                                        ...enums.tanins.map(enumValue => ({
+                                        ...enums.tannins.map(enumValue => ({
                                             value: enumValue.value,
-                                            label: t(`enums.tanins.${enumValue.value}`)
+                                            label: t(`enums.tannins.${enumValue.value}`)
                                         }))
                                     ]}
                                 />

@@ -111,15 +111,15 @@ impl AcidityType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum)]
 #[serde(rename_all = "kebab-case")]
-#[ExistingTypePath = "crate::schema::sql_types::TaninsTypeEnum"]
+#[ExistingTypePath = "crate::schema::sql_types::TanninsTypeEnum"]
 #[DbValueStyle = "kebab-case"]
-pub enum TaninsType {
+pub enum TanninsType {
     Mild,
     Moderate,
     Strong,
 }
 
-impl TaninsType {
+impl TanninsType {
     pub fn all() -> Vec<Self> {
         vec![Self::Mild, Self::Moderate, Self::Strong]
     }
