@@ -202,18 +202,13 @@ const AdminImages: React.FC = () => {
             </div>
           </div>
 
-          {imagesLoading ? (
-            <div className="loading-state">
-              <div className="loading-spinner"></div>
-              <p>{t('admin.images.loading')}</p>
-            </div>
-          ) : imagesError ? (
+          {imagesError ? (
             <div className="error-state">
               <div className="error-icon warning-icon"></div>
               <p className="error-message">{imagesError}</p>
               <button onClick={fetchImages} className="button button-secondary">{t('admin.products.retry')}</button>
             </div>
-          ) : images.length === 0 ? (
+          ) : images.length === 0 && !imagesLoading ? (
             <div className="empty-state">
               <div className="empty-state-icon image-icon"></div>
               <h3>{t('admin.images.noImages')}</h3>

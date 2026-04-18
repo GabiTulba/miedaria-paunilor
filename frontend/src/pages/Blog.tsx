@@ -40,16 +40,6 @@ function Blog() {
         fetchBlogPosts();
     }, [t, page]);
 
-    if (loading) {
-        return (
-            <div className="blog-page">
-                <div className="blog-container">
-                    <div className="loading-spinner">{t('common.loading')}</div>
-                </div>
-            </div>
-        );
-    }
-
     if (error) {
         return (
             <div className="blog-page">
@@ -68,7 +58,7 @@ function Blog() {
                     <p>{t('blog.description')}</p>
                 </header>
 
-                {blogPosts.length === 0 ? (
+                {blogPosts.length === 0 && !loading ? (
                     <div className="no-posts">
                         <p>{t('blog.noPosts')}</p>
                     </div>

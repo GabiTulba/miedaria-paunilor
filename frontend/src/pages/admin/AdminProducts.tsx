@@ -73,18 +73,13 @@ function AdminProducts() {
                 </Link>
             </div>
 
-            {loading ? (
-                <div className="loading-state">
-                    <div className="loading-spinner"></div>
-                    <p>{t('admin.products.loading')}</p>
-                </div>
-            ) : error ? (
+            {error ? (
                 <div className="error-state">
                     <div className="error-icon warning-icon"></div>
                     <p className="error-message">{error}</p>
                     <button onClick={() => window.location.reload()} className="button button-secondary">{t('admin.products.retry')}</button>
                 </div>
-            ) : products.length === 0 && page === 1 ? (
+            ) : products.length === 0 && page === 1 && !loading ? (
                 <div className="empty-state">
                     <div className="empty-state-icon products-icon"></div>
                     <h3>{t('admin.products.noProducts')}</h3>

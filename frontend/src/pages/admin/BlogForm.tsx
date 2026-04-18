@@ -172,14 +172,6 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
         }
     };
 
-    if (loading && isEdit) {
-        return (
-            <div className="admin-content">
-                <div className="loading-spinner">{t('common.loading')}</div>
-            </div>
-        );
-    }
-
     return (
         <div className="admin-content">
             <div className="admin-header">

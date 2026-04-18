@@ -70,14 +70,6 @@ function AdminBlog() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="admin-content">
-                <div className="loading-spinner">{t('common.loading')}</div>
-            </div>
-        );
-    }
-
     if (error) {
         return (
             <div className="admin-content">
@@ -105,7 +97,7 @@ function AdminBlog() {
                 </div>
             </div>
 
-            {blogPosts.length === 0 && page === 1 ? (
+            {blogPosts.length === 0 && page === 1 && !loading ? (
                 <div className="empty-state">
                     <div className="empty-state-icon">📝</div>
                     <h3>{t('admin.blog.noPosts')}</h3>

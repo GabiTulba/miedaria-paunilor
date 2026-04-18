@@ -50,17 +50,7 @@ function BlogPostDetail() {
         fetchBlogPost();
     }, [slug, t]);
 
-    if (loading) {
-        return (
-            <div className="blog-page">
-                <div className="blog-container">
-                    <div className="loading-spinner">{t('common.loading')}</div>
-                </div>
-            </div>
-        );
-    }
-
-    if (error || !blogPost) {
+    if (!loading && (error || !blogPost)) {
         return (
             <div className="blog-page">
                 <div className="blog-container">
