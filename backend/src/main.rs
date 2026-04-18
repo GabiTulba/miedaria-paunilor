@@ -146,7 +146,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/products", get(get_all_products))
         .route("/api/products/{product_id}", get(get_product_by_id))
         .route("/api/blog", get(get_all_blog_posts))
-        .route("/api/blog/{blog_id}", get(get_blog_post_by_blog_id))
+        .route("/api/blog/{slug}", get(get_blog_post_by_slug))
         .route("/api/sitemap-data", get(get_sitemap_data))
         .route("/api/admin/login", post(auth::login))
         .nest("/api/admin", admin_routes)
@@ -385,13 +385,13 @@ async fn get_all_blog_posts_admin(
     Ok(Json(posts))
 }
 
-async fn get_blog_post_by_blog_id(
+async fn get_blog_post_by_slug(
     State(app_state): State<Arc<AppState>>,
-    Path(blog_id): Path<String>,
+    Path(slug): Path<String>,
     lang: Language,
 ) -> Result<(VaryLang, Json<LocalizedBlogPost>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    let post = blog_crud::get_blog_post_by_blog_id(&mut conn, &blog_id)?;
+    let post = blog_crud::get_blog_post_by_slug(&mut conn, &slug)?;
     Ok((
         vary_accept_language(),
         Json(LocalizedBlogPost::from_blog_post(post, lang)),

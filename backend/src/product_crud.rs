@@ -94,9 +94,9 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
     // ABV: 0.0–99.9 (DECIMAL(3,1))
     let abv_min = Decimal::new(0, 1);
     let abv_max = Decimal::new(999, 1);
-    // EUR price: 0.00–999.99 (DECIMAL(5,2))
+    // EUR price: 0.00–99999.99 (DECIMAL(7,2))
     let price_min = Decimal::new(0, 2);
-    let price_max_eur = Decimal::new(99999, 2);
+    let price_max_eur = Decimal::new(9999999, 2);
     // RON price: 0.00–99999.99 (DECIMAL(7,2))
     let price_max_ron = Decimal::new(9999999, 2);
 

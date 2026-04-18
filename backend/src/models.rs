@@ -88,9 +88,10 @@ pub struct Product {
     pub price: Decimal,
     #[serde(with = "rust_decimal::serde::float")]
     pub price_ron: Decimal,
-    pub image_id: uuid::Uuid,
+    pub image_id: Option<uuid::Uuid>,
     pub bottling_date: chrono::NaiveDate,
     pub lot_number: i32,
+    pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Insertable, serde::Deserialize)]
@@ -118,7 +119,7 @@ pub struct NewProduct {
     pub price: Decimal,
     #[serde(with = "rust_decimal::serde::float")]
     pub price_ron: Decimal,
-    pub image_id: uuid::Uuid,
+    pub image_id: Option<uuid::Uuid>,
     pub bottling_date: chrono::NaiveDate,
     pub lot_number: i32,
 }
@@ -130,13 +131,13 @@ pub struct BlogPost {
     pub id: uuid::Uuid,
     pub title: String,
     pub title_ro: String,
-    pub blog_id: String,
+    pub slug: String,
     pub content_markdown: String,
     pub content_markdown_ro: String,
     pub excerpt: String,
     pub excerpt_ro: String,
     pub author: String,
-    pub published_at: chrono::NaiveDateTime,
+    pub published_at: Option<chrono::NaiveDateTime>,
     pub updated_at: chrono::NaiveDateTime,
     pub is_published: bool,
 }
@@ -146,13 +147,15 @@ pub struct BlogPost {
 pub struct NewBlogPost {
     pub title: String,
     pub title_ro: String,
-    pub blog_id: String,
+    pub slug: String,
     pub content_markdown: String,
     pub content_markdown_ro: String,
     pub excerpt: String,
     pub excerpt_ro: String,
     pub author: String,
     pub is_published: bool,
+    #[serde(skip_deserializing)]
+    pub published_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(serde::Deserialize, AsChangeset, Debug)]
@@ -160,7 +163,7 @@ pub struct NewBlogPost {
 pub struct UpdateBlogPost {
     pub title: Option<String>,
     pub title_ro: Option<String>,
-    pub blog_id: Option<String>,
+    pub slug: Option<String>,
     pub content_markdown: Option<String>,
     pub content_markdown_ro: Option<String>,
     pub excerpt: Option<String>,

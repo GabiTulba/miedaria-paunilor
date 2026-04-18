@@ -2,7 +2,7 @@ export interface Image {
   id: string; // UUID as string
   file_name: string;
   storage_path: string;
-  created_at: string; // NaiveDateTime as string
+  created_at: string; // Timestamptz as string
   file_size: number;
 }
 
@@ -27,9 +27,10 @@ export interface Product {
   bottle_size: number;
   price: number | string; // Decimal as number or string
   price_ron: number | string; // Decimal as number or string
-  image_id: string; // Reference to Image.id
+  image_id: string | null; // Reference to Image.id, nullable
   bottling_date: string; // Date in ISO format (YYYY-MM-DD)
   lot_number: number; // Positive integer
+  updated_at: string; // Timestamptz as string
 }
 
 export interface ProductWithImage {
@@ -41,21 +42,21 @@ export interface BlogPost {
   id: string; // UUID as string
   title: string;
   title_ro: string;
-  blog_id: string;
+  slug: string;
   content_markdown: string;
   content_markdown_ro: string;
   excerpt: string;
   excerpt_ro: string;
   author: string;
-  published_at: string; // NaiveDateTime as string
-  updated_at: string; // NaiveDateTime as string
+  published_at: string | null; // Timestamptz as string, null for drafts
+  updated_at: string; // Timestamptz as string
   is_published: boolean;
 }
 
 export interface NewBlogPost {
   title: string;
   title_ro: string;
-  blog_id: string;
+  slug: string;
   content_markdown: string;
   content_markdown_ro: string;
   excerpt: string;
@@ -67,7 +68,7 @@ export interface NewBlogPost {
 export interface UpdateBlogPost {
   title?: string;
   title_ro?: string;
-  blog_id?: string;
+  slug?: string;
   content_markdown?: string;
   content_markdown_ro?: string;
   excerpt?: string;
@@ -76,7 +77,7 @@ export interface UpdateBlogPost {
   is_published?: boolean;
 }
 
-export type ProductFormData = Omit<Product, 'product_id'> & { product_id?: string };
+export type ProductFormData = Omit<Product, 'product_id' | 'updated_at'> & { product_id?: string };
 
 // Localized types — returned by public API endpoints (single-language, Accept-Language driven)
 export interface LocalizedProduct {
@@ -96,7 +97,7 @@ export interface LocalizedProduct {
   bottle_size: number;
   price: number | string;
   currency: string;
-  image_id: string;
+  image_id: string | null;
   bottling_date: string;
   lot_number: number;
 }
@@ -109,11 +110,11 @@ export interface LocalizedProductWithImage {
 export interface LocalizedBlogPost {
   id: string;
   title: string;
-  blog_id: string;
+  slug: string;
   content_markdown: string;
   excerpt: string;
   author: string;
-  published_at: string;
+  published_at: string | null;
   updated_at: string;
   is_published: boolean;
 }

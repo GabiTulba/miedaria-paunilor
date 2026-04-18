@@ -10,9 +10,9 @@ pub enum BlogValidationError {
     TitleTooLong,
     EmptyTitleRo,
     TitleRoTooLong,
-    EmptyBlogId,
-    BlogIdTooLong,
-    InvalidBlogId,
+    EmptySlug,
+    SlugTooLong,
+    InvalidSlug,
     EmptyContent,
     EmptyContentRo,
     EmptyExcerpt,
@@ -25,7 +25,7 @@ pub enum BlogValidationError {
 
 #[derive(Debug)]
 pub enum BlogCreationError {
-    DuplicateBlogId,
+    DuplicateSlug,
     DatabaseError(String),
     ValidationErrors(Vec<BlogValidationError>),
     UnknownError,
@@ -37,8 +37,8 @@ impl From<DieselError> for BlogCreationError {
             DieselError::DatabaseError(kind, info) => {
                 if let DatabaseErrorKind::UniqueViolation = kind {
                     if let Some(constraint_name) = info.constraint_name() {
-                        if constraint_name.contains("blog_id") {
-                            return BlogCreationError::DuplicateBlogId;
+                        if constraint_name.contains("slug") {
+                            return BlogCreationError::DuplicateSlug;
                         }
                     }
                 }
@@ -84,12 +84,12 @@ fn validate_blog_post(new_post: &NewBlogPost) -> Vec<BlogValidationError> {
         errors.push(BlogValidationError::TitleRoTooLong);
     }
 
-    if new_post.blog_id.is_empty() {
-        errors.push(BlogValidationError::EmptyBlogId);
-    } else if new_post.blog_id.len() > 256 {
-        errors.push(BlogValidationError::BlogIdTooLong);
-    } else if !crate::utils::is_valid_slug(&new_post.blog_id) {
-        errors.push(BlogValidationError::InvalidBlogId);
+    if new_post.slug.is_empty() {
+        errors.push(BlogValidationError::EmptySlug);
+    } else if new_post.slug.len() > 256 {
+        errors.push(BlogValidationError::SlugTooLong);
+    } else if !crate::utils::is_valid_slug(&new_post.slug) {
+        errors.push(BlogValidationError::InvalidSlug);
     }
 
     if new_post.content_markdown.is_empty() {
@@ -123,8 +123,12 @@ fn validate_blog_post(new_post: &NewBlogPost) -> Vec<BlogValidationError> {
 
 pub fn create_blog_post(
     conn: &mut PgConnection,
-    new_post: NewBlogPost,
+    mut new_post: NewBlogPost,
 ) -> Result<BlogPost, BlogCreationError> {
+    if new_post.is_published {
+        new_post.published_at = Some(chrono::Utc::now().naive_utc());
+    }
+
     let validation_errors = validate_blog_post(&new_post);
     if !validation_errors.is_empty() {
         return Err(BlogCreationError::ValidationErrors(validation_errors));
@@ -161,12 +165,12 @@ pub fn get_all_blog_posts_admin(
         .load::<BlogPost>(conn)
 }
 
-pub fn get_blog_post_by_blog_id(
+pub fn get_blog_post_by_slug(
     conn: &mut PgConnection,
-    blog_id: &str,
+    slug: &str,
 ) -> Result<BlogPost, DieselError> {
     blog_posts::table
-        .filter(blog_posts::blog_id.eq(blog_id))
+        .filter(blog_posts::slug.eq(slug))
         .filter(blog_posts::is_published.eq(true))
         .first::<BlogPost>(conn)
 }
@@ -185,10 +189,20 @@ pub fn update_blog_post(
     id: uuid::Uuid,
     update_post: UpdateBlogPost,
 ) -> Result<BlogPost, BlogUpdateError> {
-    diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
+    let post: BlogPost = diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
         .set(&update_post)
         .get_result(conn)
-        .map_err(BlogUpdateError::from)
+        .map_err(BlogUpdateError::from)?;
+
+    // Set published_at on first publish
+    if post.is_published && post.published_at.is_none() {
+        diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
+            .set(blog_posts::published_at.eq(Some(chrono::Utc::now().naive_utc())))
+            .get_result(conn)
+            .map_err(BlogUpdateError::from)
+    } else {
+        Ok(post)
+    }
 }
 
 pub fn delete_blog_post(conn: &mut PgConnection, id: uuid::Uuid) -> Result<usize, DieselError> {

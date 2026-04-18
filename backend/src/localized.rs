@@ -25,7 +25,7 @@ pub struct LocalizedProduct {
     #[serde(with = "rust_decimal::serde::float")]
     pub price: Decimal,
     pub currency: String,
-    pub image_id: uuid::Uuid,
+    pub image_id: Option<uuid::Uuid>,
     pub bottling_date: chrono::NaiveDate,
     pub lot_number: i32,
 }
@@ -40,11 +40,11 @@ pub struct LocalizedProductWithImage {
 pub struct LocalizedBlogPost {
     pub id: uuid::Uuid,
     pub title: String,
-    pub blog_id: String,
+    pub slug: String,
     pub content_markdown: String,
     pub excerpt: String,
     pub author: String,
-    pub published_at: chrono::NaiveDateTime,
+    pub published_at: Option<chrono::NaiveDateTime>,
     pub updated_at: chrono::NaiveDateTime,
     pub is_published: bool,
 }
@@ -117,7 +117,7 @@ impl LocalizedBlogPost {
         LocalizedBlogPost {
             id: post.id,
             title,
-            blog_id: post.blog_id,
+            slug: post.slug,
             content_markdown: content,
             excerpt,
             author: post.author,

@@ -75,7 +75,7 @@ function Home() {
                                     <article key={post.id} className="blog-post-card">
                                         <div className="blog-post-header">
                                             <h3 className="blog-post-title">
-                                                <Link to={`/blog/${post.blog_id}`}>{post.title}</Link>
+                                                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
                                             </h3>
                                             <div className="blog-post-meta">
                                                 <span className="blog-post-date">
@@ -90,7 +90,7 @@ function Home() {
                                             <p>{post.excerpt}</p>
                                         </div>
                                         <div className="blog-post-actions">
-                                            <Link to={`/blog/${post.blog_id}`} className="read-more-btn">
+                                            <Link to={`/blog/${post.slug}`} className="read-more-btn">
                                                 {t('blog.readMore')}
                                             </Link>
                                         </div>

@@ -78,7 +78,7 @@ function Blog() {
                                 <article key={post.id} className="blog-post-card">
                                     <div className="blog-post-header">
                                         <h2 className="blog-post-title">
-                                            <Link to={`/blog/${post.blog_id}`}>{post.title}</Link>
+                                            <Link to={`/blog/${post.slug}`}>{post.title}</Link>
                                         </h2>
                                         <div className="blog-post-meta">
                                             <span className="blog-post-date">
@@ -141,7 +141,7 @@ function Blog() {
                                          </ReactMarkdown>
                                      </div>
                                     <div className="blog-post-actions">
-                                        <Link to={`/blog/${post.blog_id}`} className="read-more-btn">
+                                        <Link to={`/blog/${post.slug}`} className="read-more-btn">
                                             {t('blog.readMore')}
                                         </Link>
                                     </div>

@@ -1,3 +1,7 @@
+DROP TRIGGER IF EXISTS trg_products_updated_at ON products;
+DROP TRIGGER IF EXISTS trg_blog_posts_updated_at ON blog_posts;
+DROP FUNCTION IF EXISTS update_updated_at();
+
 DROP TABLE IF EXISTS blog_posts;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS images;

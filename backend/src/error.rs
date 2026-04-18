@@ -43,10 +43,10 @@ impl IntoResponse for AppError {
                     }),
                 )
                     .into_response(),
-                BlogCreationError::DuplicateBlogId => (
+                BlogCreationError::DuplicateSlug => (
                     StatusCode::CONFLICT,
                     Json(ErrorResponse {
-                        message: "Blog post with this blog ID already exists.".to_string(),
+                        message: "Blog post with this slug already exists.".to_string(),
                     }),
                 )
                     .into_response(),

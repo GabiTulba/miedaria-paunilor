@@ -45,14 +45,14 @@ diesel::table! {
         id -> Uuid,
         title -> Varchar,
         title_ro -> Varchar,
-        blog_id -> Varchar,
+        slug -> Varchar,
         content_markdown -> Text,
         content_markdown_ro -> Text,
         excerpt -> Varchar,
         excerpt_ro -> Varchar,
         author -> Varchar,
-        published_at -> Timestamp,
-        updated_at -> Timestamp,
+        published_at -> Nullable<Timestamptz>,
+        updated_at -> Timestamptz,
         is_published -> Bool,
     }
 }
@@ -62,7 +62,7 @@ diesel::table! {
         id -> Uuid,
         file_name -> Varchar,
         storage_path -> Varchar,
-        created_at -> Timestamp,
+        created_at -> Timestamptz,
         file_size -> Int8,
     }
 }
@@ -91,9 +91,10 @@ diesel::table! {
         bottle_size -> Int4,
         price -> Numeric,
         price_ron -> Numeric,
-        image_id -> Uuid,
+        image_id -> Nullable<Uuid>,
         bottling_date -> Date,
         lot_number -> Int4,
+        updated_at -> Timestamptz,
     }
 }
 

@@ -9,7 +9,7 @@ import remarkGfm from 'remark-gfm';
 import './Blog.css';
 
 function BlogPostDetail() {
-    const { blog_id } = useParams<{ blog_id: string }>();
+    const { slug } = useParams<{ slug: string }>();
     const [blogPost, setBlogPost] = useState<LocalizedBlogPost | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -25,15 +25,15 @@ function BlogPostDetail() {
 
     useEffect(() => {
         const fetchBlogPost = async () => {
-            if (!blog_id) {
-                setError(t('blog.invalidBlogId'));
+            if (!slug) {
+                setError(t('blog.invalidSlug'));
                 setLoading(false);
                 return;
             }
 
             try {
                 setLoading(true);
-                const post = await api.getBlogPostByBlogId(blog_id);
+                const post = await api.getBlogPostBySlug(slug);
                 setBlogPost(post);
                 setError(null);
             } catch (err: any) {
@@ -48,7 +48,7 @@ function BlogPostDetail() {
             }
         };
         fetchBlogPost();
-    }, [blog_id, t]);
+    }, [slug, t]);
 
     if (loading) {
         return (

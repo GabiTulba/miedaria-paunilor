@@ -50,80 +50,12 @@ Generated: 2026-04-17
 
 == DATABASE SCHEMA ==
 
-[HIGH] Add CHECK constraints - backend validates these but DB has no guardrails
-  backend/migrations/20250101000000_create_tables/up.sql
-  Missing constraints:
-    abv          DECIMAL(3,1) CHECK (abv >= 0 AND abv <= 99.9)
-    bottle_count INTEGER      CHECK (bottle_count >= 0)
-    bottle_size  INTEGER      CHECK (bottle_size > 0)
-    price        DECIMAL(5,2) CHECK (price > 0)
-    price_ron    DECIMAL(7,2) CHECK (price_ron > 0)
-    lot_number   INTEGER      CHECK (lot_number > 0)
-    bottling_date DATE        CHECK (bottling_date <= CURRENT_DATE)
-  Direct DB inserts bypass all application validation silently.
-
-[HIGH] images.file_name UNIQUE constraint wrong
-  file_name UNIQUE means same filename (e.g. photo.jpg) can't be uploaded twice.
-  storage_path is already UUID-based and unique - that's the stable identifier.
-  Remove UNIQUE from file_name.
-
-[HIGH] No VARCHAR length limits anywhere
-  username, salt, hashed_password, product_name, author, file_name, storage_path all unbounded.
-  DoS via huge string inserts. Add explicit limits:
-    username VARCHAR(256), salt VARCHAR(256), hashed_password VARCHAR(64)
-    product_name VARCHAR(256), author VARCHAR(256)
-    file_name VARCHAR(512), storage_path VARCHAR(1024)
-
-[MEDIUM] blog_posts.published_at DEFAULT NOW() on creation
-  Drafts (is_published=false) get published_at = creation time, not publish time.
-  Fix: published_at is NULL by default, set when is_published flips to true.
-  Requires backend logic to set it on first publish.
-
-[MEDIUM] No updated_at trigger on blog_posts
-  updated_at must be set manually by app. Will drift if any direct DB update happens.
-  Add trigger:
-    CREATE OR REPLACE FUNCTION update_updated_at()
-    RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
-    CREATE TRIGGER trg_blog_posts_updated_at
-    BEFORE UPDATE ON blog_posts FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-[MEDIUM] No updated_at on products table
-  No way to know when a product was last modified. Useful for cache invalidation, admin audit.
-  Add: updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW() with same trigger pattern.
-
-[MEDIUM] TIMESTAMP instead of TIMESTAMPTZ
-  images.created_at, blog_posts.published_at, blog_posts.updated_at all TIMESTAMP (no tz).
-  Server timezone change or future internationalisation will cause silent data corruption.
-  Migrate all timestamp columns to TIMESTAMPTZ.
-
-[MEDIUM] No indexes on products for common query patterns
-  Current: no indexes on products table at all.
-  Add indexes for filter/sort operations:
-    CREATE INDEX idx_products_product_type ON products(product_type);
-    CREATE INDEX idx_products_bottle_count ON products(bottle_count);
-    CREATE INDEX idx_products_bottling_date ON products(bottling_date DESC);
-    CREATE INDEX idx_products_sweetness ON products(sweetness);
-  Partial index for in-stock filter:
-    CREATE INDEX idx_products_in_stock ON products(bottling_date DESC) WHERE bottle_count > 0;
-
-[MEDIUM] image_id NOT NULL forces image on every product
-  Cannot create product without an image. Blocks admin workflow.
-  Make nullable: image_id UUID REFERENCES images(id) NULL
-  Handle NULL image_id in frontend with placeholder image.
-
 [MEDIUM] users and admin_users are identical tables
   Same schema, separate tables. Username 'gabi' in users != 'gabi' in admin_users - confusing.
   Consider: single users table with role column (role VARCHAR CHECK (role IN ('user','admin'))).
   Or keep separate but add cross-table uniqueness if usernames should be globally unique.
 
-[LOW] price DECIMAL(5,2) max is 999.99 EUR
-  Premium/aged meads can exceed this. Widen to DECIMAL(7,2) (max 99999.99).
-
 [LOW] No soft delete on products
   Hard delete breaks order history when checkout is implemented.
   Add: deleted_at TIMESTAMPTZ NULL. Filter WHERE deleted_at IS NULL in queries.
   Revisit when orders table is designed.
-
-[LOW] blog_id column should be named slug
-  AGENTS.md calls it slug, SEO convention calls it slug, but column is blog_id.
-  Rename column to slug for clarity. Requires migration + backend + frontend update.

@@ -88,7 +88,7 @@ pub fn get_sitemap_data(
         .iter()
         .map(|product| SitemapUrl {
             loc: format!("{}/shop/{}", site_url, product.product_id),
-            lastmod: product.bottling_date.format("%Y-%m-%d").to_string(),
+            lastmod: product.updated_at.format("%Y-%m-%d").to_string(),
             changefreq: CHANGEFREQ_MONTHLY.to_string(),
             priority: PRIORITY_PRODUCT,
         })
@@ -97,7 +97,7 @@ pub fn get_sitemap_data(
     let blog_urls = blog_posts
         .iter()
         .map(|blog_post| SitemapUrl {
-            loc: format!("{}/blog/{}", site_url, blog_post.blog_id),
+            loc: format!("{}/blog/{}", site_url, blog_post.slug),
             lastmod: blog_post.updated_at.format("%Y-%m-%d").to_string(),
             changefreq: CHANGEFREQ_MONTHLY.to_string(),
             priority: PRIORITY_SECONDARY,

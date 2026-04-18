@@ -18,7 +18,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
     const [formData, setFormData] = useState<NewBlogPost | UpdateBlogPost>({
         title: '',
         title_ro: '',
-        blog_id: '',
+        slug: '',
         content_markdown: '',
         content_markdown_ro: '',
         excerpt: '',
@@ -44,7 +44,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                         setFormData({
                             title: post.title,
                             title_ro: post.title_ro,
-                            blog_id: post.blog_id,
+                            slug: post.slug,
                             content_markdown: post.content_markdown,
                             content_markdown_ro: post.content_markdown_ro,
                             excerpt: post.excerpt,
@@ -100,10 +100,10 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
             errors.title_ro = t('common.required');
         }
 
-        if (!formData.blog_id?.trim()) {
-            errors.blog_id = t('common.required');
-        } else if (!/^[a-z0-9-]+$/.test(formData.blog_id)) {
-            errors.blog_id = t('admin.blog.form.blogIdInvalid');
+        if (!formData.slug?.trim()) {
+            errors.slug = t('common.required');
+        } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+            errors.slug = t('admin.blog.form.slugInvalid');
         }
 
         if (!formData.content_markdown?.trim()) {
@@ -156,7 +156,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                 err.response.data.errors.forEach((error: any) => {
                     if (error === 'EmptyTitle') validationErrors.title = t('common.required');
                     else if (error === 'EmptyTitleRo') validationErrors.title_ro = t('common.required');
-                    else if (error === 'EmptyBlogId' || error === 'InvalidBlogId') validationErrors.blog_id = 'Invalid blog ID format';
+                    else if (error === 'EmptySlug' || error === 'InvalidSlug') validationErrors.slug = 'Invalid slug format';
                     else if (error === 'EmptyContent') validationErrors.content_markdown = t('common.required');
                     else if (error === 'EmptyContentRo') validationErrors.content_markdown_ro = t('common.required');
                     else if (error === 'EmptyExcerpt') validationErrors.excerpt = t('common.required');
@@ -222,14 +222,14 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
 
                     <div className="form-row">
                         <TextInput
-                            id="blog_id"
-                            label={t('admin.blog.form.blogId')}
-                            name="blog_id"
-                            value={formData.blog_id || ''}
+                            id="slug"
+                            label={t('admin.blog.form.slug')}
+                            name="slug"
+                            value={formData.slug || ''}
                             onChange={handleChange}
-                            error={formErrors.blog_id}
+                            error={formErrors.slug}
                             required
-                            helpText={t('admin.blog.form.blogIdHelp')}
+                            helpText={t('admin.blog.form.slugHelp')}
                         />
                         <TextInput
                             id="author"

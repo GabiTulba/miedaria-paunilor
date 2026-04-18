@@ -133,7 +133,7 @@ function AdminBlog() {
                                         <div className="product-cell">
                                             <div className="product-info">
                                                 <div className="product-name">{getLocalizedTitle(post)}</div>
-                                                <div className="product-id">{post.blog_id}</div>
+                                                <div className="product-id">{post.slug}</div>
                                             </div>
                                         </div>
                                     </td>

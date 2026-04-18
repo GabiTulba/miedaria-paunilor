@@ -87,24 +87,26 @@ export const api = {
     },
 
     createProduct: async (productData: ProductFormData, token: string) => {
+        const payload = { ...productData, image_id: productData.image_id || null };
         return request('/admin/products', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(productData),
+            body: JSON.stringify(payload),
         });
     },
 
     updateProduct: async (id: string, productData: Product, token: string) => {
+        const payload = { ...productData, image_id: productData.image_id || null };
         return request(`/admin/products/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(productData),
+            body: JSON.stringify(payload),
         });
     },
 
@@ -172,7 +174,7 @@ export const api = {
         const qs = params.toString() ? `?${params.toString()}` : '';
         return request(`/blog${qs}`);
     },
-    getBlogPostByBlogId: (blog_id: string): Promise<LocalizedBlogPost> => request(`/blog/${blog_id}`),
+    getBlogPostBySlug: (slug: string): Promise<LocalizedBlogPost> => request(`/blog/${slug}`),
     
     // Admin blog operations
     getBlogPostsAdmin: async (token: string, page?: number, per_page?: number, limit?: number): Promise<BlogPost[]> => {

@@ -43,7 +43,7 @@ pub struct AppState {
 pub use crate::auth::{Claims, LoginPayload, LoginResponse};
 pub use crate::blog_crud::{
     create_blog_post, delete_blog_post, get_all_blog_posts, get_all_blog_posts_admin,
-    get_blog_post_by_blog_id, get_blog_post_by_id, update_blog_post,
+    get_blog_post_by_slug, get_blog_post_by_id, update_blog_post,
 };
 pub use crate::models::{AdminUser, NewAdminUser, NewProduct, NewUser, Product, User};
 pub use crate::product_crud::{

@@ -180,9 +180,8 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         label={t('admin.productForm.selectImage')}
                         value={product.image_id || ''}
                         onChange={handleChange}
-                        required
                         options={[
-                            { value: '', label: t('admin.productForm.selectImage') },
+                            { value: '', label: t('admin.productForm.noImage') },
                             ...availableImages.map((image) => ({
                                 value: image.id,
                                 label: `${image.file_name} (ID: ${image.id.substring(0, 8)}...)`,
