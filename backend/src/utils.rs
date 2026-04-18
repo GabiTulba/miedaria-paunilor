@@ -1,12 +1,22 @@
-use sha2::{Digest, Sha256};
+use argon2::{
+    Argon2,
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
+};
 
-pub fn salt_and_hash(salt: &str, password: &str) -> String {
-    let hash = Sha256::digest(format!("{}{}", salt, password).as_bytes());
-    let hashed_string = format!("{:x}", hash);
-    hashed_string
+pub fn hash_password(password: &str) -> String {
+    let salt = SaltString::generate(&mut OsRng);
+    Argon2::default()
+        .hash_password(password.as_bytes(), &salt)
+        .expect("Failed to hash password")
+        .to_string()
 }
 
-pub fn verify_password(password: &str, salt: &str, stored_hash: &str) -> bool {
-    let computed_hash = salt_and_hash(salt, password);
-    computed_hash == stored_hash
+pub fn verify_password(password: &str, stored_hash: &str) -> bool {
+    let parsed_hash = match PasswordHash::new(stored_hash) {
+        Ok(h) => h,
+        Err(_) => return false,
+    };
+    Argon2::default()
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .is_ok()
 }

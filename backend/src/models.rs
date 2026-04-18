@@ -10,7 +10,6 @@ use uuid;
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct AdminUser {
     pub username: String,
-    pub salt: String,
     pub hashed_password: String,
 }
 
@@ -19,7 +18,6 @@ pub struct AdminUser {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {
     pub username: String,
-    pub salt: String,
     pub hashed_password: String,
 }
 
@@ -27,7 +25,6 @@ pub struct User {
 #[diesel(table_name = admin_users)]
 pub struct NewAdminUser<'a> {
     pub username: &'a str,
-    pub salt: &'a str,
     pub hashed_password: &'a str,
 }
 
@@ -35,7 +32,6 @@ pub struct NewAdminUser<'a> {
 #[diesel(table_name = users)]
 pub struct NewUser<'a> {
     pub username: &'a str,
-    pub salt: &'a str,
     pub hashed_password: &'a str,
 }
 

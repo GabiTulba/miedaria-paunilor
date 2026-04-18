@@ -23,11 +23,17 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY generate-sitemap.sh /usr/local/bin/generate-sitemap.sh
 RUN chmod +x /usr/local/bin/generate-sitemap.sh
 
-# Create cron job for sitemap generation (every 10 minutes)
-RUN echo "*/10 * * * * /usr/local/bin/generate-sitemap.sh >> /var/log/sitemap-cron.log 2>&1" > /etc/crontabs/root
+# Create crontab for nginx user (not root); truncate log daily to prevent unbounded growth
+RUN printf '*/10 * * * * /usr/local/bin/generate-sitemap.sh >> /var/log/sitemap-cron.log 2>&1\n0 0 * * * truncate -s 0 /var/log/sitemap-cron.log\n' > /etc/crontabs/nginx
 
-# Create log file
-RUN touch /var/log/sitemap-cron.log
+# Create log file owned by nginx user
+RUN touch /var/log/sitemap-cron.log && chown nginx:nginx /var/log/sitemap-cron.log
+
+# nginx pid file and cache dirs must be writable by nginx user
+RUN mkdir -p /var/cache/nginx /var/run /run && \
+    chown -R nginx:nginx /var/cache/nginx /var/run /run /usr/share/nginx/html
+
+USER nginx
 
 # Start cron in background and nginx in foreground
 CMD sh -c "crond && nginx -g 'daemon off;'"

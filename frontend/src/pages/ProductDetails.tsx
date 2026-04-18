@@ -41,7 +41,7 @@ function ProductDetails() {
 
     const handleAddToCart = () => {
         if (productWithImage?.product) {
-            addToCart(productWithImage.product, quantity, product.bottle_count);
+            addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count);
         }
     };
 

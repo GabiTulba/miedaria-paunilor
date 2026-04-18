@@ -3,7 +3,6 @@
 diesel::table! {
     admin_users (username) {
         username -> Varchar,
-        salt -> Varchar,
         hashed_password -> Varchar,
     }
 }
@@ -65,7 +64,6 @@ diesel::table! {
 diesel::table! {
     users (username) {
         username -> Varchar,
-        salt -> Varchar,
         hashed_password -> Varchar,
     }
 }

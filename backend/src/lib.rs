@@ -15,8 +15,22 @@ pub mod utils;
 pub use crate::db::get_db_connection;
 pub use crate::error::{AppError, ErrorResponse, ValidationErrorResponse};
 
+use governor::{Quota, RateLimiter, clock::DefaultClock, state::keyed::DefaultKeyedStateStore};
+use std::net::IpAddr;
+use std::num::NonZeroU32;
+use std::sync::Arc;
+
+pub type LoginRateLimiter = RateLimiter<IpAddr, DefaultKeyedStateStore<IpAddr>, DefaultClock>;
+
+pub fn build_login_limiter() -> Arc<LoginRateLimiter> {
+    Arc::new(RateLimiter::keyed(
+        Quota::per_minute(NonZeroU32::new(10).unwrap()),
+    ))
+}
+
 pub struct AppState {
     pub pool: db::PgPool,
+    pub login_limiter: Arc<LoginRateLimiter>,
 }
 
 // Export modules and their contents
@@ -34,4 +48,4 @@ pub use crate::user_crud::{
     create_admin, create_regular, delete_admin, delete_regular, get_admin, get_regular,
     update_admin_password, update_regular_password,
 };
-pub use crate::utils::{salt_and_hash, verify_password};
+pub use crate::utils::{hash_password, verify_password};

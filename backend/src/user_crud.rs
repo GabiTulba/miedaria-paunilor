@@ -2,25 +2,16 @@ use crate::models::{AdminUser, NewAdminUser, NewUser, User};
 use crate::schema::*;
 use crate::utils;
 use diesel::prelude::*;
-use rand::distr::{Alphanumeric, SampleString};
-
-fn create_salt_and_hash(password: &str) -> (String, String) {
-    let new_salt = Alphanumeric.sample_string(&mut rand::rng(), 32);
-    let hash = utils::salt_and_hash(&new_salt, password);
-
-    (new_salt, hash)
-}
 
 pub fn create_admin(
     conn: &mut PgConnection,
     username: &str,
     password: &str,
 ) -> QueryResult<AdminUser> {
-    let (new_salt, hash) = create_salt_and_hash(&password);
+    let hash = utils::hash_password(password);
 
     let new_user = NewAdminUser {
-        username: &username,
-        salt: &new_salt,
+        username,
         hashed_password: &hash,
     };
 
@@ -47,14 +38,11 @@ pub fn update_admin_password(
 ) -> QueryResult<()> {
     match get_admin(conn, user)? {
         Some(_user) => {
-            let (new_salt, hash) = create_salt_and_hash(new_password);
+            let hash = utils::hash_password(new_password);
 
             diesel::update(admin_users::table)
                 .filter(admin_users::username.eq(user))
-                .set((
-                    admin_users::salt.eq(new_salt),
-                    admin_users::hashed_password.eq(hash),
-                ))
+                .set(admin_users::hashed_password.eq(hash))
                 .execute(conn)
                 .map(|_| ())
         }
@@ -74,11 +62,10 @@ pub fn create_regular(
     username: &str,
     password: &str,
 ) -> QueryResult<User> {
-    let (new_salt, hash) = create_salt_and_hash(&password);
+    let hash = utils::hash_password(password);
 
     let new_user = NewUser {
-        username: &username,
-        salt: &new_salt,
+        username,
         hashed_password: &hash,
     };
 
@@ -105,11 +92,11 @@ pub fn update_regular_password(
 ) -> QueryResult<()> {
     match get_regular(conn, user)? {
         Some(_user) => {
-            let (new_salt, hash) = create_salt_and_hash(new_password);
+            let hash = utils::hash_password(new_password);
 
             diesel::update(users::table)
                 .filter(users::username.eq(user))
-                .set((users::salt.eq(new_salt), users::hashed_password.eq(hash)))
+                .set(users::hashed_password.eq(hash))
                 .execute(conn)
                 .map(|_| ())
         }

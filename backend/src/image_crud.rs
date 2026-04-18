@@ -10,6 +10,34 @@ use crate::schema::{images, products};
 use diesel::dsl::count;
 use diesel::pg::PgConnection;
 
+const MAX_IMAGE_SIZE: usize = 50 * 1024 * 1024; // 50MB
+
+/// Detects image format from magic bytes. Returns canonical extension or None if not a known image.
+fn detect_image_format(data: &[u8]) -> Option<&'static str> {
+    if data.len() < 12 {
+        return None;
+    }
+    if data.starts_with(b"\xFF\xD8\xFF") {
+        return Some("jpg");
+    }
+    if data.starts_with(b"\x89PNG\r\n\x1A\n") {
+        return Some("png");
+    }
+    if data.starts_with(b"GIF87a") || data.starts_with(b"GIF89a") {
+        return Some("gif");
+    }
+    if data.starts_with(b"RIFF") && &data[8..12] == b"WEBP" {
+        return Some("webp");
+    }
+    if data.starts_with(b"BM") {
+        return Some("bmp");
+    }
+    if data.starts_with(b"II\x2A\x00") || data.starts_with(b"MM\x00\x2A") {
+        return Some("tiff");
+    }
+    None
+}
+
 pub async fn upload_image(
     conn: &mut PgConnection,
     mut multipart: Multipart,
@@ -23,35 +51,34 @@ pub async fn upload_image(
         ));
     }
 
-    while let Some(field) = multipart.next_field().await.unwrap() {
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        eprintln!("Error reading multipart field: {:?}", e);
+        AppError::BadRequest("Invalid multipart request".to_string())
+    })? {
         let file_name = field.file_name().map(|s| s.to_string());
-        let content_type = field.content_type().map(|s| s.to_string());
 
         if let Some(original_filename) = file_name {
-            if let Some(ref ct) = content_type {
-                if !ct.starts_with("image/") {
-                    return Err(AppError::BadRequest(
-                        "Invalid content type. Only image files are allowed.".to_string(),
-                    ));
-                }
-            } else {
-                return Err(AppError::BadRequest(
-                    "Missing content type for file upload.".to_string(),
-                ));
-            }
-
             let data = field.bytes().await.map_err(|e| {
                 eprintln!("Error reading file bytes: {:?}", e);
                 AppError::InternalServerError("Failed to read file data".to_string())
             })?;
-            let file_size = data.len() as i64;
 
+            if data.len() > MAX_IMAGE_SIZE {
+                return Err(AppError::BadRequest(
+                    "File too large. Maximum image size is 50MB.".to_string(),
+                ));
+            }
+
+            // Validate by magic bytes — client-supplied content-type and extension are untrusted
+            let extension = detect_image_format(&data).ok_or_else(|| {
+                AppError::BadRequest(
+                    "Invalid file. Only JPEG, PNG, GIF, WebP, BMP, and TIFF images are allowed."
+                        .to_string(),
+                )
+            })?;
+
+            let file_size = data.len() as i64;
             let image_uuid = Uuid::new_v4();
-            let extension = original_filename
-                .split('.')
-                .last()
-                .unwrap_or("png")
-                .to_lowercase();
             let storage_filename = format!("{}.{}", image_uuid, extension);
             let storage_path = format!("{}/{}", upload_dir, storage_filename);
 
@@ -139,7 +166,8 @@ pub async fn update_image(
     if let Some(new_file_name) = updated_image_data.file_name.clone() {
         if new_file_name != existing_image.file_name {
             let old_storage_path = existing_image.storage_path;
-            let upload_dir = "/app/images";
+            let upload_dir = std::env::var("IMAGE_UPLOAD_DIR")
+                .map_err(|_| AppError::InternalServerError("IMAGE_UPLOAD_DIR not set".to_string()))?;
             let extension = old_storage_path.split('.').last().unwrap_or("png");
             let new_storage_filename = format!("{}.{}", image_id, extension);
             let new_storage_path = format!("{}/{}", upload_dir, new_storage_filename);

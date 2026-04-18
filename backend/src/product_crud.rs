@@ -149,7 +149,7 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
     }
 
     // bottling_date: Date - should not be in the future
-    let today = chrono::Utc::now().naive_utc().date();
+    let today = chrono::Local::now().date_naive();
     if new_product.bottling_date > today {
         errors.push(ProductValidationError::InvalidBottlingDate);
     }

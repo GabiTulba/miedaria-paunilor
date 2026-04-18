@@ -7,38 +7,67 @@ services:
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     ports:
-      - "80:80"   # HTTP port for redirect to HTTPS
-      - "443:443" # HTTPS port
+      - "80:8080"   # HTTP port for redirect to HTTPS
+      - "443:8443"  # HTTPS port
     networks:
       - react-rust
     env_file:
       - .env
     volumes:
       - 'miedaria_paunilor_images:/app/images'
-      - './ssl:/etc/nginx/ssl:ro'  # Mount SSL certificates 
+      - './ssl:/etc/nginx/ssl:ro'  # Mount SSL certificates
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-fk", "https://localhost:8443/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   backend:
     build: ./backend
-    ports:
-      - "8000:8000"
     networks:
       - react-rust
       - rust-postgres
     env_file:
       - .env
     volumes:
-      - 'miedaria_paunilor_images:/app/images' 
+      - 'miedaria_paunilor_images:/app/images'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   database:
     image: postgres:16.2-alpine
-    ports:
-      - "5432:5432"
     networks:
       - rust-postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
     env_file:
       - .env
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 networks:
   react-rust:
@@ -46,4 +75,4 @@ networks:
 
 volumes:
   postgres-data:
-  miedaria_paunilor_images: 
+  miedaria_paunilor_images:

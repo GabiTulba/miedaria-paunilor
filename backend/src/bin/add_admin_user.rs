@@ -1,7 +1,7 @@
 use backend::db::establish_connection;
 use backend::models::AdminUser;
-use backend::{create_admin, get_admin, salt_and_hash}; // Import what's needed
-use diesel::PgConnection; // Keep this for PgConnection type
+use backend::{create_admin, get_admin, verify_password};
+use diesel::PgConnection;
 use std::env::args;
 
 // Throws if there already is a user $ADMIN_USERNAME in the database with a different password than $ADMIN_PASSWORD
@@ -10,19 +10,16 @@ pub fn create_admin_user_if_non_existent_or_die(
     username: &str,
     password: &str,
 ) -> Option<AdminUser> {
-    match get_admin(conn, &username) {
-        // Use get_admin directly
+    match get_admin(conn, username) {
         Ok(Some(user)) => {
-            if user.hashed_password != salt_and_hash(&user.salt, &password) {
-                // Use salt_and_hash directly
+            if !verify_password(password, &user.hashed_password) {
                 panic!("User already exists with different password");
             } else {
                 None
             }
         }
         Ok(None) => {
-            match create_admin(conn, &username, &password) {
-                // Use create_admin directly
+            match create_admin(conn, username, password) {
                 Ok(user) => Some(user),
                 Err(e) => panic!("Error creating user: {}", e),
             }

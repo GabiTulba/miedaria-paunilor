@@ -3,118 +3,9 @@ Generated: 2026-04-17
 
 == BUGS ==
 
-[HIGH] backend/src/image_crud.rs:142
-  Hardcoded /app/images instead of IMAGE_UPLOAD_DIR env var.
-  File ops fail if env differs.
-
-[HIGH] backend/src/auth.rs:49-52
-  .expect() on JWT_EXPIRATION_HOURS parse.
-  Invalid env var panics server at login time.
-
-[HIGH] backend/src/image_crud.rs:26
-  .unwrap() on multipart field iteration.
-  Bad multipart request panics server instead of returning error.
-
-[HIGH] backend/src/main.rs:82,86
-  .unwrap() on startup code.
-  Panic kills entire app process.
-
-[MEDIUM] backend/src/product_crud.rs:152
-  Uses Utc::now().naive_utc().date() vs NaiveDate bottling_date.
-  Timezone mismatch breaks future-date validation.
-
-[MEDIUM] frontend/src/pages/ProductDetails.tsx:44
-  Possible undefined access when adding to cart (product.bottle_count).
-
 
 == SECURITY ==
 
-[CRITICAL] .env
-  Default weak secrets (POSTGRES_PASSWORD, ADMIN_PASSWORD, JWT_SECRET).
-  Must be changed before any production deployment.
-
-[CRITICAL] docker-compose.yml:34-35
-  PostgreSQL port 5432 exposed to host network.
-  Remove port mapping - only backend needs DB access via internal network.
-
-[CRITICAL] docker-compose.yml:23
-  Backend port 8000 exposed to host network.
-  Should only be accessible via nginx internal network.
-
-[CRITICAL] generate-ssl.sh:12-15
-  RSA-2048 self-signed cert, 365-day expiry.
-  Not suitable for production. Use Let's Encrypt.
-
-[HIGH] backend/src/utils.rs
-  SHA256 used for password hashing. Weak - no iterations, trivially brute-forced.
-  Replace with Argon2 or bcrypt.
-
-[HIGH] backend/src/auth.rs
-  No rate limiting on /api/admin/login.
-  Brute force attack trivially possible.
-
-[HIGH] backend/Dockerfile, frontend/Dockerfile
-  No USER directive. Containers run as root.
-  Container escape gives attacker root on host.
-
-[HIGH] frontend/Dockerfile:27
-  Cron job runs as root (sitemap generation).
-  Any exploit in script executes with root privileges.
-
-[HIGH] backend/entrypoint.sh
-  Entrypoint script runs DB setup and app launch as root.
-  Add user switching after setup steps.
-
-[HIGH] backend/src/image_crud.rs:50-55
-  File upload validates MIME type/extension only.
-  No magic bytes check. Upload malicious file disguised as image.
-
-[HIGH] backend/src/main.rs:38-41
-  CORS set to allow_origin(Any). All origins allowed.
-  Restrict to specific domain in production.
-
-[MEDIUM] docker-compose.yml
-  No resource limits (CPU, memory) on any container.
-  Single container can DoS entire host.
-
-[MEDIUM] docker-compose.yml
-  No healthcheck directives on any service.
-  Failed services stay running without detection.
-
-[MEDIUM] frontend/nginx.conf
-  server_tokens not disabled.
-  Leaks nginx version in error pages and headers.
-
-[MEDIUM] frontend/nginx.conf
-  Missing security headers:
-    X-Frame-Options: SAMEORIGIN
-    X-Content-Type-Options: nosniff
-    X-XSS-Protection: 1; mode=block
-    Referrer-Policy: strict-origin-when-cross-origin
-
-[MEDIUM] (root dir)
-  No .dockerignore file.
-  Build context includes .git, .env, node_modules - leaks secrets into image layers.
-
-[MEDIUM] frontend/nginx.conf:14,38,60
-  client_max_body_size 50M with no backend file size enforcement.
-  Validate file size in backend before accepting upload.
-
-[LOW] frontend/nginx.conf:22
-  ssl_prefer_server_ciphers off - client chooses cipher, may pick weak one.
-  Set to on.
-
-[LOW] frontend/nginx.conf
-  No autoindex off directive.
-  Could expose directory listings.
-
-[LOW] frontend/Dockerfile:27
-  Cron log /var/log/sitemap-cron.log has no rotation.
-  Log grows unbounded, can fill container filesystem.
-
-[LOW] backend/src/auth.rs:100
-  Verify JWT validation explicitly checks exp claim.
-  Some jsonwebtoken versions require explicit Validation config.
 
 
 == IMPROVEMENTS ==
@@ -235,11 +126,6 @@ Generated: 2026-04-17
   Add tower_http::trace::TraceLayer.
 
 --- TypeScript Frontend ---
-
-[HIGH] frontend/src/pages/ProductDetails.tsx:44
-  BUG: addToCart() passes undefined variable `product` - should be `productWithImage.product`.
-  Also in code quality because it reflects missing type safety catching this at compile time.
-  Fix: addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count)
 
 [HIGH] frontend/src/lib/api.ts:21,67,75 and frontend/src/pages/admin/ProductForm.tsx:16
   `any` types used instead of proper interfaces.

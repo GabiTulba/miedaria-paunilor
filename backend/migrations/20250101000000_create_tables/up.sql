@@ -41,13 +41,11 @@ CREATE TABLE IF NOT EXISTS products (
 -- Existing admin_users and users tables
 CREATE TABLE IF NOT EXISTS admin_users (
   username VARCHAR NOT NULL PRIMARY KEY,
-  salt VARCHAR NOT NULL,
   hashed_password VARCHAR NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS users (
   username VARCHAR NOT NULL PRIMARY KEY,
-  salt VARCHAR NOT NULL,
   hashed_password VARCHAR NOT NULL
 );
 

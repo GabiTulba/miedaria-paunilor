@@ -18,12 +18,13 @@ use backend::enum_crud;
 use backend::image_crud;
 use backend::product_crud::ProductWithImage;
 use backend::sitemap_crud;
-use backend::{AppState, auth, db, models, product_crud}; // Corrected AppError import
+use backend::{AppState, auth, build_login_limiter, db, models, product_crud};
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
 
+    use axum::http::HeaderValue;
     use tower_http::cors::Any;
     use tower_http::cors::CorsLayer;
 
@@ -33,10 +34,15 @@ async fn main() {
         .build(manager)
         .expect("Failed to create pool.");
 
-    let app_state = Arc::new(AppState { pool });
+    let app_state = Arc::new(AppState { pool, login_limiter: build_login_limiter() });
+
+    let allowed_origin = env::var("ALLOWED_ORIGIN")
+        .expect("ALLOWED_ORIGIN must be set")
+        .parse::<HeaderValue>()
+        .expect("ALLOWED_ORIGIN is not a valid header value");
 
     let cors = CorsLayer::new()
-        .allow_origin(Any)
+        .allow_origin(allowed_origin)
         .allow_methods(Any)
         .allow_headers(Any);
 
@@ -79,11 +85,10 @@ async fn main() {
         .parse::<u16>()
         .expect("BACKEND_PORT must be a valid port number");
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await?;
     println!("listening on {}", addr);
-    axum::serve(listener, app.into_make_service())
-        .await
-        .unwrap();
+    axum::serve(listener, app.into_make_service()).await?;
+    Ok(())
 }
 
 async fn health_check() -> impl IntoResponse {

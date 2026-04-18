@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+
+# Development files
+.env
+*.env.*
+
+# Git
+.git/
+.gitignore

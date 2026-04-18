@@ -34,8 +34,11 @@ FROM debian:trixie-slim
 # Install runtime dependencies
 # postgresql-client for pg_isready, openssl and libpq-dev for the Rust app runtime
 RUN apt-get update && \
-    apt-get install -y openssl libpq-dev ca-certificates postgresql-client && \
+    apt-get install -y openssl libpq-dev ca-certificates postgresql-client gosu && \
     rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser -s /bin/false appuser
 
 WORKDIR /app
 
@@ -55,8 +58,12 @@ COPY --from=builder /app/diesel.toml .
 # Copy entrypoint script
 COPY entrypoint.sh .
 
-# Make entrypoint script executable
-RUN chmod +x entrypoint.sh
+# Set permissions and create image upload directory
+RUN chmod +x entrypoint.sh && \
+    mkdir -p /app/images && \
+    chown -R appuser:appuser /app
+
+USER appuser
 
 # Expose port
 EXPOSE 8000

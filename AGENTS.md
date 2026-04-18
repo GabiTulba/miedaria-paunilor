@@ -92,14 +92,9 @@ There are two volumes:
 *   **miedaria_paunilor_images:** A volume for storing uploaded product images, mounted at `/app/images` in both the backend and frontend (Nginx) containers.
 
 ## Environment
-All Docker images utilize environment variables defined in a single `.env` file located at the project root. This centralizes configuration for all services.
-
-## Environment
-All Docker images utilize environment variables defined in a single `.env` file located at the project root. This centralizes configuration for all services. The project includes an `env.sample` file that serves as a template with all required environment variables and their default values.
+All Docker images utilize environment variables defined in a single `.env` file located at the project root. The project includes an `env.sample` file as a template with all required variables and their default values.
 
 ### Environment Variables
-
-The following environment variables *must* be defined in the `.env` file for the application to run:
 
 *   **Database Configuration:**
     *   `POSTGRES_HOST`: PostgreSQL database host (default: `database`)
@@ -114,24 +109,30 @@ The following environment variables *must* be defined in the `.env` file for the
     *   `ADMIN_PASSWORD`: Default administrator password for initial setup (default: `password`)
     *   `JWT_SECRET`: Secret key for JWT token generation and validation (default: `my-super-secret-key`)
     *   `JWT_EXPIRATION_HOURS`: Number of hours until a generated JWT token expires (default: `24`)
+    *   `ALLOWED_ORIGIN`: Allowed CORS origin for the frontend (e.g., `https://yourdomain.com`; default: `https://localhost`)
 
 *   **Backend Configuration:**
     *   `BACKEND_PORT`: The port on which the Rust backend server will listen (default: `8000`)
-    *   `IMAGE_UPLOAD_DIR`: The directory where product images will be stored on the filesystem within the Docker container (default: `/app/images`)
+    *   `IMAGE_UPLOAD_DIR`: The directory where product images will be stored within the Docker container (default: `/app/images`)
 
 *   **Frontend Configuration:**
-    *   `VITE_API_BASE_URL`: The base URL for the backend API that the frontend will make requests to (default: `http://localhost:8000/api`)
+    *   `VITE_API_BASE_URL`: The base URL for the backend API that the frontend will make requests to (default: `/api`)
 
-**Setup Instructions:** To configure the application, copy `env.sample` to `.env` and update the values as needed for your environment. The `.env` file is excluded from version control via `.gitignore` to prevent sensitive information from being committed.
+**Setup Instructions:** Copy `env.sample` to `.env` and update values for your environment. The `.env` file is excluded from version control. **All default secrets (`POSTGRES_PASSWORD`, `ADMIN_PASSWORD`, `JWT_SECRET`) must be changed before any production deployment.**
+
+### Security Hardening
+*   **No exposed ports for database or backend** — only the frontend exposes ports 80 and 443 to the host. The backend (port 8000) and database (port 5432) are accessible only via internal Docker networks.
+*   **Non-root containers** — the backend runs as `appuser` (via `gosu` in `entrypoint.sh`); the frontend runs as the `nginx` user.
+*   **Resource limits and healthchecks** configured on all services in `docker-compose.yml`.
+*   **`.dockerignore`** files in both `backend/` and `frontend/` exclude `.env`, `.git`, `target/`, `node_modules/`, and `dist/` from build contexts.
 
 ### HTTPS Configuration
-The application is configured to serve content over HTTPS on the default port 443. For development, self-signed certificates are automatically generated using the `generate-ssl.sh` script. For production deployment, replace the self-signed certificates in the `ssl/` directory with certificates from a trusted Certificate Authority (CA) such as Let's Encrypt.
+The application serves content over HTTPS (host port 443 → container port 8443) with HTTP (port 80 → 8080) redirecting to HTTPS. For development, self-signed certificates are generated using `generate-ssl.sh` (ECDSA P-384, 90-day expiry, with SAN). For production, replace certificates in the `ssl/` directory with Let's Encrypt certificates.
 
 **SSL Certificate Generation:**
-- Run `./generate-ssl.sh` to generate self-signed certificates for development
-- Certificates are stored in the `ssl/` directory and mounted to the Nginx container
-- The Nginx configuration automatically redirects HTTP (port 80) to HTTPS (port 443)
-- For production, obtain certificates from Let's Encrypt using certbot or another trusted CA
+- Run `./generate-ssl.sh` to generate development certificates (stored in `ssl/`, mounted read-only into the nginx container)
+- Certificates are created with `chmod 644` so the non-root nginx user can read them in the container
+- For production, use certbot or another trusted CA
 
 # Logical Components
 ## Database
@@ -192,14 +193,10 @@ The instance has a single database [miedaria_paunilor], with five tables:
  * lot_number - Production lot number as a positive integer. Required field with validation (must be > 0).
 
 [users] and [admin_users] have the following schema:
-* username - (Primary Key) ASCII printable string, limited to 256 characters.
-* salt - ASCII printable string, limited to 256 characters.
-* hashed_password - Hexadecimal string, limited to 256 characters.
+* username - (Primary Key) ASCII printable string.
+* hashed_password - Argon2id PHC string (includes embedded salt, algorithm parameters, and hash).
 
-The password is stored in the database as the sha256 hash of the password and the user's salt like the following pseudocode (| means string concatenation):
-```
-password_hash = hex(sha256(user_salt | password))
-```
+Passwords are hashed with Argon2id via the `argon2` crate. The PHC string format embeds the salt and parameters, so no separate salt column is needed.
 
 The database is initialized at container startup by the backend's `entrypoint.sh` using `diesel setup` (to create the database and run migrations) and then `add_admin_user` to create the default admin user with credentials from the root `.env` file.
 
@@ -215,8 +212,10 @@ The backend acts as a middle-man between the frontend and the database. It is bu
 *   [uuid] (v1.8.0) - For UUID generation and handling, with the `v4`, `fast-rng`, and `serde` features enabled.
 *   [chrono] (v0.4.38) - For date and time handling, with the `serde` feature enabled.
 *   [mime_guess] (v2.0) - For guessing MIME types based on file extensions.
- *   [rust_decimal] (v1.39) - For precise decimal arithmetic with database support, with the `serde-with-float` feature enabled for JSON serialization as numbers.
+*   [rust_decimal] (v1.39) - For precise decimal arithmetic with database support, with the `serde-with-float` feature enabled for JSON serialization as numbers.
 *   [diesel-derive-enum] (v2.1.0) - For enum support in Diesel ORM.
+*   [argon2] (v0.5) - Argon2id password hashing.
+*   [governor] (v0.6) - Token-bucket rate limiting for the login endpoint.
 
 The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `auth`, `blog_crud`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `models`, `product_crud`, `schema`, `sitemap_crud`, `user_crud`, and `utils`.
 
@@ -239,7 +238,8 @@ Axum is used to interact with the frontend, dealing with:
 *   User requests to various API endpoints (e.g., `/api/products`, `/api/admin/login`, `/api/enums`).
 *   Routing, including dynamic path parameters (e.g., `/api/products/{product_id}`, `/images/{image_id}`).
 *   User authentication and authorization using JWTs, with an `Auth` extractor (`auth.rs`) to protect admin routes.
-*   CORS (Cross-Origin Resource Sharing) middleware is enabled and configured to allow communication with the frontend during development, applied specifically to admin routes to ensure proper preflight handling.
+*   CORS middleware is restricted to the origin specified by the `ALLOWED_ORIGIN` environment variable, applied specifically to admin routes for proper preflight handling.
+*   **Login Rate Limiting:** The `/api/admin/login` endpoint enforces a token-bucket limit of 10 requests per minute per client IP (extracted from `X-Real-IP` / `X-Forwarded-For` headers). Excess requests receive HTTP 429.
 *   **Unified Error Handling:** The `AppError` enum serves as a unified error type for all API handlers, providing `From` implementations for various specific errors (e.g., `diesel::result::Error`, product CRUD errors, authentication errors) and an `IntoResponse` implementation for consistent HTTP response generation.
 *   **Centralized Database Connection Acquisition:** The `db::get_db_connection` helper function centralizes the logic for acquiring a database connection from the application's connection pool, reducing boilerplate code in handler functions.
 
@@ -253,7 +253,7 @@ Diesel is used to interact with the database, dealing with:
     *   Includes slug validation and duplicate slug prevention.
 *   **Image Management:**
     *   Provides an API endpoint (`/api/admin/images` POST) for uploading product images.
-    *   Saves uploaded images to a designated directory (`/app/images`) within the Docker container, mounted as a volume. Files are saved as `UUID.lowercase_extension`.
+    *   Saves uploaded images to a designated directory (`/app/images`) within the Docker container, mounted as a volume. Files are saved as `UUID.lowercase_extension`. Uploads are validated against magic bytes (JPEG, PNG, GIF, WebP, BMP, TIFF) and enforced to a 50 MB size limit before any data is written to disk. File extension is derived from content, not the client-supplied filename.
     *   Stores image metadata (UUID, filename, storage path, creation time, file size) in the `images` table.
     *   Offers API endpoints (`/api/admin/images` GET, `/api/admin/images/{image_id}` GET, `/api/admin/images/{image_id}` PUT, `/api/admin/images/{image_id}` DELETE) for full CRUD operations on image metadata.
     *   **Image Deletion:** Checks for foreign key references in the `products` table before deletion. If an image is still referenced by a product, the deletion is prevented, and a `409 Conflict` status is returned. Gracefully handles cases where an image file is already missing from the filesystem.

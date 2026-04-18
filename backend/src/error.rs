@@ -33,7 +33,8 @@ pub enum AppError {
     InternalServerError(String),
     NotFound(String),
     BadRequest(String),
-    Unauthorized(String), // Added for authentication/authorization failures
+    Unauthorized(String),
+    TooManyRequests,
 }
 
 impl IntoResponse for AppError {
@@ -186,6 +187,13 @@ impl IntoResponse for AppError {
             AppError::Unauthorized(msg) => (
                 StatusCode::UNAUTHORIZED,
                 Json(ErrorResponse { message: msg }),
+            )
+                .into_response(),
+            AppError::TooManyRequests => (
+                StatusCode::TOO_MANY_REQUESTS,
+                Json(ErrorResponse {
+                    message: "Too many login attempts. Try again later.".to_string(),
+                }),
             )
                 .into_response(),
         }

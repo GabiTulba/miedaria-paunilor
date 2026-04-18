@@ -6,12 +6,14 @@ use crate::utils::verify_password;
 use axum::{
     Json,
     extract::{Request, State},
+    http::HeaderMap,
     middleware::Next,
     response::Response,
 };
-use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::net::IpAddr;
 use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -31,25 +33,42 @@ pub struct LoginResponse {
     token: String,
 }
 
+fn extract_client_ip(headers: &HeaderMap) -> IpAddr {
+    headers
+        .get("X-Real-IP")
+        .or_else(|| headers.get("X-Forwarded-For"))
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.split(',').next())
+        .and_then(|s| s.trim().parse::<IpAddr>().ok())
+        .unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED))
+}
+
 pub async fn login(
     State(app_state): State<Arc<AppState>>,
+    headers: HeaderMap,
     Json(payload): Json<LoginPayload>,
 ) -> Result<Json<LoginResponse>, AppError> {
+    let client_ip = extract_client_ip(&headers);
+    app_state
+        .login_limiter
+        .check_key(&client_ip)
+        .map_err(|_| AppError::TooManyRequests)?;
+
     let mut conn = db::get_db_connection(&app_state)?;
 
     let user = user_crud::get_admin(&mut conn, &payload.username)
         .map_err(|e| AppError::InternalServerError(format!("Database error: {}", e)))?
         .ok_or(AppError::Unauthorized("Invalid credentials".to_string()))?;
 
-    if !verify_password(&payload.password, &user.salt, &user.hashed_password) {
+    if !verify_password(&payload.password, &user.hashed_password) {
         return Err(AppError::Unauthorized("Invalid credentials".to_string()));
     }
 
     let now = chrono::Utc::now();
     let jwt_expiration_hours = env::var("JWT_EXPIRATION_HOURS")
-        .expect("JWT_EXPIRATION_HOURS must be set")
+        .map_err(|_| AppError::InternalServerError("JWT_EXPIRATION_HOURS not set".to_string()))?
         .parse::<i64>()
-        .expect("JWT_EXPIRATION_HOURS must be a valid integer");
+        .map_err(|_| AppError::InternalServerError("JWT_EXPIRATION_HOURS must be a valid integer".to_string()))?;
     let exp = (now + chrono::Duration::hours(jwt_expiration_hours)).timestamp() as usize;
     let claims = Claims {
         sub: user.username.clone(),
@@ -94,10 +113,12 @@ pub async fn auth_middleware(
 
     let secret = env::var("JWT_SECRET")
         .map_err(|_| AppError::InternalServerError("JWT_SECRET not set".to_string()))?;
+    let mut validation = Validation::new(Algorithm::HS256);
+    validation.validate_exp = true;
     let token_data = decode::<Claims>(
         &token,
         &DecodingKey::from_secret(secret.as_ref()),
-        &Validation::default(),
+        &validation,
     )
     .map_err(|e| {
         eprintln!("JWT decoding error: {:?}", e);
