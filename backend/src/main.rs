@@ -18,6 +18,7 @@ use backend::enum_crud;
 use backend::image_crud;
 use backend::product_crud::ProductWithImage;
 use backend::sitemap_crud;
+use backend::enums::*;
 use backend::{AppState, auth, build_login_limiter, db, models, product_crud};
 
 #[tokio::main]
@@ -139,13 +140,13 @@ pub struct GetProductsQuery {
     order_by: Option<String>,
     in_stock: Option<bool>,
     order_direction: Option<String>,
-    product_type: Option<String>,
-    sweetness: Option<String>,
-    turbidity: Option<String>,
-    effervescence: Option<String>,
-    acidity: Option<String>,
-    tanins: Option<String>,
-    body: Option<String>,
+    product_type: Option<MeadType>,
+    sweetness: Option<SweetnessType>,
+    turbidity: Option<TurbidityType>,
+    effervescence: Option<EffervescenceType>,
+    acidity: Option<AcidityType>,
+    tanins: Option<TaninsType>,
+    body: Option<BodyType>,
 }
 
 async fn get_all_products(
@@ -159,13 +160,13 @@ async fn get_all_products(
         query.order_by.as_deref(),
         query.in_stock,
         query.order_direction.as_deref(),
-        query.product_type.as_deref(),
-        query.sweetness.as_deref(),
-        query.turbidity.as_deref(),
-        query.effervescence.as_deref(),
-        query.acidity.as_deref(),
-        query.tanins.as_deref(),
-        query.body.as_deref(),
+        query.product_type,
+        query.sweetness,
+        query.turbidity,
+        query.effervescence,
+        query.acidity,
+        query.tanins,
+        query.body,
     )?;
 
     Ok(Json(products))

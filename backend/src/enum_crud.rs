@@ -18,22 +18,26 @@ pub struct EnumValues {
     pub body: Vec<EnumValue>,
 }
 
-fn map_enum_values<E>(all: Vec<E>, as_str: impl Fn(&E) -> &'static str) -> Vec<EnumValue> {
+fn map_enum_values<E: Serialize>(all: Vec<E>) -> Vec<EnumValue> {
     all.into_iter()
         .map(|e| EnumValue {
-            value: as_str(&e).to_string(),
+            value: serde_json::to_value(&e)
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string(),
         })
         .collect()
 }
 
 pub fn get_all_enum_values() -> EnumValues {
     EnumValues {
-        mead_type: map_enum_values(MeadType::all(), |e| e.as_str()),
-        sweetness: map_enum_values(SweetnessType::all(), |e| e.as_str()),
-        turbidity: map_enum_values(TurbidityType::all(), |e| e.as_str()),
-        effervescence: map_enum_values(EffervescenceType::all(), |e| e.as_str()),
-        acidity: map_enum_values(AcidityType::all(), |e| e.as_str()),
-        tanins: map_enum_values(TaninsType::all(), |e| e.as_str()),
-        body: map_enum_values(BodyType::all(), |e| e.as_str()),
+        mead_type: map_enum_values(MeadType::all()),
+        sweetness: map_enum_values(SweetnessType::all()),
+        turbidity: map_enum_values(TurbidityType::all()),
+        effervescence: map_enum_values(EffervescenceType::all()),
+        acidity: map_enum_values(AcidityType::all()),
+        tanins: map_enum_values(TaninsType::all()),
+        body: map_enum_values(BodyType::all()),
     }
 }

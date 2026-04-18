@@ -1,3 +1,4 @@
+use crate::enums::*;
 use crate::schema::*;
 use chrono;
 use diesel::prelude::*;
@@ -72,13 +73,13 @@ pub struct Product {
     pub product_description_ro: String,
     pub ingredients: String,
     pub ingredients_ro: String,
-    pub product_type: String,
-    pub sweetness: String,
-    pub turbidity: String,
-    pub effervescence: String,
-    pub acidity: String,
-    pub tanins: String,
-    pub body: String,
+    pub product_type: MeadType,
+    pub sweetness: SweetnessType,
+    pub turbidity: TurbidityType,
+    pub effervescence: EffervescenceType,
+    pub acidity: AcidityType,
+    pub tanins: TaninsType,
+    pub body: BodyType,
     #[serde(with = "rust_decimal::serde::float")]
     pub abv: Decimal,
     pub bottle_count: i32,
@@ -102,13 +103,13 @@ pub struct NewProduct {
     pub product_description_ro: String,
     pub ingredients: String,
     pub ingredients_ro: String,
-    pub product_type: String,
-    pub sweetness: String,
-    pub turbidity: String,
-    pub effervescence: String,
-    pub acidity: String,
-    pub tanins: String,
-    pub body: String,
+    pub product_type: MeadType,
+    pub sweetness: SweetnessType,
+    pub turbidity: TurbidityType,
+    pub effervescence: EffervescenceType,
+    pub acidity: AcidityType,
+    pub tanins: TaninsType,
+    pub body: BodyType,
     #[serde(with = "rust_decimal::serde::float")]
     pub abv: Decimal,
     pub bottle_count: i32,

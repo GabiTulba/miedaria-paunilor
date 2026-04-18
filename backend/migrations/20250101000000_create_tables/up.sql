@@ -1,9 +1,12 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; -- For UUID generation
 
--- Note: Using text columns instead of ENUM types for simplicity
--- ENUM types would require: CREATE TYPE mead_type_enum AS ENUM (...)
--- and CREATE TYPE sweetness_type_enum as ENUM (...)
-
+CREATE TYPE mead_type_enum AS ENUM ('hidromel','melomel','metheglin','bochet','braggot','pyment','cyser','rhodomel','capsicumel','acerglyn');
+CREATE TYPE sweetness_type_enum AS ENUM ('bone-dry','dry','semi-dry','semi-sweet','sweet','dessert');
+CREATE TYPE turbidity_type_enum AS ENUM ('crystalline','hazy','cloudy');
+CREATE TYPE effervescence_type_enum AS ENUM ('flat','perlant','sparkling');
+CREATE TYPE acidity_type_enum AS ENUM ('mild','moderate','strong');
+CREATE TYPE tanins_type_enum AS ENUM ('mild','moderate','strong');
+CREATE TYPE body_type_enum AS ENUM ('light','medium','full');
 
 CREATE TABLE IF NOT EXISTS images (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -21,13 +24,13 @@ CREATE TABLE IF NOT EXISTS products (
   product_description_ro TEXT NOT NULL,
   ingredients TEXT NOT NULL,
   ingredients_ro TEXT NOT NULL,
-  product_type VARCHAR NOT NULL,
-  sweetness VARCHAR NOT NULL,
-  turbidity VARCHAR NOT NULL,
-  effervescence VARCHAR NOT NULL,
-  acidity VARCHAR NOT NULL,
-  tanins VARCHAR NOT NULL,
-  body VARCHAR NOT NULL,
+  product_type mead_type_enum NOT NULL,
+  sweetness sweetness_type_enum NOT NULL,
+  turbidity turbidity_type_enum NOT NULL,
+  effervescence effervescence_type_enum NOT NULL,
+  acidity acidity_type_enum NOT NULL,
+  tanins tanins_type_enum NOT NULL,
+  body body_type_enum NOT NULL,
   abv DECIMAL(3,1) NOT NULL,
   bottle_count INTEGER NOT NULL,
   bottle_size INTEGER NOT NULL,

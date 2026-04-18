@@ -1,3 +1,4 @@
+use crate::enums::*;
 use crate::models::{Image, NewProduct, Product};
 use crate::schema::*;
 use chrono;
@@ -15,14 +16,6 @@ pub enum ProductValidationError {
     EmptyProductDescriptionRo,
     EmptyIngredients,
     EmptyIngredientsRo,
-    InvalidProductType,
-    InvalidSweetnessType,
-
-    InvalidTurbidityType,
-    InvalidEffervescenceType,
-    InvalidAcidityType,
-    InvalidTaninsType,
-    InvalidBodyType,
     InvalidAbv,
     InvalidBottleCount,
     InvalidBottleSize,
@@ -75,41 +68,6 @@ fn validate_product(new_product: &NewProduct) -> Vec<ProductValidationError> {
     // ingredients_ro: Romanian ingredients.
     if new_product.ingredients_ro.is_empty() {
         errors.push(ProductValidationError::EmptyIngredientsRo);
-    }
-
-    // product_type: String - must be a valid MeadType
-    if !crate::enums::MeadType::from_str(&new_product.product_type).is_some() {
-        errors.push(ProductValidationError::InvalidProductType);
-    }
-
-    // sweetness: String - must be a valid SweetnessType
-    if !crate::enums::SweetnessType::from_str(&new_product.sweetness).is_some() {
-        errors.push(ProductValidationError::InvalidSweetnessType);
-    }
-
-    // turbidity: String - must be a valid TurbidityType
-    if !crate::enums::TurbidityType::from_str(&new_product.turbidity).is_some() {
-        errors.push(ProductValidationError::InvalidTurbidityType);
-    }
-
-    // effervescence: String - must be a valid EffervescenceType
-    if !crate::enums::EffervescenceType::from_str(&new_product.effervescence).is_some() {
-        errors.push(ProductValidationError::InvalidEffervescenceType);
-    }
-
-    // acidity: String - must be a valid AcidityType
-    if !crate::enums::AcidityType::from_str(&new_product.acidity).is_some() {
-        errors.push(ProductValidationError::InvalidAcidityType);
-    }
-
-    // tanins: String - must be a valid TaninsType
-    if !crate::enums::TaninsType::from_str(&new_product.tanins).is_some() {
-        errors.push(ProductValidationError::InvalidTaninsType);
-    }
-
-    // body: String - must be a valid BodyType
-    if !crate::enums::BodyType::from_str(&new_product.body).is_some() {
-        errors.push(ProductValidationError::InvalidBodyType);
     }
 
     // abv: Decimal with one digit of precision, valid ranges from 0.0 to 99.9.
@@ -258,14 +216,13 @@ pub fn update_product(
         product_description_ro: product.product_description_ro.clone(),
         ingredients: product.ingredients.clone(),
         ingredients_ro: product.ingredients_ro.clone(),
-        product_type: product.product_type.clone(),
-        sweetness: product.sweetness.clone(),
-
-        turbidity: product.turbidity.clone(),
-        effervescence: product.effervescence.clone(),
-        acidity: product.acidity.clone(),
-        tanins: product.tanins.clone(),
-        body: product.body.clone(),
+        product_type: product.product_type,
+        sweetness: product.sweetness,
+        turbidity: product.turbidity,
+        effervescence: product.effervescence,
+        acidity: product.acidity,
+        tanins: product.tanins,
+        body: product.body,
         abv: product.abv,
         bottle_count: product.bottle_count,
         bottle_size: product.bottle_size,
@@ -299,13 +256,13 @@ pub fn get_all_products(
     order_by: Option<&str>,
     in_stock: Option<bool>,
     order_direction: Option<&str>,
-    product_type_filter: Option<&str>,
-    sweetness_filter: Option<&str>,
-    turbidity_filter: Option<&str>,
-    effervescence_filter: Option<&str>,
-    acidity_filter: Option<&str>,
-    tanins_filter: Option<&str>,
-    body_filter: Option<&str>,
+    product_type_filter: Option<MeadType>,
+    sweetness_filter: Option<SweetnessType>,
+    turbidity_filter: Option<TurbidityType>,
+    effervescence_filter: Option<EffervescenceType>,
+    acidity_filter: Option<AcidityType>,
+    tanins_filter: Option<TaninsType>,
+    body_filter: Option<BodyType>,
 ) -> QueryResult<Vec<ProductWithImage>> {
     use crate::schema::images::dsl::images;
     use crate::schema::products::dsl::*;

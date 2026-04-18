@@ -176,13 +176,13 @@ The instance has a single database [miedaria_paunilor], with five tables:
 * product_description_ro - A long, free-form text string. Represents a detailed description of the product in Romanian.
 * ingredients - A text field for the ingredients of the product in English.
 * ingredients_ro - A text field for the ingredients of the product in Romanian.
-* product_type - String representing the type of mead (e.g., hidromel, melomel, metheglin, etc.)
-* sweetness - String representing sweetness level (e.g., bone-dry, dry, semi-dry, etc.)
-* turbidity - String representing clarity level (e.g., crystalline, hazy, cloudy)
-* effervescence - String representing carbonation level (e.g., flat, perlant, sparkling)
-* acidity - String representing acidity level (e.g., mild, moderate, strong)
-* tanins - String representing tannin level (e.g., mild, moderate)
-* body - String representing body/mouthfeel (e.g., light, medium, full)
+* product_type - PostgreSQL ENUM (`mead_type_enum`): hidromel, melomel, metheglin, bochet, braggot, pyment, cyser, rhodomel, capsicumel, acerglyn
+* sweetness - PostgreSQL ENUM (`sweetness_type_enum`): bone-dry, dry, semi-dry, semi-sweet, sweet, dessert
+* turbidity - PostgreSQL ENUM (`turbidity_type_enum`): crystalline, hazy, cloudy
+* effervescence - PostgreSQL ENUM (`effervescence_type_enum`): flat, perlant, sparkling
+* acidity - PostgreSQL ENUM (`acidity_type_enum`): mild, moderate, strong
+* tanins - PostgreSQL ENUM (`tanins_type_enum`): mild, moderate, strong
+* body - PostgreSQL ENUM (`body_type_enum`): light, medium, full
 * abv - Decimal with one digit of precision, valid ranges from 0.0 to 99.9. Represents the alcohol by volume concentration of the mead.
 * bottle_count - Non-negative integer. Represents the number of bottles in stock.
 * bottle_size - Positive integer (mililiters of volume). Represents the net volume of the bottle of mead.
@@ -213,23 +213,26 @@ The backend acts as a middle-man between the frontend and the database. It is bu
 *   [chrono] (v0.4.38) - For date and time handling, with the `serde` feature enabled.
 *   [mime_guess] (v2.0) - For guessing MIME types based on file extensions.
 *   [rust_decimal] (v1.39) - For precise decimal arithmetic with database support, with the `serde-with-float` feature enabled for JSON serialization as numbers.
-*   [diesel-derive-enum] (v2.1.0) - For enum support in Diesel ORM.
+*   [diesel-derive-enum] (v2.1.0) - Maps Rust enums to PostgreSQL ENUM types via `DbEnum` derive macro with `ExistingTypePath` and `DbValueStyle = "kebab-case"` attributes.
 *   [argon2] (v0.5) - Argon2id password hashing.
 *   [governor] (v0.6) - Token-bucket rate limiting for the login endpoint.
 
 The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `auth`, `blog_crud`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `models`, `product_crud`, `schema`, `sitemap_crud`, `user_crud`, and `utils`.
 
 ### Enums and Product Attributes
-The backend defines comprehensive enums for product attributes in `enums.rs`:
-*   **MeadType:** Hidromel, Melomel, Metheglin, Bochet, Braggot, Pyment, Cyser, Rhodomel, Capsicumel, Acerglyn
-*   **SweetnessType:** BoneDry, Dry, SemiDry, SemiSweet, Sweet, Dessert
-*   **TurbidityType:** Crystalline, Hazy, Cloudy
-*   **EffervescenceType:** Flat, Perlant, Sparkling
-*   **AcidityType:** Mild, Moderate, Strong
-*   **TaninsType:** Mild, Moderate
-*   **BodyType:** Light, Medium, Full
+Product attribute enums are defined in `enums.rs` as Rust enums backed by PostgreSQL ENUM types. Each enum derives `diesel_derive_enum::DbEnum` for DB mapping, `serde` with `rename_all = "kebab-case"` for API serialization, and uses `#[DbValueStyle = "kebab-case"]` for DB value mapping. The Rust types, PostgreSQL types, and JSON API all use the same kebab-case string values (e.g., `"bone-dry"`, `"semi-sweet"`).
 
-**Enum API Endpoint:** The backend provides a `/api/enums` GET endpoint that returns all enum values with their string representations and bilingual display labels (English and Romanian). This eliminates duplication between frontend and backend.
+*   **MeadType** (`mead_type_enum`): Hidromel, Melomel, Metheglin, Bochet, Braggot, Pyment, Cyser, Rhodomel, Capsicumel, Acerglyn
+*   **SweetnessType** (`sweetness_type_enum`): BoneDry, Dry, SemiDry, SemiSweet, Sweet, Dessert
+*   **TurbidityType** (`turbidity_type_enum`): Crystalline, Hazy, Cloudy
+*   **EffervescenceType** (`effervescence_type_enum`): Flat, Perlant, Sparkling
+*   **AcidityType** (`acidity_type_enum`): Mild, Moderate, Strong
+*   **TaninsType** (`tanins_type_enum`): Mild, Moderate, Strong
+*   **BodyType** (`body_type_enum`): Light, Medium, Full
+
+Enum validation is handled at two levels: serde rejects invalid values during JSON/query parameter deserialization (before any handler code runs), and PostgreSQL ENUM types reject invalid values at the database level. No manual enum validation exists in application code.
+
+**Enum API Endpoint:** The backend provides a `/api/enums` GET endpoint that returns all enum values with their string representations and bilingual display labels (English and Romanian). String values are derived from serde serialization of each enum variant. This eliminates duplication between frontend and backend.
 
 **Frontend Enum Integration:** The frontend uses the `useFetchEnums` hook to fetch enum values from the backend. Form components like `ProductForm` use these dynamically fetched values for select options, while display components use the `getEnumLabel` utility function from `enums.ts` with language support for consistent label formatting across both languages.
 
@@ -265,11 +268,11 @@ Diesel is used to interact with the database, dealing with:
     *   Comprehensive validation of product creation and update fields including:
         *   Product ID format (lowercase letters, dashes, underscores)
         *   Required fields (name, description, ingredients)
-        *   Enum validation for product attributes (mead type, sweetness, turbidity, effervescence, acidity, tannins, body)
         *   Numeric validation (ABV range 0.0-99.9, bottle count non-negative, bottle size positive, price validation)
         *   Precision validation (ABV with 1 decimal place, price with 2 decimal places)
         *   Date validation (bottling date cannot be in the future)
         *   Lot number validation (must be positive integer)
+    *   Enum product attributes are validated at the serde deserialization layer (invalid values rejected before handler code runs) and at the PostgreSQL ENUM type level.
     *   Returning specific error types for different validation failures.
     *   **Enhanced Product Filtering:** The `/api/products` GET endpoint supports comprehensive filtering by all product attributes including:
         *   `product_type` - Filter by mead type (hidromel, melomel, metheglin, etc.)

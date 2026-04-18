@@ -1,9 +1,59 @@
 // @generated automatically by Diesel CLI.
 
+pub mod sql_types {
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "acidity_type_enum"))]
+    pub struct AcidityTypeEnum;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "body_type_enum"))]
+    pub struct BodyTypeEnum;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "effervescence_type_enum"))]
+    pub struct EffervescenceTypeEnum;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "mead_type_enum"))]
+    pub struct MeadTypeEnum;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "sweetness_type_enum"))]
+    pub struct SweetnessTypeEnum;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "tanins_type_enum"))]
+    pub struct TaninsTypeEnum;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "turbidity_type_enum"))]
+    pub struct TurbidityTypeEnum;
+}
+
 diesel::table! {
     admin_users (username) {
         username -> Varchar,
         hashed_password -> Varchar,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::*;
+
+    blog_posts (id) {
+        id -> Uuid,
+        title -> Varchar,
+        title_ro -> Varchar,
+        blog_id -> Varchar,
+        content_markdown -> Text,
+        content_markdown_ro -> Text,
+        excerpt -> Varchar,
+        excerpt_ro -> Varchar,
+        author -> Varchar,
+        published_at -> Timestamp,
+        updated_at -> Timestamp,
+        is_published -> Bool,
     }
 }
 
@@ -18,6 +68,9 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::*;
+
     products (product_id) {
         product_id -> Varchar,
         product_name -> Varchar,
@@ -26,13 +79,13 @@ diesel::table! {
         product_description_ro -> Text,
         ingredients -> Text,
         ingredients_ro -> Text,
-        product_type -> Varchar,
-        sweetness -> Varchar,
-        turbidity -> Varchar,
-        effervescence -> Varchar,
-        acidity -> Varchar,
-        tanins -> Varchar,
-        body -> Varchar,
+        product_type -> MeadTypeEnum,
+        sweetness -> SweetnessTypeEnum,
+        turbidity -> TurbidityTypeEnum,
+        effervescence -> EffervescenceTypeEnum,
+        acidity -> AcidityTypeEnum,
+        tanins -> TaninsTypeEnum,
+        body -> BodyTypeEnum,
         abv -> Numeric,
         bottle_count -> Int4,
         bottle_size -> Int4,
@@ -41,23 +94,6 @@ diesel::table! {
         image_id -> Uuid,
         bottling_date -> Date,
         lot_number -> Int4,
-    }
-}
-
-diesel::table! {
-    blog_posts (id) {
-        id -> Uuid,
-        title -> Varchar,
-        title_ro -> Varchar,
-        blog_id -> Varchar,
-        content_markdown -> Text,
-        content_markdown_ro -> Text,
-        excerpt -> Varchar,
-        excerpt_ro -> Varchar,
-        author -> Varchar,
-        published_at -> Timestamp,
-        updated_at -> Timestamp,
-        is_published -> Bool,
     }
 }
 
