@@ -1,0 +1,422 @@
+================================================================================
+                    FRONTEND UX AUDIT - Miedaria Paunilor
+                           April 2026
+================================================================================
+
+================================================================================
+CRITICAL (Fix First)
+================================================================================
+
+[C1] Missing Loading States Everywhere
+-------------------------------------------------------------------------------
+- Shop page ignores `isLoading` from useFetchProducts -- empty grid looks broken
+  File: frontend/src/pages/Shop.tsx (line 30, 255-262)
+- Home page -- no spinner while featured products/blog posts fetch; blank flash
+  File: frontend/src/pages/Home.tsx (lines 16-38)
+- BlogPostDetail returns `null` during load (page appears broken)
+  File: frontend/src/pages/BlogPostDetail.tsx (line 53)
+- Admin pages show '...' strings instead of skeletons; no loading during
+  pagination/filter changes
+  File: frontend/src/pages/admin/AdminDashboard.tsx (lines 52, 59, 66, 73)
+  File: frontend/src/pages/admin/AdminProducts.tsx (lines 30-31, 146-161)
+  File: frontend/src/pages/admin/AdminBlog.tsx (lines 33-51)
+- Form submissions (AdminProductCreate, AdminProductEdit) -- no submit-in-flight
+  state; buttons stay clickable, allowing duplicate submissions
+  File: frontend/src/pages/admin/AdminProductCreate.tsx (lines 104-123)
+  File: frontend/src/pages/admin/AdminProductEdit.tsx (lines 94-117)
+
+[C2] Race Conditions & Stale Data
+-------------------------------------------------------------------------------
+- No AbortController on any fetch -- navigating away mid-fetch causes React
+  unmount warnings
+  File: frontend/src/hooks/useFetchProducts.ts (lines 42-96)
+  File: frontend/src/pages/ProductDetails.tsx (lines 26-42)
+- Shop filter + page change triggers double-fetch (filter resets page to 1,
+  both trigger useFetchProducts)
+  File: frontend/src/pages/Shop.tsx (lines 44-51)
+- Cart rapid clicks -- no debounce on add-to-cart; clicking fast doubles
+  quantity unexpectedly
+  File: frontend/src/context/CartContext.tsx (lines 30-43)
+- Admin delete -- actionId race between refetch completing and button re-enabling
+  File: frontend/src/pages/admin/AdminProducts.tsx (lines 72-88)
+- Stock staleness -- cart uses cached availableStock, never re-validates against
+  current inventory
+  File: frontend/src/pages/Cart.tsx (lines 45-50)
+
+[C3] Accessibility Violations (WCAG 2.1)
+-------------------------------------------------------------------------------
+- No :focus-visible on nav links, pagination buttons, product cards, admin
+  sidebar links
+  File: frontend/src/App.css (lines 63-77)
+  File: frontend/src/components/Pagination.css (lines 14-32)
+  File: frontend/src/pages/admin/Admin.css (lines 45-66)
+- No prefers-reduced-motion media query -- all fadeIn/collapsible/admin
+  animations forced
+  File: frontend/src/pages/Shop.css, Home.css, Cart.css, Contact.css
+  File: frontend/src/components/CollapsibleSection.css (lines 42, 58)
+- Hamburger menu -- missing aria-expanded, aria-label, role="navigation"
+  File: frontend/src/App.tsx (line 38)
+- Form inputs -- no aria-invalid, no aria-describedby linking errors/help
+  File: frontend/src/components/forms/TextInput.tsx (lines 30-46)
+  File: frontend/src/components/forms/NumberInput.tsx (lines 33-46)
+  File: frontend/src/components/forms/SelectInput.tsx (lines 34-50)
+  File: frontend/src/components/forms/TextAreaInput.tsx (lines 31-46)
+- Pagination -- arrow buttons have no aria-label; no aria-current="page"
+  File: frontend/src/components/Pagination.tsx (lines 16-30)
+- ErrorBoundary -- error div missing role="alert"
+  File: frontend/src/components/ErrorBoundary.tsx (lines 25-28)
+- Shop filters -- no <fieldset>/<legend> around checkbox groups
+  File: frontend/src/pages/Shop.tsx (lines 100-108)
+- Admin tabs -- no role="tablist"/role="tab"/aria-selected
+  File: frontend/src/pages/admin/AdminProducts.tsx (lines 134-143)
+- No skip-to-content link anywhere
+
+[C4] Non-Clickable Contact Info
+-------------------------------------------------------------------------------
+- Phone number is plain text -- should be <a href="tel:...">
+- Email is plain text -- should be <a href="mailto:...">
+- Address is plain text -- should link to Google Maps
+  File: frontend/src/pages/Contact.tsx (lines 15-28)
+
+================================================================================
+HIGH PRIORITY (UX Bugs & Inconsistencies)
+================================================================================
+
+[H1] Error Handling Is Generic & Unhelpful
+-------------------------------------------------------------------------------
+- All pages show bare text errors with no icons, no retry buttons, no context
+- No distinction between 404 (not found) vs 500 (server error) vs network fail
+  File: frontend/src/pages/ProductDetails.tsx (line 34)
+  File: frontend/src/pages/Shop.tsx (line 54)
+  File: frontend/src/hooks/useFetchProducts.ts (line 88)
+- Admin operations use blocking alert() / window.confirm() instead of modals
+  File: frontend/src/pages/admin/AdminProducts.tsx (lines 73, 84, 98, 116)
+  File: frontend/src/pages/admin/AdminBlog.tsx (line 58)
+- api.ts -- non-JSON error responses show raw text to user
+  File: frontend/src/lib/api.ts (line 28)
+
+[H2] CSS Variable System Is Broken
+-------------------------------------------------------------------------------
+- Blog.css and LanguageSwitcher.css reference undefined variables:
+  --color-surface, --color-border, --color-primary, --color-text,
+  --color-text-light -- styles silently fail
+  File: frontend/src/pages/Blog.css (lines 3-4, 17, 23, 29, 40, 44)
+  File: frontend/src/components/LanguageSwitcher.css (lines 8-10)
+- 20+ hardcoded colors scattered across ProductCard, Home, Contact, Admin
+  File: frontend/src/components/ProductCard.css (lines 4, 7, 77, 93, 102, 106)
+  File: frontend/src/pages/Home.css (line 49)
+  File: frontend/src/pages/Contact.css (line 64)
+- Inconsistent shadow, border-radius, spacing -- no scale system
+  - border-radius: 8px, 12px, 6px used interchangeably
+  - Shadows: ad-hoc values instead of --shadow-sm/md/lg
+
+[H3] Empty States Are Minimal or Missing
+-------------------------------------------------------------------------------
+- Shop -- no "No products found" when filters match nothing
+  File: frontend/src/pages/Shop.tsx (lines 256-262)
+- Cart -- bare "Your cart is empty" text, no illustration or CTA
+  File: frontend/src/pages/Cart.tsx (lines 31-35)
+- Home -- no fallback if featured products or blog posts arrays empty
+  File: frontend/src/pages/Home.tsx (lines 57-64)
+- AdminBlog -- uses emoji as empty state icon (inaccessible, inconsistent)
+  File: frontend/src/pages/admin/AdminBlog.tsx (line 102)
+
+[H4] Cart Page UX Problems
+-------------------------------------------------------------------------------
+- "Work in progress" banner -- permanent, not dismissible, unprofessional
+  File: frontend/src/pages/Cart.tsx (lines 26-29)
+- Currency assumption -- cartItems[0].currency assumes all items same currency
+  File: frontend/src/pages/Cart.tsx (line 18)
+- "Proceed to Checkout" button -- non-functional, no feedback on click
+  File: frontend/src/pages/Cart.tsx (line 74)
+- Quantity decrement -- no minimum check at 1
+  File: frontend/src/pages/Cart.tsx (lines 44-56)
+
+[H5] No Data Caching
+-------------------------------------------------------------------------------
+- Enums fetched on every component mount -- no global cache
+  File: frontend/src/hooks/useFetchEnums.ts (lines 16-32)
+- Product list re-fetches on language change (should use Accept-Language only)
+  File: frontend/src/hooks/useFetchProducts.ts (line 96)
+- Admin images re-fetched every time Create/Edit product mounts
+  File: frontend/src/pages/admin/AdminProductEdit.tsx (lines 36-46)
+  File: frontend/src/pages/admin/AdminProductCreate.tsx (lines 46-65)
+- nginx.conf -- no Cache-Control headers for static assets or API responses
+  File: frontend/nginx.conf (lines 49-51, 62-69)
+
+================================================================================
+MEDIUM PRIORITY (Modernization for 2026)
+================================================================================
+
+[M1] No Dark Mode
+-------------------------------------------------------------------------------
+- Zero @media (prefers-color-scheme: dark) anywhere
+- All colors hardcoded to light theme
+- Table stakes in 2026
+
+[M2] Responsive Design Gaps -- see MOBILE UX section (MOB1-MOB11) for full
+     breakdown. All responsive/mobile issues consolidated there.
+
+[M3] Missing Modern CSS
+-------------------------------------------------------------------------------
+- No clamp() for fluid typography -- font sizes hardcoded with media queries
+- No container queries -- product cards can't adapt to container width
+- No CSS logical properties -- all left/right/padding-left (breaks RTL)
+- No shadow/radius scale -- ad-hoc values everywhere
+- No CSS variables for animation durations (0.2s, 0.3s, 0.5s hardcoded)
+
+[M4] No Toast/Notification System
+-------------------------------------------------------------------------------
+- Add-to-cart has no success feedback
+- Filter changes show no "results updated" indicator
+- Form submissions have no success/failure toasts
+- Admin CRUD operations rely on alert() or nothing
+
+[M5] Form UX Is Weak
+-------------------------------------------------------------------------------
+- Validation only on submit -- no real-time or on-blur validation
+- No required field indicators visible (asterisk exists but minimal)
+- No form validation summary at top showing all errors
+- Help text below input -- should appear before user fills field
+- Admin login -- missing autocomplete="username"/autocomplete="current-password",
+  no show/hide password toggle
+  File: frontend/src/pages/admin/AdminLogin.tsx (lines 46-66)
+- No unsaved changes warning when navigating away from edit forms
+
+[M6] Missing Micro-Interactions
+-------------------------------------------------------------------------------
+- No skeleton loading animations
+- No error shake animations for validation
+- No success animations for form submissions
+- No ripple/scale on button clicks
+- Blog post title hover has no transition
+  File: frontend/src/pages/Home.css (lines 176-178)
+- Select hover has no transition
+  File: frontend/src/index.css (lines 122-125)
+
+================================================================================
+LOW PRIORITY (Polish)
+================================================================================
+
+[L1] Navigation Improvements
+-------------------------------------------------------------------------------
+- No breadcrumbs -- product detail, blog detail, admin pages lack hierarchy
+- No 404 page -- invalid routes get generic error with no link to home/shop
+- Admin logout -- no confirmation dialog
+  File: frontend/src/pages/admin/AdminLayout.tsx (line 43)
+- Hard back-links -- always go to /shop or /blog, not browser history
+
+[L2] Image Handling
+-------------------------------------------------------------------------------
+- No lazy loading on product images
+- No error fallback if image fails to load
+- No skeleton while images load
+- AdminImages drag-and-drop -- text says "drag and drop" but no actual DnD
+  File: frontend/src/pages/admin/AdminImages.tsx (line 159)
+- No upload progress bar
+- Delete button shows same text whether loading or not
+  File: frontend/src/pages/admin/AdminImages.tsx (line 287)
+
+[L3] Pagination Improvements
+-------------------------------------------------------------------------------
+- Shows "Page 3" -- should show "Page 3 of 7"
+- No loading indicator between pages
+- Buttons too small for mobile thumbs
+  File: frontend/src/components/Pagination.tsx
+
+[L4] Type Safety Risks
+-------------------------------------------------------------------------------
+- abv, price, price_ron typed as number | string -- defensive toNumber() calls
+  everywhere instead of parsing at API boundary
+  File: frontend/src/types.ts (lines 25, 28-29, 96, 99-100)
+- enums.mead_type.map() crashes if backend returns unexpected shape
+  File: frontend/src/hooks/useFetchEnums.ts (line 20)
+- No Zod/validation at API response boundary
+
+[L5] Minor CSS Issues
+-------------------------------------------------------------------------------
+- Unnecessary -webkit- prefixes (not needed since ~2020)
+  File: frontend/src/App.css (line 103)
+- Inconsistent animation durations (0.2s, 0.3s, 0.5s) with no variables
+- transition: all used in places (performance; should specify properties)
+- .availability.low-stock -- #ffc107 yellow text on white may fail WCAG AA
+  File: frontend/src/components/ProductCard.css (line 147)
+- AdminImages message state uses string parsing to determine CSS class
+  File: frontend/src/pages/admin/AdminImages.tsx (line 186)
+- AdminProducts double-fetch when deleting last product on page
+  File: frontend/src/pages/admin/AdminProducts.tsx (lines 77-81)
+
+================================================================================
+MOBILE UX (Consolidated)
+================================================================================
+
+This section consolidates all mobile-specific findings from the UX audit and
+the project todo.txt into one place. Items referenced in other sections above
+are cross-referenced but not removed -- this section is the authoritative
+mobile checklist.
+
+[MOB1] Full Mobile Redesign Needed (from todo.txt)
+-------------------------------------------------------------------------------
+Current state: media queries exist but layout is desktop-first and janky on
+mobile browsers. Full responsive redesign needed, not just breakpoint patches.
+
+Approach:
+  - Audit with Chrome DevTools: 375px (iPhone SE), 390px (iPhone 14), 768px
+  - Switch to mobile-first CSS (min-width breakpoints instead of max-width)
+  - Use CSS container queries for component-level responsiveness
+  - Test on real devices, not just browser emulation
+
+[MOB2] Navigation & Header
+-------------------------------------------------------------------------------
+- Hamburger menu missing aria-expanded, aria-label -- unusable for screen
+  readers on mobile (see also C3)
+  File: frontend/src/App.tsx (line 38)
+- Sticky nav height eats screen space on small phones
+  File: frontend/src/App.css
+- Main nav positioned off-screen with left: -100% -- focus trap risk; keyboard
+  users can tab into invisible nav
+  File: frontend/src/App.css (line 142)
+- Logo image jumps between fixed heights (90px, 65px, 55px) with no
+  intermediate tablet size
+  File: frontend/src/App.css
+- No skip-to-content link for keyboard/mobile screen reader users (see also C3)
+
+[MOB3] Shop Page -- Filters & Grid
+-------------------------------------------------------------------------------
+- 9 filter groups stack vertically on mobile -- excessive scrolling, no
+  collapse/expand toggle. Need overlay/drawer pattern instead of sidebar.
+  File: frontend/src/pages/Shop.tsx (lines 65-253)
+  File: frontend/src/pages/Shop.css (lines 209-233)
+- Sidebar hidden at 992px but grid layout remains 1fr with no mobile
+  optimization
+- No filter count badge to show active filters at a glance on mobile
+- Product grid should go single-column on small screens; card sizing and image
+  aspect ratio need tuning
+- No "No products found" empty state when filters match nothing -- especially
+  confusing on mobile with collapsed sidebar (see also H3)
+
+[MOB4] Product Details
+-------------------------------------------------------------------------------
+- Quantity selector buttons too small to tap on mobile -- need >= 44x44px touch
+  targets
+  File: frontend/src/pages/ProductDetails.tsx (lines 167-173)
+- Product attribute table needs mobile-friendly layout (card view or stacked)
+  File: frontend/src/pages/ProductDetails.tsx
+- Add-to-cart button sizing needs mobile treatment
+- Product detail image hover scale (1.01) has no transition defined -- janky
+  on touch devices
+  File: frontend/src/pages/ProductDetails.css (lines 50-52)
+- Missing 1024px tablet breakpoint -- jumps from 992px to 768px
+  File: frontend/src/pages/ProductDetails.css (lines 203-240)
+
+[MOB5] Cart Page
+-------------------------------------------------------------------------------
+- Cart table layout breaks on narrow screens -- needs card-based mobile layout
+  File: frontend/src/pages/Cart.tsx
+- Quantity +/- buttons same tap target issue as ProductDetails
+  File: frontend/src/pages/Cart.tsx (lines 44-56)
+- Cart summary sticky positioning has no transition when switching to static
+  at breakpoint
+  File: frontend/src/pages/Cart.css (lines 157-164)
+
+[MOB6] Blog
+-------------------------------------------------------------------------------
+- ReactMarkdown table rendering overflows on mobile -- tables not responsive
+  File: frontend/src/pages/Blog.tsx (lines 109-128)
+  File: frontend/src/pages/BlogPostDetail.tsx (lines 93-113)
+- Blog content width, typography scale, image sizing need mobile treatment
+- Only 768px and 480px breakpoints; missing 1024px tablet optimization
+  File: frontend/src/pages/Blog.css (lines 254-280)
+- Blog post cards have no max-width constraints on mobile
+
+[MOB7] Admin Panel -- Completely Unusable on Mobile
+-------------------------------------------------------------------------------
+- Admin sidebar has no mobile hamburger -- no way to navigate on phones
+  File: frontend/src/pages/admin/AdminLayout.tsx
+  File: frontend/src/pages/admin/Admin.css (line 1325)
+- Admin sidebar only has responsive rules at 992px and 768px, no intermediate
+  tablet breakpoint
+- Products table overflows on small screens -- no horizontal scroll indicator,
+  action buttons not mobile-sized, thumbnails tiny
+  File: frontend/src/pages/admin/AdminProducts.tsx (lines 183-274)
+- Admin dashboard grid jumps from repeat(auto-fit, minmax(240px, 1fr)) to full
+  reflow at 992px with no intermediate state
+  File: frontend/src/pages/admin/Admin.css (lines 1325-1444)
+- BlogForm two 10-row textareas side-by-side -- unusable on mobile, should
+  stack responsively
+  File: frontend/src/pages/admin/BlogForm.tsx (lines 288-300)
+- Admin image grid not responsive at different breakpoints; upload section and
+  images section both full-width
+  File: frontend/src/pages/admin/AdminImages.tsx
+- Admin forms: input fields, date picker, image selector all need mobile
+  treatment
+- Admin stat cards loading state shows '...' -- even worse on small screens
+  where layout shifts
+
+[MOB8] Touch Targets & Tap Sizing
+-------------------------------------------------------------------------------
+- Pagination buttons too small for mobile thumbs -- need >= 44x44px
+  File: frontend/src/components/Pagination.tsx
+- Quantity +/- buttons throughout (ProductDetails, Cart)
+- Admin action buttons (edit/delete) in product table
+- Shop filter checkboxes -- default browser checkbox size too small for touch
+- CollapsibleSection toggle button needs adequate tap area
+
+[MOB9] Images & Performance on Mobile
+-------------------------------------------------------------------------------
+- No lazy loading on product images -- wastes mobile data
+  File: frontend/src/components/ProductCard.tsx
+- No responsive srcset -- oversized images sent to mobile devices
+- No image error fallback -- broken images worse on mobile (no retry)
+- No skeleton/placeholder while images load -- layout shift on slow connections
+- Hero logo jumps from 300px to 180px at 768px with no intermediate size
+  File: frontend/src/pages/Home.css
+
+[MOB10] Typography & Spacing on Mobile
+-------------------------------------------------------------------------------
+- Font sizes hardcoded with media queries instead of clamp() -- no fluid
+  scaling between breakpoints (see also M3)
+- Heading sizes inconsistent at mobile breakpoints:
+  - h1 jumps between 3rem and 2rem with no intermediate
+  - h2 varies between 2.5rem and 1.5rem across pages
+- Line heights and spacing scale not optimized for small screens
+- Form labels at 0.95rem may be too small on mobile
+
+[MOB11] Breakpoint Architecture
+-------------------------------------------------------------------------------
+- Desktop-first approach (max-width queries) throughout -- should be
+  mobile-first (min-width)
+  Files: App.css (768px, 480px), Shop.css (992px, 768px), Cart.css (992px,
+  768px), Home.css (768px only), ProductDetails.css (992px, 768px),
+  Blog.css (768px, 480px), Admin.css (992px, 768px)
+- Missing 1024px tablet landscape breakpoint across all pages
+- No consistent breakpoint scale defined as CSS variables
+- Recommended scale: 480px (small phone), 640px (large phone), 768px (tablet
+  portrait), 1024px (tablet landscape), 1280px (desktop)
+
+================================================================================
+SUMMARY
+================================================================================
+
+| Priority | Category              | Issue Count |
+|----------|-----------------------|-------------|
+| Critical | Loading states        | 6 pages     |
+| Critical | Race conditions       | 6 locations |
+| Critical | Accessibility         | 15+ issues  |
+| Critical | Contact page          | 3 items     |
+| High     | Error handling        | 6 pages     |
+| High     | Broken CSS vars       | 2 files     |
+| High     | Empty states          | 4 pages     |
+| High     | Cart UX               | 4 issues    |
+| High     | No caching            | 4 locations |
+| High     | Mobile UX             | 11 sections |
+| Medium   | Dark mode             | All CSS     |
+| Medium   | Modern CSS            | 4 features  |
+| Medium   | Toast system          | Missing     |
+| Medium   | Form UX               | 6 issues    |
+| Medium   | Micro-interactions    | 6 missing   |
+| Low      | Navigation            | 4 items     |
+| Low      | Images                | 5 gaps      |
+| Low      | Pagination            | 3 tweaks    |
+| Low      | Type safety           | 3 risks     |
+| Low      | CSS polish            | 6 items     |
