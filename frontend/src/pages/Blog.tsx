@@ -1,24 +1,32 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BlogPost } from '../types';
 import { api } from '../lib/api';
+import Pagination from '../components/Pagination';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Blog.css';
+
+const BLOG_PER_PAGE = 10;
 
 function Blog() {
     const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [hasMore, setHasMore] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
     const { t, i18n } = useTranslation();
 
     useEffect(() => {
         const fetchBlogPosts = async () => {
             try {
                 setLoading(true);
-                const posts = await api.getBlogPosts();
-                setBlogPosts(posts);
+                const posts = await api.getBlogPosts(page, BLOG_PER_PAGE, BLOG_PER_PAGE + 1);
+                setHasMore(posts.length > BLOG_PER_PAGE);
+                setBlogPosts(posts.slice(0, BLOG_PER_PAGE));
                 setError(null);
             } catch (err) {
                 console.error("Failed to fetch blog posts:", err);
@@ -28,7 +36,7 @@ function Blog() {
             }
         };
         fetchBlogPosts();
-    }, [t]);
+    }, [t, page]);
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -160,6 +168,12 @@ function Blog() {
                         })}
                     </div>
                 )}
+                <Pagination
+                    page={page}
+                    hasMore={hasMore}
+                    onPrevPage={() => { setPage(page - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    onNextPage={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                />
             </div>
         </div>
     );

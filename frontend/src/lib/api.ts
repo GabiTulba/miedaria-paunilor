@@ -44,11 +44,13 @@ export const api = {
         acidity?: string;
         tanins?: string;
         body?: string;
+        page?: number;
+        per_page?: number;
+        limit?: number;
     }): Promise<ProductWithImage[]> => {
         const queryParams = new URLSearchParams();
         if (params) {
             if (params.order_by) queryParams.append('order_by', params.order_by);
-            // Only append order_direction if order_by is also present
             if (params.order_by && params.order_direction) queryParams.append('order_direction', params.order_direction);
             if (params.in_stock !== undefined) queryParams.append('in_stock', params.in_stock.toString());
             if (params.product_type) queryParams.append('product_type', params.product_type);
@@ -58,6 +60,9 @@ export const api = {
             if (params.acidity) queryParams.append('acidity', params.acidity);
             if (params.tanins) queryParams.append('tanins', params.tanins);
             if (params.body) queryParams.append('body', params.body);
+            if (params.page !== undefined) queryParams.append('page', String(params.page));
+            if (params.per_page !== undefined) queryParams.append('per_page', String(params.per_page));
+            if (params.limit !== undefined) queryParams.append('limit', String(params.limit));
         }
         const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
         return request(`/products${queryString}`);
@@ -143,12 +148,24 @@ export const api = {
     },
 
     // Blog CRUD Operations
-    getBlogPosts: (): Promise<BlogPost[]> => request('/blog'),
+    getBlogPosts: (page?: number, per_page?: number, limit?: number): Promise<BlogPost[]> => {
+        const params = new URLSearchParams();
+        if (page !== undefined) params.append('page', String(page));
+        if (per_page !== undefined) params.append('per_page', String(per_page));
+        if (limit !== undefined) params.append('limit', String(limit));
+        const qs = params.toString() ? `?${params.toString()}` : '';
+        return request(`/blog${qs}`);
+    },
     getBlogPostByBlogId: (blog_id: string): Promise<BlogPost> => request(`/blog/${blog_id}`),
     
     // Admin blog operations
-    getBlogPostsAdmin: async (token: string): Promise<BlogPost[]> => {
-        return request('/admin/blog/admin', {
+    getBlogPostsAdmin: async (token: string, page?: number, per_page?: number, limit?: number): Promise<BlogPost[]> => {
+        const params = new URLSearchParams();
+        if (page !== undefined) params.append('page', String(page));
+        if (per_page !== undefined) params.append('per_page', String(per_page));
+        if (limit !== undefined) params.append('limit', String(limit));
+        const qs = params.toString() ? `?${params.toString()}` : '';
+        return request(`/admin/blog/admin${qs}`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` },
         });

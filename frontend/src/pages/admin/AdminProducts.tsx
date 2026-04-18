@@ -1,17 +1,25 @@
 import { useEffect, useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ProductWithImage } from '../../types';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import { getAdminStockStatus } from '../../utils/stockAvailability';
 import { toFixed } from '../../utils/numberUtils';
+import Pagination from '../../components/Pagination';
 import './Admin.css';
+
+const ADMIN_PRODUCTS_PER_PAGE = 20;
 
 function AdminProducts() {
     const [products, setProducts] = useState<ProductWithImage[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [hasMore, setHasMore] = useState(false);
+    const [fetchTrigger, setFetchTrigger] = useState(0);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
     const { token } = useContext(AuthContext);
     const { t, i18n } = useTranslation();
     const currentLanguage = i18n.language;
@@ -21,8 +29,9 @@ function AdminProducts() {
             try {
                 setLoading(true);
                 setError(null);
-                const productsData = await api.getProducts();
-                setProducts(productsData);
+                const productsData = await api.getProducts({ page, per_page: ADMIN_PRODUCTS_PER_PAGE, limit: ADMIN_PRODUCTS_PER_PAGE + 1 });
+                setHasMore(productsData.length > ADMIN_PRODUCTS_PER_PAGE);
+                setProducts(productsData.slice(0, ADMIN_PRODUCTS_PER_PAGE));
             } catch (error) {
                 console.error("Failed to fetch products:", error);
                 setError(t('admin.products.error'));
@@ -31,13 +40,17 @@ function AdminProducts() {
             }
         };
         getProducts();
-    }, [t]);
-    
+    }, [t, page, fetchTrigger]);
+
     const handleDelete = async (productId: string) => {
         if (token && window.confirm(t('admin.products.deleteConfirm'))) {
             try {
                 await api.deleteProduct(productId, token);
-                setProducts(products.filter(pwi => pwi.product.product_id !== productId));
+                if (products.length === 1 && page > 1) {
+                    setPage(page - 1);
+                } else {
+                    setFetchTrigger(n => n + 1);
+                }
             } catch (error) {
                 console.error("Failed to delete product:", error);
                 alert(t('admin.products.error'));
@@ -68,7 +81,7 @@ function AdminProducts() {
                     <p className="error-message">{error}</p>
                     <button onClick={() => window.location.reload()} className="button button-secondary">{t('admin.products.retry')}</button>
                 </div>
-            ) : products.length === 0 ? (
+            ) : products.length === 0 && page === 1 ? (
                 <div className="empty-state">
                     <div className="empty-state-icon products-icon"></div>
                     <h3>{t('admin.products.noProducts')}</h3>
@@ -79,7 +92,7 @@ function AdminProducts() {
                 <div className="products-table-container">
                     <div className="table-header">
                         <div className="table-info">
-                            <span className="table-count">{products.length} {t('common.products')}</span>
+                            <span className="table-count">{products.length} {t('common.products')} ({t('common.page')} {page})</span>
                             <span className="table-total">{t('admin.dashboard.totalStock')}: {products.reduce((sum, pwi) => sum + pwi.product.bottle_count, 0)} {t('common.bottles')}</span>
                         </div>
                     </div>
@@ -164,6 +177,12 @@ function AdminProducts() {
                             </tbody>
                         </table>
                     </div>
+                    <Pagination
+                        page={page}
+                        hasMore={hasMore}
+                        onPrevPage={() => setPage(page - 1)}
+                        onNextPage={() => setPage(page + 1)}
+                    />
                 </div>
             )}
         </div>

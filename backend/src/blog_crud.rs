@@ -124,16 +124,28 @@ pub fn create_blog_post(
         .map_err(BlogCreationError::from)
 }
 
-pub fn get_all_blog_posts(conn: &mut PgConnection) -> Result<Vec<BlogPost>, DieselError> {
+pub fn get_all_blog_posts(
+    conn: &mut PgConnection,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<BlogPost>, DieselError> {
     blog_posts::table
         .filter(blog_posts::is_published.eq(true))
         .order_by(blog_posts::published_at.desc())
+        .limit(limit)
+        .offset(offset)
         .load::<BlogPost>(conn)
 }
 
-pub fn get_all_blog_posts_admin(conn: &mut PgConnection) -> Result<Vec<BlogPost>, DieselError> {
+pub fn get_all_blog_posts_admin(
+    conn: &mut PgConnection,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<BlogPost>, DieselError> {
     blog_posts::table
         .order_by(blog_posts::published_at.desc())
+        .limit(limit)
+        .offset(offset)
         .load::<BlogPost>(conn)
 }
 

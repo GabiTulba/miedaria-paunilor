@@ -10,9 +10,6 @@ Generated: 2026-04-17
 
 == IMPROVEMENTS ==
 
-[MEDIUM] backend/src/product_crud.rs, backend/src/blog_crud.rs
-  No pagination on get_all_products or get_all_blog_posts.
-  Full table scan per request. Add LIMIT/OFFSET.
 
 [MEDIUM] backend/Dockerfile:2, frontend/Dockerfile:2,13
   Unversioned base images (rust:latest, nginx:stable-alpine).

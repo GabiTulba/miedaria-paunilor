@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useFetchProducts } from '../hooks/useFetchProducts';
 import { useFetchEnums } from '../hooks/useFetchEnums';
 import ProductCard from '../components/ProductCard';
+import Pagination from '../components/Pagination';
 import SelectInput from '../components/forms/SelectInput';
 import './Shop.css';
 
@@ -17,12 +19,16 @@ function Shop() {
     const [acidity, setAcidity] = useState<string>('');
     const [tanins, setTanins] = useState<string>('');
     const [body, setBody] = useState<string>('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
+    const filtersInitialized = useRef(false);
     const { t } = useTranslation();
 
     const { enums, loading: enumsLoading } = useFetchEnums();
-    const { products, isLoading, error, refetch } = useFetchProducts(
-        orderBy, 
-        inStock, 
+    const { products, isLoading, error, hasMore } = useFetchProducts(
+        orderBy,
+        inStock,
         orderDirection,
         productType,
         sweetness,
@@ -30,12 +36,18 @@ function Shop() {
         effervescence,
         acidity,
         tanins,
-        body
+        body,
+        page
     );
 
     useEffect(() => {
-        refetch();
-    }, [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tanins, body, refetch]);
+        if (!filtersInitialized.current) {
+            filtersInitialized.current = true;
+            return;
+        }
+        setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tanins, body]);
 
     if (isLoading || enumsLoading) {
         return <div className="loader">{t('common.loading')}</div>;
@@ -99,7 +111,7 @@ function Shop() {
                     </div>
 
                     <div className="filter-group">
-                        <button 
+                        <button
                             className="clear-filters-btn"
                             onClick={() => {
                                 setOrderBy('');
@@ -112,6 +124,7 @@ function Shop() {
                                 setAcidity('');
                                 setTanins('');
                                 setBody('');
+                                setPage(1);
                             }}
                         >
                             {t('shop.clearFilters')}
@@ -245,12 +258,18 @@ function Shop() {
                 <main className="product-display">
                     <div className="product-grid">
                         {products.map(productWithImage => (
-                            <ProductCard 
-                                key={productWithImage.product.product_id} 
-                                productWithImage={productWithImage} 
+                            <ProductCard
+                                key={productWithImage.product.product_id}
+                                productWithImage={productWithImage}
                             />
                         ))}
                     </div>
+                    <Pagination
+                        page={page}
+                        hasMore={hasMore}
+                        onPrevPage={() => { setPage(page - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        onNextPage={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    />
                 </main>
             </div>
         </div>

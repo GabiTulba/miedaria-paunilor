@@ -1,15 +1,23 @@
 import { useEffect, useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BlogPost } from '../../types';
 import { api } from '../../lib/api';
 import { AuthContext } from '../../context/AuthContext';
+import Pagination from '../../components/Pagination';
 import './Admin.css';
+
+const ADMIN_BLOG_PER_PAGE = 20;
 
 function AdminBlog() {
     const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [hasMore, setHasMore] = useState(false);
+    const [fetchTrigger, setFetchTrigger] = useState(0);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
     const { t, i18n } = useTranslation();
     const { token } = useContext(AuthContext);
 
@@ -19,8 +27,9 @@ function AdminBlog() {
 
             try {
                 setLoading(true);
-                const posts = await api.getBlogPostsAdmin(token);
-                setBlogPosts(posts);
+                const posts = await api.getBlogPostsAdmin(token, page, ADMIN_BLOG_PER_PAGE, ADMIN_BLOG_PER_PAGE + 1);
+                setHasMore(posts.length > ADMIN_BLOG_PER_PAGE);
+                setBlogPosts(posts.slice(0, ADMIN_BLOG_PER_PAGE));
                 setError(null);
             } catch (err) {
                 console.error("Failed to fetch blog posts:", err);
@@ -30,7 +39,7 @@ function AdminBlog() {
             }
         };
         fetchBlogPosts();
-    }, [token, t]);
+    }, [token, t, page, fetchTrigger]);
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -50,7 +59,11 @@ function AdminBlog() {
 
         try {
             await api.deleteBlogPost(id, token);
-            setBlogPosts(blogPosts.filter(post => post.id !== id));
+            if (blogPosts.length === 1 && page > 1) {
+                setPage(page - 1);
+            } else {
+                setFetchTrigger(n => n + 1);
+            }
         } catch (err) {
             console.error("Failed to delete blog post:", err);
             alert(t('common.error'));
@@ -92,7 +105,7 @@ function AdminBlog() {
                 </div>
             </div>
 
-            {blogPosts.length === 0 ? (
+            {blogPosts.length === 0 && page === 1 ? (
                 <div className="empty-state">
                     <div className="empty-state-icon">📝</div>
                     <h3>{t('admin.blog.noPosts')}</h3>
@@ -148,6 +161,12 @@ function AdminBlog() {
                             ))}
                         </tbody>
                     </table>
+                    <Pagination
+                        page={page}
+                        hasMore={hasMore}
+                        onPrevPage={() => setPage(page - 1)}
+                        onNextPage={() => setPage(page + 1)}
+                    />
                 </div>
             )}
         </div>

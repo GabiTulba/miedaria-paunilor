@@ -6,8 +6,11 @@ interface UseFetchProductsResult {
   products: ProductWithImage[];
   isLoading: boolean;
   error: string | null;
-  refetch: () => void; // Function to manually refetch products
+  hasMore: boolean;
+  refetch: () => void;
 }
+
+const PER_PAGE = 20;
 
 
 
@@ -21,12 +24,14 @@ export const useFetchProducts = (
   effervescence: string,
   acidity: string,
   tanins: string,
-  body: string
+  body: string,
+  page: number
 ): UseFetchProductsResult => {
   const [products, setProducts] = useState<ProductWithImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fetchTrigger, setFetchTrigger] = useState(0); // To manually trigger refetch
+  const [hasMore, setHasMore] = useState(false);
+  const [fetchTrigger, setFetchTrigger] = useState(0);
 
   const refetch = useCallback(() => {
     setFetchTrigger(prev => prev + 1);
@@ -69,12 +74,14 @@ export const useFetchProducts = (
         if (body) {
           params.append('body', body);
         }
-        if (params.toString()) {
-          url = `${url}?${params.toString()}`;
-        }
-        
+        params.append('page', String(page));
+        params.append('per_page', String(PER_PAGE));
+        params.append('limit', String(PER_PAGE + 1));
+        url = `${url}?${params.toString()}`;
+
         const data = await api.get(url);
-        setProducts(data);
+        setHasMore(data.length > PER_PAGE);
+        setProducts(data.slice(0, PER_PAGE));
       } catch (err) {
         setError('Failed to fetch products. Please try again later.');
         console.error(err);
@@ -84,7 +91,7 @@ export const useFetchProducts = (
     };
 
     fetchProducts();
-  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tanins, body]); // Dependency on fetchTrigger for manual refetch
+  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tanins, body, page]);
 
-  return { products, isLoading, error, refetch };
+  return { products, isLoading, error, hasMore, refetch };
 };

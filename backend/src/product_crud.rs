@@ -263,6 +263,8 @@ pub fn get_all_products(
     acidity_filter: Option<AcidityType>,
     tanins_filter: Option<TaninsType>,
     body_filter: Option<BodyType>,
+    limit: i64,
+    offset: i64,
 ) -> QueryResult<Vec<ProductWithImage>> {
     use crate::schema::images::dsl::images;
     use crate::schema::products::dsl::*;
@@ -333,5 +335,9 @@ pub fn get_all_products(
         query = sorted_query;
     }
 
-    query.select(ProductWithImage::as_select()).load(conn)
+    query
+        .select(ProductWithImage::as_select())
+        .limit(limit)
+        .offset(offset)
+        .load(conn)
 }

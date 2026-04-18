@@ -147,6 +147,16 @@ pub struct GetProductsQuery {
     acidity: Option<AcidityType>,
     tanins: Option<TaninsType>,
     body: Option<BodyType>,
+    page: Option<u32>,
+    per_page: Option<u32>,
+    limit: Option<u32>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct GetBlogPostsQuery {
+    page: Option<u32>,
+    per_page: Option<u32>,
+    limit: Option<u32>,
 }
 
 async fn get_all_products(
@@ -154,6 +164,13 @@ async fn get_all_products(
     query: Query<GetProductsQuery>,
 ) -> Result<Json<Vec<ProductWithImage>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
+
+    let per_page = query.per_page.unwrap_or(20).min(100) as i64;
+    let page = query.page.unwrap_or(1).max(1) as i64;
+    let offset = (page - 1) * per_page;
+    let limit = query.limit
+        .map(|l| (l as i64).min(per_page + 1))
+        .unwrap_or(per_page);
 
     let products = product_crud::get_all_products(
         &mut conn,
@@ -167,6 +184,8 @@ async fn get_all_products(
         query.acidity,
         query.tanins,
         query.body,
+        limit,
+        offset,
     )?;
 
     Ok(Json(products))
@@ -234,17 +253,31 @@ async fn list_images(
 
 async fn get_all_blog_posts(
     State(app_state): State<Arc<AppState>>,
+    query: Query<GetBlogPostsQuery>,
 ) -> Result<Json<Vec<models::BlogPost>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    let posts = blog_crud::get_all_blog_posts(&mut conn)?;
+    let per_page = query.per_page.unwrap_or(10).min(50) as i64;
+    let page = query.page.unwrap_or(1).max(1) as i64;
+    let offset = (page - 1) * per_page;
+    let limit = query.limit
+        .map(|l| (l as i64).min(per_page + 1))
+        .unwrap_or(per_page);
+    let posts = blog_crud::get_all_blog_posts(&mut conn, limit, offset)?;
     Ok(Json(posts))
 }
 
 async fn get_all_blog_posts_admin(
     State(app_state): State<Arc<AppState>>,
+    query: Query<GetBlogPostsQuery>,
 ) -> Result<Json<Vec<models::BlogPost>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    let posts = blog_crud::get_all_blog_posts_admin(&mut conn)?;
+    let per_page = query.per_page.unwrap_or(10).min(50) as i64;
+    let page = query.page.unwrap_or(1).max(1) as i64;
+    let offset = (page - 1) * per_page;
+    let limit = query.limit
+        .map(|l| (l as i64).min(per_page + 1))
+        .unwrap_or(per_page);
+    let posts = blog_crud::get_all_blog_posts_admin(&mut conn, limit, offset)?;
     Ok(Json(posts))
 }
 
