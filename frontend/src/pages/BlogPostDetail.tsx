@@ -1,18 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BlogPost } from '../types';
+import { LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
+import { useFormattedDate } from '../hooks/useFormattedDate';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Blog.css';
 
 function BlogPostDetail() {
     const { blog_id } = useParams<{ blog_id: string }>();
-    const [blogPost, setBlogPost] = useState<BlogPost | null>(null);
+    const [blogPost, setBlogPost] = useState<LocalizedBlogPost | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+    const formatDateOptions = useMemo(() => ({
+        year: 'numeric' as const,
+        month: 'long' as const,
+        day: 'numeric' as const,
+        hour: '2-digit' as const,
+        minute: '2-digit' as const,
+    }), []);
+    const formatDate = useFormattedDate(formatDateOptions);
 
     useEffect(() => {
         const fetchBlogPost = async () => {
@@ -41,25 +50,6 @@ function BlogPostDetail() {
         fetchBlogPost();
     }, [blog_id, t]);
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString(i18n.language, {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-    const getLocalizedContent = (post: BlogPost) => {
-        const isRomanian = i18n.language === 'ro';
-        return {
-            title: isRomanian ? post.title_ro : post.title,
-            content: isRomanian ? post.content_markdown_ro : post.content_markdown
-        };
-    };
-
     if (loading) {
         return (
             <div className="blog-page">
@@ -83,14 +73,12 @@ function BlogPostDetail() {
         );
     }
 
-    const localized = getLocalizedContent(blogPost);
-
     return (
         <div className="blog-page">
             <div className="blog-container blog-post-detail">
                 <article className="blog-post-card">
                     <header className="blog-post-header">
-                        <h1 className="blog-post-title">{localized.title}</h1>
+                        <h1 className="blog-post-title">{blogPost.title}</h1>
                         <div className="blog-post-meta">
                             <span className="blog-post-date">
                                 {formatDate(blogPost.published_at)}
@@ -155,7 +143,7 @@ function BlogPostDetail() {
                                  )
                              }}
                          >
-                             {localized.content}
+                             {blogPost.content_markdown}
                          </ReactMarkdown>
                      </div>
                     

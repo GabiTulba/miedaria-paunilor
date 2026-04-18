@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ProductWithImage } from '../../types';
+import { LocalizedProductWithImage } from '../../types';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import { getStockStatus } from '../../utils/stockAvailability';
@@ -13,7 +13,7 @@ import './Admin.css';
 const ADMIN_PRODUCTS_PER_PAGE = 20;
 
 function AdminProducts() {
-    const [products, setProducts] = useState<ProductWithImage[]>([]);
+    const [products, setProducts] = useState<LocalizedProductWithImage[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -23,8 +23,7 @@ function AdminProducts() {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
     const { token } = useContext(AuthContext);
-    const { t, i18n } = useTranslation();
-    const currentLanguage = i18n.language;
+    const { t } = useTranslation();
 
     useEffect(() => {
         const getProducts = async () => {
@@ -73,7 +72,7 @@ function AdminProducts() {
                     {t('admin.products.createNew')}
                 </Link>
             </div>
-            
+
             {loading ? (
                 <div className="loading-state">
                     <div className="loading-spinner"></div>
@@ -100,7 +99,7 @@ function AdminProducts() {
                             <span className="table-total">{t('admin.dashboard.totalStock')}: {products.reduce((sum, pwi) => sum + pwi.product.bottle_count, 0)} {t('common.bottles')}</span>
                         </div>
                     </div>
-                    
+
                     <div className="table-responsive">
                         <table className="products-table">
                             <thead>
@@ -114,48 +113,39 @@ function AdminProducts() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {products.map(productWithImage => (
-                                    <tr key={productWithImage.product.product_id}>
+                                {products.map(({ product, image }) => (
+                                    <tr key={product.product_id}>
                                         <td>
                                             <div className="product-cell">
-                                                 {productWithImage.image && (
-                                                    <img 
-                                                        src={getImageUrl(productWithImage.image.id)}
-                                                        alt={currentLanguage === 'ro' && productWithImage.product.product_name_ro 
-                                                            ? productWithImage.product.product_name_ro 
-                                                            : productWithImage.product.product_name}
+                                                 {image && (
+                                                    <img
+                                                        src={getImageUrl(image.id)}
+                                                        alt={product.product_name}
                                                         className="product-image"
                                                     />
                                                 )}
                                                 <div className="product-details">
-                                                    <div className="product-name">
-                                                        {currentLanguage === 'ro' && productWithImage.product.product_name_ro 
-                                                            ? productWithImage.product.product_name_ro 
-                                                            : productWithImage.product.product_name}
-                                                    </div>
-                                                    <div className="product-id">ID: {productWithImage.product.product_id}</div>
+                                                    <div className="product-name">{product.product_name}</div>
+                                                    <div className="product-id">ID: {product.product_id}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <span className="product-type">{productWithImage.product.product_type}</span>
+                                            <span className="product-type">{product.product_type}</span>
                                         </td>
                                          <td>
                                              <span className="product-price">
-                                                 {currentLanguage === 'ro' 
-                                                     ? `${toFixed(productWithImage.product.price_ron)} ${t('common.ron')}`
-                                                     : `€${toFixed(productWithImage.product.price)}`
-                                                 }
+                                                 {toFixed(product.price)} {product.currency}
                                              </span>
                                         </td>
                                         <td>
                                             <div className="stock-cell">
-                                                <span className="stock-count">{productWithImage.product.bottle_count}</span>
+                                                <span className="stock-count">{product.bottle_count}</span>
                                             </div>
                                         </td>
                                         <td>
                                             {(() => {
-                                                const stockStatus = getStockStatus(productWithImage.product.bottle_count, 'admin', t);
+                                                const stockStatus = getStockStatus(product.bottle_count, 'admin', t);
                                                 return (
                                                     <span className={`status-badge ${stockStatus.cssClass}`}>
                                                         {stockStatus.label}
@@ -165,15 +155,15 @@ function AdminProducts() {
                                         </td>
                                         <td>
                                             <div className="action-buttons">
-                                                <Link to={`${productWithImage.product.product_id}/edit`} className="button button-small button-secondary">
+                                                <Link to={`${product.product_id}/edit`} className="button button-small button-secondary">
                                                     {t('admin.products.edit')}
                                                 </Link>
                                                 <button
-                                                    onClick={() => handleDelete(productWithImage.product.product_id)}
+                                                    onClick={() => handleDelete(product.product_id)}
                                                     className="button button-small button-danger"
-                                                    disabled={deletingId === productWithImage.product.product_id}
+                                                    disabled={deletingId === product.product_id}
                                                 >
-                                                    {deletingId === productWithImage.product.product_id ? t('common.loading') : t('admin.products.delete')}
+                                                    {deletingId === product.product_id ? t('common.loading') : t('admin.products.delete')}
                                                 </button>
                                             </div>
                                         </td>

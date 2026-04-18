@@ -219,7 +219,7 @@ The backend acts as a middle-man between the frontend and the database. It is bu
 *   [tracing] (v0.1) + [tracing-subscriber] (v0.3) - Structured logging with `env-filter` support. Log level configurable via `RUST_LOG` environment variable (default: `backend=info,tower_http=info`).
 *   [tower-http] (v0.6.7) - CORS and `TraceLayer` for request/response logging.
 
-The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `auth`, `blog_crud`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `models`, `product_crud`, `schema`, `sitemap_crud`, `user_crud`, and `utils`.
+The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `auth`, `blog_crud`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `language`, `localized`, `models`, `product_crud`, `schema`, `sitemap_crud`, `user_crud`, and `utils`.
 
 `AppState` holds the database connection pool, login rate limiter, and `site_url` (read from `ALLOWED_ORIGIN` env var) used by `sitemap_crud` to construct absolute URLs.
 
@@ -238,7 +238,7 @@ Enum validation is handled at two levels: serde rejects invalid values during JS
 
 **Enum API Endpoint:** The backend provides a `/api/enums` GET endpoint that returns all enum values with their string representations and bilingual display labels (English and Romanian). String values are derived from serde serialization of each enum variant. This eliminates duplication between frontend and backend.
 
-**Frontend Enum Integration:** The frontend uses the `useFetchEnums` hook to fetch enum values from the backend. Form components like `ProductForm` use these dynamically fetched values for select options, while display components use the `getEnumLabel` utility function from `enums.ts` with language support for consistent label formatting across both languages.
+**Frontend Enum Integration:** The frontend uses the `useFetchEnums` hook to fetch enum values from the backend. All components use the `getEnumLabel(value, enumType, t)` utility function from `enums.ts` for consistent translated enum labels. The function maps `EnumValues` keys (e.g., `mead_type`) to translation keys (e.g., `meadType`) via `ENUM_TYPE_TO_TRANSLATION_KEY`, with a `formatEnumLabel` fallback for missing translations.
 
 ### Features
 Axum is used to interact with the frontend, dealing with:
@@ -250,6 +250,7 @@ Axum is used to interact with the frontend, dealing with:
 *   **Request Logging:** `tower_http::trace::TraceLayer` logs all incoming requests and responses via the `tracing` framework.
 *   **Unified Error Handling:** The `AppError` enum serves as a unified error type for all API handlers, providing `From` implementations for various specific errors (e.g., `diesel::result::Error`, product CRUD errors, authentication errors) and an `IntoResponse` implementation for consistent HTTP response generation.
 *   **Centralized Database Connection Acquisition:** The `db::get_db_connection` helper function centralizes the logic for acquiring a database connection from the application's connection pool, reducing boilerplate code in handler functions.
+*   **Accept-Language Content Negotiation:** Public GET endpoints (`/api/products`, `/api/products/{id}`, `/api/blog`, `/api/blog/{slug}`) use a `Language` Axum extractor (`language.rs`) to parse the `Accept-Language` header. Responses contain single-language fields via `LocalizedProduct`, `LocalizedProductWithImage`, and `LocalizedBlogPost` structs (`localized.rs`). Price is returned with a `currency` field ("EUR" or "RON") based on language. All localized responses include a `Vary: Accept-Language` header. Admin endpoints continue to return full bilingual data. A dedicated `GET /api/admin/products/{product_id}` endpoint returns the full `ProductWithImage` for admin edit forms.
 
 Diesel is used to interact with the database, dealing with:
 *   Fetching data from the `products`, `images`, and `blog_posts` tables.
@@ -329,10 +330,10 @@ The frontend website is structured as follows:
             admin/dashboard/blog -- A page to manage blog posts (create, edit, delete) with markdown editor and bilingual support.
 ```
 All pages are fully implemented and fetch data from the backend where applicable.
-The frontend `Product` and `ProductWithImage` types include all product attributes and image management.
+The frontend uses two type families: `LocalizedProduct`/`LocalizedProductWithImage`/`LocalizedBlogPost` for public-facing components (single-language fields from Accept-Language negotiation), and `Product`/`ProductWithImage`/`BlogPost`/`ProductFormData` for admin edit forms (full bilingual fields).
 
 ### Frontend Architecture Patterns
-*   **Custom Hooks:** The `useFetchProducts` hook encapsulates logic for fetching product data with loading and error states, reducing code duplication in components that display product listings. The `useFetchEnums` hook fetches enum values from the backend API.
+*   **Custom Hooks:** The `useFetchProducts` hook encapsulates logic for fetching product data with loading and error states, returning `LocalizedProductWithImage[]`. The `useFetchEnums` hook fetches enum values from the backend API. The `useLanguage` hook (`hooks/useLanguage.ts`) provides a type-safe `Language` union type (`'en' | 'ro'`) wrapping `i18n.language`. The `useFormattedDate` hook (`hooks/useFormattedDate.ts`) returns a locale-aware date formatting function using the current language.
 *   **Reusable Components:** The `ProductCard` component provides a consistent UI structure for displaying individual product cards across different pages with a clean two-line product summary layout (mead type and sweetness on the first line, ABV and volume on the second line with aligned pipe separators).
 *   **Modular Form Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) centralize input rendering, labeling, and error display logic with support for help text and placeholders.
 *   **Environment-Based Configuration:** The frontend uses `import.meta.env.VITE_API_BASE_URL` for API configuration, centralizing settings through environment variables. TypeScript environment type definitions are provided in `src/vite-env.d.ts`.
@@ -351,15 +352,16 @@ The frontend `Product` and `ProductWithImage` types include all product attribut
     *   **Empty States:** Helpful guidance when no data is available
     *   **Responsive Design:** Mobile-optimized layouts with adaptive navigation
     *   **Simplified Login:** Clean, minimal admin login page with focused authentication interface
- *   **Internationalization (i18n):** The application supports multiple languages (English and Romanian) using `react-i18next` with:
+ *   **Internationalization (i18n):** The application supports English and Romanian using `react-i18next` with an Accept-Language header pattern:
+    *   **Accept-Language Negotiation:** The frontend API client (`api.ts`) sends `Accept-Language` header on every request based on `i18n.language`. The backend returns single-language content (product names, descriptions, ingredients, blog titles/excerpts/content) and the correct price/currency pair. Public components use `LocalizedProduct`/`LocalizedBlogPost` types with no bilingual field selection logic.
+    *   **Language Type Safety:** `type Language = 'en' | 'ro'` with `useLanguage()` hook provides type-checked language access. `SUPPORTED_LANGUAGES` and `DEFAULT_LANGUAGE` constants are shared between the hook and i18n config.
     *   **Language Switcher:** UI component in the header for switching between languages with flag emojis (🇬🇧/🇷🇴) and language codes
     *   **Translation Files:** JSON-based translation files for all UI text
     *   **Automatic Detection:** Browser language detection with localStorage persistence
     *   **Comprehensive Coverage:** All UI text translated including navigation, forms, buttons, error messages, and product descriptions
-    *   **Bilingual Product Data:** Product names, descriptions, and ingredients are stored in both English and Romanian, with automatic language switching based on user preference
-    *   **Dual Currency Support:** Product prices displayed in both Euros and Romanian Lei based on user language preference
-    *   **Translated Enums:** Product attribute enums (mead type, sweetness, turbidity, etc.) are translated automatically based on user language
-*   **Home Page Blog Integration:** The home page features a "Latest Blog Posts" section that displays the three most recent published blog posts in a vertical stack with bilingual support, formatted dates, author attribution, and excerpts. The section uses consistent card styling with the featured products section (white background, gray border, hover effects) but arranges posts vertically rather than in a grid. The section includes a "View All Posts" button linking to the full blog page. Blog posts are fetched from the backend API which returns them in reverse chronological order (newest first), ensuring the home page always shows the most recent content.
+    *   **Translated Enums:** Product attribute enums (mead type, sweetness, turbidity, etc.) are translated via `getEnumLabel()` using translation files
+    *   **Admin Forms:** Admin create/edit forms use full bilingual `Product`/`BlogPost` types to edit both language versions simultaneously. Admin product edit fetches from `GET /api/admin/products/{id}` which returns full bilingual data.
+*   **Home Page Blog Integration:** The home page features a "Latest Blog Posts" section that displays the three most recent published blog posts in a vertical stack with locale-aware formatted dates, author attribution, and excerpts. The section uses consistent card styling with the featured products section (white background, gray border, hover effects) but arranges posts vertically rather than in a grid. The section includes a "View All Posts" button linking to the full blog page. Blog posts are fetched from the backend API which returns them in reverse chronological order (newest first) with content localized via Accept-Language.
 
 ### Shopping Cart
 The application includes a fully functional shopping cart system with the following features:

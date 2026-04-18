@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { ProductWithImage } from '../../types';
+import { LocalizedProductWithImage } from '../../types';
 import { api } from '../../lib/api';
 import { getStockStatus } from '../../utils/stockAvailability';
 import { getImageUrl } from '../../lib/api';
@@ -9,10 +9,9 @@ import { toFixed } from '../../utils/numberUtils';
 import './Admin.css';
 
 function AdminDashboard() {
-    const [products, setProducts] = useState<ProductWithImage[]>([]);
+    const [products, setProducts] = useState<LocalizedProductWithImage[]>([]);
     const [loading, setLoading] = useState(true);
-    const { t, i18n } = useTranslation();
-    const currentLanguage = i18n.language;
+    const { t } = useTranslation();
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -35,9 +34,9 @@ function AdminDashboard() {
         return stockStatus.status === 'low_stock';
     }).length;
     const totalValue = products.reduce((sum, pwi) => {
-        const price = currentLanguage === 'ro' ? Number(pwi.product.price_ron) : Number(pwi.product.price);
-        return sum + (price * pwi.product.bottle_count);
+        return sum + (Number(pwi.product.price) * pwi.product.bottle_count);
     }, 0);
+    const valueCurrency = products.length > 0 ? products[0].product.currency : '';
 
     return (
         <div className="admin-dashboard">
@@ -45,7 +44,7 @@ function AdminDashboard() {
                 <h1>{t('admin.dashboard.title')}</h1>
                 <p className="dashboard-subtitle">{t('admin.dashboard.subtitle')}</p>
             </div>
-            
+
             <div className="stats-grid">
                 <div className="stat-card">
                     <div className="stat-icon products-icon"></div>
@@ -71,7 +70,7 @@ function AdminDashboard() {
                 <div className="stat-card">
                     <div className="stat-icon value-icon"></div>
                     <div className="stat-content">
-                         <h3>{loading ? '...' : currentLanguage === 'ro' ? `${totalValue.toFixed(2)} ${t('common.ron')}` : `€${totalValue.toFixed(2)}`}</h3>
+                         <h3>{loading ? '...' : `${totalValue.toFixed(2)} ${valueCurrency}`}</h3>
                         <p>{t('admin.dashboard.totalValue')}</p>
                     </div>
                 </div>
@@ -125,36 +124,25 @@ function AdminDashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {products.slice(0, 5).map(productWithImage => (
-                                    <tr key={productWithImage.product.product_id}>
+                                {products.slice(0, 5).map(({ product, image }) => (
+                                    <tr key={product.product_id}>
                                         <td>
                                             <div className="product-info">
-                                                {productWithImage.image && (
-                                                     <img 
-                                                        src={getImageUrl(productWithImage.image.id)}
-                                                        alt={currentLanguage === 'ro' && productWithImage.product.product_name_ro 
-                                                            ? productWithImage.product.product_name_ro 
-                                                            : productWithImage.product.product_name}
+                                                {image && (
+                                                     <img
+                                                        src={getImageUrl(image.id)}
+                                                        alt={product.product_name}
                                                         className="product-thumbnail"
                                                     />
                                                 )}
-                                                <span>
-                                                    {currentLanguage === 'ro' && productWithImage.product.product_name_ro 
-                                                        ? productWithImage.product.product_name_ro 
-                                                        : productWithImage.product.product_name}
-                                                </span>
+                                                <span>{product.product_name}</span>
                                             </div>
                                         </td>
-                                         <td>
-                                             {currentLanguage === 'ro' 
-                                                 ? `${toFixed(productWithImage.product.price_ron)} ${t('common.ron')}`
-                                                 : `€${toFixed(productWithImage.product.price)}`
-                                             }
-                                         </td>
-                                        <td>{productWithImage.product.bottle_count}</td>
+                                         <td>{toFixed(product.price)} {product.currency}</td>
+                                        <td>{product.bottle_count}</td>
                                         <td>
                                             {(() => {
-                                                const stockStatus = getStockStatus(productWithImage.product.bottle_count, 'admin', t);
+                                                const stockStatus = getStockStatus(product.bottle_count, 'admin', t);
                                                 return (
                                                     <span className={`status-badge ${stockStatus.cssClass}`}>
                                                         {stockStatus.label}

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useFetchProducts } from '../hooks/useFetchProducts';
 import { useFetchEnums } from '../hooks/useFetchEnums';
+import { getEnumLabel } from '../enums';
 import ProductCard from '../components/ProductCard';
 import Pagination from '../components/Pagination';
 import SelectInput from '../components/forms/SelectInput';
@@ -144,7 +145,7 @@ function Shop() {
                                         { value: '', label: t('shop.allTypes') },
                                         ...enums.mead_type.map(enumValue => ({
                                             value: enumValue.value,
-                                            label: t(`enums.meadType.${enumValue.value}`)
+                                            label: getEnumLabel(enumValue.value, 'mead_type', t)
                                         }))
                                     ]}
                                 />
@@ -161,7 +162,7 @@ function Shop() {
                                         { value: '', label: t('shop.allSweetness') },
                                         ...enums.sweetness.map(enumValue => ({
                                             value: enumValue.value,
-                                            label: t(`enums.sweetness.${enumValue.value}`)
+                                            label: getEnumLabel(enumValue.value, 'sweetness', t)
                                         }))
                                     ]}
                                 />
@@ -178,7 +179,7 @@ function Shop() {
                                         { value: '', label: t('shop.allTurbidity') },
                                         ...enums.turbidity.map(enumValue => ({
                                             value: enumValue.value,
-                                            label: t(`enums.turbidity.${enumValue.value}`)
+                                            label: getEnumLabel(enumValue.value, 'turbidity', t)
                                         }))
                                     ]}
                                 />
@@ -195,7 +196,7 @@ function Shop() {
                                         { value: '', label: t('shop.allEffervescence') },
                                         ...enums.effervescence.map(enumValue => ({
                                             value: enumValue.value,
-                                            label: t(`enums.effervescence.${enumValue.value}`)
+                                            label: getEnumLabel(enumValue.value, 'effervescence', t)
                                         }))
                                     ]}
                                 />
@@ -212,7 +213,7 @@ function Shop() {
                                         { value: '', label: t('shop.allAcidity') },
                                         ...enums.acidity.map(enumValue => ({
                                             value: enumValue.value,
-                                            label: t(`enums.acidity.${enumValue.value}`)
+                                            label: getEnumLabel(enumValue.value, 'acidity', t)
                                         }))
                                     ]}
                                 />
@@ -229,7 +230,7 @@ function Shop() {
                                         { value: '', label: t('shop.allTanins') },
                                         ...enums.tannins.map(enumValue => ({
                                             value: enumValue.value,
-                                            label: t(`enums.tannins.${enumValue.value}`)
+                                            label: getEnumLabel(enumValue.value, 'tannins', t)
                                         }))
                                     ]}
                                 />
@@ -246,7 +247,7 @@ function Shop() {
                                         { value: '', label: t('shop.allBody') },
                                         ...enums.body.map(enumValue => ({
                                             value: enumValue.value,
-                                            label: t(`enums.body.${enumValue.value}`)
+                                            label: getEnumLabel(enumValue.value, 'body', t)
                                         }))
                                     ]}
                                 />

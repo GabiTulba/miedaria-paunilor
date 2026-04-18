@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ProductWithImage } from '../types';
+import { LocalizedProductWithImage } from '../types';
 import { getEnumLabel } from '../enums';
 import { getStockStatus } from '../utils/stockAvailability';
 import { toFixed } from '../utils/numberUtils';
@@ -9,59 +9,49 @@ import { getImageUrl } from '../lib/api';
 import './ProductCard.css';
 
 interface ProductCardProps {
-  productWithImage: ProductWithImage;
+  productWithImage: LocalizedProductWithImage;
 }
 
 function ProductCard({ productWithImage }: ProductCardProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
-  const stockStatus = getStockStatus(productWithImage.product.bottle_count, 'shop', t);
-  const currentLanguage = i18n.language;
-  
-  // Get product name based on language
-  const productName = currentLanguage === 'ro' && productWithImage.product.product_name_ro 
-    ? productWithImage.product.product_name_ro 
-    : productWithImage.product.product_name;
-  
+  const { product, image } = productWithImage;
+  const stockStatus = getStockStatus(product.bottle_count, 'shop', t);
+
   return (
     <div className="product-card">
-      <Link to={`/shop/${productWithImage.product.product_id}`}>
+      <Link to={`/shop/${product.product_id}`}>
         <div className="product-card-main">
           <div className="product-card-image">
-            {productWithImage.image ? (
-              <img 
-                src={getImageUrl(productWithImage.image.id)}
-                alt={productName} 
-                className="product-image" 
+            {image ? (
+              <img
+                src={getImageUrl(image.id)}
+                alt={product.product_name}
+                className="product-image"
               />
             ) : (
               <div className="placeholder-image">{t('admin.productForm.noImage')}</div>
             )}
           </div>
            <div className="product-card-content">
-             <h3>{productName}</h3>
+             <h3>{product.product_name}</h3>
                  <div className="product-details">
                    <div className="product-details-line">
                       <span className="mead-type">
-                        {getEnumLabel(productWithImage.product.product_type, 'mead_type', t)}
+                        {getEnumLabel(product.product_type, 'mead_type', t)}
                       </span>
                       <span className="separator">|</span>
                       <span className="sweetness">
-                        {getEnumLabel(productWithImage.product.sweetness, 'sweetness', t)}
+                        {getEnumLabel(product.sweetness, 'sweetness', t)}
                       </span>
                    </div>
                     <div className="product-details-line">
-                      <span className="abv">{productWithImage.product.abv}% {t('product.abv')}</span>
+                      <span className="abv">{product.abv}% {t('product.abv')}</span>
                       <span className="separator">|</span>
-                      <span className="volume">{productWithImage.product.bottle_size}{t('common.milliliters')}</span>
+                      <span className="volume">{product.bottle_size}{t('common.milliliters')}</span>
                     </div>
                  </div>
-              <p className="price">
-                {currentLanguage === 'ro' 
-                  ? `${toFixed(productWithImage.product.price_ron)} ${t('common.ron')}`
-                  : `${toFixed(productWithImage.product.price)} ${t('common.euro')}`
-                }
-              </p>
+              <p className="price">{toFixed(product.price)} {product.currency}</p>
              <p className={`availability ${stockStatus.cssClass}`}>{stockStatus.description}</p>
            </div>
         </div>

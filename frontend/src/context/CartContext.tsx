@@ -1,14 +1,14 @@
 import { createContext, useState, ReactNode } from 'react';
-import { Product } from '../types';
+import { LocalizedProduct } from '../types';
 
-export interface CartItem extends Product {
+export interface CartItem extends LocalizedProduct {
     quantity: number;
     availableStock: number;
 }
 
 interface CartContextType {
     cartItems: CartItem[];
-    addToCart: (product: Product, quantity: number, availableStock: number) => void;
+    addToCart: (product: LocalizedProduct, quantity: number, availableStock: number) => void;
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number, availableStock?: number) => void;
     clearCart: () => void;
@@ -27,7 +27,7 @@ export const CartContext = createContext<CartContextType>({
 export function CartProvider({ children }: { children: ReactNode }) {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-    const addToCart = (product: Product, quantity: number, availableStock: number) => {
+    const addToCart = (product: LocalizedProduct, quantity: number, availableStock: number) => {
         setCartItems(prevItems => {
             const itemExists = prevItems.find(item => item.product_id === product.product_id);
             const stock = availableStock ?? product.bottle_count;

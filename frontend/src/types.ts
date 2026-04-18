@@ -78,6 +78,46 @@ export interface UpdateBlogPost {
 
 export type ProductFormData = Omit<Product, 'product_id'> & { product_id?: string };
 
+// Localized types — returned by public API endpoints (single-language, Accept-Language driven)
+export interface LocalizedProduct {
+  product_id: string;
+  product_name: string;
+  product_description: string;
+  ingredients: string;
+  product_type: string;
+  sweetness: string;
+  turbidity: string;
+  effervescence: string;
+  acidity: string;
+  tannins: string;
+  body: string;
+  abv: number | string;
+  bottle_count: number;
+  bottle_size: number;
+  price: number | string;
+  currency: string;
+  image_id: string;
+  bottling_date: string;
+  lot_number: number;
+}
+
+export interface LocalizedProductWithImage {
+  product: LocalizedProduct;
+  image: Image | null;
+}
+
+export interface LocalizedBlogPost {
+  id: string;
+  title: string;
+  blog_id: string;
+  content_markdown: string;
+  excerpt: string;
+  author: string;
+  published_at: string;
+  updated_at: string;
+  is_published: boolean;
+}
+
 export interface LoginCredentials {
   username: string;
   password: string;

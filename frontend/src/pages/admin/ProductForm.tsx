@@ -5,6 +5,8 @@ import TextAreaInput from '../../components/forms/TextAreaInput';
 import NumberInput from '../../components/forms/NumberInput';
 import SelectInput from '../../components/forms/SelectInput';
 import { useFetchEnums } from '../../hooks/useFetchEnums';
+import { getEnumLabel } from '../../enums';
+import { useLanguage } from '../../hooks/useLanguage';
 import DatePicker from 'react-datepicker';
 import { registerLocale } from 'react-datepicker';
 import { ro } from 'date-fns/locale/ro';
@@ -23,7 +25,8 @@ interface ProductFormProps {
 
 function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false, errors = {}, availableImages }: ProductFormProps) {
     const { enums, loading, error } = useFetchEnums();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+    const language = useLanguage();
     
     // Register locales for date picker
     registerLocale('en', enUS);
@@ -214,7 +217,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.productType') },
                                 ...enums.mead_type.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: t(`enums.meadType.${enumValue.value}`),
+                                    label: getEnumLabel(enumValue.value, 'mead_type', t),
                                 })),
                             ]}
                             required
@@ -230,7 +233,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.sweetness') },
                                 ...enums.sweetness.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: t(`enums.sweetness.${enumValue.value}`),
+                                    label: getEnumLabel(enumValue.value, 'sweetness', t),
                                 })),
                             ]}
                             required
@@ -248,7 +251,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.turbidity') },
                                 ...enums.turbidity.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: t(`enums.turbidity.${enumValue.value}`),
+                                    label: getEnumLabel(enumValue.value, 'turbidity', t),
                                 })),
                             ]}
                             required
@@ -264,7 +267,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.effervescence') },
                                 ...enums.effervescence.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: t(`enums.effervescence.${enumValue.value}`),
+                                    label: getEnumLabel(enumValue.value, 'effervescence', t),
                                 })),
                             ]}
                             required
@@ -282,7 +285,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.acidity') },
                                 ...enums.acidity.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: t(`enums.acidity.${enumValue.value}`),
+                                    label: getEnumLabel(enumValue.value, 'acidity', t),
                                 })),
                             ]}
                             required
@@ -298,7 +301,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.tannins') },
                                 ...enums.tannins.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: t(`enums.tannins.${enumValue.value}`),
+                                    label: getEnumLabel(enumValue.value, 'tannins', t),
                                 })),
                             ]}
                             required
@@ -316,7 +319,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 { value: '', label: t('admin.productForm.body') },
                                 ...enums.body.map((enumValue) => ({
                                     value: enumValue.value,
-                                    label: t(`enums.body.${enumValue.value}`),
+                                    label: getEnumLabel(enumValue.value, 'body', t),
                                 })),
                             ]}
                             required
@@ -405,7 +408,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                                 selected={getDatePickerValue()}
                                 onChange={handleDateChange}
                                 dateFormat="dd/MM/yyyy"
-                                locale={i18n.language === 'ro' ? 'ro' : 'en'}
+                                locale={language === 'ro' ? 'ro' : 'en'}
                                 className={`form-input ${errors.bottling_date ? 'input-error' : ''}`}
                                 placeholderText="DD/MM/YYYY"
                                 isClearable

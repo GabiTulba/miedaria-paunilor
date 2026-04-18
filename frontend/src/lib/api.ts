@@ -1,4 +1,5 @@
-import { ApiError, ApiErrorResponse, BlogPost, LoginCredentials, NewBlogPost, Product, ProductFormData, ProductWithImage, UpdateBlogPost } from '../types';
+import { ApiError, ApiErrorResponse, BlogPost, LocalizedBlogPost, LocalizedProductWithImage, LoginCredentials, NewBlogPost, Product, ProductFormData, ProductWithImage, UpdateBlogPost } from '../types';
+import i18n from '../i18n/config';
 
 export function getImageUrl(id: string): string {
     return `/images/${id}`;
@@ -11,7 +12,11 @@ if (!API_BASE_URL) {
 
 async function request(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, options);
+    const headers = new Headers(options.headers);
+    if (!headers.has('Accept-Language')) {
+        headers.set('Accept-Language', i18n.language);
+    }
+    const response = await fetch(url, { ...options, headers });
     if (!response.ok) {
         // Try to parse as JSON first, fall back to text if it fails
         const contentType = response.headers.get('content-type');
@@ -51,7 +56,7 @@ export const api = {
         page?: number;
         per_page?: number;
         limit?: number;
-    }): Promise<ProductWithImage[]> => {
+    }): Promise<LocalizedProductWithImage[]> => {
         const queryParams = new URLSearchParams();
         if (params) {
             if (params.order_by) queryParams.append('order_by', params.order_by);
@@ -71,7 +76,7 @@ export const api = {
         const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
         return request(`/products${queryString}`);
     },
-    getProductById: (id: string): Promise<ProductWithImage> => request(`/products/${id}`),
+    getProductById: (id: string): Promise<LocalizedProductWithImage> => request(`/products/${id}`),
 
     adminLogin: async (credentials: LoginCredentials) => {
         return request('/admin/login', {
@@ -100,6 +105,13 @@ export const api = {
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(productData),
+        });
+    },
+
+    getProductByIdAdmin: async (id: string, token: string): Promise<ProductWithImage> => {
+        return request(`/admin/products/${id}`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
         });
     },
 
@@ -152,7 +164,7 @@ export const api = {
     },
 
     // Blog CRUD Operations
-    getBlogPosts: (page?: number, per_page?: number, limit?: number): Promise<BlogPost[]> => {
+    getBlogPosts: (page?: number, per_page?: number, limit?: number): Promise<LocalizedBlogPost[]> => {
         const params = new URLSearchParams();
         if (page !== undefined) params.append('page', String(page));
         if (per_page !== undefined) params.append('per_page', String(per_page));
@@ -160,7 +172,7 @@ export const api = {
         const qs = params.toString() ? `?${params.toString()}` : '';
         return request(`/blog${qs}`);
     },
-    getBlogPostByBlogId: (blog_id: string): Promise<BlogPost> => request(`/blog/${blog_id}`),
+    getBlogPostByBlogId: (blog_id: string): Promise<LocalizedBlogPost> => request(`/blog/${blog_id}`),
     
     // Admin blog operations
     getBlogPostsAdmin: async (token: string, page?: number, per_page?: number, limit?: number): Promise<BlogPost[]> => {

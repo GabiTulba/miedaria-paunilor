@@ -43,7 +43,7 @@ function AdminProductEdit() {
                     setProductLoading(false);
                     return;
                 }
-                const fetchedProductWithImage = await api.getProductById(productId); // Fetch ProductWithImage
+                const fetchedProductWithImage = await api.getProductByIdAdmin(productId, token);
                 setProductWithImage(fetchedProductWithImage); // Set ProductWithImage
             } catch (error: any) {
                 setImagesError(`Failed to fetch data: ${error.response?.data?.message || error.message}`);

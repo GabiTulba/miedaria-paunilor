@@ -2,20 +2,21 @@ use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, Path, Query, State},
     http::StatusCode,
-    response::IntoResponse,
+    response::{AppendHeaders, IntoResponse},
     routing::{delete, get, post, put},
 };
 use diesel::r2d2::ConnectionManager;
 use dotenvy::dotenv;
 use std::{env, net::SocketAddr, sync::Arc};
 
-// Import everything from the backend library crate
 use axum::extract::Extension;
-use axum::extract::Multipart; // Added for upload_image_handler
+use axum::extract::Multipart;
 use backend::AppError;
 use backend::blog_crud;
 use backend::enum_crud;
 use backend::image_crud;
+use backend::language::Language;
+use backend::localized::{LocalizedBlogPost, LocalizedProductWithImage};
 use backend::product_crud::ProductWithImage;
 use backend::sitemap_crud;
 use backend::enums::*;
@@ -117,13 +118,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cors = CorsLayer::new()
         .allow_origin(allowed_origin)
         .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_headers(Any)
+        .expose_headers([axum::http::header::VARY]);
 
     let admin_routes = Router::new()
         .route("/protected", get(protected_route))
         .route("/products", post(create_product))
-        .route("/products/{product_id}", put(update_product))
-        .route("/products/{product_id}", delete(delete_product))
+        .route("/products/{product_id}", get(get_product_by_id_admin).put(update_product).delete(delete_product))
         .route("/blog", post(create_blog_post))
         .route("/blog/{id}", put(update_blog_post))
         .route("/blog/{id}", delete(delete_blog_post))
@@ -228,10 +229,17 @@ pub struct GetBlogPostsQuery {
     limit: Option<u32>,
 }
 
+type VaryLang = AppendHeaders<[(axum::http::HeaderName, &'static str); 1]>;
+
+fn vary_accept_language() -> VaryLang {
+    AppendHeaders([(axum::http::header::VARY, "Accept-Language")])
+}
+
 async fn get_all_products(
     State(app_state): State<Arc<AppState>>,
     query: Query<GetProductsQuery>,
-) -> Result<Json<Vec<ProductWithImage>>, AppError> {
+    lang: Language,
+) -> Result<(VaryLang, Json<Vec<LocalizedProductWithImage>>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
     let per_page = query.per_page.unwrap_or(20).min(100) as i64;
@@ -257,10 +265,32 @@ async fn get_all_products(
         offset,
     )?;
 
-    Ok(Json(products))
+    let localized: Vec<_> = products
+        .into_iter()
+        .map(|p| LocalizedProductWithImage::from_product_with_image(p, lang))
+        .collect();
+
+    Ok((vary_accept_language(), Json(localized)))
 }
 
 async fn get_product_by_id(
+    State(app_state): State<Arc<AppState>>,
+    Path(product_id): Path<String>,
+    lang: Language,
+) -> Result<(VaryLang, Json<LocalizedProductWithImage>), AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+
+    let product = product_crud::get_product(&mut conn, &product_id)?.ok_or(AppError::NotFound(
+        format!("Product with id {} not found", product_id),
+    ))?;
+
+    Ok((
+        vary_accept_language(),
+        Json(LocalizedProductWithImage::from_product_with_image(product, lang)),
+    ))
+}
+
+async fn get_product_by_id_admin(
     State(app_state): State<Arc<AppState>>,
     Path(product_id): Path<String>,
 ) -> Result<Json<ProductWithImage>, AppError> {
@@ -323,7 +353,8 @@ async fn list_images(
 async fn get_all_blog_posts(
     State(app_state): State<Arc<AppState>>,
     query: Query<GetBlogPostsQuery>,
-) -> Result<Json<Vec<models::BlogPost>>, AppError> {
+    lang: Language,
+) -> Result<(VaryLang, Json<Vec<LocalizedBlogPost>>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
     let per_page = query.per_page.unwrap_or(10).min(50) as i64;
     let page = query.page.unwrap_or(1).max(1) as i64;
@@ -332,7 +363,11 @@ async fn get_all_blog_posts(
         .map(|l| (l as i64).min(per_page + 1))
         .unwrap_or(per_page);
     let posts = blog_crud::get_all_blog_posts(&mut conn, limit, offset)?;
-    Ok(Json(posts))
+    let localized: Vec<_> = posts
+        .into_iter()
+        .map(|p| LocalizedBlogPost::from_blog_post(p, lang))
+        .collect();
+    Ok((vary_accept_language(), Json(localized)))
 }
 
 async fn get_all_blog_posts_admin(
@@ -353,10 +388,14 @@ async fn get_all_blog_posts_admin(
 async fn get_blog_post_by_blog_id(
     State(app_state): State<Arc<AppState>>,
     Path(blog_id): Path<String>,
-) -> Result<Json<models::BlogPost>, AppError> {
+    lang: Language,
+) -> Result<(VaryLang, Json<LocalizedBlogPost>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
     let post = blog_crud::get_blog_post_by_blog_id(&mut conn, &blog_id)?;
-    Ok(Json(post))
+    Ok((
+        vary_accept_language(),
+        Json(LocalizedBlogPost::from_blog_post(post, lang)),
+    ))
 }
 
 async fn get_sitemap_data(

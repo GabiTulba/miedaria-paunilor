@@ -47,57 +47,6 @@ Generated: 2026-04-17
     - Test on real devices, not just browser emulation
 
 
-== I18N ARCHITECTURE ==
-
-Current state: 36 direct i18n.language checks across 12 files. Same bilingual field
-selection pattern repeated in 8+ components. Language concern leaks into every UI component.
-
-[ARCH] Migrate to Accept-Language header pattern (Option B)
-  Backend reads Accept-Language header, returns single-language fields (no _ro suffix).
-  Frontend sends header on every API request. Types become clean - no dual fields.
-  Extensible to 3rd language with no frontend type changes.
-
-  Backend changes:
-    - Read Accept-Language header in all product/blog handlers
-    - Return product_name (localized), not both product_name + product_name_ro
-    - Same for: product_description, ingredients, title, excerpt, content_markdown
-    - price/price_ron: keep both or add currency field; OR return { price, currency } based on header
-    - Add vary: Accept-Language to response headers for cache correctness
-
-  Frontend changes:
-    - Add Accept-Language header to all api.ts fetch calls based on i18n.language
-    - Simplify Product and BlogPost types - remove all _ro fields
-    - Remove all i18n.language === 'ro' checks from components (36 total)
-    - Remove bilingual field selection logic from ProductCard, ProductDetails,
-      Cart, Blog, BlogPostDetail, Home, AdminProducts, AdminDashboard, AdminBlog
-    - Admin forms (ProductForm, BlogForm) still need dual-language fields for editing both versions
-
-  Note: Admin forms are a special case - they must edit both language versions simultaneously.
-  Solution: Admin API endpoints return both versions regardless of Accept-Language header.
-  Or: use ?lang=both query param for admin endpoints only.
-
-[HIGH] Add type Language = 'en' | 'ro'
-  frontend/src/i18n/config.ts or types.ts
-  i18n.language is untyped string today. All language checks are unchecked strings.
-  Add: export type Language = 'en' | 'ro';
-  Use cast or type guard at single point: useLanguage() hook returns Language.
-
-[MEDIUM] Extract useFormattedDate(dateStr: string) hook
-  frontend/src/utils/dateUtils.ts or hooks/useFormattedDate.ts
-  Same toLocaleDateString(i18n.language, { year: 'numeric', month: 'long', day: 'numeric' })
-  repeated in Blog.tsx:35, BlogPostDetail.tsx:46, Home.tsx:85, AdminBlog.tsx:37.
-  Single hook eliminates all 4 duplicates.
-
-[MEDIUM] Extract useLocalizedPrice(product) hook
-  Price + currency selection duplicated in ProductCard, ProductDetails, Cart, AdminDashboard (5+ files).
-  Returns { price: number, currency: string } based on current language.
-  Collapses after Option B migration - becomes trivial.
-
-[LOW] Normalize getEnumLabel() call sites
-  frontend/src/enums.ts
-  Some callers pass t(), some construct key manually, some use formatEnumLabel() fallback.
-  Standardize: always use getEnumLabel(value, enumType, t) with t from useTranslation().
-
 
 == DATABASE SCHEMA ==
 

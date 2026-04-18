@@ -1,8 +1,10 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BlogPost } from '../../types';
 import { api } from '../../lib/api';
+import { useFormattedDate } from '../../hooks/useFormattedDate';
+import { useLanguage } from '../../hooks/useLanguage';
 import { AuthContext } from '../../context/AuthContext';
 import Pagination from '../../components/Pagination';
 import './Admin.css';
@@ -18,7 +20,14 @@ function AdminBlog() {
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+    const language = useLanguage();
+    const formatDateOptions = useMemo(() => ({
+        year: 'numeric' as const,
+        month: 'short' as const,
+        day: 'numeric' as const,
+    }), []);
+    const formatDate = useFormattedDate(formatDateOptions);
     const { token } = useContext(AuthContext);
 
     useEffect(() => {
@@ -41,17 +50,8 @@ function AdminBlog() {
         fetchBlogPosts();
     }, [token, t, page, fetchTrigger]);
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString(i18n.language, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
     const getLocalizedTitle = (post: BlogPost) => {
-        return i18n.language === 'ro' ? post.title_ro : post.title;
+        return language === 'ro' ? post.title_ro : post.title;
     };
 
     const handleDelete = async (id: string) => {

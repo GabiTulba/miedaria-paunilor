@@ -5,6 +5,8 @@ pub mod enum_crud;
 pub mod enums;
 pub mod error;
 pub mod image_crud;
+pub mod language;
+pub mod localized;
 pub mod models;
 pub mod product_crud;
 pub mod schema;

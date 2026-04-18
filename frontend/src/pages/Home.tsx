@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ProductWithImage, BlogPost } from '../types';
+import { LocalizedProductWithImage, LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
+import { useFormattedDate } from '../hooks/useFormattedDate';
 import ProductCard from '../components/ProductCard';
 import './Home.css';
 
 function Home() {
-    const [featuredProducts, setFeaturedProducts] = useState<ProductWithImage[]>([]);
-    const [latestBlogPosts, setLatestBlogPosts] = useState<BlogPost[]>([]);
-    const { t, i18n } = useTranslation();
+    const [featuredProducts, setFeaturedProducts] = useState<LocalizedProductWithImage[]>([]);
+    const [latestBlogPosts, setLatestBlogPosts] = useState<LocalizedBlogPost[]>([]);
+    const { t } = useTranslation();
+    const formatDate = useFormattedDate();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -69,24 +71,15 @@ function Home() {
                     <div className="teaser-content">
                         <h2>{t('home.latestBlogPosts')}</h2>
                         <div className="blog-grid">
-                            {latestBlogPosts.map(post => {
-                                const isRomanian = i18n.language === 'ro';
-                                const title = isRomanian ? post.title_ro : post.title;
-                                const excerpt = isRomanian ? post.excerpt_ro : post.excerpt;
-                                
-                                return (
+                            {latestBlogPosts.map(post => (
                                     <article key={post.id} className="blog-post-card">
                                         <div className="blog-post-header">
                                             <h3 className="blog-post-title">
-                                                <Link to={`/blog/${post.blog_id}`}>{title}</Link>
+                                                <Link to={`/blog/${post.blog_id}`}>{post.title}</Link>
                                             </h3>
                                             <div className="blog-post-meta">
                                                 <span className="blog-post-date">
-                                                    {new Date(post.published_at).toLocaleDateString(i18n.language, {
-                                                        year: 'numeric',
-                                                        month: 'long',
-                                                        day: 'numeric'
-                                                    })}
+                                                    {formatDate(post.published_at)}
                                                 </span>
                                                 <span className="blog-post-author">
                                                     {t('blog.byAuthor', { author: post.author })}
@@ -94,7 +87,7 @@ function Home() {
                                             </div>
                                         </div>
                                         <div className="blog-post-excerpt">
-                                            <p>{excerpt}</p>
+                                            <p>{post.excerpt}</p>
                                         </div>
                                         <div className="blog-post-actions">
                                             <Link to={`/blog/${post.blog_id}`} className="read-more-btn">
@@ -102,8 +95,7 @@ function Home() {
                                             </Link>
                                         </div>
                                     </article>
-                                );
-                            })}
+                                ))}
                         </div>
                         <Link to="/blog" className="button button-secondary">{t('home.viewAllPosts')}</Link>
                     </div>

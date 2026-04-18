@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BlogPost } from '../types';
+import { LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
+import { useFormattedDate } from '../hooks/useFormattedDate';
 import Pagination from '../components/Pagination';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -11,14 +12,15 @@ import './Blog.css';
 const BLOG_PER_PAGE = 10;
 
 function Blog() {
-    const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+    const [blogPosts, setBlogPosts] = useState<LocalizedBlogPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+    const formatDate = useFormattedDate();
 
     useEffect(() => {
         const fetchBlogPosts = async () => {
@@ -37,24 +39,6 @@ function Blog() {
         };
         fetchBlogPosts();
     }, [t, page]);
-
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString(i18n.language, {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    };
-
-    const getLocalizedContent = (post: BlogPost) => {
-        const isRomanian = i18n.language === 'ro';
-        return {
-            title: isRomanian ? post.title_ro : post.title,
-            excerpt: isRomanian ? post.excerpt_ro : post.excerpt,
-            content: isRomanian ? post.content_markdown_ro : post.content_markdown
-        };
-    };
 
     if (loading) {
         return (
@@ -90,13 +74,11 @@ function Blog() {
                     </div>
                 ) : (
                     <div className="blog-posts">
-                        {blogPosts.map((post) => {
-                            const localized = getLocalizedContent(post);
-                            return (
+                        {blogPosts.map((post) => (
                                 <article key={post.id} className="blog-post-card">
                                     <div className="blog-post-header">
                                         <h2 className="blog-post-title">
-                                            <Link to={`/blog/${post.blog_id}`}>{localized.title}</Link>
+                                            <Link to={`/blog/${post.blog_id}`}>{post.title}</Link>
                                         </h2>
                                         <div className="blog-post-meta">
                                             <span className="blog-post-date">
@@ -155,7 +137,7 @@ function Blog() {
                                                  )
                                              }}
                                          >
-                                             {localized.excerpt}
+                                             {post.excerpt}
                                          </ReactMarkdown>
                                      </div>
                                     <div className="blog-post-actions">
@@ -164,8 +146,7 @@ function Blog() {
                                         </Link>
                                     </div>
                                 </article>
-                            );
-                        })}
+                            ))}
                     </div>
                 )}
                 <Pagination

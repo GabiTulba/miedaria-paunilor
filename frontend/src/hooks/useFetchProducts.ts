@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
-import { ProductWithImage } from '../types';
+import { LocalizedProductWithImage } from '../types';
 
 interface UseFetchProductsResult {
-  products: ProductWithImage[];
+  products: LocalizedProductWithImage[];
   isLoading: boolean;
   error: string | null;
   hasMore: boolean;
@@ -27,7 +27,7 @@ export const useFetchProducts = (
   body: string,
   page: number
 ): UseFetchProductsResult => {
-  const [products, setProducts] = useState<ProductWithImage[]>([]);
+  const [products, setProducts] = useState<LocalizedProductWithImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);

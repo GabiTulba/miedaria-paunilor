@@ -15,17 +15,25 @@ export interface EnumValues {
     body: EnumValue[];
 }
 
-// Helper function to get enum label from value based on language
-// Uses translation files for labels
+const ENUM_TYPE_TO_TRANSLATION_KEY: Record<keyof EnumValues, string> = {
+    mead_type: 'meadType',
+    sweetness: 'sweetness',
+    turbidity: 'turbidity',
+    effervescence: 'effervescence',
+    acidity: 'acidity',
+    tannins: 'tannins',
+    body: 'body',
+};
+
 export function getEnumLabel(value: string, enumType: keyof EnumValues, t: (key: string) => string): string {
-    const translationKey = `enums.${enumType}.${value}`;
+    const translationPrefix = ENUM_TYPE_TO_TRANSLATION_KEY[enumType];
+    const translationKey = `enums.${translationPrefix}.${value}`;
     const translated = t(translationKey);
-    
-    // If translation is not found, fall back to formatted value
+
     if (translated === translationKey) {
         return formatEnumLabel(value);
     }
-    
+
     return translated;
 }
 
