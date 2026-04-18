@@ -95,6 +95,7 @@ diesel::table! {
         bottling_date -> Date,
         lot_number -> Int4,
         updated_at -> Timestamptz,
+        deleted_at -> Nullable<Timestamptz>,
     }
 }
 

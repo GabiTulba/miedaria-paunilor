@@ -47,7 +47,8 @@ pub use crate::blog_crud::{
 };
 pub use crate::models::{AdminUser, NewAdminUser, NewProduct, NewUser, Product, User};
 pub use crate::product_crud::{
-    create_product, delete_product, get_all_products, get_product, update_product,
+    create_product, delete_product, get_all_products, get_all_products_admin, get_product,
+    get_product_admin, hard_delete_product, restore_product, update_product, IncludeDeleted,
 };
 pub use crate::schema::*;
 pub use crate::user_crud::{

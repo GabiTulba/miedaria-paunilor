@@ -79,7 +79,7 @@ function Home() {
                                             </h3>
                                             <div className="blog-post-meta">
                                                 <span className="blog-post-date">
-                                                    {formatDate(post.published_at)}
+                                                    {post.published_at ? formatDate(post.published_at) : ''}
                                                 </span>
                                                 <span className="blog-post-author">
                                                     {t('blog.byAuthor', { author: post.author })}

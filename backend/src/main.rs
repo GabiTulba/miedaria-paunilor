@@ -20,6 +20,7 @@ use backend::localized::{LocalizedBlogPost, LocalizedProductWithImage};
 use backend::product_crud::ProductWithImage;
 use backend::sitemap_crud;
 use backend::enums::*;
+use backend::product_crud::IncludeDeleted;
 use backend::{AppState, auth, build_login_limiter, db, models, product_crud};
 
 struct Config {
@@ -123,8 +124,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let admin_routes = Router::new()
         .route("/protected", get(protected_route))
-        .route("/products", post(create_product))
+        .route("/products", get(list_products_admin).post(create_product))
         .route("/products/{product_id}", get(get_product_by_id_admin).put(update_product).delete(delete_product))
+        .route("/products/{product_id}/restore", post(restore_product_handler))
+        .route("/products/{product_id}/hard", delete(hard_delete_product_handler))
         .route("/blog", post(create_blog_post))
         .route("/blog/{id}", put(update_blog_post))
         .route("/blog/{id}", delete(delete_blog_post))
@@ -296,15 +299,85 @@ async fn get_product_by_id_admin(
 ) -> Result<Json<ProductWithImage>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
-    let product = product_crud::get_product(&mut conn, &product_id)?.ok_or(AppError::NotFound(
-        format!("Product with id {} not found", product_id),
-    ))?;
+    let product = product_crud::get_product_admin(&mut conn, &product_id)?.ok_or(
+        AppError::NotFound(format!("Product with id {} not found", product_id)),
+    )?;
 
     Ok(Json(product))
 }
 
 async fn protected_route(Extension(claims): Extension<auth::Claims>) -> Result<String, StatusCode> {
     Ok(format!("Welcome to the protected area, {}!", claims.sub))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct GetAdminProductsQuery {
+    include_deleted: Option<IncludeDeleted>,
+    order_by: Option<String>,
+    in_stock: Option<bool>,
+    order_direction: Option<String>,
+    product_type: Option<MeadType>,
+    sweetness: Option<SweetnessType>,
+    turbidity: Option<TurbidityType>,
+    effervescence: Option<EffervescenceType>,
+    acidity: Option<AcidityType>,
+    tannins: Option<TanninsType>,
+    body: Option<BodyType>,
+    page: Option<u32>,
+    per_page: Option<u32>,
+    limit: Option<u32>,
+}
+
+async fn list_products_admin(
+    State(app_state): State<Arc<AppState>>,
+    query: Query<GetAdminProductsQuery>,
+) -> Result<Json<Vec<product_crud::ProductWithImage>>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+
+    let per_page = query.per_page.unwrap_or(20).min(100) as i64;
+    let page = query.page.unwrap_or(1).max(1) as i64;
+    let offset = (page - 1) * per_page;
+    let limit = query
+        .limit
+        .map(|l| (l as i64).min(per_page + 1))
+        .unwrap_or(per_page);
+
+    let products = product_crud::get_all_products_admin(
+        &mut conn,
+        query.include_deleted.unwrap_or_default(),
+        query.order_by.as_deref(),
+        query.in_stock,
+        query.order_direction.as_deref(),
+        query.product_type,
+        query.sweetness,
+        query.turbidity,
+        query.effervescence,
+        query.acidity,
+        query.tannins,
+        query.body,
+        limit,
+        offset,
+    )?;
+
+    Ok(Json(products))
+}
+
+async fn restore_product_handler(
+    State(app_state): State<Arc<AppState>>,
+    Path(product_id): Path<String>,
+) -> Result<Json<models::Product>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    let product = product_crud::restore_product(&mut conn, &product_id)?;
+    Ok(Json(product))
+}
+
+async fn hard_delete_product_handler(
+    State(app_state): State<Arc<AppState>>,
+    Path(product_id): Path<String>,
+) -> Result<StatusCode, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    product_crud::hard_delete_product(&mut conn, &product_id)?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn create_product(
@@ -337,10 +410,8 @@ async fn delete_product(
     Path(product_id): Path<String>,
 ) -> Result<StatusCode, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-
-    product_crud::delete_product(&mut conn, &product_id)
-        .map(|_| StatusCode::NO_CONTENT)
-        .map_err(AppError::from)
+    product_crud::delete_product(&mut conn, &product_id)?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn list_images(

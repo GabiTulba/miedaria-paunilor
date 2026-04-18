@@ -92,6 +92,8 @@ pub struct Product {
     pub bottling_date: chrono::NaiveDate,
     pub lot_number: i32,
     pub updated_at: chrono::NaiveDateTime,
+    #[diesel(skip_update)]
+    pub deleted_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[derive(Insertable, serde::Deserialize)]

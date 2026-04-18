@@ -31,6 +31,7 @@ export interface Product {
   bottling_date: string; // Date in ISO format (YYYY-MM-DD)
   lot_number: number; // Positive integer
   updated_at: string; // Timestamptz as string
+  deleted_at: string | null; // Timestamptz as string, null if active
 }
 
 export interface ProductWithImage {
@@ -77,7 +78,7 @@ export interface UpdateBlogPost {
   is_published?: boolean;
 }
 
-export type ProductFormData = Omit<Product, 'product_id' | 'updated_at'> & { product_id?: string };
+export type ProductFormData = Omit<Product, 'product_id' | 'updated_at' | 'deleted_at'> & { product_id?: string };
 
 // Localized types — returned by public API endpoints (single-language, Accept-Language driven)
 export interface LocalizedProduct {

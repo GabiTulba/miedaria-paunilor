@@ -124,6 +124,38 @@ export const api = {
         });
     },
 
+    getAdminProducts: async (token: string, params?: {
+        include_deleted?: 'active' | 'deleted' | 'all';
+        page?: number;
+        per_page?: number;
+        limit?: number;
+    }): Promise<ProductWithImage[]> => {
+        const queryParams = new URLSearchParams();
+        if (params?.include_deleted) queryParams.append('include_deleted', params.include_deleted);
+        if (params?.page !== undefined) queryParams.append('page', String(params.page));
+        if (params?.per_page !== undefined) queryParams.append('per_page', String(params.per_page));
+        if (params?.limit !== undefined) queryParams.append('limit', String(params.limit));
+        const qs = queryParams.toString() ? `?${queryParams.toString()}` : '';
+        return request(`/admin/products${qs}`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+    },
+
+    restoreProduct: async (id: string, token: string): Promise<Product> => {
+        return request(`/admin/products/${id}/restore`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+    },
+
+    hardDeleteProduct: async (id: string, token: string) => {
+        return request(`/admin/products/${id}/hard`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+    },
+
     // Image CRUD Operations
     uploadImage: async (formData: FormData, token: string) => {
         return request('/admin/images', {

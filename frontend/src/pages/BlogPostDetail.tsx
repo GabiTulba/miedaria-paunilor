@@ -73,7 +73,7 @@ function BlogPostDetail() {
                         <h1 className="blog-post-title">{blogPost.title}</h1>
                         <div className="blog-post-meta">
                             <span className="blog-post-date">
-                                {formatDate(blogPost.published_at)}
+                                {blogPost.published_at ? formatDate(blogPost.published_at) : ''}
                             </span>
                             <span className="blog-post-author">
                                 {t('blog.byAuthor', { author: blogPost.author })}

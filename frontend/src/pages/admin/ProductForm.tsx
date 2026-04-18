@@ -1,4 +1,4 @@
-import { Product, Image, ProductFormData } from '../../types';
+import { Image, ProductFormData } from '../../types';
 import { useTranslation } from 'react-i18next';
 import TextInput from '../../components/forms/TextInput';
 import TextAreaInput from '../../components/forms/TextAreaInput';

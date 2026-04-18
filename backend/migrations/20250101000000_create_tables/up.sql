@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS products (
   image_id UUID REFERENCES images(id),
   bottling_date DATE NOT NULL CHECK (bottling_date <= CURRENT_DATE),
   lot_number INTEGER NOT NULL CHECK (lot_number > 0),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ NULL
 );
 
 CREATE INDEX idx_products_product_type ON products(product_type);
@@ -47,6 +48,7 @@ CREATE INDEX idx_products_bottle_count ON products(bottle_count);
 CREATE INDEX idx_products_bottling_date ON products(bottling_date DESC);
 CREATE INDEX idx_products_sweetness ON products(sweetness);
 CREATE INDEX idx_products_in_stock ON products(bottling_date DESC) WHERE bottle_count > 0;
+CREATE INDEX idx_products_active ON products(product_id) WHERE deleted_at IS NULL;
 
 -- Existing admin_users and users tables
 CREATE TABLE IF NOT EXISTS admin_users (

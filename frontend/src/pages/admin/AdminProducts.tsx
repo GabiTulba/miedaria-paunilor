@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LocalizedProductWithImage } from '../../types';
+import { ProductWithImage } from '../../types';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import { getStockStatus } from '../../utils/stockAvailability';
@@ -12,13 +12,28 @@ import './Admin.css';
 
 const ADMIN_PRODUCTS_PER_PAGE = 20;
 
+type DeletedFilter = 'active' | 'deleted' | 'all';
+
+function canHardDelete(deletedAt: string): boolean {
+    const deletedDate = new Date(deletedAt);
+    const eligibleDate = new Date(deletedDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return new Date() >= eligibleDate;
+}
+
+function hardDeleteEligibleDate(deletedAt: string): string {
+    const deletedDate = new Date(deletedAt);
+    const eligibleDate = new Date(deletedDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return eligibleDate.toLocaleDateString();
+}
+
 function AdminProducts() {
-    const [products, setProducts] = useState<LocalizedProductWithImage[]>([]);
+    const [products, setProducts] = useState<ProductWithImage[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [actionId, setActionId] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
     const [fetchTrigger, setFetchTrigger] = useState(0);
+    const [deletedFilter, setDeletedFilter] = useState<DeletedFilter>('active');
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
@@ -26,38 +41,81 @@ function AdminProducts() {
     const { t } = useTranslation();
 
     useEffect(() => {
+        if (!token) return;
         const getProducts = async () => {
             try {
                 setLoading(true);
                 setError(null);
-                const productsData = await api.getProducts({ page, per_page: ADMIN_PRODUCTS_PER_PAGE, limit: ADMIN_PRODUCTS_PER_PAGE + 1 });
-                setHasMore(productsData.length > ADMIN_PRODUCTS_PER_PAGE);
-                setProducts(productsData.slice(0, ADMIN_PRODUCTS_PER_PAGE));
-            } catch (error) {
-                console.error("Failed to fetch products:", error);
+                const data = await api.getAdminProducts(token, {
+                    include_deleted: deletedFilter,
+                    page,
+                    per_page: ADMIN_PRODUCTS_PER_PAGE,
+                    limit: ADMIN_PRODUCTS_PER_PAGE + 1,
+                });
+                setHasMore(data.length > ADMIN_PRODUCTS_PER_PAGE);
+                setProducts(data.slice(0, ADMIN_PRODUCTS_PER_PAGE));
+            } catch (err) {
+                console.error('Failed to fetch products:', err);
                 setError(t('admin.products.error'));
             } finally {
                 setLoading(false);
             }
         };
         getProducts();
-    }, [t, page, fetchTrigger]);
+    }, [token, t, page, fetchTrigger, deletedFilter]);
+
+    const handleTabChange = (filter: DeletedFilter) => {
+        setDeletedFilter(filter);
+        setPage(1);
+    };
 
     const handleDelete = async (productId: string) => {
-        if (!token || deletingId || !window.confirm(t('admin.products.deleteConfirm'))) return;
+        if (!token || actionId || !window.confirm(t('admin.products.deleteConfirm'))) return;
         try {
-            setDeletingId(productId);
+            setActionId(productId);
             await api.deleteProduct(productId, token);
             if (products.length === 1 && page > 1) {
                 setPage(page - 1);
             } else {
                 setFetchTrigger(n => n + 1);
             }
-        } catch (error) {
-            console.error("Failed to delete product:", error);
+        } catch (err) {
+            console.error('Failed to delete product:', err);
             alert(t('admin.products.error'));
         } finally {
-            setDeletingId(null);
+            setActionId(null);
+        }
+    };
+
+    const handleRestore = async (productId: string) => {
+        if (!token || actionId) return;
+        try {
+            setActionId(productId);
+            await api.restoreProduct(productId, token);
+            setFetchTrigger(n => n + 1);
+        } catch (err) {
+            console.error('Failed to restore product:', err);
+            alert(t('admin.products.error'));
+        } finally {
+            setActionId(null);
+        }
+    };
+
+    const handleHardDelete = async (productId: string) => {
+        if (!token || actionId || !window.confirm(t('admin.products.hardDeleteConfirm'))) return;
+        try {
+            setActionId(productId);
+            await api.hardDeleteProduct(productId, token);
+            if (products.length === 1 && page > 1) {
+                setPage(page - 1);
+            } else {
+                setFetchTrigger(n => n + 1);
+            }
+        } catch (err) {
+            console.error('Failed to hard delete product:', err);
+            alert(t('admin.products.error'));
+        } finally {
+            setActionId(null);
         }
     };
 
@@ -73,6 +131,18 @@ function AdminProducts() {
                 </Link>
             </div>
 
+            <div className="admin-tabs">
+                {(['active', 'deleted', 'all'] as DeletedFilter[]).map(filter => (
+                    <button
+                        key={filter}
+                        className={`admin-tab${deletedFilter === filter ? ' admin-tab-active' : ''}`}
+                        onClick={() => handleTabChange(filter)}
+                    >
+                        {t(`admin.products.tabs.${filter}`)}
+                    </button>
+                ))}
+            </div>
+
             {error ? (
                 <div className="error-state">
                     <div className="error-icon warning-icon"></div>
@@ -84,14 +154,16 @@ function AdminProducts() {
                     <div className="empty-state-icon products-icon"></div>
                     <h3>{t('admin.products.noProducts')}</h3>
                     <p>{t('admin.products.noProductsDescription')}</p>
-                    <Link to="create" className="button button-primary">{t('admin.products.createFirst')}</Link>
+                    {deletedFilter === 'active' && (
+                        <Link to="create" className="button button-primary">{t('admin.products.createFirst')}</Link>
+                    )}
                 </div>
             ) : (
                 <div className="products-table-container">
                     <div className="table-header">
                         <div className="table-info">
                             <span className="table-count">{products.length} {t('common.products')} ({t('common.page')} {page})</span>
-                            <span className="table-total">{t('admin.dashboard.totalStock')}: {products.reduce((sum, pwi) => sum + pwi.product.bottle_count, 0)} {t('common.bottles')}</span>
+                            <span className="table-total">{t('admin.dashboard.totalStock')}: {products.filter(p => !p.product.deleted_at).reduce((sum, pwi) => sum + pwi.product.bottle_count, 0)} {t('common.bottles')}</span>
                         </div>
                     </div>
 
@@ -108,62 +180,96 @@ function AdminProducts() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {products.map(({ product, image }) => (
-                                    <tr key={product.product_id}>
-                                        <td>
-                                            <div className="product-cell">
-                                                 {image && (
-                                                    <img
-                                                        src={getImageUrl(image.id)}
-                                                        alt={product.product_name}
-                                                        className="product-image"
-                                                    />
-                                                )}
-                                                <div className="product-details">
-                                                    <div className="product-name">{product.product_name}</div>
-                                                    <div className="product-id">ID: {product.product_id}</div>
+                                {products.map(({ product, image }) => {
+                                    const isDeleted = product.deleted_at !== null;
+                                    return (
+                                        <tr key={product.product_id} className={isDeleted ? 'product-row-deleted' : ''}>
+                                            <td>
+                                                <div className="product-cell">
+                                                    {image && (
+                                                        <img
+                                                            src={getImageUrl(image.id)}
+                                                            alt={product.product_name}
+                                                            className="product-image"
+                                                        />
+                                                    )}
+                                                    <div className="product-details">
+                                                        <div className="product-name">{product.product_name}</div>
+                                                        <div className="product-id">ID: {product.product_id}</div>
+                                                        {isDeleted && (
+                                                            <div className="deleted-badge">
+                                                                {t('admin.products.deletedBadge')} — {t('admin.products.deletedOn')} {new Date(product.deleted_at!).toLocaleDateString()}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className="product-type">{product.product_type}</span>
-                                        </td>
-                                         <td>
-                                             <span className="product-price">
-                                                 {toFixed(product.price)} {product.currency}
-                                             </span>
-                                        </td>
-                                        <td>
-                                            <div className="stock-cell">
-                                                <span className="stock-count">{product.bottle_count}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {(() => {
-                                                const stockStatus = getStockStatus(product.bottle_count, 'admin', t);
-                                                return (
-                                                    <span className={`status-badge ${stockStatus.cssClass}`}>
-                                                        {stockStatus.label}
-                                                    </span>
-                                                );
-                                            })()}
-                                        </td>
-                                        <td>
-                                            <div className="action-buttons">
-                                                <Link to={`${product.product_id}/edit`} className="button button-small button-secondary">
-                                                    {t('admin.products.edit')}
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDelete(product.product_id)}
-                                                    className="button button-small button-danger"
-                                                    disabled={deletingId === product.product_id}
-                                                >
-                                                    {deletingId === product.product_id ? t('common.loading') : t('admin.products.delete')}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td>
+                                                <span className="product-type">{product.product_type}</span>
+                                            </td>
+                                            <td>
+                                                <span className="product-price">
+                                                    {toFixed(product.price)} EUR
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="stock-cell">
+                                                    <span className="stock-count">{product.bottle_count}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {(() => {
+                                                    const stockStatus = getStockStatus(product.bottle_count, 'admin', t);
+                                                    return (
+                                                        <span className={`status-badge ${stockStatus.cssClass}`}>
+                                                            {stockStatus.label}
+                                                        </span>
+                                                    );
+                                                })()}
+                                            </td>
+                                            <td>
+                                                <div className="action-buttons">
+                                                    {!isDeleted ? (
+                                                        <>
+                                                            <Link to={`${product.product_id}/edit`} className="button button-small button-secondary">
+                                                                {t('admin.products.edit')}
+                                                            </Link>
+                                                            <button
+                                                                onClick={() => handleDelete(product.product_id)}
+                                                                className="button button-small button-danger"
+                                                                disabled={actionId === product.product_id}
+                                                            >
+                                                                {actionId === product.product_id ? t('common.loading') : t('admin.products.delete')}
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleRestore(product.product_id)}
+                                                                className="button button-small button-secondary"
+                                                                disabled={actionId === product.product_id}
+                                                            >
+                                                                {actionId === product.product_id ? t('common.loading') : t('admin.products.restore')}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => canHardDelete(product.deleted_at!) ? handleHardDelete(product.product_id) : undefined}
+                                                                className="button button-small button-danger"
+                                                                disabled={actionId === product.product_id || !canHardDelete(product.deleted_at!)}
+                                                                title={
+                                                                    canHardDelete(product.deleted_at!)
+                                                                        ? undefined
+                                                                        : t('admin.products.hardDeleteEligibleOn', { date: hardDeleteEligibleDate(product.deleted_at!) })
+                                                                }
+                                                            >
+                                                                {actionId === product.product_id ? t('common.loading') : t('admin.products.hardDelete')}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

@@ -4,7 +4,9 @@ use axum::response::IntoResponse;
 use serde::Serialize;
 
 use crate::blog_crud::{BlogCreationError, BlogUpdateError};
-use crate::product_crud::{ProductCreationError, ProductUpdateError};
+use crate::product_crud::{
+    HardDeleteError, ProductCreationError, ProductUpdateError, RestoreError, SoftDeleteError,
+};
 
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
@@ -27,6 +29,7 @@ pub enum AppError {
     InternalServerError(String),
     NotFound(String),
     BadRequest(String),
+    Conflict(String),
     Unauthorized(String),
     TooManyRequests,
 }
@@ -178,6 +181,11 @@ impl IntoResponse for AppError {
                 Json(ErrorResponse { message: msg }),
             )
                 .into_response(),
+            AppError::Conflict(msg) => (
+                StatusCode::CONFLICT,
+                Json(ErrorResponse { message: msg }),
+            )
+                .into_response(),
             AppError::Unauthorized(msg) => (
                 StatusCode::UNAUTHORIZED,
                 Json(ErrorResponse { message: msg }),
@@ -243,6 +251,46 @@ impl From<diesel::result::Error> for AppError {
                 _ => AppError::InternalServerError(format!("Database error: {}", info.message())),
             },
             _ => AppError::InternalServerError(format!("Database error: {}", error)),
+        }
+    }
+}
+
+impl From<SoftDeleteError> for AppError {
+    fn from(err: SoftDeleteError) -> Self {
+        match err {
+            SoftDeleteError::NotFound => AppError::NotFound("Product not found".to_string()),
+            SoftDeleteError::AlreadyDeleted => {
+                AppError::Conflict("Product is already deleted".to_string())
+            }
+            SoftDeleteError::DatabaseError(msg) => AppError::InternalServerError(msg),
+        }
+    }
+}
+
+impl From<RestoreError> for AppError {
+    fn from(err: RestoreError) -> Self {
+        match err {
+            RestoreError::NotFound => AppError::NotFound("Product not found".to_string()),
+            RestoreError::NotDeleted => {
+                AppError::BadRequest("Product is not deleted".to_string())
+            }
+            RestoreError::DatabaseError(msg) => AppError::InternalServerError(msg),
+        }
+    }
+}
+
+impl From<HardDeleteError> for AppError {
+    fn from(err: HardDeleteError) -> Self {
+        match err {
+            HardDeleteError::NotFound => AppError::NotFound("Product not found".to_string()),
+            HardDeleteError::NotSoftDeleted => {
+                AppError::BadRequest("Product has not been soft-deleted".to_string())
+            }
+            HardDeleteError::TooRecent(eligible_at) => AppError::Conflict(format!(
+                "Product cannot be permanently deleted until {}",
+                eligible_at.format("%Y-%m-%dT%H:%M:%SZ")
+            )),
+            HardDeleteError::DatabaseError(msg) => AppError::InternalServerError(msg),
         }
     }
 }

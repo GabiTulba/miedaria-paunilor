@@ -1557,3 +1557,53 @@
 .react-datepicker-popper {
     z-index: 1000 !important;
 }
+
+/* Soft Delete Tabs */
+.admin-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color, #e5e7eb);
+}
+
+.admin-tab {
+    padding: 0.5rem 1.25rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-muted, #6b7280);
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.admin-tab:hover {
+    color: var(--primary-color, #1e3a5f);
+}
+
+.admin-tab-active {
+    color: var(--primary-color, #1e3a5f);
+    border-bottom-color: var(--primary-color, #1e3a5f);
+    font-weight: 600;
+}
+
+/* Deleted product row */
+.product-row-deleted {
+    opacity: 0.6;
+}
+
+.product-row-deleted .product-name,
+.product-row-deleted .product-type,
+.product-row-deleted .product-price {
+    text-decoration: line-through;
+    color: var(--text-muted, #6b7280);
+}
+
+.deleted-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #dc2626;
+    margin-top: 0.2rem;
+    letter-spacing: 0.03em;
+}

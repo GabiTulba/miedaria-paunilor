@@ -1,7 +1,7 @@
 use crate::enums::*;
 use crate::models::{Image, NewProduct, Product};
 use crate::schema::*;
-use chrono;
+use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use rust_decimal::Decimal;
@@ -250,6 +250,19 @@ pub fn get_product(conn: &mut PgConnection, id: &str) -> QueryResult<Option<Prod
     products
         .left_join(images)
         .filter(product_id.eq(id))
+        .filter(deleted_at.is_null())
+        .select(ProductWithImage::as_select())
+        .first(conn)
+        .optional()
+}
+
+pub fn get_product_admin(conn: &mut PgConnection, id: &str) -> QueryResult<Option<ProductWithImage>> {
+    use crate::schema::images::dsl::images;
+    use crate::schema::products::dsl::*;
+
+    products
+        .left_join(images)
+        .filter(product_id.eq(id))
         .select(ProductWithImage::as_select())
         .first(conn)
         .optional()
@@ -292,11 +305,128 @@ pub fn update_product(
         .map_err(ProductUpdateError::from)
 }
 
-pub fn delete_product(conn: &mut PgConnection, product_id: &str) -> QueryResult<()> {
-    diesel::delete(products::table)
-        .filter(products::product_id.eq(product_id))
+#[derive(Debug, Serialize)]
+pub enum SoftDeleteError {
+    NotFound,
+    AlreadyDeleted,
+    DatabaseError(String),
+}
+
+pub fn delete_product(conn: &mut PgConnection, id: &str) -> Result<(), SoftDeleteError> {
+    use crate::schema::products::dsl::*;
+
+    let target = products
+        .filter(product_id.eq(id))
+        .filter(deleted_at.is_null())
+        .select(product_id)
+        .first::<String>(conn)
+        .optional()
+        .map_err(|e| SoftDeleteError::DatabaseError(e.to_string()))?;
+
+    if target.is_none() {
+        // Check if it exists but is already deleted
+        let exists = products
+            .filter(product_id.eq(id))
+            .select(product_id)
+            .first::<String>(conn)
+            .optional()
+            .map_err(|e| SoftDeleteError::DatabaseError(e.to_string()))?
+            .is_some();
+
+        return Err(if exists {
+            SoftDeleteError::AlreadyDeleted
+        } else {
+            SoftDeleteError::NotFound
+        });
+    }
+
+    diesel::update(products)
+        .filter(product_id.eq(id))
+        .set(deleted_at.eq(Utc::now()))
         .execute(conn)
         .map(|_| ())
+        .map_err(|e| SoftDeleteError::DatabaseError(e.to_string()))
+}
+
+#[derive(Debug, Serialize)]
+pub enum RestoreError {
+    NotFound,
+    NotDeleted,
+    DatabaseError(String),
+}
+
+pub fn restore_product(conn: &mut PgConnection, id: &str) -> Result<Product, RestoreError> {
+    use crate::schema::products::dsl::*;
+
+    let existing_deleted_at = products
+        .filter(product_id.eq(id))
+        .select(deleted_at)
+        .first::<Option<chrono::DateTime<Utc>>>(conn)
+        .optional()
+        .map_err(|e| RestoreError::DatabaseError(e.to_string()))?;
+
+    match existing_deleted_at {
+        None => return Err(RestoreError::NotFound),
+        Some(None) => return Err(RestoreError::NotDeleted),
+        Some(Some(_)) => {}
+    }
+
+    diesel::update(products)
+        .filter(product_id.eq(id))
+        .set(deleted_at.eq(None::<chrono::DateTime<Utc>>))
+        .returning(Product::as_returning())
+        .get_result(conn)
+        .map_err(|e| RestoreError::DatabaseError(e.to_string()))
+}
+
+#[derive(Debug, Serialize)]
+pub enum HardDeleteError {
+    NotFound,
+    NotSoftDeleted,
+    TooRecent(chrono::DateTime<Utc>),
+    DatabaseError(String),
+}
+
+pub fn hard_delete_product(conn: &mut PgConnection, id: &str) -> Result<(), HardDeleteError> {
+    use crate::schema::products::dsl::*;
+
+    let existing_deleted_at = products
+        .filter(product_id.eq(id))
+        .select(deleted_at)
+        .first::<Option<chrono::DateTime<Utc>>>(conn)
+        .optional()
+        .map_err(|e| HardDeleteError::DatabaseError(e.to_string()))?;
+
+    match existing_deleted_at {
+        None => return Err(HardDeleteError::NotFound),
+        Some(None) => return Err(HardDeleteError::NotSoftDeleted),
+        Some(Some(ts)) => {
+            let eligible_at = ts + Duration::days(7);
+            if Utc::now() < eligible_at {
+                return Err(HardDeleteError::TooRecent(eligible_at));
+            }
+        }
+    }
+
+    diesel::delete(products)
+        .filter(product_id.eq(id))
+        .execute(conn)
+        .map(|_| ())
+        .map_err(|e| HardDeleteError::DatabaseError(e.to_string()))
+}
+
+#[derive(Debug, Clone, Copy, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum IncludeDeleted {
+    Active,
+    Deleted,
+    All,
+}
+
+impl Default for IncludeDeleted {
+    fn default() -> Self {
+        Self::Active
+    }
 }
 
 pub fn get_all_products(
@@ -314,11 +444,85 @@ pub fn get_all_products(
     limit: i64,
     offset: i64,
 ) -> QueryResult<Vec<ProductWithImage>> {
+    get_products_internal(
+        conn,
+        IncludeDeleted::Active,
+        order_by,
+        in_stock,
+        order_direction,
+        product_type_filter,
+        sweetness_filter,
+        turbidity_filter,
+        effervescence_filter,
+        acidity_filter,
+        tannins_filter,
+        body_filter,
+        limit,
+        offset,
+    )
+}
+
+pub fn get_all_products_admin(
+    conn: &mut PgConnection,
+    include_deleted: IncludeDeleted,
+    order_by: Option<&str>,
+    in_stock: Option<bool>,
+    order_direction: Option<&str>,
+    product_type_filter: Option<MeadType>,
+    sweetness_filter: Option<SweetnessType>,
+    turbidity_filter: Option<TurbidityType>,
+    effervescence_filter: Option<EffervescenceType>,
+    acidity_filter: Option<AcidityType>,
+    tannins_filter: Option<TanninsType>,
+    body_filter: Option<BodyType>,
+    limit: i64,
+    offset: i64,
+) -> QueryResult<Vec<ProductWithImage>> {
+    get_products_internal(
+        conn,
+        include_deleted,
+        order_by,
+        in_stock,
+        order_direction,
+        product_type_filter,
+        sweetness_filter,
+        turbidity_filter,
+        effervescence_filter,
+        acidity_filter,
+        tannins_filter,
+        body_filter,
+        limit,
+        offset,
+    )
+}
+
+fn get_products_internal(
+    conn: &mut PgConnection,
+    include_deleted: IncludeDeleted,
+    order_by: Option<&str>,
+    in_stock: Option<bool>,
+    order_direction: Option<&str>,
+    product_type_filter: Option<MeadType>,
+    sweetness_filter: Option<SweetnessType>,
+    turbidity_filter: Option<TurbidityType>,
+    effervescence_filter: Option<EffervescenceType>,
+    acidity_filter: Option<AcidityType>,
+    tannins_filter: Option<TanninsType>,
+    body_filter: Option<BodyType>,
+    limit: i64,
+    offset: i64,
+) -> QueryResult<Vec<ProductWithImage>> {
     use crate::schema::images::dsl::images;
     use crate::schema::products::dsl::*;
-    use diesel::ExpressionMethods; // Import ExpressionMethods to use .asc() and .desc()
+    use diesel::ExpressionMethods;
 
     let mut query = products.left_join(images).into_boxed();
+
+    match include_deleted {
+        IncludeDeleted::Active => query = query.filter(deleted_at.is_null()),
+        IncludeDeleted::Deleted => query = query.filter(deleted_at.is_not_null()),
+        IncludeDeleted::All => {}
+    }
 
     if let Some(true) = in_stock {
         query = query.filter(bottle_count.gt(0));
@@ -353,7 +557,7 @@ pub fn get_all_products(
     }
 
     if let Some(order_by_col) = order_by {
-        let sorted_query = match order_by_col {
+        query = match order_by_col {
             "price" => {
                 if let Some("desc") = order_direction {
                     query.order(price.desc())
@@ -375,12 +579,8 @@ pub fn get_all_products(
                     query.order(bottling_date.asc())
                 }
             }
-            _ => {
-                // If order_by is specified but not recognized, do nothing (no specific order)
-                query
-            }
+            _ => query,
         };
-        query = sorted_query;
     }
 
     query
