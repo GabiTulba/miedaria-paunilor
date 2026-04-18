@@ -88,14 +88,8 @@ fn validate_blog_post(new_post: &NewBlogPost) -> Vec<BlogValidationError> {
         errors.push(BlogValidationError::EmptyBlogId);
     } else if new_post.blog_id.len() > 256 {
         errors.push(BlogValidationError::BlogIdTooLong);
-    } else {
-        let blog_id_is_valid = new_post
-            .blog_id
-            .chars()
-            .all(|c| c.is_ascii_lowercase() || c == '-' || c.is_ascii_digit());
-        if !blog_id_is_valid {
-            errors.push(BlogValidationError::InvalidBlogId);
-        }
+    } else if !crate::utils::is_valid_slug(&new_post.blog_id) {
+        errors.push(BlogValidationError::InvalidBlogId);
     }
 
     if new_post.content_markdown.is_empty() {

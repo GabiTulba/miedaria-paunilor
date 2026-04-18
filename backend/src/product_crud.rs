@@ -102,12 +102,8 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
 
     let mut errors = Vec::new();
 
-    // product_id: A short string composed of lowercase letters, dashes or underscores.
-    let product_id_is_valid = input
-        .product_id
-        .chars()
-        .all(|c| c.is_ascii_lowercase() || c == '-' || c == '_');
-    if !product_id_is_valid || input.product_id.is_empty() {
+    // product_id: lowercase letters, digits, hyphens, underscores.
+    if !crate::utils::is_valid_slug(input.product_id) {
         errors.push(ProductValidationError::InvalidProductId);
     } else if input.product_id.len() > 128 {
         errors.push(ProductValidationError::ProductIdTooLong);

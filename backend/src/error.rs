@@ -224,11 +224,30 @@ impl From<ProductUpdateError> for AppError {
     }
 }
 
-// Implement From for diesel::result::Error so that query results can be easily converted
 impl From<diesel::result::Error> for AppError {
     fn from(error: diesel::result::Error) -> Self {
+        use diesel::result::{DatabaseErrorKind, Error as DieselError};
         match error {
-            diesel::result::Error::NotFound => AppError::NotFound("Resource not found".to_string()),
+            DieselError::NotFound => AppError::NotFound("Resource not found".to_string()),
+            DieselError::DatabaseError(kind, info) => match kind {
+                DatabaseErrorKind::UniqueViolation => AppError::BadRequest(format!(
+                    "Duplicate value violates unique constraint: {}",
+                    info.constraint_name().unwrap_or("unknown")
+                )),
+                DatabaseErrorKind::ForeignKeyViolation => AppError::BadRequest(format!(
+                    "Foreign key constraint violated: {}",
+                    info.constraint_name().unwrap_or("unknown")
+                )),
+                DatabaseErrorKind::NotNullViolation => AppError::BadRequest(format!(
+                    "Required field missing: {}",
+                    info.column_name().unwrap_or("unknown")
+                )),
+                DatabaseErrorKind::CheckViolation => AppError::BadRequest(format!(
+                    "Value failed check constraint: {}",
+                    info.constraint_name().unwrap_or("unknown")
+                )),
+                _ => AppError::InternalServerError(format!("Database error: {}", info.message())),
+            },
             _ => AppError::InternalServerError(format!("Database error: {}", error)),
         }
     }

@@ -16,14 +16,6 @@ Generated: 2026-04-17
 
 --- Rust Backend ---
 
-[LOW] backend/src/blog_crud.rs:80-86 vs backend/src/product_crud.rs:42-48
-  Slug/ID validation rules inconsistent: product_id allows _ and -, blog slug allows digits but not _.
-  Unify in shared validation module or document difference explicitly.
-
-[LOW] backend/src/error.rs:220-227
-  From<diesel::result::Error> maps all errors to generic message, losing detail.
-  Add structured variants for different Diesel error types.
-
 --- TypeScript Frontend ---
 
 [HIGH] frontend/src/lib/api.ts:21,67,75 and frontend/src/pages/admin/ProductForm.tsx:16
