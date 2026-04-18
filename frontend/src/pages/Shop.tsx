@@ -26,8 +26,8 @@ function Shop() {
     const filtersInitialized = useRef(false);
     const { t } = useTranslation();
 
-    const { enums, loading: enumsLoading } = useFetchEnums();
-    const { products, isLoading, error, hasMore } = useFetchProducts(
+    const { enums } = useFetchEnums();
+    const { products, error, hasMore } = useFetchProducts(
         orderBy,
         inStock,
         orderDirection,
@@ -49,10 +49,6 @@ function Shop() {
         setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body]);
-
-    if (isLoading || enumsLoading) {
-        return <div className="loader">{t('common.loading')}</div>;
-    }
 
     if (error) {
         return <div className="error-message">{error}</div>;
