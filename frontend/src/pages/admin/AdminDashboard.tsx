@@ -14,17 +14,20 @@ function AdminDashboard() {
     const { t } = useTranslation();
 
     useEffect(() => {
+        const controller = new AbortController();
         const fetchProducts = async () => {
             try {
-                const productsData = await api.getProducts();
+                const productsData = await api.getProducts(undefined, controller.signal);
                 setProducts(productsData);
             } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') return;
                 console.error("Failed to fetch products:", error);
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         };
         fetchProducts();
+        return () => { controller.abort(); };
     }, []);
 
     const totalProducts = products.length;

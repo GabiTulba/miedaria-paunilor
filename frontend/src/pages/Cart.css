@@ -141,6 +141,13 @@
     font-style: italic;
 }
 
+.cart-stock-warning {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: #e67e22;
+    font-weight: 500;
+}
+
 .remove-item-btn {
     background: none;
     border: none;

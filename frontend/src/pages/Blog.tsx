@@ -23,21 +23,24 @@ function Blog() {
     const formatDate = useFormattedDate();
 
     useEffect(() => {
+        const controller = new AbortController();
         const fetchBlogPosts = async () => {
             try {
                 setLoading(true);
-                const posts = await api.getBlogPosts(page, BLOG_PER_PAGE, BLOG_PER_PAGE + 1);
+                const posts = await api.getBlogPosts(page, BLOG_PER_PAGE, BLOG_PER_PAGE + 1, controller.signal);
                 setHasMore(posts.length > BLOG_PER_PAGE);
                 setBlogPosts(posts.slice(0, BLOG_PER_PAGE));
                 setError(null);
             } catch (err) {
+                if (err instanceof DOMException && err.name === 'AbortError') return;
                 console.error("Failed to fetch blog posts:", err);
                 setError(t('blog.fetchError'));
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         };
         fetchBlogPosts();
+        return () => { controller.abort(); };
     }, [i18n.language, page]);
 
     if (error) {

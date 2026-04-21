@@ -31,23 +31,26 @@ function AdminBlog() {
     const { token } = useContext(AuthContext);
 
     useEffect(() => {
+        const controller = new AbortController();
         const fetchBlogPosts = async () => {
             if (!token) return;
 
             try {
                 setLoading(true);
-                const posts = await api.getBlogPostsAdmin(token, page, ADMIN_BLOG_PER_PAGE, ADMIN_BLOG_PER_PAGE + 1);
+                const posts = await api.getBlogPostsAdmin(token, page, ADMIN_BLOG_PER_PAGE, ADMIN_BLOG_PER_PAGE + 1, controller.signal);
                 setHasMore(posts.length > ADMIN_BLOG_PER_PAGE);
                 setBlogPosts(posts.slice(0, ADMIN_BLOG_PER_PAGE));
                 setError(null);
             } catch (err) {
+                if (err instanceof DOMException && err.name === 'AbortError') return;
                 console.error("Failed to fetch blog posts:", err);
                 setError(t('admin.products.error'));
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         };
         fetchBlogPosts();
+        return () => { controller.abort(); };
     }, [token, t, page, fetchTrigger]);
 
     const getLocalizedTitle = (post: BlogPost) => {

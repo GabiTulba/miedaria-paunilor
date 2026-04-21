@@ -11,6 +11,7 @@ interface CartContextType {
     addToCart: (product: LocalizedProduct, quantity: number, availableStock: number) => void;
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number, availableStock?: number) => void;
+    updateStock: (productId: string, newAvailableStock: number) => void;
     clearCart: () => void;
     itemCount: number;
 }
@@ -20,6 +21,7 @@ export const CartContext = createContext<CartContextType>({
     addToCart: () => {},
     removeFromCart: () => {},
     updateQuantity: () => {},
+    updateStock: () => {},
     clearCart: () => {},
     itemCount: 0,
 });
@@ -62,6 +64,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
         );
     };
 
+    const updateStock = (productId: string, newAvailableStock: number) => {
+        setCartItems(prevItems =>
+            prevItems.map(item => {
+                if (item.product_id === productId) {
+                    return {
+                        ...item,
+                        availableStock: newAvailableStock,
+                        quantity: Math.min(item.quantity, Math.max(newAvailableStock, 0)),
+                    };
+                }
+                return item;
+            })
+        );
+    };
+
     const clearCart = () => {
         setCartItems([]);
     };
@@ -69,7 +86,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, itemCount }}>
+        <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, updateStock, clearCart, itemCount }}>
             {children}
         </CartContext.Provider>
     );

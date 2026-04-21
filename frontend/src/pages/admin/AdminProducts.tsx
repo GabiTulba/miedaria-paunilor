@@ -42,26 +42,30 @@ function AdminProducts() {
 
     useEffect(() => {
         if (!token) return;
+        const controller = new AbortController();
         const getProducts = async () => {
             try {
                 setLoading(true);
                 setError(null);
+                setActionId(null);
                 const data = await api.getAdminProducts(token, {
                     include_deleted: deletedFilter,
                     page,
                     per_page: ADMIN_PRODUCTS_PER_PAGE,
                     limit: ADMIN_PRODUCTS_PER_PAGE + 1,
-                });
+                }, controller.signal);
                 setHasMore(data.length > ADMIN_PRODUCTS_PER_PAGE);
                 setProducts(data.slice(0, ADMIN_PRODUCTS_PER_PAGE));
             } catch (err) {
+                if (err instanceof DOMException && err.name === 'AbortError') return;
                 console.error('Failed to fetch products:', err);
                 setError(t('admin.products.error'));
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         };
         getProducts();
+        return () => { controller.abort(); };
     }, [token, t, page, fetchTrigger, deletedFilter]);
 
     const handleTabChange = (filter: DeletedFilter) => {
@@ -82,7 +86,6 @@ function AdminProducts() {
         } catch (err) {
             console.error('Failed to delete product:', err);
             alert(t('admin.products.error'));
-        } finally {
             setActionId(null);
         }
     };
@@ -96,7 +99,6 @@ function AdminProducts() {
         } catch (err) {
             console.error('Failed to restore product:', err);
             alert(t('admin.products.error'));
-        } finally {
             setActionId(null);
         }
     };
@@ -114,7 +116,6 @@ function AdminProducts() {
         } catch (err) {
             console.error('Failed to hard delete product:', err);
             alert(t('admin.products.error'));
-        } finally {
             setActionId(null);
         }
     };
@@ -243,7 +244,7 @@ function AdminProducts() {
                                                             <button
                                                                 onClick={() => handleDelete(product.product_id)}
                                                                 className="button button-small button-danger"
-                                                                disabled={actionId === product.product_id}
+                                                                disabled={actionId !== null}
                                                             >
                                                                 {actionId === product.product_id ? t('common.loading') : t('admin.products.delete')}
                                                             </button>
@@ -253,14 +254,14 @@ function AdminProducts() {
                                                             <button
                                                                 onClick={() => handleRestore(product.product_id)}
                                                                 className="button button-small button-secondary"
-                                                                disabled={actionId === product.product_id}
+                                                                disabled={actionId !== null}
                                                             >
                                                                 {actionId === product.product_id ? t('common.loading') : t('admin.products.restore')}
                                                             </button>
                                                             <button
                                                                 onClick={() => canHardDelete(product.deleted_at!) ? handleHardDelete(product.product_id) : undefined}
                                                                 className="button button-small button-danger"
-                                                                disabled={actionId === product.product_id || !canHardDelete(product.deleted_at!)}
+                                                                disabled={actionId !== null || !canHardDelete(product.deleted_at!)}
                                                                 title={
                                                                     canHardDelete(product.deleted_at!)
                                                                         ? undefined

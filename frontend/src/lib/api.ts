@@ -41,7 +41,7 @@ async function request(endpoint: string, options: RequestInit = {}) {
 }
 
 export const api = {
-    get: (endpoint: string) => request(endpoint),
+    get: (endpoint: string, options?: RequestInit) => request(endpoint, options),
     getProducts: (params?: {
         order_by?: string;
         order_direction?: string;
@@ -56,7 +56,7 @@ export const api = {
         page?: number;
         per_page?: number;
         limit?: number;
-    }): Promise<LocalizedProductWithImage[]> => {
+    }, signal?: AbortSignal): Promise<LocalizedProductWithImage[]> => {
         const queryParams = new URLSearchParams();
         if (params) {
             if (params.order_by) queryParams.append('order_by', params.order_by);
@@ -74,9 +74,9 @@ export const api = {
             if (params.limit !== undefined) queryParams.append('limit', String(params.limit));
         }
         const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-        return request(`/products${queryString}`);
+        return request(`/products${queryString}`, { signal });
     },
-    getProductById: (id: string): Promise<LocalizedProductWithImage> => request(`/products/${id}`),
+    getProductById: (id: string, signal?: AbortSignal): Promise<LocalizedProductWithImage> => request(`/products/${id}`, { signal }),
 
     adminLogin: async (credentials: LoginCredentials) => {
         return request('/admin/login', {
@@ -129,7 +129,7 @@ export const api = {
         page?: number;
         per_page?: number;
         limit?: number;
-    }): Promise<ProductWithImage[]> => {
+    }, signal?: AbortSignal): Promise<ProductWithImage[]> => {
         const queryParams = new URLSearchParams();
         if (params?.include_deleted) queryParams.append('include_deleted', params.include_deleted);
         if (params?.page !== undefined) queryParams.append('page', String(params.page));
@@ -139,6 +139,7 @@ export const api = {
         return request(`/admin/products${qs}`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` },
+            signal,
         });
     },
 
@@ -198,18 +199,18 @@ export const api = {
     },
 
     // Blog CRUD Operations
-    getBlogPosts: (page?: number, per_page?: number, limit?: number): Promise<LocalizedBlogPost[]> => {
+    getBlogPosts: (page?: number, per_page?: number, limit?: number, signal?: AbortSignal): Promise<LocalizedBlogPost[]> => {
         const params = new URLSearchParams();
         if (page !== undefined) params.append('page', String(page));
         if (per_page !== undefined) params.append('per_page', String(per_page));
         if (limit !== undefined) params.append('limit', String(limit));
         const qs = params.toString() ? `?${params.toString()}` : '';
-        return request(`/blog${qs}`);
+        return request(`/blog${qs}`, { signal });
     },
-    getBlogPostBySlug: (slug: string): Promise<LocalizedBlogPost> => request(`/blog/${slug}`),
+    getBlogPostBySlug: (slug: string, signal?: AbortSignal): Promise<LocalizedBlogPost> => request(`/blog/${slug}`, { signal }),
     
     // Admin blog operations
-    getBlogPostsAdmin: async (token: string, page?: number, per_page?: number, limit?: number): Promise<BlogPost[]> => {
+    getBlogPostsAdmin: async (token: string, page?: number, per_page?: number, limit?: number, signal?: AbortSignal): Promise<BlogPost[]> => {
         const params = new URLSearchParams();
         if (page !== undefined) params.append('page', String(page));
         if (per_page !== undefined) params.append('per_page', String(per_page));
@@ -218,6 +219,7 @@ export const api = {
         return request(`/admin/blog/admin${qs}`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` },
+            signal,
         });
     },
 

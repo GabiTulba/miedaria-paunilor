@@ -15,6 +15,7 @@ function Home() {
     const formatDate = useFormattedDate();
 
     useEffect(() => {
+        const controller = new AbortController();
         const fetchData = async () => {
             try {
                 setIsLoading(true);
@@ -24,18 +25,20 @@ function Home() {
                 params.append('in_stock', 'true');
                 const queryString = params.toString();
                 const url = `/products${queryString ? `?${queryString}` : ''}`;
-                const products = await api.get(url);
+                const products = await api.get(url, { signal: controller.signal });
                 setFeaturedProducts(products.slice(0, 3));
 
-                const blogPosts = await api.getBlogPosts();
+                const blogPosts = await api.getBlogPosts(undefined, undefined, undefined, controller.signal);
                 setLatestBlogPosts(blogPosts.slice(0, 3));
             } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') return;
                 console.error("Failed to fetch data:", error);
             } finally {
-                setIsLoading(false);
+                if (!controller.signal.aborted) setIsLoading(false);
             }
         };
         fetchData();
+        return () => { controller.abort(); };
     }, [i18n.language]);
 
     return (

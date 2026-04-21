@@ -40,6 +40,7 @@ export const useFetchProducts = (
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchProducts = async () => {
       setIsLoading(true);
       setError(null);
@@ -52,7 +53,7 @@ export const useFetchProducts = (
         if (inStock) {
           params.append('in_stock', 'true');
         }
-        if (orderBy && orderDirection) { // Only append order_direction if orderBy is also present
+        if (orderBy && orderDirection) {
           params.append('order_direction', orderDirection);
         }
         if (productType) {
@@ -81,18 +82,20 @@ export const useFetchProducts = (
         params.append('limit', String(PER_PAGE + 1));
         url = `${url}?${params.toString()}`;
 
-        const data = await api.get(url);
+        const data = await api.get(url, { signal: controller.signal });
         setHasMore(data.length > PER_PAGE);
         setProducts(data.slice(0, PER_PAGE));
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         setError('Failed to fetch products. Please try again later.');
         console.error(err);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     };
 
     fetchProducts();
+    return () => { controller.abort(); };
   }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, page, language]);
 
   return { products, isLoading, error, hasMore, refetch };

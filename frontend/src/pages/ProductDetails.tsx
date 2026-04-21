@@ -24,21 +24,24 @@ function ProductDetails() {
     const formatDate = useFormattedDate();
 
     useEffect(() => {
+        const controller = new AbortController();
         const fetchProduct = async () => {
             setIsLoading(true);
             try {
                 if (!productId) return;
-                const data = await api.getProductById(productId);
+                const data = await api.getProductById(productId, controller.signal);
                 setProductWithImage(data);
             } catch (err) {
+                if (err instanceof DOMException && err.name === 'AbortError') return;
                 setError(t('errors.serverError'));
                 console.error(err);
             } finally {
-                setIsLoading(false);
+                if (!controller.signal.aborted) setIsLoading(false);
             }
         };
 
         fetchProduct();
+        return () => { controller.abort(); };
     }, [productId, i18n.language]);
 
     const handleAddToCart = () => {

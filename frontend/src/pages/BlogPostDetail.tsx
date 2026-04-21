@@ -24,6 +24,7 @@ function BlogPostDetail() {
     const formatDate = useFormattedDate(formatDateOptions);
 
     useEffect(() => {
+        const controller = new AbortController();
         const fetchBlogPost = async () => {
             if (!slug) {
                 setError(t('blog.invalidSlug'));
@@ -33,10 +34,11 @@ function BlogPostDetail() {
 
             try {
                 setLoading(true);
-                const post = await api.getBlogPostBySlug(slug);
+                const post = await api.getBlogPostBySlug(slug, controller.signal);
                 setBlogPost(post);
                 setError(null);
             } catch (err: any) {
+                if (err instanceof DOMException && err.name === 'AbortError') return;
                 console.error("Failed to fetch blog post:", err);
                 if (err.response?.status === 404) {
                     setError(t('blog.notFound'));
@@ -44,10 +46,11 @@ function BlogPostDetail() {
                     setError(t('blog.fetchError'));
                 }
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         };
         fetchBlogPost();
+        return () => { controller.abort(); };
     }, [slug, i18n.language]);
 
     if (loading) return <div className="loader">{t('common.loading')}</div>;

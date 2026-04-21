@@ -7,24 +7,6 @@
 CRITICAL (Fix First)
 ================================================================================
 
-[C2] Race Conditions & Stale Data
--------------------------------------------------------------------------------
-- No AbortController on any fetch -- navigating away mid-fetch causes React
-  unmount warnings
-  File: frontend/src/hooks/useFetchProducts.ts (lines 42-96)
-  File: frontend/src/pages/ProductDetails.tsx (lines 26-42)
-- Shop filter + page change triggers double-fetch (filter resets page to 1,
-  both trigger useFetchProducts)
-  File: frontend/src/pages/Shop.tsx (lines 44-51)
-- Cart rapid clicks -- no debounce on add-to-cart; clicking fast doubles
-  quantity unexpectedly
-  File: frontend/src/context/CartContext.tsx (lines 30-43)
-- Admin delete -- actionId race between refetch completing and button re-enabling
-  File: frontend/src/pages/admin/AdminProducts.tsx (lines 72-88)
-- Stock staleness -- cart uses cached availableStock, never re-validates against
-  current inventory
-  File: frontend/src/pages/Cart.tsx (lines 45-50)
-
 [C3] Accessibility Violations (WCAG 2.1)
 -------------------------------------------------------------------------------
 - No :focus-visible on nav links, pagination buttons, product cards, admin

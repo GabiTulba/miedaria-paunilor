@@ -1,13 +1,63 @@
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
+import { api } from '../lib/api';
 import { toFixed, toNumber } from '../utils/numberUtils';
 import './Cart.css';
 
 function Cart() {
-    const { cartItems, removeFromCart, updateQuantity, clearCart } = useContext(CartContext);
+    const { cartItems, removeFromCart, updateQuantity, updateStock, clearCart } = useContext(CartContext);
     const { t } = useTranslation();
+    const [stockWarnings, setStockWarnings] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        if (cartItems.length === 0) return;
+
+        const controller = new AbortController();
+        const validateStock = async () => {
+            try {
+                const results = await Promise.all(
+                    cartItems.map(item =>
+                        api.getProductById(item.product_id, controller.signal)
+                            .then(data => ({
+                                productId: item.product_id,
+                                stock: data.product.bottle_count,
+                                found: true,
+                            }))
+                            .catch(err => {
+                                if (err instanceof DOMException && err.name === 'AbortError') throw err;
+                                return { productId: item.product_id, stock: 0, found: false };
+                            })
+                    )
+                );
+                if (controller.signal.aborted) return;
+
+                const warnings: Record<string, string> = {};
+                for (const result of results) {
+                    const cartItem = cartItems.find(i => i.product_id === result.productId);
+                    if (!result.found) {
+                        warnings[result.productId] = t('cart.productUnavailable');
+                        updateStock(result.productId, 0);
+                    } else if (cartItem && result.stock !== cartItem.availableStock) {
+                        updateStock(result.productId, result.stock);
+                        if (result.stock === 0) {
+                            warnings[result.productId] = t('cart.outOfStock');
+                        } else if (cartItem.quantity > result.stock) {
+                            warnings[result.productId] = t('cart.quantityReduced', { max: result.stock });
+                        }
+                    }
+                }
+                setStockWarnings(warnings);
+            } catch (err) {
+                if (err instanceof DOMException && err.name === 'AbortError') return;
+                console.error('Failed to validate stock:', err);
+            }
+        };
+        validateStock();
+        return () => { controller.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const getTotalPrice = () => {
         return cartItems.reduce((total, item) => {
@@ -52,6 +102,11 @@ function Cart() {
                                          {item.quantity >= item.availableStock && item.availableStock > 0 && (
                                              <div className="cart-max-quantity-message">
                                                  {t('product.maxQuantityReached', { count: item.availableStock })}
+                                             </div>
+                                         )}
+                                         {stockWarnings[item.product_id] && (
+                                             <div className="cart-stock-warning">
+                                                 {stockWarnings[item.product_id]}
                                              </div>
                                          )}
                                          <p className="cart-item-subtotal">

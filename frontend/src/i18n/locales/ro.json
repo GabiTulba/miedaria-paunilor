@@ -219,7 +219,10 @@
     "remove": "Elimină",
     "update": "Anunț",
     "workInProgress": "În Curs de Dezvoltare",
-    "workInProgressMessage": "Această pagină de coș este în curs de dezvoltare. Până când sistemul de finalizare a comenzii va fi gata, te rugăm să ne trimiți comanda prin mesaj WhatsApp cu produsele din coș. Vă mulțumim pentru înțelegere!"
+    "workInProgressMessage": "Această pagină de coș este în curs de dezvoltare. Până când sistemul de finalizare a comenzii va fi gata, te rugăm să ne trimiți comanda prin mesaj WhatsApp cu produsele din coș. Vă mulțumim pentru înțelegere!",
+    "productUnavailable": "Acest produs nu mai este disponibil",
+    "outOfStock": "Acest produs nu mai este în stoc",
+    "quantityReduced": "Cantitatea a fost ajustată — doar {{max}} disponibile"
   },
   "admin": {
     "login": {
