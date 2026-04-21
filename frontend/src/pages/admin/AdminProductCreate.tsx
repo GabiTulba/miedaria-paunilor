@@ -35,6 +35,7 @@ function AdminProductCreate() {
         lot_number: 1,
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [submitting, setSubmitting] = useState(false);
     const { token } = useContext(AuthContext);
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -66,29 +67,25 @@ function AdminProductCreate() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (submitting) return;
         setErrors({});
-        
-        // Client-side validation
+
         const newErrors: Record<string, string> = {};
-        
-        // Validate bottling_date format
+
         if (!product.bottling_date || product.bottling_date.trim() === '') {
             newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
         } else {
-            // The product.bottling_date should already be in YYYY-MM-DD format
-            // from the ProductForm's parseDateForBackend conversion
-            // But let's validate it's a valid date
             const dateObj = new Date(product.bottling_date);
             if (isNaN(dateObj.getTime())) {
                 newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
             }
         }
-        
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;
         }
-        
+
         if (!token) {
             alert(t('errors.unauthorized'));
             return;
@@ -102,6 +99,7 @@ function AdminProductCreate() {
             return;
         }
         try {
+            setSubmitting(true);
             await api.createProduct(product, token);
             navigate('/admin/dashboard/products');
         } catch (error: any) {
@@ -120,6 +118,8 @@ function AdminProductCreate() {
             } else {
                 alert('Failed to create product. Check console for details.');
             }
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -138,6 +138,7 @@ function AdminProductCreate() {
                     submitText="Create Product"
                     errors={errors}
                     availableImages={availableImages}
+                    submitting={submitting}
                 />
             )}
         </>

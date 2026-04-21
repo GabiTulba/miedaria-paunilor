@@ -158,6 +158,11 @@ function AdminProducts() {
                         <Link to="create" className="button button-primary">{t('admin.products.createFirst')}</Link>
                     )}
                 </div>
+            ) : loading ? (
+                <div className="loading-state">
+                    <div className="loading-icon"></div>
+                    <p>{t('common.loading')}</p>
+                </div>
             ) : (
                 <>
                 <div className="products-table-container">

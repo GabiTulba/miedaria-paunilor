@@ -27,7 +27,7 @@ function Shop() {
     const { t } = useTranslation();
 
     const { enums } = useFetchEnums();
-    const { products, error, hasMore } = useFetchProducts(
+    const { products, isLoading, error, hasMore } = useFetchProducts(
         orderBy,
         inStock,
         orderDirection,
@@ -253,20 +253,26 @@ function Shop() {
                 </aside>
 
                 <main className="product-display">
-                    <div className="product-grid">
-                        {products.map(productWithImage => (
-                            <ProductCard
-                                key={productWithImage.product.product_id}
-                                productWithImage={productWithImage}
-                            />
-                        ))}
-                    </div>
-                    <Pagination
-                        page={page}
-                        hasMore={hasMore}
-                        onPrevPage={() => { setPage(page - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        onNextPage={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    />
+                    {isLoading ? (
+                        <div className="loader">{t('common.loading')}</div>
+                    ) : (
+                        <div className="product-grid">
+                            {products.map(productWithImage => (
+                                <ProductCard
+                                    key={productWithImage.product.product_id}
+                                    productWithImage={productWithImage}
+                                />
+                            ))}
+                        </div>
+                    )}
+                    {!isLoading && (
+                        <Pagination
+                            page={page}
+                            hasMore={hasMore}
+                            onPrevPage={() => { setPage(page - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            onNextPage={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        />
+                    )}
                 </main>
             </div>
         </div>

@@ -20,10 +20,11 @@ interface ProductFormProps {
     submitText: string;
     isEdit?: boolean;
     errors?: Record<string, string>;
-    availableImages: Image[]; // New prop for available images
+    availableImages: Image[];
+    submitting?: boolean;
 }
 
-function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false, errors = {}, availableImages }: ProductFormProps) {
+function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false, errors = {}, availableImages, submitting = false }: ProductFormProps) {
     const { enums, loading, error } = useFetchEnums();
     const { t } = useTranslation();
     const language = useLanguage();
@@ -437,8 +438,8 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
             </div>
 
             <div className="form-actions">
-                <button type="submit" className="button button-primary">
-                    {submitText}
+                <button type="submit" className="button button-primary" disabled={submitting}>
+                    {submitting ? t('common.loading') : submitText}
                 </button>
                 <a href="/admin/dashboard/products" className="button button-secondary">{t('admin.productForm.cancel')}</a>
             </div>

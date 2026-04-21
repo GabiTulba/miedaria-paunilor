@@ -203,3 +203,9 @@ tr:last-child td {
 tr:hover {
     background-color: #f9f9f9;
 }
+
+.loader {
+    text-align: center;
+    font-size: 1.2rem;
+    padding: 40px;
+}

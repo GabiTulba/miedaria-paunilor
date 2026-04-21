@@ -19,6 +19,7 @@ function AdminProductEdit() {
     const [imagesLoading, setImagesLoading] = useState<boolean>(true);
     const [imagesError, setImagesError] = useState<string>('');
     const [productLoading, setProductLoading] = useState<boolean>(true);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -58,12 +59,11 @@ function AdminProductEdit() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setErrors({}); // Clear previous errors
-        
-        // Client-side validation
+        if (submitting) return;
+        setErrors({});
+
         const newErrors: Record<string, string> = {};
-        
-        // Validate bottling_date format
+
         if (productWithImage && productWithImage.product.bottling_date) {
             const dateObj = new Date(productWithImage.product.bottling_date);
             if (isNaN(dateObj.getTime())) {
@@ -72,12 +72,12 @@ function AdminProductEdit() {
         } else {
             newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
         }
-        
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;
         }
-        
+
         if (!token) {
             alert(t('errors.unauthorized'));
             return;
@@ -90,11 +90,11 @@ function AdminProductEdit() {
             alert(t('admin.images.error'));
             return;
         }
-        if (productWithImage && productId) { // Check productWithImage
+        if (productWithImage && productId) {
             try {
-                // Extract product data for update
+                setSubmitting(true);
                 const productToUpdate: Product = productWithImage.product;
-                await api.updateProduct(productId, productToUpdate, token); // Pass Product
+                await api.updateProduct(productId, productToUpdate, token);
                 navigate('/admin/dashboard/products');
             } catch (error: any) {
                 console.error("Failed to update product:", error);
@@ -112,6 +112,8 @@ function AdminProductEdit() {
                 } else {
                     alert(t('admin.products.error'));
                 }
+            } finally {
+                setSubmitting(false);
             }
         }
     };
@@ -130,11 +132,10 @@ function AdminProductEdit() {
         <>
             {errors.form && <p className="error-message">{errors.form}</p>}
             <ProductForm
-                product={productToPassToForm} // Pass the extracted product
+                product={productToPassToForm}
                 setProduct={(updatedProduct: ProductFormData) => {
-                    // When ProductForm updates the product, update productWithImage accordingly
-                    setProductWithImage((prev) => 
-                        prev ? { ...prev, product: updatedProduct } : null
+                    setProductWithImage((prev) =>
+                        prev ? { ...prev, product: { ...prev.product, ...updatedProduct } } : null
                     );
                 }}
                 onSubmit={handleSubmit}
@@ -142,6 +143,7 @@ function AdminProductEdit() {
                 isEdit={true}
                 errors={errors}
                 availableImages={availableImages}
+                submitting={submitting}
             />
         </>
     );

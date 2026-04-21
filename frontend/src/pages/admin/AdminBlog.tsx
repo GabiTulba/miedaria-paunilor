@@ -106,6 +106,11 @@ function AdminBlog() {
                         {t('admin.blog.createFirst')}
                     </Link>
                 </div>
+            ) : loading ? (
+                <div className="loading-state">
+                    <div className="loading-icon"></div>
+                    <p>{t('common.loading')}</p>
+                </div>
             ) : (
                 <>
                 <div className="admin-table-container">

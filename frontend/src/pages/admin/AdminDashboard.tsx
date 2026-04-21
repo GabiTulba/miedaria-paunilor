@@ -110,7 +110,12 @@ function AdminDashboard() {
                 </div>
             </div>
 
-            {!loading && products.length > 0 && (
+            {loading ? (
+                <div className="loading-state">
+                    <div className="loading-icon"></div>
+                    <p>{t('common.loading')}</p>
+                </div>
+            ) : products.length > 0 && (
                 <div className="recent-products">
                     <h2>{t('common.products')}</h2>
                     <div className="products-table">

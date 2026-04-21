@@ -50,7 +50,7 @@ function BlogPostDetail() {
         fetchBlogPost();
     }, [slug, i18n.language]);
 
-    if (loading) return null;
+    if (loading) return <div className="loader">{t('common.loading')}</div>;
 
     if (error || !blogPost) {
         return (

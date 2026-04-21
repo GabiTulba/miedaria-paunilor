@@ -10,28 +10,29 @@ import './Home.css';
 function Home() {
     const [featuredProducts, setFeaturedProducts] = useState<LocalizedProductWithImage[]>([]);
     const [latestBlogPosts, setLatestBlogPosts] = useState<LocalizedBlogPost[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const { t, i18n } = useTranslation();
     const formatDate = useFormattedDate();
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch in-stock products sorted by bottling date (newest first)
-                // Using the same approach as useFetchProducts hook
+                setIsLoading(true);
                 const params = new URLSearchParams();
                 params.append('order_by', 'bottling_date');
                 params.append('order_direction', 'desc');
-                params.append('in_stock', 'true'); // Filter out out-of-stock products
+                params.append('in_stock', 'true');
                 const queryString = params.toString();
                 const url = `/products${queryString ? `?${queryString}` : ''}`;
                 const products = await api.get(url);
                 setFeaturedProducts(products.slice(0, 3));
-                
+
                 const blogPosts = await api.getBlogPosts();
-                // Take the first 3 posts (newest first from backend)
                 setLatestBlogPosts(blogPosts.slice(0, 3));
             } catch (error) {
                 console.error("Failed to fetch data:", error);
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchData();
@@ -55,12 +56,16 @@ function Home() {
                     <div className="featured-content">
                         <h2>{t('home.featuredProducts')}</h2>
                          <div className="product-grid">
-                         {featuredProducts.map(productWithImage => (
-                             <ProductCard 
-                                 key={productWithImage.product.product_id} 
-                                 productWithImage={productWithImage} 
-                             />
-                         ))}
+                         {isLoading ? (
+                             <div className="loader">{t('common.loading')}</div>
+                         ) : (
+                             featuredProducts.map(productWithImage => (
+                                 <ProductCard
+                                     key={productWithImage.product.product_id}
+                                     productWithImage={productWithImage}
+                                 />
+                             ))
+                         )}
                      </div>
                     </div>
                 </div>
@@ -71,7 +76,10 @@ function Home() {
                     <div className="teaser-content">
                         <h2>{t('home.latestBlogPosts')}</h2>
                         <div className="blog-grid">
-                            {latestBlogPosts.map(post => (
+                            {isLoading ? (
+                                <div className="loader">{t('common.loading')}</div>
+                            ) : (
+                                latestBlogPosts.map(post => (
                                     <article key={post.id} className="blog-post-card">
                                         <div className="blog-post-header">
                                             <h3 className="blog-post-title">
@@ -95,7 +103,8 @@ function Home() {
                                             </Link>
                                         </div>
                                     </article>
-                                ))}
+                                ))
+                            )}
                         </div>
                         <Link to="/blog" className="button button-secondary">{t('home.viewAllPosts')}</Link>
                     </div>
