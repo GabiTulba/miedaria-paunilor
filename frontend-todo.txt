@@ -7,24 +7,6 @@
 CRITICAL (Fix First)
 ================================================================================
 
-[C1] Missing Loading States Everywhere
--------------------------------------------------------------------------------
-- Shop page ignores `isLoading` from useFetchProducts -- empty grid looks broken
-  File: frontend/src/pages/Shop.tsx (line 30, 255-262)
-- Home page -- no spinner while featured products/blog posts fetch; blank flash
-  File: frontend/src/pages/Home.tsx (lines 16-38)
-- BlogPostDetail returns `null` during load (page appears broken)
-  File: frontend/src/pages/BlogPostDetail.tsx (line 53)
-- Admin pages show '...' strings instead of skeletons; no loading during
-  pagination/filter changes
-  File: frontend/src/pages/admin/AdminDashboard.tsx (lines 52, 59, 66, 73)
-  File: frontend/src/pages/admin/AdminProducts.tsx (lines 30-31, 146-161)
-  File: frontend/src/pages/admin/AdminBlog.tsx (lines 33-51)
-- Form submissions (AdminProductCreate, AdminProductEdit) -- no submit-in-flight
-  state; buttons stay clickable, allowing duplicate submissions
-  File: frontend/src/pages/admin/AdminProductCreate.tsx (lines 104-123)
-  File: frontend/src/pages/admin/AdminProductEdit.tsx (lines 94-117)
-
 [C2] Race Conditions & Stale Data
 -------------------------------------------------------------------------------
 - No AbortController on any fetch -- navigating away mid-fetch causes React
