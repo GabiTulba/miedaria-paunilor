@@ -7,19 +7,6 @@
 HIGH PRIORITY (UX Bugs & Inconsistencies)
 ================================================================================
 
-[H1] Error Handling Is Generic & Unhelpful
--------------------------------------------------------------------------------
-- All pages show bare text errors with no icons, no retry buttons, no context
-- No distinction between 404 (not found) vs 500 (server error) vs network fail
-  File: frontend/src/pages/ProductDetails.tsx (line 34)
-  File: frontend/src/pages/Shop.tsx (line 54)
-  File: frontend/src/hooks/useFetchProducts.ts (line 88)
-- Admin operations use blocking alert() / window.confirm() instead of modals
-  File: frontend/src/pages/admin/AdminProducts.tsx (lines 73, 84, 98, 116)
-  File: frontend/src/pages/admin/AdminBlog.tsx (line 58)
-- api.ts -- non-JSON error responses show raw text to user
-  File: frontend/src/lib/api.ts (line 28)
-
 [H2] CSS Variable System Is Broken
 -------------------------------------------------------------------------------
 - Blog.css and LanguageSwitcher.css reference undefined variables:
@@ -319,28 +306,3 @@ Approach:
 - Recommended scale: 480px (small phone), 640px (large phone), 768px (tablet
   portrait), 1024px (tablet landscape), 1280px (desktop)
 
-================================================================================
-SUMMARY
-================================================================================
-
-| Priority | Category              | Issue Count |
-|----------|-----------------------|-------------|
-| Critical | Loading states        | 6 pages     |
-| Critical | Race conditions       | 6 locations |
-| Critical | Contact page          | 3 items     |
-| High     | Error handling        | 6 pages     |
-| High     | Broken CSS vars       | 2 files     |
-| High     | Empty states          | 4 pages     |
-| High     | Cart UX               | 4 issues    |
-| High     | No caching            | 4 locations |
-| High     | Mobile UX             | 11 sections |
-| Medium   | Dark mode             | All CSS     |
-| Medium   | Modern CSS            | 4 features  |
-| Medium   | Toast system          | Missing     |
-| Medium   | Form UX               | 6 issues    |
-| Medium   | Micro-interactions    | 6 missing   |
-| Low      | Navigation            | 4 items     |
-| Low      | Images                | 5 gaps      |
-| Low      | Pagination            | 3 tweaks    |
-| Low      | Type safety           | 3 risks     |
-| Low      | CSS polish            | 6 items     |
