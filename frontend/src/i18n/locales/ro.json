@@ -25,6 +25,9 @@
     "next": "Următor",
     "previous": "Anterior",
     "page": "Pagina",
+    "pagination": "Paginare",
+    "previousPage": "Mergi la pagina anterioară",
+    "nextPage": "Mergi la pagina următoare",
     "search": "Caută",
     "filter": "Filtrează",
     "sort": "Sortează",
@@ -138,7 +141,9 @@
     "orders": "Comenzi",
     "customers": "Clienți",
     "reports": "Rapoarte",
-    "settings": "Setări"
+    "settings": "Setări",
+    "toggleMenu": "Comută meniul de navigare",
+    "main": "Navigare principală"
   },
   "home": {
     "heroTitle": "Mied Autentic. Puritate Desăvârșită.",
@@ -180,7 +185,8 @@
     "allTanins": "Toate Nivelurile",
     "body": "Corp",
     "allBody": "Toate Nivelurile",
-    "clearFilters": "Șterge Toate Filtrele"
+    "clearFilters": "Șterge Toate Filtrele",
+    "characteristics": "Caracteristici mied"
   },
   "product": {
     "addToCart": "Adaugă în Coș",
@@ -259,6 +265,7 @@
       "loading": "Se încarcă produsele...",
       "error": "Încărcarea produselor a eșuat. Te rugăm să încerci din nou.",
       "retry": "Reîncearcă",
+      "filterTabs": "Filtre produse",
       "tabs": {
         "active": "Active",
         "deleted": "Șterse",

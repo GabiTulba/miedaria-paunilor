@@ -7,33 +7,6 @@
 CRITICAL (Fix First)
 ================================================================================
 
-[C3] Accessibility Violations (WCAG 2.1)
--------------------------------------------------------------------------------
-- No :focus-visible on nav links, pagination buttons, product cards, admin
-  sidebar links
-  File: frontend/src/App.css (lines 63-77)
-  File: frontend/src/components/Pagination.css (lines 14-32)
-  File: frontend/src/pages/admin/Admin.css (lines 45-66)
-- No prefers-reduced-motion media query -- all fadeIn/collapsible/admin
-  animations forced
-  File: frontend/src/pages/Shop.css, Home.css, Cart.css, Contact.css
-  File: frontend/src/components/CollapsibleSection.css (lines 42, 58)
-- Hamburger menu -- missing aria-expanded, aria-label, role="navigation"
-  File: frontend/src/App.tsx (line 38)
-- Form inputs -- no aria-invalid, no aria-describedby linking errors/help
-  File: frontend/src/components/forms/TextInput.tsx (lines 30-46)
-  File: frontend/src/components/forms/NumberInput.tsx (lines 33-46)
-  File: frontend/src/components/forms/SelectInput.tsx (lines 34-50)
-  File: frontend/src/components/forms/TextAreaInput.tsx (lines 31-46)
-- Pagination -- arrow buttons have no aria-label; no aria-current="page"
-  File: frontend/src/components/Pagination.tsx (lines 16-30)
-- ErrorBoundary -- error div missing role="alert"
-  File: frontend/src/components/ErrorBoundary.tsx (lines 25-28)
-- Shop filters -- no <fieldset>/<legend> around checkbox groups
-  File: frontend/src/pages/Shop.tsx (lines 100-108)
-- Admin tabs -- no role="tablist"/role="tab"/aria-selected
-  File: frontend/src/pages/admin/AdminProducts.tsx (lines 134-143)
-- No skip-to-content link anywhere
 
 [C4] Non-Clickable Contact Info
 -------------------------------------------------------------------------------
@@ -366,7 +339,6 @@ SUMMARY
 |----------|-----------------------|-------------|
 | Critical | Loading states        | 6 pages     |
 | Critical | Race conditions       | 6 locations |
-| Critical | Accessibility         | 15+ issues  |
 | Critical | Contact page          | 3 items     |
 | High     | Error handling        | 6 pages     |
 | High     | Broken CSS vars       | 2 files     |

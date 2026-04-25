@@ -26,7 +26,11 @@ function App() {
             <img src="/logo.svg" alt="Miedăria Păunilor" className="logo-image" />
             Miedăria Păunilor
           </Link>
-          <nav className={`main-nav ${isMobileMenuOpen ? 'active' : ''}`}>
+          <nav
+            id="main-navigation"
+            className={`main-nav ${isMobileMenuOpen ? 'active' : ''}`}
+            aria-label={t('navigation.main')}
+          >
             <NavLink to="/home" onClick={toggleMobileMenu}>{t('navigation.home')}</NavLink>
             <NavLink to="/shop" onClick={toggleMobileMenu}>{t('navigation.shop')}</NavLink>
             <NavLink to="/blog" onClick={toggleMobileMenu}>{t('blog.title')}</NavLink>
@@ -35,14 +39,20 @@ function App() {
             <NavLink to="/cart" onClick={toggleMobileMenu}>{t('navigation.cart')} {itemCount > 0 && `(${itemCount})`}</NavLink>
             <LanguageSwitcher />
           </nav>
-          <button className="hamburger" onClick={toggleMobileMenu}>
+          <button
+            className="hamburger"
+            onClick={toggleMobileMenu}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="main-navigation"
+            aria-label={t('navigation.toggleMenu')}
+          >
             <span className="bar"></span>
             <span className="bar"></span>
             <span className="bar"></span>
           </button>
         </div>
       </header>
-      <main>
+      <main id="main-content">
         <ErrorBoundary>
           <Outlet />
         </ErrorBoundary>

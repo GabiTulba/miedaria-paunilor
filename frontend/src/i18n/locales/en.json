@@ -25,6 +25,9 @@
     "next": "Next",
     "previous": "Previous",
     "page": "Page",
+    "pagination": "Pagination",
+    "previousPage": "Go to previous page",
+    "nextPage": "Go to next page",
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
@@ -138,7 +141,9 @@
     "orders": "Orders",
     "customers": "Customers",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "toggleMenu": "Toggle navigation menu",
+    "main": "Main navigation"
   },
   "home": {
     "heroTitle": "Authentic Mead. Purity Perfected.",
@@ -180,7 +185,8 @@
     "allTanins": "All Tanins",
     "body": "Body",
     "allBody": "All Body",
-    "clearFilters": "Clear All Filters"
+    "clearFilters": "Clear All Filters",
+    "characteristics": "Mead characteristics"
   },
   "product": {
     "addToCart": "Add to Cart",
@@ -259,6 +265,7 @@
       "loading": "Loading products...",
       "error": "Failed to load products. Please try again.",
       "retry": "Retry",
+      "filterTabs": "Product filter tabs",
       "tabs": {
         "active": "Active",
         "deleted": "Deleted",

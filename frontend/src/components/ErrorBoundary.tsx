@@ -23,7 +23,7 @@ class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return this.props.fallback ?? (
-        <div className="error-message" style={{ padding: '2rem', textAlign: 'center' }}>
+        <div className="error-message" role="alert" style={{ padding: '2rem', textAlign: 'center' }}>
           Something went wrong. Please refresh the page.
         </div>
       );

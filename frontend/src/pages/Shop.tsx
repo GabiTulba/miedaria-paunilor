@@ -129,7 +129,8 @@ function Shop() {
                     </div>
 
                     {enums && (
-                        <>
+                        <fieldset className="filter-fieldset">
+                            <legend>{t('shop.characteristics')}</legend>
                             <div className="filter-group">
                                 <SelectInput
                                     id="productType"
@@ -248,7 +249,7 @@ function Shop() {
                                     ]}
                                 />
                             </div>
-                        </>
+                        </fieldset>
                     )}
                 </aside>
 

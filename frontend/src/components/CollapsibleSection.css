@@ -22,6 +22,12 @@
 .collapsible-header:hover {
     border-color: #999;
     background-color: #f8f9fa;
+    color: #333;
+}
+
+.collapsible-header:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
 }
 
 .collapsible-title {

@@ -30,6 +30,10 @@ const SelectInput: React.FC<SelectInputProps> = ({
   disabled = false,
   helpText,
 }) => {
+  const helpTextId = helpText ? `${id}-help` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  const describedBy = [helpTextId, errorId].filter(Boolean).join(' ') || undefined;
+
   return (
     <div className="form-group">
       <label htmlFor={id}>{label}</label>
@@ -40,6 +44,8 @@ const SelectInput: React.FC<SelectInputProps> = ({
         onChange={onChange}
         required={required}
         disabled={disabled}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -47,8 +53,8 @@ const SelectInput: React.FC<SelectInputProps> = ({
           </option>
         ))}
       </select>
-      {helpText && <p className="help-text">{helpText}</p>}
-      {error && <p className="error-message">{error}</p>}
+      {helpText && <p className="help-text" id={helpTextId}>{helpText}</p>}
+      {error && <p className="error-message" id={errorId}>{error}</p>}
     </div>
   );
 };

@@ -230,3 +230,17 @@
         font-size: 1rem;
     }
 }
+
+.filter-fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+.filter-fieldset legend {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    padding: 0;
+}

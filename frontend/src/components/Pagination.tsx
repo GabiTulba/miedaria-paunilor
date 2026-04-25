@@ -11,25 +11,27 @@ interface PaginationProps {
 function Pagination({ page, hasMore, onPrevPage, onNextPage }: PaginationProps) {
     const { t } = useTranslation();
     return (
-        <div className="pagination-section">
+        <nav className="pagination-section" aria-label={t('common.pagination')}>
             <div className="pagination">
                 <button
                     className="pagination-btn"
                     onClick={onPrevPage}
                     disabled={page === 1}
+                    aria-label={t('common.previousPage')}
                 >
                     ← {t('common.previous')}
                 </button>
-                <span className="pagination-page">{t('common.page')} {page}</span>
+                <span className="pagination-page" aria-current="page">{t('common.page')} {page}</span>
                 <button
                     className="pagination-btn"
                     onClick={onNextPage}
                     disabled={!hasMore}
+                    aria-label={t('common.nextPage')}
                 >
                     {t('common.next')} →
                 </button>
             </div>
-        </div>
+        </nav>
     );
 }
 

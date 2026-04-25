@@ -132,10 +132,12 @@ function AdminProducts() {
                 </Link>
             </div>
 
-            <div className="admin-tabs">
+            <div className="admin-tabs" role="tablist" aria-label={t('admin.products.filterTabs')}>
                 {(['active', 'deleted', 'all'] as DeletedFilter[]).map(filter => (
                     <button
                         key={filter}
+                        role="tab"
+                        aria-selected={deletedFilter === filter}
                         className={`admin-tab${deletedFilter === filter ? ' admin-tab-active' : ''}`}
                         onClick={() => handleTabChange(filter)}
                     >

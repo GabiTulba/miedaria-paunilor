@@ -18,6 +18,17 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.product-card:has(a:focus-visible) {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+.product-card a:focus-visible {
+    outline: none;
+}
+
 .product-card-main {
     display: flex;
     flex-direction: column;
