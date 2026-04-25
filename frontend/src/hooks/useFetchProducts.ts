@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { LocalizedProductWithImage } from '../types';
 import { useLanguage } from './useLanguage';
+import i18n from '../i18n/config';
 
 interface UseFetchProductsResult {
   products: LocalizedProductWithImage[];
@@ -87,7 +88,7 @@ export const useFetchProducts = (
         setProducts(data.slice(0, PER_PAGE));
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
-        setError('Failed to fetch products. Please try again later.');
+        setError(i18n.t('errors.fetchProducts'));
         console.error(err);
       } finally {
         if (!controller.signal.aborted) setIsLoading(false);

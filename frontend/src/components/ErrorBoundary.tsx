@@ -1,4 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import i18n from '../i18n/config';
+import ErrorDisplay from './ErrorDisplay';
 
 interface Props {
   children: ReactNode;
@@ -23,9 +25,11 @@ class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return this.props.fallback ?? (
-        <div className="error-message" role="alert" style={{ padding: '2rem', textAlign: 'center' }}>
-          Something went wrong. Please refresh the page.
-        </div>
+        <ErrorDisplay
+          error={i18n.t('errors.generic')}
+          onRetry={() => window.location.reload()}
+          retryLabel={i18n.t('common.retry')}
+        />
       );
     }
     return this.props.children;

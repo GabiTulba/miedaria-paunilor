@@ -10,6 +10,7 @@ import { getImageUrl } from '../lib/api';
 import { toFixed } from '../utils/numberUtils';
 import { useFormattedDate } from '../hooks/useFormattedDate';
 import CollapsibleSection from '../components/CollapsibleSection';
+import ErrorDisplay from '../components/ErrorDisplay';
 
 import './ProductDetails.css';
 
@@ -19,6 +20,7 @@ function ProductDetails() {
     const [quantity, setQuantity] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [fetchTrigger, setFetchTrigger] = useState(0);
     const { addToCart } = useContext(CartContext);
     const { t, i18n } = useTranslation();
     const formatDate = useFormattedDate();
@@ -27,6 +29,7 @@ function ProductDetails() {
         const controller = new AbortController();
         const fetchProduct = async () => {
             setIsLoading(true);
+            setError(null);
             try {
                 if (!productId) return;
                 const data = await api.getProductById(productId, controller.signal);
@@ -42,7 +45,7 @@ function ProductDetails() {
 
         fetchProduct();
         return () => { controller.abort(); };
-    }, [productId, i18n.language]);
+    }, [productId, i18n.language, fetchTrigger]);
 
     const handleAddToCart = () => {
         if (productWithImage?.product) {
@@ -55,7 +58,18 @@ function ProductDetails() {
     }
 
     if (error || !productWithImage) {
-        return <div className="error-message">{error || t('errors.notFound')}</div>;
+        return (
+            <div className="product-details-page">
+                <div className="back-to-shop">
+                    <Link to="/shop">&larr; {t('common.back')} {t('navigation.shop')}</Link>
+                </div>
+                <ErrorDisplay
+                    error={error || t('errors.notFound')}
+                    onRetry={error ? () => setFetchTrigger(n => n + 1) : undefined}
+                    retryLabel={t('common.retry')}
+                />
+            </div>
+        );
     }
 
     const { product, image } = productWithImage;

@@ -5,6 +5,7 @@ import { useFetchProducts } from '../hooks/useFetchProducts';
 import { useFetchEnums } from '../hooks/useFetchEnums';
 import { getEnumLabel } from '../enums';
 import ProductCard from '../components/ProductCard';
+import ErrorDisplay from '../components/ErrorDisplay';
 import Pagination from '../components/Pagination';
 import SelectInput from '../components/forms/SelectInput';
 import './Shop.css';
@@ -27,7 +28,7 @@ function Shop() {
     const { t } = useTranslation();
 
     const { enums } = useFetchEnums();
-    const { products, isLoading, error, hasMore } = useFetchProducts(
+    const { products, isLoading, error, hasMore, refetch } = useFetchProducts(
         orderBy,
         inStock,
         orderDirection,
@@ -51,7 +52,15 @@ function Shop() {
     }, [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body]);
 
     if (error) {
-        return <div className="error-message">{error}</div>;
+        return (
+            <div className="shop-page">
+                <header className="shop-header">
+                    <h1>{t('shop.title')}</h1>
+                    <p>{t('shop.subtitle')}</p>
+                </header>
+                <ErrorDisplay error={error} onRetry={refetch} retryLabel={t('common.retry')} />
+            </div>
+        );
     }
 
     return (

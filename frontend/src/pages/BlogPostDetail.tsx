@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
 import { useFormattedDate } from '../hooks/useFormattedDate';
+import ErrorDisplay from '../components/ErrorDisplay';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Blog.css';
@@ -13,6 +14,8 @@ function BlogPostDetail() {
     const [blogPost, setBlogPost] = useState<LocalizedBlogPost | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [is404, setIs404] = useState(false);
+    const [fetchTrigger, setFetchTrigger] = useState(0);
     const { t, i18n } = useTranslation();
     const formatDateOptions = useMemo(() => ({
         year: 'numeric' as const,
@@ -34,14 +37,16 @@ function BlogPostDetail() {
 
             try {
                 setLoading(true);
+                setError(null);
+                setIs404(false);
                 const post = await api.getBlogPostBySlug(slug, controller.signal);
                 setBlogPost(post);
-                setError(null);
             } catch (err: any) {
                 if (err instanceof DOMException && err.name === 'AbortError') return;
                 console.error("Failed to fetch blog post:", err);
                 if (err.response?.status === 404) {
                     setError(t('blog.notFound'));
+                    setIs404(true);
                 } else {
                     setError(t('blog.fetchError'));
                 }
@@ -51,7 +56,7 @@ function BlogPostDetail() {
         };
         fetchBlogPost();
         return () => { controller.abort(); };
-    }, [slug, i18n.language]);
+    }, [slug, i18n.language, fetchTrigger]);
 
     if (loading) return <div className="loader">{t('common.loading')}</div>;
 
@@ -59,8 +64,12 @@ function BlogPostDetail() {
         return (
             <div className="blog-page">
                 <div className="blog-container">
-                    <div className="error-message">{error}</div>
-                    <Link to="/blog" className="back-to-blog">
+                    <ErrorDisplay
+                        error={error || t('blog.notFound')}
+                        onRetry={!is404 && error ? () => setFetchTrigger(n => n + 1) : undefined}
+                        retryLabel={t('common.retry')}
+                    />
+                    <Link to="/blog" className="back-to-blog" style={{ display: 'block', textAlign: 'center', marginTop: '1rem' }}>
                         {t('blog.backToBlog')}
                     </Link>
                 </div>

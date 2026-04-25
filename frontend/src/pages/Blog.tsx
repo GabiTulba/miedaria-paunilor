@@ -5,6 +5,7 @@ import { LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
 import { useFormattedDate } from '../hooks/useFormattedDate';
 import Pagination from '../components/Pagination';
+import ErrorDisplay from '../components/ErrorDisplay';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Blog.css';
@@ -16,6 +17,7 @@ function Blog() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
+    const [fetchTrigger, setFetchTrigger] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
@@ -41,13 +43,17 @@ function Blog() {
         };
         fetchBlogPosts();
         return () => { controller.abort(); };
-    }, [i18n.language, page]);
+    }, [i18n.language, page, fetchTrigger]);
 
     if (error) {
         return (
             <div className="blog-page">
                 <div className="blog-container">
-                    <div className="error-message">{error}</div>
+                    <ErrorDisplay
+                        error={error}
+                        onRetry={() => setFetchTrigger(n => n + 1)}
+                        retryLabel={t('common.retry')}
+                    />
                 </div>
             </div>
         );

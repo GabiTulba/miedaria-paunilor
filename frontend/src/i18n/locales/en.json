@@ -126,7 +126,8 @@
     "euro": "€",
     "ron": "RON",
     "dollar": "$",
-    "pound": "£"
+    "pound": "£",
+    "retry": "Retry"
   },
   "navigation": {
     "home": "Home",
@@ -420,7 +421,10 @@
     "networkError": "Network error",
     "validationError": "Validation error",
     "unauthorized": "Unauthorized access",
-    "forbidden": "Access forbidden"
+    "forbidden": "Access forbidden",
+    "fetchProducts": "Failed to load products. Please try again.",
+    "fetchBlogPosts": "Failed to load blog posts. Please try again.",
+    "generic": "Something went wrong. Please try again."
   },
   "enums": {
     "meadType": {

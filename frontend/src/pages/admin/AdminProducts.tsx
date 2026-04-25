@@ -8,6 +8,7 @@ import { getStockStatus } from '../../utils/stockAvailability';
 import { getImageUrl } from '../../lib/api';
 import { toFixed } from '../../utils/numberUtils';
 import Pagination from '../../components/Pagination';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import './Admin.css';
 
 const ADMIN_PRODUCTS_PER_PAGE = 20;
@@ -31,6 +32,7 @@ function AdminProducts() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [actionId, setActionId] = useState<string | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
     const [fetchTrigger, setFetchTrigger] = useState(0);
     const [deletedFilter, setDeletedFilter] = useState<DeletedFilter>('active');
@@ -77,6 +79,7 @@ function AdminProducts() {
         if (!token || actionId || !window.confirm(t('admin.products.deleteConfirm'))) return;
         try {
             setActionId(productId);
+            setActionError(null);
             await api.deleteProduct(productId, token);
             if (products.length === 1 && page > 1) {
                 setPage(page - 1);
@@ -85,7 +88,7 @@ function AdminProducts() {
             }
         } catch (err) {
             console.error('Failed to delete product:', err);
-            alert(t('admin.products.error'));
+            setActionError(t('admin.products.error'));
             setActionId(null);
         }
     };
@@ -94,11 +97,12 @@ function AdminProducts() {
         if (!token || actionId) return;
         try {
             setActionId(productId);
+            setActionError(null);
             await api.restoreProduct(productId, token);
             setFetchTrigger(n => n + 1);
         } catch (err) {
             console.error('Failed to restore product:', err);
-            alert(t('admin.products.error'));
+            setActionError(t('admin.products.error'));
             setActionId(null);
         }
     };
@@ -107,6 +111,7 @@ function AdminProducts() {
         if (!token || actionId || !window.confirm(t('admin.products.hardDeleteConfirm'))) return;
         try {
             setActionId(productId);
+            setActionError(null);
             await api.hardDeleteProduct(productId, token);
             if (products.length === 1 && page > 1) {
                 setPage(page - 1);
@@ -115,7 +120,7 @@ function AdminProducts() {
             }
         } catch (err) {
             console.error('Failed to hard delete product:', err);
-            alert(t('admin.products.error'));
+            setActionError(t('admin.products.error'));
             setActionId(null);
         }
     };
@@ -146,12 +151,21 @@ function AdminProducts() {
                 ))}
             </div>
 
-            {error ? (
-                <div className="error-state">
-                    <div className="error-icon warning-icon"></div>
-                    <p className="error-message">{error}</p>
-                    <button onClick={() => window.location.reload()} className="button button-secondary">{t('admin.products.retry')}</button>
+            {actionError && (
+                <div className="message message-error" role="alert" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>{actionError}</span>
+                    <button onClick={() => setActionError(null)} className="button button-small button-secondary" style={{ marginLeft: '1rem' }}>
+                        {t('common.close')}
+                    </button>
                 </div>
+            )}
+
+            {error ? (
+                <ErrorDisplay
+                    error={error}
+                    onRetry={() => setFetchTrigger(n => n + 1)}
+                    retryLabel={t('admin.products.retry')}
+                />
             ) : products.length === 0 && page === 1 && !loading ? (
                 <div className="empty-state">
                     <div className="empty-state-icon products-icon"></div>

@@ -126,7 +126,8 @@
     "euro": "€",
     "ron": "Lei",
     "dollar": "$",
-    "pound": "£"
+    "pound": "£",
+    "retry": "Reîncearcă"
   },
   "navigation": {
     "home": "Acasă",
@@ -420,7 +421,10 @@
     "networkError": "Eroare de rețea",
     "validationError": "Eroare de validare",
     "unauthorized": "Acces neautorizat",
-    "forbidden": "Acces interzis"
+    "forbidden": "Acces interzis",
+    "fetchProducts": "Nu s-au putut încărca produsele. Vă rugăm încercați din nou.",
+    "fetchBlogPosts": "Nu s-au putut încărca postările de blog. Vă rugăm încercați din nou.",
+    "generic": "Ceva nu a funcționat. Vă rugăm încercați din nou."
   },
   "enums": {
     "meadType": {

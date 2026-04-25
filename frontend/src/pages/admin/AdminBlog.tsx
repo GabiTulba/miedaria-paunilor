@@ -7,6 +7,7 @@ import { useFormattedDate } from '../../hooks/useFormattedDate';
 import { useLanguage } from '../../hooks/useLanguage';
 import { AuthContext } from '../../context/AuthContext';
 import Pagination from '../../components/Pagination';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import './Admin.css';
 
 const ADMIN_BLOG_PER_PAGE = 20;
@@ -15,6 +16,7 @@ function AdminBlog() {
     const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
     const [fetchTrigger, setFetchTrigger] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -61,6 +63,7 @@ function AdminBlog() {
         if (!token || !window.confirm(t('admin.products.deleteConfirm'))) return;
 
         try {
+            setActionError(null);
             await api.deleteBlogPost(id, token);
             if (blogPosts.length === 1 && page > 1) {
                 setPage(page - 1);
@@ -69,19 +72,18 @@ function AdminBlog() {
             }
         } catch (err) {
             console.error("Failed to delete blog post:", err);
-            alert(t('common.error'));
+            setActionError(t('common.error'));
         }
     };
 
     if (error) {
         return (
             <div className="admin-content">
-                <div className="error-message">
-                    {error}
-                    <button onClick={() => window.location.reload()} className="retry-button">
-                        {t('admin.products.retry')}
-                    </button>
-                </div>
+                <ErrorDisplay
+                    error={error}
+                    onRetry={() => setFetchTrigger(n => n + 1)}
+                    retryLabel={t('admin.products.retry')}
+                />
             </div>
         );
     }
@@ -99,6 +101,15 @@ function AdminBlog() {
                     </Link>
                 </div>
             </div>
+
+            {actionError && (
+                <div className="message message-error" role="alert" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>{actionError}</span>
+                    <button onClick={() => setActionError(null)} className="button button-small button-secondary" style={{ marginLeft: '1rem' }}>
+                        {t('common.close')}
+                    </button>
+                </div>
+            )}
 
             {blogPosts.length === 0 && page === 1 && !loading ? (
                 <div className="empty-state">
