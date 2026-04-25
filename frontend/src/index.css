@@ -16,6 +16,38 @@
 
   --shadow: 0 4px 6px rgba(0,0,0,0.1);
   --border-radius: 8px;
+
+  /* Semantic aliases (Blog.css compatibility) */
+  --color-primary: var(--primary-color);
+  --color-text: var(--text-color);
+  --color-border: var(--border-color);
+  --color-surface: #f8f9fa;
+  --color-text-light: #666;
+
+  /* Status colors */
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-danger: #dc3545;
+
+  /* Neutral grays */
+  --color-gray-100: #f8f9fa;
+  --color-gray-200: #f0f0f0;
+  --color-gray-300: #e0e0e0;
+  --color-gray-400: #ccc;
+  --color-gray-500: #999;
+  --color-gray-600: #666;
+  --color-gray-700: #444;
+  --color-gray-800: #333;
+
+  /* Shadow scale */
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 6px 16px rgba(0, 0, 0, 0.12);
+
+  /* Border radius scale */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 }
 
 body {

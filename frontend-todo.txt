@@ -7,21 +7,6 @@
 HIGH PRIORITY (UX Bugs & Inconsistencies)
 ================================================================================
 
-[H2] CSS Variable System Is Broken
--------------------------------------------------------------------------------
-- Blog.css and LanguageSwitcher.css reference undefined variables:
-  --color-surface, --color-border, --color-primary, --color-text,
-  --color-text-light -- styles silently fail
-  File: frontend/src/pages/Blog.css (lines 3-4, 17, 23, 29, 40, 44)
-  File: frontend/src/components/LanguageSwitcher.css (lines 8-10)
-- 20+ hardcoded colors scattered across ProductCard, Home, Contact, Admin
-  File: frontend/src/components/ProductCard.css (lines 4, 7, 77, 93, 102, 106)
-  File: frontend/src/pages/Home.css (line 49)
-  File: frontend/src/pages/Contact.css (line 64)
-- Inconsistent shadow, border-radius, spacing -- no scale system
-  - border-radius: 8px, 12px, 6px used interchangeably
-  - Shadows: ad-hoc values instead of --shadow-sm/md/lg
-
 [H3] Empty States Are Minimal or Missing
 -------------------------------------------------------------------------------
 - Shop -- no "No products found" when filters match nothing

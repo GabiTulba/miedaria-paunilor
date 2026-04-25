@@ -46,14 +46,14 @@
     font-size: 3.5rem;
     margin-top: 0;
     margin-bottom: 0.5em;
-    color: #2c3e50; /* Dark blue-gray for good contrast on beige */
+    color: var(--primary-color);
 }
 
 .hero-content p {
     font-size: 1.2rem;
     max-width: 600px;
     margin: 0 auto 1rem auto;
-    color: #34495e; /* Slightly lighter than heading for hierarchy */
+    color: var(--text-color);
 }
 
 /* Section Title */
@@ -140,10 +140,10 @@
 }
 
 .blog-post-card {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-md);
     overflow: hidden;
-    background-color: #fff;
+    background-color: var(--white-color);
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     display: flex;
     flex-direction: column;
@@ -154,7 +154,7 @@
 
 .blog-post-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .blog-post-header {
@@ -182,7 +182,7 @@
     flex-wrap: wrap;
     gap: 10px;
     font-size: 0.85em;
-    color: #666;
+    color: var(--color-text-light);
     margin-bottom: 10px;
 }
 
@@ -196,7 +196,7 @@
     flex-grow: 1;
     padding: 0 15px;
     margin-bottom: 15px;
-    color: #444;
+    color: var(--color-gray-700);
     line-height: 1.5;
     font-size: 0.95em;
 }
@@ -216,7 +216,7 @@
     background-color: var(--primary-color);
     color: white;
     text-decoration: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-weight: 500;
     font-size: 0.9em;
     transition: background-color 0.2s ease-in-out;

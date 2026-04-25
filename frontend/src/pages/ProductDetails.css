@@ -41,15 +41,15 @@
     width: 100%;
     height: auto;
     max-width: 100%;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-md);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .product-detail-image:hover {
     transform: scale(1.01);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-lg);
 }
 
 .placeholder-image.product-detail-image {
@@ -59,10 +59,10 @@
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    color: #666;
+    color: var(--color-text-light);
     font-size: 1.2rem;
     font-style: italic;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
 }
 
 
@@ -100,12 +100,12 @@
 
 .basic-info-label {
     font-weight: 500;
-    color: #666;
+    color: var(--color-text-light);
 }
 
 .basic-info-value {
     font-weight: 500;
-    color: #333;
+    color: var(--color-gray-800);
 }
 
 .product-meta {
@@ -119,7 +119,7 @@
 .add-to-cart-section {
     margin-top: 2rem;
     padding-top: 1.5rem;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid var(--color-gray-300);
 }
 
 .cart-availability-info {
@@ -137,7 +137,7 @@
 
 .availability-label {
     font-weight: 500;
-    color: #666;
+    color: var(--color-text-light);
 }
 
 .cart-controls {
@@ -159,7 +159,7 @@
     padding: 10px 15px;
     cursor: pointer;
     font-size: 1.2rem;
-    color: #999;
+    color: var(--color-gray-500);
     transition: all 0.2s ease;
 }
 
@@ -169,7 +169,7 @@
 }
 
 .quantity-selector button:disabled {
-    color: #ddd;
+    color: var(--color-gray-300);
     cursor: not-allowed;
 }
 
@@ -188,7 +188,7 @@
 }
 
 .add-to-cart-btn:disabled {
-    background-color: #ccc;
+    background-color: var(--color-gray-400);
     cursor: not-allowed;
     transform: none;
 }
@@ -196,7 +196,7 @@
 .max-quantity-message {
     margin-top: 0.5rem;
     font-size: 0.9rem;
-    color: #e74c3c;
+    color: var(--error-color);
     font-style: italic;
 }
 
@@ -244,15 +244,15 @@
 }
 
 .availability-details.in-stock-details {
-    color: #28a745; /* Green */
+    color: var(--color-success);
 }
 
 .availability-details.low-stock-details {
-    color: #ffc107; /* Orange */
+    color: var(--color-warning);
 }
 
 .availability-details.out-of-stock-details {
-    color: #dc3545; /* Red */
+    color: var(--color-danger);
 }
 
 /* Collapsible sections spacing */
@@ -282,18 +282,18 @@
     display: flex;
     justify-content: space-between;
     padding: 0.5rem 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-gray-200);
     gap: 0.5rem; /* Reduced space between label and value */
 }
 
 .detail-label {
     font-weight: 500;
-    color: #666;
+    color: var(--color-text-light);
 }
 
 .detail-value {
     font-weight: 500;
-    color: #333;
+    color: var(--color-gray-800);
 }
 
 /* Responsive adjustments */
