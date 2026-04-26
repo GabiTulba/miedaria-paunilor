@@ -228,6 +228,7 @@
     "update": "Update",
     "workInProgress": "Work in Progress",
     "workInProgressMessage": "This cart page is currently under development. Until the checkout system is ready, please send your order via WhatsApp message with the items in your cart. Thank you for your understanding!",
+    "checkoutNotReady": "Checkout is not yet available. Please send your order via WhatsApp.",
     "productUnavailable": "This product is no longer available",
     "outOfStock": "This product is now out of stock",
     "quantityReduced": "Quantity adjusted — only {{max}} available"

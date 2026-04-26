@@ -4,18 +4,22 @@ import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { api } from '../lib/api';
 import { toFixed, toNumber } from '../utils/numberUtils';
+import { useLanguage } from '../hooks/useLanguage';
 import './Cart.css';
 
 function Cart() {
-    const { cartItems, removeFromCart, updateQuantity, updateStock, clearCart } = useContext(CartContext);
+    const { cartItems, removeFromCart, updateQuantity, updateStock, updateProduct, clearCart } = useContext(CartContext);
     const { t } = useTranslation();
+    const language = useLanguage();
     const [stockWarnings, setStockWarnings] = useState<Record<string, string>>({});
+    const [showWarning, setShowWarning] = useState(true);
+    const [checkoutMessage, setCheckoutMessage] = useState(false);
 
     useEffect(() => {
         if (cartItems.length === 0) return;
 
         const controller = new AbortController();
-        const validateStock = async () => {
+        const validateAndSync = async () => {
             try {
                 const results = await Promise.all(
                     cartItems.map(item =>
@@ -23,11 +27,14 @@ function Cart() {
                             .then(data => ({
                                 productId: item.product_id,
                                 stock: data.product.bottle_count,
+                                product_name: data.product.product_name,
+                                price: data.product.price,
+                                currency: data.product.currency,
                                 found: true,
                             }))
                             .catch(err => {
                                 if (err instanceof DOMException && err.name === 'AbortError') throw err;
-                                return { productId: item.product_id, stock: 0, found: false };
+                                return { productId: item.product_id, stock: 0, product_name: '', price: 0, currency: '', found: false };
                             })
                     )
                 );
@@ -36,15 +43,24 @@ function Cart() {
                 const warnings: Record<string, string> = {};
                 for (const result of results) {
                     const cartItem = cartItems.find(i => i.product_id === result.productId);
+
                     if (!result.found) {
                         warnings[result.productId] = t('cart.productUnavailable');
                         updateStock(result.productId, 0);
-                    } else if (cartItem && result.stock !== cartItem.availableStock) {
-                        updateStock(result.productId, result.stock);
-                        if (result.stock === 0) {
-                            warnings[result.productId] = t('cart.outOfStock');
-                        } else if (cartItem.quantity > result.stock) {
-                            warnings[result.productId] = t('cart.quantityReduced', { max: result.stock });
+                    } else {
+                        updateProduct(result.productId, {
+                            product_name: result.product_name,
+                            price: result.price,
+                            currency: result.currency,
+                        });
+
+                        if (cartItem && result.stock !== cartItem.availableStock) {
+                            updateStock(result.productId, result.stock);
+                            if (result.stock === 0) {
+                                warnings[result.productId] = t('cart.outOfStock');
+                            } else if (cartItem.quantity > result.stock) {
+                                warnings[result.productId] = t('cart.quantityReduced', { max: result.stock });
+                            }
                         }
                     }
                 }
@@ -54,10 +70,15 @@ function Cart() {
                 console.error('Failed to validate stock:', err);
             }
         };
-        validateStock();
+        validateAndSync();
         return () => { controller.abort(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [language]);
+
+    const handleCheckout = () => {
+        setCheckoutMessage(true);
+        setTimeout(() => setCheckoutMessage(false), 5000);
+    };
 
     const getTotalPrice = () => {
         return cartItems.reduce((total, item) => {
@@ -73,10 +94,13 @@ function Cart() {
                 <h1>{t('cart.title')}</h1>
             </header>
 
-            <div className="cart-warning">
-                <h3>{t('cart.workInProgress')}</h3>
-                <p>{t('cart.workInProgressMessage')}</p>
-            </div>
+            {showWarning && (
+                <div className="cart-warning">
+                    <button className="cart-warning-dismiss" onClick={() => setShowWarning(false)} aria-label={t('common.close')}>&times;</button>
+                    <h3>{t('cart.workInProgress')}</h3>
+                    <p>{t('cart.workInProgressMessage')}</p>
+                </div>
+            )}
 
             {cartItems.length === 0 ? (
                 <div className="empty-cart">
@@ -93,7 +117,10 @@ function Cart() {
                                         <h3>{item.product_name}</h3>
                                          <p className="cart-item-price">{toFixed(item.price)} {item.currency}</p>
                                          <div className="quantity-selector-cart">
-                                             <button onClick={() => updateQuantity(item.product_id, item.quantity - 1)}>-</button>
+                                             <button
+                                                 onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                                                 disabled={item.quantity <= 1}
+                                             >-</button>
                                              <span>{item.quantity}</span>
                                              <button
                                                  onClick={() => updateQuantity(item.product_id, item.quantity + 1, item.availableStock)}
@@ -127,7 +154,10 @@ function Cart() {
                             <span>{t('cart.total')}</span>
                             <span>{getTotalPrice()} {cartCurrency}</span>
                         </div>
-                        <button className="button checkout-btn">{t('cart.proceedToCheckout')}</button>
+                        <button className="button checkout-btn" onClick={handleCheckout}>{t('cart.proceedToCheckout')}</button>
+                        {checkoutMessage && (
+                            <p className="checkout-message">{t('cart.checkoutNotReady')}</p>
+                        )}
                         <button className="button-secondary clear-cart-btn" onClick={clearCart}>
                             {t('cart.clearCart')}
                         </button>
