@@ -98,9 +98,16 @@
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 1.5rem;
     margin-top: 2rem;
+}
+
+.product-grid > .product-card {
+    width: 350px;
+    max-width: 100%;
 }
 
 

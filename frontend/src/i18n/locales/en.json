@@ -171,6 +171,7 @@
     "volume": "Volume",
     "bottlingDate": "Bottling Date",
     "noProducts": "No products found",
+    "noProductsDescription": "Try adjusting your filters to find what you're looking for.",
     "loadingProducts": "Loading products...",
     "productType": "Product Type",
     "allTypes": "All Types",

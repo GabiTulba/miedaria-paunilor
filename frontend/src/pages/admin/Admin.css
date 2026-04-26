@@ -510,29 +510,6 @@
 
 
 
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    background: var(--white-color);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-}
-
-.empty-state-icon {
-    font-size: 4rem;
-    margin-bottom: 1.5rem;
-}
-
-.empty-state h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.5rem;
-    color: var(--text-color);
-}
-
-.empty-state p {
-    color: var(--text-light);
-    margin: 0 0 1.5rem 0;
-}
 
 .products-table-container {
     background: var(--white-color);
@@ -611,7 +588,7 @@
 .admin-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: auto;
+    table-layout: fixed;
 }
 
 .admin-table th {
@@ -629,8 +606,9 @@
     padding: 1rem 1rem;
     border-bottom: 1px solid #e2e8f0;
     vertical-align: middle;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .product-cell {
@@ -667,6 +645,9 @@
 .product-id {
     font-size: 0.8rem;
     color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .product-type {

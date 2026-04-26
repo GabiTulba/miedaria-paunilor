@@ -113,7 +113,7 @@ function AdminBlog() {
 
             {blogPosts.length === 0 && page === 1 && !loading ? (
                 <div className="empty-state">
-                    <div className="empty-state-icon">📝</div>
+                    <div className="empty-state-icon blog-empty-icon"></div>
                     <h3>{t('admin.blog.noPosts')}</h3>
                     <p>{t('admin.blog.noPostsDescription')}</p>
                     <Link to="/admin/dashboard/blog/create" className="button">
@@ -129,6 +129,13 @@ function AdminBlog() {
                 <>
                 <div className="admin-table-container">
                     <table className="admin-table">
+                        <colgroup>
+                            <col style={{ width: '25%' }} />
+                            <col style={{ width: '25%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '20%' }} />
+                        </colgroup>
                         <thead>
                             <tr>
                                 <th>{t('admin.blog.table.title')}</th>

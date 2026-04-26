@@ -289,6 +289,47 @@ tr:hover {
     max-width: 400px;
 }
 
+/* Empty states */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--white-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.empty-state-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.5rem;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.empty-state h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    color: var(--text-color);
+}
+
+.empty-state p {
+    color: var(--color-text-light);
+    margin: 0 0 1.5rem 0;
+}
+
+.search-empty-icon {
+    background-image: url("/search-empty.svg");
+}
+
+.cart-empty-icon {
+    background-image: url("/cart-empty.svg");
+}
+
+.blog-empty-icon {
+    background-image: url("/blog-empty.svg");
+}
+
 .skip-to-content {
     position: absolute;
     left: -9999px;

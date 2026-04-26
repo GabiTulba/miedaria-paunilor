@@ -54,65 +54,69 @@ function Home() {
                 </div>
             </section>
 
-            <section className="featured-products">
-                <div className="section-content-container">
-                    <div className="featured-content">
-                        <h2>{t('home.featuredProducts')}</h2>
-                         <div className="product-grid">
-                         {isLoading ? (
-                             <div className="loader">{t('common.loading')}</div>
-                         ) : (
-                             featuredProducts.map(productWithImage => (
-                                 <ProductCard
-                                     key={productWithImage.product.product_id}
-                                     productWithImage={productWithImage}
-                                 />
-                             ))
-                         )}
-                     </div>
-                    </div>
-                </div>
-            </section>
-
-            <section className="blog-teaser">
-                <div className="section-content-container">
-                    <div className="teaser-content">
-                        <h2>{t('home.latestBlogPosts')}</h2>
-                        <div className="blog-grid">
-                            {isLoading ? (
-                                <div className="loader">{t('common.loading')}</div>
-                            ) : (
-                                latestBlogPosts.map(post => (
-                                    <article key={post.id} className="blog-post-card">
-                                        <div className="blog-post-header">
-                                            <h3 className="blog-post-title">
-                                                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
-                                            </h3>
-                                            <div className="blog-post-meta">
-                                                <span className="blog-post-date">
-                                                    {post.published_at ? formatDate(post.published_at) : ''}
-                                                </span>
-                                                <span className="blog-post-author">
-                                                    {t('blog.byAuthor', { author: post.author })}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="blog-post-excerpt">
-                                            <p>{post.excerpt}</p>
-                                        </div>
-                                        <div className="blog-post-actions">
-                                            <Link to={`/blog/${post.slug}`} className="read-more-btn">
-                                                {t('blog.readMore')}
-                                            </Link>
-                                        </div>
-                                    </article>
-                                ))
-                            )}
+            {(isLoading || featuredProducts.length > 0) && (
+                <section className="featured-products">
+                    <div className="section-content-container">
+                        <div className="featured-content">
+                            <h2>{t('home.featuredProducts')}</h2>
+                             <div className="product-grid">
+                             {isLoading ? (
+                                 <div className="loader">{t('common.loading')}</div>
+                             ) : (
+                                 featuredProducts.map(productWithImage => (
+                                     <ProductCard
+                                         key={productWithImage.product.product_id}
+                                         productWithImage={productWithImage}
+                                     />
+                                 ))
+                             )}
+                         </div>
                         </div>
-                        <Link to="/blog" className="button button-secondary">{t('home.viewAllPosts')}</Link>
                     </div>
-                </div>
-            </section>
+                </section>
+            )}
+
+            {(isLoading || latestBlogPosts.length > 0) && (
+                <section className="blog-teaser">
+                    <div className="section-content-container">
+                        <div className="teaser-content">
+                            <h2>{t('home.latestBlogPosts')}</h2>
+                            <div className="blog-grid">
+                                {isLoading ? (
+                                    <div className="loader">{t('common.loading')}</div>
+                                ) : (
+                                    latestBlogPosts.map(post => (
+                                        <article key={post.id} className="blog-post-card">
+                                            <div className="blog-post-header">
+                                                <h3 className="blog-post-title">
+                                                    <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                                                </h3>
+                                                <div className="blog-post-meta">
+                                                    <span className="blog-post-date">
+                                                        {post.published_at ? formatDate(post.published_at) : ''}
+                                                    </span>
+                                                    <span className="blog-post-author">
+                                                        {t('blog.byAuthor', { author: post.author })}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="blog-post-excerpt">
+                                                <p>{post.excerpt}</p>
+                                            </div>
+                                            <div className="blog-post-actions">
+                                                <Link to={`/blog/${post.slug}`} className="read-more-btn">
+                                                    {t('blog.readMore')}
+                                                </Link>
+                                            </div>
+                                        </article>
+                                    ))
+                                )}
+                            </div>
+                            <Link to="/blog" className="button button-secondary">{t('home.viewAllPosts')}</Link>
+                        </div>
+                    </div>
+                </section>
+            )}
 
             <section className="about-teaser">
                 <div className="section-content-container">

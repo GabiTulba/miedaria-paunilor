@@ -265,6 +265,12 @@ function Shop() {
                 <main className="product-display">
                     {isLoading ? (
                         <div className="loader">{t('common.loading')}</div>
+                    ) : products.length === 0 ? (
+                        <div className="empty-state">
+                            <div className="empty-state-icon search-empty-icon"></div>
+                            <h3>{t('shop.noProducts')}</h3>
+                            <p>{t('shop.noProductsDescription')}</p>
+                        </div>
                     ) : (
                         <div className="product-grid">
                             {products.map(productWithImage => (

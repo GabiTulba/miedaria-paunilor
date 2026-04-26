@@ -7,17 +7,6 @@
 HIGH PRIORITY (UX Bugs & Inconsistencies)
 ================================================================================
 
-[H3] Empty States Are Minimal or Missing
--------------------------------------------------------------------------------
-- Shop -- no "No products found" when filters match nothing
-  File: frontend/src/pages/Shop.tsx (lines 256-262)
-- Cart -- bare "Your cart is empty" text, no illustration or CTA
-  File: frontend/src/pages/Cart.tsx (lines 31-35)
-- Home -- no fallback if featured products or blog posts arrays empty
-  File: frontend/src/pages/Home.tsx (lines 57-64)
-- AdminBlog -- uses emoji as empty state icon (inaccessible, inconsistent)
-  File: frontend/src/pages/admin/AdminBlog.tsx (line 102)
-
 [H4] Cart Page UX Problems
 -------------------------------------------------------------------------------
 - "Work in progress" banner -- permanent, not dismissible, unprofessional

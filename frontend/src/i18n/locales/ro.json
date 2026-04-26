@@ -171,6 +171,7 @@
     "volume": "Volum",
     "bottlingDate": "Data Îmbutelierii",
     "noProducts": "Nu s-au găsit produse",
+    "noProductsDescription": "Încercați să ajustați filtrele pentru a găsi ceea ce căutați.",
     "loadingProducts": "Se încarcă produsele...",
     "productType": "Tip Produs",
     "allTypes": "Toate Tipurile",

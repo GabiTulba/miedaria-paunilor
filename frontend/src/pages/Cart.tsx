@@ -80,6 +80,7 @@ function Cart() {
 
             {cartItems.length === 0 ? (
                 <div className="empty-cart">
+                    <div className="empty-state-icon cart-empty-icon"></div>
                     <p>{t('cart.empty')}</p>
                     <Link to="/shop" className="button">{t('cart.continueShopping')}</Link>
                 </div>
