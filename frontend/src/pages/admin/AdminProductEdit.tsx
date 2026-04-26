@@ -3,9 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
-import { Product, Image, ProductFormData, ProductWithImage } from '../../types';
+import { Product, ProductFormData, ProductWithImage } from '../../types';
 import ProductForm from './ProductForm';
 import { errorMapping, errorMessageMapping } from './errorMappings';
+import { useAdminImages } from '../../hooks/useAdminImages';
 
 function AdminProductEdit() {
     const { productId } = useParams<{ productId: string }>();
@@ -15,46 +16,27 @@ function AdminProductEdit() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    const [availableImages, setAvailableImages] = useState<Image[]>([]);
-    const [imagesLoading, setImagesLoading] = useState<boolean>(true);
-    const [imagesError, setImagesError] = useState<string>('');
+    const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages(token);
     const [productLoading, setProductLoading] = useState<boolean>(true);
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        const fetchAllData = async () => {
-            if (!token) {
-                setImagesError(t('errors.unauthorized'));
-                setImagesLoading(false);
+        const fetchProduct = async () => {
+            if (!token || !productId) {
                 setProductLoading(false);
                 return;
             }
-
-            setImagesLoading(true);
-            setImagesError('');
             setProductLoading(true);
-
             try {
-                // Fetch images
-                const fetchedImages = await api.getImages(token);
-                setAvailableImages(fetchedImages);
-
-                // Fetch product
-                if (!productId) {
-                    setProductLoading(false);
-                    return;
-                }
                 const fetchedProductWithImage = await api.getProductByIdAdmin(productId, token);
-                setProductWithImage(fetchedProductWithImage); // Set ProductWithImage
+                setProductWithImage(fetchedProductWithImage);
             } catch (error: any) {
-                setImagesError(`Failed to fetch data: ${error.response?.data?.message || error.message}`);
-                console.error("Failed to fetch product or images:", error);
+                console.error("Failed to fetch product:", error);
             } finally {
-                setImagesLoading(false);
                 setProductLoading(false);
             }
         };
-        fetchAllData();
+        fetchProduct();
     }, [productId, token]);
 
     const handleSubmit = async (e: React.FormEvent) => {

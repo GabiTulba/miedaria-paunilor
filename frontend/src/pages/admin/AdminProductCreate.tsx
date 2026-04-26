@@ -1,12 +1,13 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import ProductForm from './ProductForm';
-import { ProductFormData, Image } from '../../types';
+import { ProductFormData } from '../../types';
 import { errorMapping, errorMessageMapping } from './errorMappings';
 import { getTodayIsoDate } from '../../utils/dateUtils';
+import { useAdminImages } from '../../hooks/useAdminImages';
 
 function AdminProductCreate() {
     const [product, setProduct] = useState<ProductFormData>({
@@ -40,30 +41,7 @@ function AdminProductCreate() {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    const [availableImages, setAvailableImages] = useState<Image[]>([]);
-    const [imagesLoading, setImagesLoading] = useState<boolean>(true);
-    const [imagesError, setImagesError] = useState<string>('');
-
-    useEffect(() => {
-        const fetchImages = async () => {
-            if (!token) {
-                setImagesError(t('errors.unauthorized'));
-                setImagesLoading(false);
-                return;
-            }
-            setImagesLoading(true);
-            setImagesError('');
-            try {
-                const fetchedImages = await api.getImages(token);
-                setAvailableImages(fetchedImages);
-            } catch (error: any) {
-                setImagesError(t('admin.images.error'));
-            } finally {
-                setImagesLoading(false);
-            }
-        };
-        fetchImages();
-    }, [token, t]);
+    const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages(token);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

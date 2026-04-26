@@ -12,23 +12,13 @@ HIGH PRIORITY (UX Bugs & Inconsistencies)
 - "Work in progress" banner -- permanent, not dismissible, unprofessional
   File: frontend/src/pages/Cart.tsx (lines 26-29)
 - Currency assumption -- cartItems[0].currency assumes all items same currency
+  currency is not timed to language, change from english to romanian keeps price
+  in euros.
   File: frontend/src/pages/Cart.tsx (line 18)
 - "Proceed to Checkout" button -- non-functional, no feedback on click
   File: frontend/src/pages/Cart.tsx (line 74)
 - Quantity decrement -- no minimum check at 1
   File: frontend/src/pages/Cart.tsx (lines 44-56)
-
-[H5] No Data Caching
--------------------------------------------------------------------------------
-- Enums fetched on every component mount -- no global cache
-  File: frontend/src/hooks/useFetchEnums.ts (lines 16-32)
-- Product list re-fetches on language change (should use Accept-Language only)
-  File: frontend/src/hooks/useFetchProducts.ts (line 96)
-- Admin images re-fetched every time Create/Edit product mounts
-  File: frontend/src/pages/admin/AdminProductEdit.tsx (lines 36-46)
-  File: frontend/src/pages/admin/AdminProductCreate.tsx (lines 46-65)
-- nginx.conf -- no Cache-Control headers for static assets or API responses
-  File: frontend/nginx.conf (lines 49-51, 62-69)
 
 ================================================================================
 MEDIUM PRIORITY (Modernization for 2026)

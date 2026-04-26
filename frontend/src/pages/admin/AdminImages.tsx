@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { api, getImageUrl } from '../../lib/api';
-import { Image } from '../../types';
 import './Admin.css';
+import { useAdminImages } from '../../hooks/useAdminImages';
 
 const AdminImages: React.FC = () => {
   const { token } = useAuth();
@@ -11,35 +11,11 @@ const AdminImages: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [images, setImages] = useState<Image[]>([]);
-  const [imagesLoading, setImagesLoading] = useState<boolean>(true);
-  const [imagesError, setImagesError] = useState<string>('');
+  const { images, setImages, loading: imagesLoading, error: imagesError, refetch: fetchImages } = useAdminImages(token);
   const [renamingImageId, setRenamingImageId] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState<string>('');
   const [renameLoading, setRenameLoading] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
-
-  const fetchImages = async () => {
-    if (!token) {
-      setImagesError(t('errors.unauthorized'));
-      setImagesLoading(false);
-      return;
-    }
-    setImagesLoading(true);
-    setImagesError('');
-    try {
-      const fetchedImages = await api.getImages(token);
-      setImages(fetchedImages);
-    } catch (error: any) {
-      setImagesError(t('admin.images.error'));
-    } finally {
-      setImagesLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchImages();
-  }, [token]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {

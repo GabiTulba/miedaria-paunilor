@@ -68,6 +68,7 @@ const router = createBrowserRouter([
 
 
 import { AuthProvider } from './context/AuthContext';
+import { EnumProvider } from './context/EnumContext';
 
 // ... (rest of the imports)
 
@@ -82,9 +83,11 @@ import { CartProvider } from './context/CartContext';
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <AuthProvider>
-      <CartProvider>
-        <RouterProvider router={router} />
-      </CartProvider>
+      <EnumProvider>
+        <CartProvider>
+          <RouterProvider router={router} />
+        </CartProvider>
+      </EnumProvider>
     </AuthProvider>
   </React.StrictMode>
 );
