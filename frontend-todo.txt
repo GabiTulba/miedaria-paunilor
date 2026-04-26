@@ -4,10 +4,6 @@
 ================================================================================
 
 ================================================================================
-HIGH PRIORITY (UX Bugs & Inconsistencies)
-================================================================================
-
-================================================================================
 MEDIUM PRIORITY (Modernization for 2026)
 ================================================================================
 
@@ -16,9 +12,6 @@ MEDIUM PRIORITY (Modernization for 2026)
 - Zero @media (prefers-color-scheme: dark) anywhere
 - All colors hardcoded to light theme
 - Table stakes in 2026
-
-[M2] Responsive Design Gaps -- see MOBILE UX section (MOB1-MOB11) for full
-     breakdown. All responsive/mobile issues consolidated there.
 
 [M3] Missing Modern CSS
 -------------------------------------------------------------------------------
