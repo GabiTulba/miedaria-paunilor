@@ -13,14 +13,6 @@ MEDIUM PRIORITY (Modernization for 2026)
 - All colors hardcoded to light theme
 - Table stakes in 2026
 
-[M3] Missing Modern CSS
--------------------------------------------------------------------------------
-- No clamp() for fluid typography -- font sizes hardcoded with media queries
-- No container queries -- product cards can't adapt to container width
-- No CSS logical properties -- all left/right/padding-left (breaks RTL)
-- No shadow/radius scale -- ad-hoc values everywhere
-- No CSS variables for animation durations (0.2s, 0.3s, 0.5s hardcoded)
-
 [M4] No Toast/Notification System
 -------------------------------------------------------------------------------
 - Add-to-cart has no success feedback
@@ -93,7 +85,6 @@ LOW PRIORITY (Polish)
 -------------------------------------------------------------------------------
 - Unnecessary -webkit- prefixes (not needed since ~2020)
   File: frontend/src/App.css (line 103)
-- Inconsistent animation durations (0.2s, 0.3s, 0.5s) with no variables
 - transition: all used in places (performance; should specify properties)
 - .availability.low-stock -- #ffc107 yellow text on white may fail WCAG AA
   File: frontend/src/components/ProductCard.css (line 147)
@@ -230,11 +221,6 @@ Approach:
 
 [MOB10] Typography & Spacing on Mobile
 -------------------------------------------------------------------------------
-- Font sizes hardcoded with media queries instead of clamp() -- no fluid
-  scaling between breakpoints (see also M3)
-- Heading sizes inconsistent at mobile breakpoints:
-  - h1 jumps between 3rem and 2rem with no intermediate
-  - h2 varies between 2.5rem and 1.5rem across pages
 - Line heights and spacing scale not optimized for small screens
 - Form labels at 0.95rem may be too small on mobile
 

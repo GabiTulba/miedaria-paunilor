@@ -1,6 +1,6 @@
 /* frontend/src/pages/AboutUs.css */
 .about-us-page {
-    animation: fadeIn 0.5s ease-in-out;
+    animation: fadeIn var(--duration-slower) ease-in-out;
 }
 
 .about-hero {
@@ -14,7 +14,7 @@
 }
 
 .about-hero-content h1 {
-    font-size: 3rem;
+    font-size: clamp(2.2rem, 1.78rem + 0.91vw, 3rem);
     color: var(--white-color);
     max-width: 800px;
 }
@@ -30,7 +30,7 @@
 }
 
 .about-section h2 {
-    font-size: 2.5rem;
+    font-size: clamp(2rem, 1.74rem + 0.57vw, 2.5rem);
     margin-bottom: 1.5rem;
     text-align: center;
     position: relative;
@@ -57,12 +57,6 @@
 @media (max-width: 768px) {
     .about-hero {
         height: 40vh;
-    }
-    .about-hero-content h1 {
-        font-size: 2.2rem;
-    }
-    .about-section h2 {
-        font-size: 2rem;
     }
     .about-content {
         margin-top: 2rem;

@@ -50,7 +50,7 @@
     padding: 0.875rem 1rem;
     border-radius: var(--border-radius);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: all var(--duration-normal) ease;
     font-weight: 500;
 }
 
@@ -63,7 +63,7 @@
 .nav-link.active {
     background-color: rgba(255, 255, 255, 0.15);
     color: var(--white-color);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-md);
 }
 
 .nav-link:focus-visible {
@@ -111,7 +111,7 @@
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all var(--duration-normal) ease;
 }
 
 .logout-button:hover {
@@ -149,8 +149,8 @@
 
 .login-card {
     background: var(--white-color);
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
     overflow: hidden;
 }
 
@@ -184,7 +184,7 @@
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     font-size: 1rem;
-    transition: all 0.2s ease;
+    transition: all var(--duration-normal) ease;
     background-color: #f8fafc;
 }
 
@@ -288,12 +288,12 @@
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform var(--duration-normal) ease, box-shadow var(--duration-normal) ease;
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .stat-icon {
@@ -304,7 +304,7 @@
     justify-content: center;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     background-size: 28px 28px;
     background-repeat: no-repeat;
     background-position: center;
@@ -354,7 +354,7 @@
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    transition: all 0.2s ease;
+    transition: all var(--duration-normal) ease;
     border: 2px solid transparent;
 }
 
@@ -372,7 +372,7 @@
     justify-content: center;
     background: #f0f7ff;
     color: var(--primary-color);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     background-size: 28px 28px;
     background-repeat: no-repeat;
     background-position: center;
@@ -446,7 +446,7 @@
 .status-badge {
     display: inline-block;
     padding: 0.25rem 0.75rem;
-    border-radius: 20px;
+    border-radius: var(--radius-pill);
     font-size: 0.8rem;
     font-weight: 500;
 }
@@ -490,7 +490,7 @@
     align-items: center;
     gap: 0.5rem;
     text-decoration: none;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--duration-normal) ease;
 }
 
 .button-primary:hover {
@@ -655,7 +655,7 @@
     padding: 0.25rem 0.75rem;
     background-color: #f0f7ff;
     color: var(--primary-color);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.85rem;
     font-weight: 500;
 }
@@ -689,7 +689,7 @@
 .status-badge {
     display: inline-block;
     padding: 0.375rem 0.875rem;
-    border-radius: 20px;
+    border-radius: var(--radius-pill);
     font-size: 0.85rem;
     font-weight: 500;
     white-space: nowrap;
@@ -808,7 +808,7 @@
     padding: 2rem;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.2s ease;
+    transition: border-color var(--duration-normal) ease;
     margin-bottom: 1.5rem;
 }
 
@@ -945,12 +945,12 @@
     border: 1px solid #e2e8f0;
     border-radius: var(--border-radius);
     overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform var(--duration-normal) ease, box-shadow var(--duration-normal) ease;
 }
 
 .image-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .image-preview {
@@ -985,7 +985,7 @@
     width: 100%;
     padding: 0.5rem;
     border: 1px solid #cbd5e1;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.9rem;
 }
 
@@ -1123,7 +1123,7 @@
     border: 1px solid #cbd5e1;
     border-radius: 6px;
     font-size: 1rem;
-    transition: border-color 0.2s ease;
+    transition: border-color var(--duration-normal) ease;
 }
 
 .form-group input:focus,
@@ -1406,7 +1406,7 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .react-datepicker__header {
@@ -1480,7 +1480,7 @@
     font-size: 1rem;
     color: var(--text-color);
     background-color: var(--white-color);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color var(--duration-normal), box-shadow var(--duration-normal);
 }
 
 .react-datepicker__input-container input:focus {
@@ -1533,7 +1533,7 @@
     cursor: pointer;
     font-size: 0.9rem;
     color: var(--text-muted, #6b7280);
-    transition: color 0.15s, border-color 0.15s;
+    transition: color var(--duration-fast), border-color var(--duration-fast);
 }
 
 .admin-tab:hover {

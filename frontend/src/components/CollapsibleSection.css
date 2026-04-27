@@ -16,7 +16,7 @@
     font-size: 1rem;
     font-weight: 500;
     color: var(--color-gray-800);
-    transition: border-color 0.2s ease;
+    transition: border-color var(--duration-normal) ease;
 }
 
 .collapsible-header:hover {
@@ -37,15 +37,15 @@
 .collapsible-icon {
     font-size: 0.8rem;
     color: var(--color-text-light);
-    transition: transform 0.3s ease;
-    margin-left: 0.5rem;
+    transition: transform var(--duration-slow) ease;
+    margin-inline-start: 0.5rem;
 }
 
 .collapsible-content {
     padding: 0;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease, padding 0.3s ease;
+    transition: max-height var(--duration-slow) ease, padding var(--duration-slow) ease;
 }
 
 .collapsible-content.expanded {
@@ -61,7 +61,7 @@
 /* Smooth transition for content inside */
 .collapsible-content > * {
     opacity: 0;
-    transition: opacity 0.3s ease 0.1s;
+    transition: opacity var(--duration-slow) ease 0.1s;
 }
 
 .collapsible-content.expanded > * {

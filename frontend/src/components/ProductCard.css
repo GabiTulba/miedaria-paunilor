@@ -5,7 +5,7 @@
     border-radius: var(--radius-md);
     overflow: hidden;
     background-color: var(--white-color);
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    transition: transform var(--duration-normal) ease-in-out, box-shadow var(--duration-normal) ease-in-out;
     display: flex;
     flex-direction: column;
     text-decoration: none;
@@ -160,4 +160,18 @@
 
 .availability.out-of-stock {
   color: var(--color-danger);
+}
+
+@container (max-width: 250px) {
+  .product-card-content {
+    padding: 10px;
+  }
+
+  .product-card-content h3 {
+    font-size: 1em;
+  }
+
+  .product-details {
+    font-size: 0.7em;
+  }
 }

@@ -19,7 +19,7 @@
     color: var(--primary-color);
     font-size: 0.9rem;
     cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
+    transition: background-color var(--duration-normal), color var(--duration-normal);
 }
 
 .pagination-btn:hover:not(:disabled) {
