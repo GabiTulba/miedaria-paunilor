@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { LocalizedProductWithImage } from '../types';
 import { api } from '../lib/api';
 import { CartContext } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
 import { getEnumLabel } from '../enums';
 import { getStockStatus, isInStock } from '../utils/stockAvailability';
 import { getImageUrl } from '../lib/api';
@@ -22,6 +23,7 @@ function ProductDetails() {
     const [error, setError] = useState<string | null>(null);
     const [fetchTrigger, setFetchTrigger] = useState(0);
     const { addToCart } = useContext(CartContext);
+    const { showToast } = useToast();
     const { t, i18n } = useTranslation();
     const formatDate = useFormattedDate();
 
@@ -50,6 +52,7 @@ function ProductDetails() {
     const handleAddToCart = () => {
         if (productWithImage?.product) {
             addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count);
+            showToast(t('cart.addedToCart'), 'success');
         }
     };
 

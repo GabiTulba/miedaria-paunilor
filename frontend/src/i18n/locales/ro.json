@@ -231,7 +231,8 @@
     "checkoutNotReady": "Finalizarea comenzii nu este încă disponibilă. Vă rugăm să trimiteți comanda prin WhatsApp.",
     "productUnavailable": "Acest produs nu mai este disponibil",
     "outOfStock": "Acest produs nu mai este în stoc",
-    "quantityReduced": "Cantitatea a fost ajustată — doar {{max}} disponibile"
+    "quantityReduced": "Cantitatea a fost ajustată — doar {{max}} disponibile",
+    "addedToCart": "Adăugat în coș"
   },
   "admin": {
     "login": {
@@ -279,7 +280,12 @@
       "hardDeleteConfirm": "Ștergi definitiv acest produs? Acțiunea nu poate fi anulată.",
       "deletedBadge": "ȘTERS",
       "deletedOn": "Șters pe",
-      "hardDeleteEligibleOn": "Disponibil pentru ștergere definitivă pe {{date}}"
+      "hardDeleteEligibleOn": "Disponibil pentru ștergere definitivă pe {{date}}",
+      "deleteSuccess": "Produsul a fost șters cu succes",
+      "hardDeleteSuccess": "Produsul a fost șters definitiv",
+      "restoreSuccess": "Produsul a fost restaurat cu succes",
+      "created": "Produsul a fost creat cu succes",
+      "updated": "Produsul a fost actualizat cu succes"
     },
     "productForm": {
       "createTitle": "Creează Produs Nou",
@@ -348,6 +354,7 @@
       "delete": "Șterge",
       "deleteConfirm": "Sigur dorești să ștergi această imagine?",
       "deleteError": "Nu se poate șterge imaginea: este folosită de un produs",
+      "deleteSuccess": "Imaginea a fost ștearsă cu succes",
       "loading": "Se încarcă imaginile...",
       "error": "Încărcarea imaginilor a eșuat. Te rugăm să încerci din nou."
     },
@@ -365,6 +372,9 @@
         "status": "Status",
         "actions": "Acțiuni"
       },
+      "deleteSuccess": "Articolul de blog a fost șters cu succes",
+      "created": "Articolul de blog a fost creat cu succes",
+      "updated": "Articolul de blog a fost actualizat cu succes",
       "status": {
         "published": "Publicat",
         "draft": "Ciornă"
@@ -416,6 +426,20 @@
     "links": "Link-uri Rapide",
     "contact": "Contactați-ne",
     "social": "Urmărește-ne"
+  },
+  "confirm": {
+    "delete": {
+      "title": "Confirmare Ștergere",
+      "message": "Sigur dorești să ștergi acest produs? Poate fi restaurat în termen de 7 zile.",
+      "imageMessage": "Sigur dorești să ștergi această imagine?",
+      "blogMessage": "Sigur dorești să ștergi acest articol de blog?",
+      "confirm": "Șterge"
+    },
+    "hardDelete": {
+      "title": "Ștergere Definitivă",
+      "message": "Sigur dorești să ștergi definitiv acest produs? Acțiunea nu poate fi anulată.",
+      "confirm": "Șterge Definitiv"
+    }
   },
   "errors": {
     "notFound": "Pagina nu a fost găsită",

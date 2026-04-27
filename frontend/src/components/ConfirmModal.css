@@ -1,0 +1,108 @@
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: modalFadeIn var(--duration-normal) ease;
+}
+
+.modal-card {
+    background-color: var(--white-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    padding: 28px;
+    max-width: 440px;
+    width: 90%;
+    animation: modalScaleIn var(--duration-slow) ease;
+}
+
+.modal-title {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    color: var(--primary-color);
+    margin: 0 0 12px;
+}
+
+.modal-message {
+    font-size: 0.95rem;
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0 0 24px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.modal-btn {
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background-color var(--duration-normal) ease;
+}
+
+.modal-btn-cancel {
+    background-color: var(--color-gray-200);
+    color: var(--color-gray-700);
+}
+
+.modal-btn-cancel:hover {
+    background-color: var(--color-gray-300);
+}
+
+.modal-btn-confirm.modal-btn-danger {
+    background-color: var(--color-danger);
+    color: var(--white-color);
+}
+
+.modal-btn-confirm.modal-btn-danger:hover {
+    background-color: #c82333;
+}
+
+.modal-btn-confirm.modal-btn-warning {
+    background-color: var(--color-warning);
+    color: var(--color-gray-800);
+}
+
+.modal-btn-confirm.modal-btn-warning:hover {
+    background-color: #e0a800;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-card {
+        padding: 20px;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .modal-btn {
+        width: 100%;
+        text-align: center;
+    }
+}

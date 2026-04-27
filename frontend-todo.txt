@@ -13,13 +13,6 @@ MEDIUM PRIORITY (Modernization for 2026)
 - All colors hardcoded to light theme
 - Table stakes in 2026
 
-[M4] No Toast/Notification System
--------------------------------------------------------------------------------
-- Add-to-cart has no success feedback
-- Filter changes show no "results updated" indicator
-- Form submissions have no success/failure toasts
-- Admin CRUD operations rely on alert() or nothing
-
 [M5] Form UX Is Weak
 -------------------------------------------------------------------------------
 - Validation only on submit -- no real-time or on-blur validation
@@ -88,8 +81,6 @@ LOW PRIORITY (Polish)
 - transition: all used in places (performance; should specify properties)
 - .availability.low-stock -- #ffc107 yellow text on white may fail WCAG AA
   File: frontend/src/components/ProductCard.css (line 147)
-- AdminImages message state uses string parsing to determine CSS class
-  File: frontend/src/pages/admin/AdminImages.tsx (line 186)
 - AdminProducts double-fetch when deleting last product on page
   File: frontend/src/pages/admin/AdminProducts.tsx (lines 77-81)
 

@@ -231,7 +231,8 @@
     "checkoutNotReady": "Checkout is not yet available. Please send your order via WhatsApp.",
     "productUnavailable": "This product is no longer available",
     "outOfStock": "This product is now out of stock",
-    "quantityReduced": "Quantity adjusted — only {{max}} available"
+    "quantityReduced": "Quantity adjusted — only {{max}} available",
+    "addedToCart": "Added to cart"
   },
   "admin": {
     "login": {
@@ -279,7 +280,12 @@
       "hardDeleteConfirm": "Permanently delete this product? This cannot be undone.",
       "deletedBadge": "DELETED",
       "deletedOn": "Deleted on",
-      "hardDeleteEligibleOn": "Available for permanent deletion on {{date}}"
+      "hardDeleteEligibleOn": "Available for permanent deletion on {{date}}",
+      "deleteSuccess": "Product deleted successfully",
+      "hardDeleteSuccess": "Product permanently deleted",
+      "restoreSuccess": "Product restored successfully",
+      "created": "Product created successfully",
+      "updated": "Product updated successfully"
     },
     "productForm": {
       "createTitle": "Create New Product",
@@ -348,6 +354,7 @@
       "delete": "Delete",
       "deleteConfirm": "Are you sure you want to delete this image?",
       "deleteError": "Cannot delete image: it is being used by a product",
+      "deleteSuccess": "Image deleted successfully",
       "loading": "Loading images...",
       "error": "Failed to load images. Please try again."
     },
@@ -365,6 +372,9 @@
         "status": "Status",
         "actions": "Actions"
       },
+      "deleteSuccess": "Blog post deleted successfully",
+      "created": "Blog post created successfully",
+      "updated": "Blog post updated successfully",
       "status": {
         "published": "Published",
         "draft": "Draft"
@@ -416,6 +426,20 @@
     "links": "Quick Links",
     "contact": "Contact Us",
     "social": "Follow Us"
+  },
+  "confirm": {
+    "delete": {
+      "title": "Confirm Deletion",
+      "message": "Are you sure you want to delete this product? It can be restored within 7 days.",
+      "imageMessage": "Are you sure you want to delete this image?",
+      "blogMessage": "Are you sure you want to delete this blog post?",
+      "confirm": "Delete"
+    },
+    "hardDelete": {
+      "title": "Permanent Deletion",
+      "message": "Are you sure you want to permanently delete this product? This action cannot be undone.",
+      "confirm": "Delete Permanently"
+    }
   },
   "errors": {
     "notFound": "Page not found",

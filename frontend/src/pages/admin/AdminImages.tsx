@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { api, getImageUrl } from '../../lib/api';
-import './Admin.css';
+import ConfirmModal from '../../components/ConfirmModal';
 import { useAdminImages } from '../../hooks/useAdminImages';
+import './Admin.css';
 
 const AdminImages: React.FC = () => {
   const { token } = useAuth();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [message, setMessage] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const { images, setImages, loading: imagesLoading, error: imagesError, refetch: fetchImages } = useAdminImages(token);
   const [renamingImageId, setRenamingImageId] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState<string>('');
@@ -20,24 +23,15 @@ const AdminImages: React.FC = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setSelectedFile(event.target.files[0]);
-      setMessage('');
     } else {
       setSelectedFile(null);
     }
   };
 
   const handleFileUpload = async () => {
-    if (!selectedFile) {
-      setMessage(t('admin.images.upload'));
-      return;
-    }
-    if (!token) {
-      setMessage(t('errors.unauthorized'));
-      return;
-    }
+    if (!selectedFile || !token) return;
 
     setLoading(true);
-    setMessage(t('admin.images.upload'));
 
     const formData = new FormData();
     formData.append('image', selectedFile);
@@ -45,10 +39,10 @@ const AdminImages: React.FC = () => {
     try {
       const newImage = await api.uploadImage(formData, token);
       setImages((prevImages) => [...prevImages, newImage]);
-      setMessage(`${t('common.success')}: ${newImage.file_name}`);
+      showToast(`${t('common.success')}: ${newImage.file_name}`, 'success');
       setSelectedFile(null);
     } catch (error: any) {
-      setMessage(`${t('common.error')}: ${error.response?.data?.message || error.message}`);
+      showToast(`${t('common.error')}: ${error.response?.data?.message || error.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -65,49 +59,40 @@ const AdminImages: React.FC = () => {
   };
 
   const handleSaveRename = async (imageId: string) => {
-    if (!newFileName.trim()) {
-      setMessage(t('admin.images.rename'));
-      return;
-    }
-    if (!token) {
-      setMessage(t('errors.unauthorized'));
-      return;
-    }
+    if (!newFileName.trim() || !token) return;
     setRenameLoading(true);
-    setMessage(t('admin.images.rename'));
     try {
       const updatedImage = await api.updateImage(imageId, newFileName, token);
       setImages((prevImages) =>
         prevImages.map((img) => (img.id === imageId ? updatedImage : img))
       );
-      setMessage(`${t('common.success')}: ${updatedImage.file_name}`);
+      showToast(`${t('common.success')}: ${updatedImage.file_name}`, 'success');
       handleCancelRename();
     } catch (error: any) {
-      setMessage(`${t('common.error')}: ${error.response?.data?.message || error.message}`);
+      showToast(`${t('common.error')}: ${error.response?.data?.message || error.message}`, 'error');
     } finally {
       setRenameLoading(false);
     }
   };
 
-  const handleDeleteImage = async (imageId: string) => {
-    if (!window.confirm(t('admin.images.deleteConfirm'))) {
-      return;
-    }
-    if (!token) {
-      setMessage(t('errors.unauthorized'));
-      return;
-    }
+  const handleDeleteClick = (imageId: string) => {
+    setConfirmDeleteId(imageId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteId || !token) return;
+    const imageId = confirmDeleteId;
+    setConfirmDeleteId(null);
     setDeleteLoading(imageId);
-    setMessage(t('admin.images.delete'));
     try {
       await api.deleteImage(imageId, token);
       setImages((prevImages) => prevImages.filter((img) => img.id !== imageId));
-      setMessage(t('common.success'));
+      showToast(t('admin.images.deleteSuccess'), 'success');
     } catch (error: any) {
       if (error.response && error.response.status === 409) {
-        setMessage(t('admin.images.deleteError'));
+        showToast(t('admin.images.deleteError'), 'error');
       } else {
-        setMessage(`${t('common.error')}: ${error.response?.data?.message || error.message}`);
+        showToast(`${t('common.error')}: ${error.response?.data?.message || error.message}`, 'error');
       }
     } finally {
       setDeleteLoading(null);
@@ -158,11 +143,6 @@ const AdminImages: React.FC = () => {
           >
             {loading ? t('admin.images.uploading') : t('admin.images.upload')}
           </button>
-          {message && (
-            <div className={`message ${message.includes(t('common.success')) ? 'message-success' : 'message-error'}`}>
-              {message}
-            </div>
-          )}
         </div>
 
         <div className="images-section card">
@@ -256,7 +236,7 @@ const AdminImages: React.FC = () => {
                           {t('admin.images.rename')}
                         </button>
                         <button
-                          onClick={() => handleDeleteImage(image.id)}
+                          onClick={() => handleDeleteClick(image.id)}
                           disabled={deleteLoading === image.id}
                           className="button button-small button-danger"
                         >
@@ -271,6 +251,17 @@ const AdminImages: React.FC = () => {
           )}
         </div>
       </div>
+      {confirmDeleteId && (
+        <ConfirmModal
+          title={t('confirm.delete.title')}
+          message={t('confirm.delete.imageMessage')}
+          confirmLabel={t('confirm.delete.confirm')}
+          cancelLabel={t('common.cancel')}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmDeleteId(null)}
+          variant="danger"
+        />
+      )}
     </div>
   );
 };

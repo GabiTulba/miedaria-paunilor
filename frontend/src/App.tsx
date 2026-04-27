@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CartContext } from './context/CartContext';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import ErrorBoundary from './components/ErrorBoundary';
+import ToastContainer from './components/ToastContainer';
 import './App.css';
 import './components/LanguageSwitcher.css';
 
@@ -52,6 +53,7 @@ function App() {
           </button>
         </div>
       </header>
+      <ToastContainer />
       <main id="main-content">
         <ErrorBoundary>
           <Outlet />

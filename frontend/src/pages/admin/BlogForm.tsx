@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { NewBlogPost, UpdateBlogPost } from '../../types';
 import { api } from '../../lib/api';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import TextInput from '../../components/forms/TextInput';
 import TextAreaInput from '../../components/forms/TextAreaInput';
 import SelectInput from '../../components/forms/SelectInput';
@@ -31,6 +32,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const { t } = useTranslation();
     const { token } = useContext(AuthContext);
+    const { showToast } = useToast();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -147,6 +149,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                 await api.createBlogPost(formData as NewBlogPost, token);
             }
 
+            showToast(t(isEdit ? 'admin.blog.updated' : 'admin.blog.created'), 'success');
             navigate('/admin/dashboard/blog');
         } catch (err: any) {
             console.error("Failed to save blog post:", err);

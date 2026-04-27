@@ -3,12 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ProductWithImage } from '../../types';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { getStockStatus } from '../../utils/stockAvailability';
 import { getImageUrl } from '../../lib/api';
 import { toFixed } from '../../utils/numberUtils';
 import Pagination from '../../components/Pagination';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import ConfirmModal from '../../components/ConfirmModal';
 import './Admin.css';
 
 const ADMIN_PRODUCTS_PER_PAGE = 20;
@@ -39,8 +41,10 @@ function AdminProducts() {
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
+    const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'hardDelete'; id: string } | null>(null);
     const { token } = useContext(AuthContext);
     const { t } = useTranslation();
+    const { showToast } = useToast();
 
     useEffect(() => {
         if (!token) return;
@@ -75,19 +79,37 @@ function AdminProducts() {
         setPage(1);
     };
 
-    const handleDelete = async (productId: string) => {
-        if (!token || actionId || !window.confirm(t('admin.products.deleteConfirm'))) return;
+    const handleDeleteClick = (productId: string) => {
+        if (!token || actionId) return;
+        setConfirmAction({ type: 'delete', id: productId });
+    };
+
+    const handleHardDeleteClick = (productId: string) => {
+        if (!token || actionId) return;
+        setConfirmAction({ type: 'hardDelete', id: productId });
+    };
+
+    const handleConfirm = async () => {
+        if (!confirmAction || !token) return;
+        const { type, id } = confirmAction;
+        setConfirmAction(null);
         try {
-            setActionId(productId);
+            setActionId(id);
             setActionError(null);
-            await api.deleteProduct(productId, token);
+            if (type === 'delete') {
+                await api.deleteProduct(id, token);
+                showToast(t('admin.products.deleteSuccess'), 'success');
+            } else {
+                await api.hardDeleteProduct(id, token);
+                showToast(t('admin.products.hardDeleteSuccess'), 'success');
+            }
             if (products.length === 1 && page > 1) {
                 setPage(page - 1);
             } else {
                 setFetchTrigger(n => n + 1);
             }
         } catch (err) {
-            console.error('Failed to delete product:', err);
+            console.error(`Failed to ${type} product:`, err);
             setActionError(t('admin.products.error'));
             setActionId(null);
         }
@@ -99,27 +121,10 @@ function AdminProducts() {
             setActionId(productId);
             setActionError(null);
             await api.restoreProduct(productId, token);
+            showToast(t('admin.products.restoreSuccess'), 'success');
             setFetchTrigger(n => n + 1);
         } catch (err) {
             console.error('Failed to restore product:', err);
-            setActionError(t('admin.products.error'));
-            setActionId(null);
-        }
-    };
-
-    const handleHardDelete = async (productId: string) => {
-        if (!token || actionId || !window.confirm(t('admin.products.hardDeleteConfirm'))) return;
-        try {
-            setActionId(productId);
-            setActionError(null);
-            await api.hardDeleteProduct(productId, token);
-            if (products.length === 1 && page > 1) {
-                setPage(page - 1);
-            } else {
-                setFetchTrigger(n => n + 1);
-            }
-        } catch (err) {
-            console.error('Failed to hard delete product:', err);
             setActionError(t('admin.products.error'));
             setActionId(null);
         }
@@ -258,7 +263,7 @@ function AdminProducts() {
                                                                 {t('admin.products.edit')}
                                                             </Link>
                                                             <button
-                                                                onClick={() => handleDelete(product.product_id)}
+                                                                onClick={() => handleDeleteClick(product.product_id)}
                                                                 className="button button-small button-danger"
                                                                 disabled={actionId !== null}
                                                             >
@@ -275,7 +280,7 @@ function AdminProducts() {
                                                                 {actionId === product.product_id ? t('common.loading') : t('admin.products.restore')}
                                                             </button>
                                                             <button
-                                                                onClick={() => canHardDelete(product.deleted_at!) ? handleHardDelete(product.product_id) : undefined}
+                                                                onClick={() => canHardDelete(product.deleted_at!) ? handleHardDeleteClick(product.product_id) : undefined}
                                                                 className="button button-small button-danger"
                                                                 disabled={actionId !== null || !canHardDelete(product.deleted_at!)}
                                                                 title={
@@ -304,6 +309,17 @@ function AdminProducts() {
                     onNextPage={() => setPage(page + 1)}
                 />
                 </>
+            )}
+            {confirmAction && (
+                <ConfirmModal
+                    title={t(confirmAction.type === 'hardDelete' ? 'confirm.hardDelete.title' : 'confirm.delete.title')}
+                    message={t(confirmAction.type === 'hardDelete' ? 'confirm.hardDelete.message' : 'confirm.delete.message')}
+                    confirmLabel={t(confirmAction.type === 'hardDelete' ? 'confirm.hardDelete.confirm' : 'confirm.delete.confirm')}
+                    cancelLabel={t('common.cancel')}
+                    onConfirm={handleConfirm}
+                    onCancel={() => setConfirmAction(null)}
+                    variant="danger"
+                />
             )}
         </div>
     );

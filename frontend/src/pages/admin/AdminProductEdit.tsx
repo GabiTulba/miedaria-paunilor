@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { Product, ProductFormData, ProductWithImage } from '../../types';
 import ProductForm from './ProductForm';
@@ -15,6 +16,7 @@ function AdminProductEdit() {
     const { token } = useContext(AuthContext);
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const { showToast } = useToast();
 
     const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages(token);
     const [productLoading, setProductLoading] = useState<boolean>(true);
@@ -61,15 +63,15 @@ function AdminProductEdit() {
         }
 
         if (!token) {
-            alert(t('errors.unauthorized'));
+            showToast(t('errors.unauthorized'), 'error');
             return;
         }
         if (productLoading || imagesLoading) {
-            alert(t('common.loading'));
+            showToast(t('common.loading'), 'error');
             return;
         }
         if (imagesError) {
-            alert(t('admin.images.error'));
+            showToast(t('admin.images.error'), 'error');
             return;
         }
         if (productWithImage && productId) {
@@ -77,6 +79,7 @@ function AdminProductEdit() {
                 setSubmitting(true);
                 const productToUpdate: Product = productWithImage.product;
                 await api.updateProduct(productId, productToUpdate, token);
+                showToast(t('admin.products.updated'), 'success');
                 navigate('/admin/dashboard/products');
             } catch (error: any) {
                 console.error("Failed to update product:", error);
@@ -92,7 +95,7 @@ function AdminProductEdit() {
                 } else if (error.response && error.response.data && error.response.data.message) {
                     setErrors({ form: error.response.data.message });
                 } else {
-                    alert(t('admin.products.error'));
+                    showToast(t('admin.products.error'), 'error');
                 }
             } finally {
                 setSubmitting(false);

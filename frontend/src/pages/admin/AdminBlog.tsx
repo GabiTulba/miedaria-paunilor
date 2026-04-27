@@ -6,8 +6,10 @@ import { api } from '../../lib/api';
 import { useFormattedDate } from '../../hooks/useFormattedDate';
 import { useLanguage } from '../../hooks/useLanguage';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import Pagination from '../../components/Pagination';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import ConfirmModal from '../../components/ConfirmModal';
 import './Admin.css';
 
 const ADMIN_BLOG_PER_PAGE = 20;
@@ -22,7 +24,9 @@ function AdminBlog() {
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const { t } = useTranslation();
+    const { showToast } = useToast();
     const language = useLanguage();
     const formatDateOptions = useMemo(() => ({
         year: 'numeric' as const,
@@ -59,12 +63,19 @@ function AdminBlog() {
         return language === 'ro' ? post.title_ro : post.title;
     };
 
-    const handleDelete = async (id: string) => {
-        if (!token || !window.confirm(t('admin.products.deleteConfirm'))) return;
+    const handleDeleteClick = (id: string) => {
+        if (!token) return;
+        setConfirmDeleteId(id);
+    };
 
+    const handleConfirmDelete = async () => {
+        if (!confirmDeleteId || !token) return;
+        const id = confirmDeleteId;
+        setConfirmDeleteId(null);
         try {
             setActionError(null);
             await api.deleteBlogPost(id, token);
+            showToast(t('admin.blog.deleteSuccess'), 'success');
             if (blogPosts.length === 1 && page > 1) {
                 setPage(page - 1);
             } else {
@@ -169,7 +180,7 @@ function AdminBlog() {
                                                 {t('common.edit')}
                                             </Link>
                                             <button
-                                                onClick={() => handleDelete(post.id)}
+                                                onClick={() => handleDeleteClick(post.id)}
                                                 className="button button-small button-danger"
                                             >
                                                 {t('common.delete')}
@@ -188,6 +199,17 @@ function AdminBlog() {
                     onNextPage={() => setPage(page + 1)}
                 />
                 </>
+            )}
+            {confirmDeleteId && (
+                <ConfirmModal
+                    title={t('confirm.delete.title')}
+                    message={t('confirm.delete.blogMessage')}
+                    confirmLabel={t('confirm.delete.confirm')}
+                    cancelLabel={t('common.cancel')}
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setConfirmDeleteId(null)}
+                    variant="danger"
+                />
             )}
         </div>
     );

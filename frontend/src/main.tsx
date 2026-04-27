@@ -76,7 +76,7 @@ import { EnumProvider } from './context/EnumContext';
 
 import './index.css';
 import { CartProvider } from './context/CartContext';
-// ... other imports
+import { ToastProvider } from './context/ToastContext';
 
 // ... router definition
 
@@ -85,7 +85,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <AuthProvider>
       <EnumProvider>
         <CartProvider>
-          <RouterProvider router={router} />
+          <ToastProvider>
+            <RouterProvider router={router} />
+          </ToastProvider>
         </CartProvider>
       </EnumProvider>
     </AuthProvider>

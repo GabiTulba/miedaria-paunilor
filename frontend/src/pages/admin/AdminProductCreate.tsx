@@ -2,6 +2,7 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import ProductForm from './ProductForm';
 import { ProductFormData } from '../../types';
@@ -40,6 +41,7 @@ function AdminProductCreate() {
     const { token } = useContext(AuthContext);
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages(token);
 
@@ -65,20 +67,21 @@ function AdminProductCreate() {
         }
 
         if (!token) {
-            alert(t('errors.unauthorized'));
+            showToast(t('errors.unauthorized'), 'error');
             return;
         }
         if (imagesLoading) {
-            alert(t('common.loading'));
+            showToast(t('common.loading'), 'error');
             return;
         }
         if (imagesError) {
-            alert(t('admin.images.error'));
+            showToast(t('admin.images.error'), 'error');
             return;
         }
         try {
             setSubmitting(true);
             await api.createProduct(product, token);
+            showToast(t('admin.products.created'), 'success');
             navigate('/admin/dashboard/products');
         } catch (error: any) {
             console.error("Failed to create product:", error);
@@ -94,7 +97,7 @@ function AdminProductCreate() {
             } else if (error.response && error.response.data && error.response.data.message) {
                 setErrors({ form: error.response.data.message });
             } else {
-                alert('Failed to create product. Check console for details.');
+                showToast('Failed to create product. Check console for details.', 'error');
             }
         } finally {
             setSubmitting(false);
