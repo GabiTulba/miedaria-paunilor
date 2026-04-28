@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 24 24"
+   fill="currentColor"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="icon-system.svg"
+   inkscape:version="1.4.3 (fcd0343856, 2026-01-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs6">
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect9"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,0.48608088,0,1 @ F,0,1,1,0,0.48608088,0,1 @ F,0,1,1,0,0.48608088,0,1 @ F,0,1,1,0,0.48608088,0,1"
+       radius="0"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath7">
+      <path
+         id="path7"
+         style="fill:#000000"
+         d="M 21,22 H 1 L 21,2 Z"
+         sodipodi:nodetypes="cccc" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath8">
+      <path
+         id="path8"
+         style="fill:#000000"
+         d="M 20,20 H 0 L 20,0 Z"
+         sodipodi:nodetypes="cccc" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath9">
+      <path
+         id="path9"
+         style="fill:#000000"
+         d="M 1,-2 H 21 L 1,18 Z"
+         sodipodi:nodetypes="cccc" />
+    </clipPath>
+  </defs>
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="33.458333"
+     inkscape:cx="13.464508"
+     inkscape:cy="10.684932"
+     inkscape:window-width="1854"
+     inkscape:window-height="1011"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6" />
+  <clipPath
+     id="sun-half">
+    <rect
+       x="0"
+       y="0"
+       width="11"
+       height="24"
+       id="rect1" />
+  </clipPath>
+  <clipPath
+     id="moon-half">
+    <rect
+       x="13"
+       y="0"
+       width="11"
+       height="24"
+       id="rect5" />
+  </clipPath>
+  <path
+     d="M 20.000001,13.845114 A 10.462962,10.462962 0 0 1 6.154886,0 10.46427,10.46427 0 1 0 20.000001,13.845114 Z"
+     id="path1"
+     style="stroke-width:1.30787"
+     clip-path="url(#clipPath8)"
+     transform="translate(1.9999997,2)" />
+  <g
+     id="g8"
+     transform="translate(-1,2)"
+     clip-path="url(#clipPath9)">
+    <circle
+       cx="11"
+       cy="8"
+       r="4"
+       id="circle1" />
+    <line
+       x1="11"
+       y1="-1"
+       x2="11"
+       y2="2"
+       stroke="currentColor"
+       stroke-width="2"
+       stroke-linecap="round"
+       id="line1" />
+    <line
+       x1="11"
+       y1="14"
+       x2="11"
+       y2="17"
+       stroke="currentColor"
+       stroke-width="2"
+       stroke-linecap="round"
+       id="line2" />
+    <line
+       x1="2"
+       y1="8"
+       x2="5"
+       y2="8"
+       stroke="currentColor"
+       stroke-width="2"
+       stroke-linecap="round"
+       id="line3" />
+    <line
+       x1="17"
+       y1="8"
+       x2="20"
+       y2="8"
+       stroke="currentColor"
+       stroke-width="2"
+       stroke-linecap="round"
+       id="line4" />
+    <line
+       x1="4.5"
+       y1="1.5"
+       x2="6.3000002"
+       y2="3.3000002"
+       stroke="currentColor"
+       stroke-width="2"
+       stroke-linecap="round"
+       id="line5" />
+    <line
+       x1="15.7"
+       y1="12.7"
+       x2="17.5"
+       y2="14.5"
+       stroke="currentColor"
+       stroke-width="2"
+       stroke-linecap="round"
+       id="line6" />
+    <line
+       x1="4.5"
+       y1="14.5"
+       x2="6.3000002"
+       y2="12.7"
+       stroke="currentColor"
+       stroke-width="2"
+       stroke-linecap="round"
+       id="line7" />
+    <line
+       x1="15.7"
+       y1="3.3000002"
+       x2="17.5"
+       y2="1.5"
+       stroke="currentColor"
+       stroke-width="2"
+       stroke-linecap="round"
+       id="line8" />
+  </g>
+  <path
+     id="rect9"
+     style="fill:#000000"
+     transform="rotate(-45)"
+     d="M -14.513919,15 H 14.513919 A 0.48608088,0.48608088 45 0 1 15,15.486081 v 0.02784 A 0.48608088,0.48608088 135 0 1 14.513919,16 H -14.513919 A 0.48608088,0.48608088 45 0 1 -15,15.513919 v -0.02784 A 0.48608088,0.48608088 135 0 1 -14.513919,15 Z"
+     inkscape:path-effect="#path-effect9"
+     inkscape:original-d="m -15,15 h 30 v 1 h -30 z" />
+</svg>
