@@ -1,0 +1,20 @@
+.theme-toggle {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    transition: background-color var(--duration-normal) ease;
+}
+
+.theme-toggle:hover {
+    background-color: var(--color-surface-hover);
+}
+
+.theme-toggle-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+}

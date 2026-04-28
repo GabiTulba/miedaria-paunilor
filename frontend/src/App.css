@@ -54,7 +54,7 @@
 
 .logo:hover {
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.8); /* 80% opacity white */
+  color: var(--logo-hover-bg);
 }
 
 .logo:hover .logo-image {

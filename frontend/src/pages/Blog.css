@@ -150,7 +150,7 @@
 }
 
 .read-more-btn:hover {
-    background-color: #d35400;
+    background-color: var(--accent-color-hover);
     color: white;
 }
 

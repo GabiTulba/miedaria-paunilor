@@ -510,5 +510,10 @@
     "backToBlog": "Înapoi la Blog",
     "byAuthor": "De {{author}}",
     "updatedOn": "Actualizat la {{date}}"
+  },
+  "theme": {
+    "system": "Temă: Sistem",
+    "light": "Temă: Deschisă",
+    "dark": "Temă: Întunecată"
   }
 }

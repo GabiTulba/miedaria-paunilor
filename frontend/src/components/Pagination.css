@@ -1,5 +1,5 @@
 .pagination-section {
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--input-border);
     margin-top: 2rem;
 }
 

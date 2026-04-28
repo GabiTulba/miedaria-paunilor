@@ -3,6 +3,7 @@ import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from './context/CartContext';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import ThemeToggle from './components/ThemeToggle';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/ToastContainer';
 import './App.css';
@@ -38,6 +39,7 @@ function App() {
             <NavLink to="/about-us" onClick={toggleMobileMenu}>{t('navigation.aboutUs')}</NavLink>
             <NavLink to="/contact" onClick={toggleMobileMenu}>{t('navigation.contact')}</NavLink>
             <NavLink to="/cart" onClick={toggleMobileMenu}>{t('navigation.cart')} {itemCount > 0 && `(${itemCount})`}</NavLink>
+            <ThemeToggle />
             <LanguageSwitcher />
           </nav>
           <button

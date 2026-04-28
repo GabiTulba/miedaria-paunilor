@@ -64,7 +64,7 @@
 }
 
 .modal-btn-confirm.modal-btn-danger:hover {
-    background-color: #c82333;
+    background-color: var(--danger-hover);
 }
 
 .modal-btn-confirm.modal-btn-warning {
@@ -73,7 +73,7 @@
 }
 
 .modal-btn-confirm.modal-btn-warning:hover {
-    background-color: #e0a800;
+    background-color: var(--warning-hover);
 }
 
 @keyframes modalFadeIn {

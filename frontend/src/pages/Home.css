@@ -11,7 +11,7 @@
 
 /* Hero Section */
 .hero-section {
-    background: radial-gradient(circle at center, #e7e1cb 0%, #f5f5dc 33%, #ecf0f1 100%);
+    background: var(--gradient-hero);
     color: var(--text-color);
     text-align: center;
     padding: 60px 20px 80px;
@@ -229,7 +229,7 @@
 }
 
 .read-more-btn:hover {
-    background-color: #1a252f;
+    background-color: var(--primary-color-dark);
 }
 
 .blog-teaser .button-secondary {
@@ -239,8 +239,8 @@
 }
 
 .blog-teaser .button-secondary:hover {
-    background-color: #1a252f;
-    border-color: #1a252f;
+    background-color: var(--primary-color-dark);
+    border-color: var(--primary-color-dark);
     color: white;
 }
 

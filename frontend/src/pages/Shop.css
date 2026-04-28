@@ -148,7 +148,7 @@
 
 .filter-group select:hover {
     border-color: var(--primary-color);
-    background-color: #f8fafc;
+    background-color: var(--color-surface-alt);
 }
 
 .filter-group select:focus {
@@ -169,14 +169,14 @@
 }
 
 .filter-group select option:hover {
-    background-color: #f0f7ff;
+    background-color: var(--color-surface-blue);
 }
 
 /* Help text styling */
 .filter-group .help-text {
     margin: 6px 0 0 0;
     font-size: 0.85rem;
-    color: #666;
+    color: var(--color-text-light);
     line-height: 1.4;
 }
 

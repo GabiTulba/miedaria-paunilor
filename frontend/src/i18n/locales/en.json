@@ -510,5 +510,10 @@
     "backToBlog": "Back to Blog",
     "byAuthor": "By {{author}}",
     "updatedOn": "Updated on {{date}}"
+  },
+  "theme": {
+    "system": "Theme: System",
+    "light": "Theme: Light",
+    "dark": "Theme: Dark"
   }
 }
