@@ -1,5 +1,5 @@
-import { Outlet, Link, NavLink } from "react-router-dom";
-import { useContext, useState } from 'react';
+import { Outlet, Link, NavLink, useLocation } from "react-router-dom";
+import { useContext, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from './context/CartContext';
 import LanguageSwitcher from './components/LanguageSwitcher';
@@ -13,6 +13,11 @@ function App() {
   const { itemCount } = useContext(CartContext);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);

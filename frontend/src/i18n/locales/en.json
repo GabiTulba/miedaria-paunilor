@@ -323,6 +323,7 @@
       "save": "Save Product",
       "update": "Update Product",
       "cancel": "Cancel",
+      "validationErrors": "Please fix the following errors",
       "validation": {
         "invalidProductId": "Invalid product ID format",
         "emptyProductName": "Product name is required",
@@ -398,7 +399,8 @@
         "excerptHelp": "Short summary displayed in blog listing",
         "contentEn": "Content (English) - Markdown",
         "contentRo": "Content (Romanian) - Markdown",
-        "contentHelp": "Write your blog post content using Markdown"
+        "contentHelp": "Write your blog post content using Markdown",
+        "validationErrors": "Please fix the following errors"
       }
     }
   },
@@ -512,8 +514,9 @@
     "updatedOn": "Updated on {{date}}"
   },
   "theme": {
-    "system": "Theme: System",
-    "light": "Theme: Light",
-    "dark": "Theme: Dark"
+    "label": "Theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
   }
 }

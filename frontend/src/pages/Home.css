@@ -33,8 +33,20 @@
 .hero-logo {
     width: 300px;
     height: auto;
-    opacity: 0.8; 
+    opacity: 0.8;
     filter: brightness(1) contrast(1);
+}
+
+:root[data-theme="dark"] .hero-logo {
+    filter: brightness(1.2) contrast(1.2);
+    opacity: 0.8;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .hero-logo {
+        filter: brightness(1.2) contrast(1.2);
+        opacity: 0.8;
+    }
 }
 
 .hero-content {
@@ -220,7 +232,7 @@
     display: inline-block;
     padding: 8px 16px;
     background-color: var(--primary-color);
-    color: white;
+    color: var(--button-secondary-text);
     text-decoration: none;
     border-radius: var(--radius-sm);
     font-weight: 500;
@@ -234,14 +246,14 @@
 
 .blog-teaser .button-secondary {
     background-color: var(--primary-color);
-    color: white;
+    color: var(--button-secondary-text);
     border: 2px solid var(--primary-color);
 }
 
 .blog-teaser .button-secondary:hover {
     background-color: var(--primary-color-dark);
     border-color: var(--primary-color-dark);
-    color: white;
+    color: var(--button-secondary-text);
 }
 
 /* About Teaser */

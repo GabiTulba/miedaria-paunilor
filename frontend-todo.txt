@@ -7,17 +7,6 @@
 MEDIUM PRIORITY (Modernization for 2026)
 ================================================================================
 
-[M5] Form UX Is Weak
--------------------------------------------------------------------------------
-- Validation only on submit -- no real-time or on-blur validation
-- No required field indicators visible (asterisk exists but minimal)
-- No form validation summary at top showing all errors
-- Help text below input -- should appear before user fills field
-- Admin login -- missing autocomplete="username"/autocomplete="current-password",
-  no show/hide password toggle
-  File: frontend/src/pages/admin/AdminLogin.tsx (lines 46-66)
-- No unsaved changes warning when navigating away from edit forms
-
 [M6] Missing Micro-Interactions
 -------------------------------------------------------------------------------
 - No skeleton loading animations

@@ -1,20 +1,53 @@
-.theme-toggle {
+.theme-slider {
+    display: flex;
+    align-items: center;
+    position: relative;
+    background-color: var(--theme-slider-bg);
+    border-radius: var(--radius-pill);
+    padding: 3px;
+    gap: 0;
+}
+
+.theme-slider-option {
     all: unset;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    transition: background-color var(--duration-normal) ease;
+    width: 30px;
+    height: 28px;
+    border-radius: var(--radius-pill);
+    position: relative;
+    z-index: 1;
+    color: var(--theme-slider-icon);
+    transition: color var(--duration-normal) ease;
 }
 
-.theme-toggle:hover {
-    background-color: var(--color-surface-hover);
+.theme-slider-option:hover {
+    color: var(--theme-slider-icon-hover);
 }
 
-.theme-toggle-icon {
-    font-size: 1.2rem;
-    line-height: 1;
+.theme-slider-option.active {
+    color: var(--theme-slider-icon-active);
+}
+
+.theme-slider-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.theme-slider-indicator {
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    width: 28px;
+    height: 26px;
+    background-color: var(--theme-slider-indicator);
+    border-radius: var(--radius-pill);
+    transition: transform var(--duration-slow) ease, opacity var(--duration-normal) ease;
+    z-index: 0;
+}
+
+.theme-slider:hover .theme-slider-indicator {
+    opacity: 0;
 }

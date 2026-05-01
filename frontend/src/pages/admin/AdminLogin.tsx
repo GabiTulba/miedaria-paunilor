@@ -8,6 +8,7 @@ import './Admin.css';
 function AdminLogin() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const { setToken } = useContext(AuthContext);
     const navigate = useNavigate();
@@ -49,21 +50,33 @@ function AdminLogin() {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
+                                autoComplete="username"
                                 placeholder={t('admin.login.username')}
                                 className="login-input"
                             />
                         </div>
                         <div className="form-group">
                             <label htmlFor="password">{t('admin.login.password')}</label>
-                            <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                placeholder={t('admin.login.password')}
-                                className="login-input"
-                            />
+                            <div className="password-input-wrapper">
+                                <input
+                                    id="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    autoComplete="current-password"
+                                    placeholder={t('admin.login.password')}
+                                    className="login-input"
+                                />
+                                <button
+                                    type="button"
+                                    className="password-toggle"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? t('admin.login.hidePassword') : t('admin.login.showPassword')}
+                                >
+                                    {showPassword ? '\u25E1' : '\u2299'}
+                                </button>
+                            </div>
                         </div>
                         
                         {error && (

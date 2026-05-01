@@ -36,7 +36,7 @@ const SelectInput: React.FC<SelectInputProps> = ({
 
   return (
     <div className="form-group">
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id}>{label}{required && <span className="required-indicator">*</span>}</label>
       <select
         id={id}
         name={name}

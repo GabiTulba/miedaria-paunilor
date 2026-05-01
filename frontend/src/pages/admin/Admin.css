@@ -157,7 +157,7 @@
 .login-card-header {
     padding: 2rem 2rem 1.5rem;
     text-align: center;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-blue) 100%);
+    background: linear-gradient(135deg, var(--login-gradient-start) 0%, var(--login-gradient-end) 100%);
     color: white;
 }
 
@@ -222,6 +222,31 @@
 
 .warning-icon {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23dc2626'%3E%3Cpath d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E");
+}
+
+.password-toggle {
+    all: unset;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--color-text-light);
+    padding: 4px;
+    transition: color var(--duration-normal) ease;
+}
+
+.password-toggle:hover {
+    color: var(--text-color);
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-input-wrapper input {
+    padding-inline-end: 40px;
 }
 
 .login-button {
@@ -479,7 +504,7 @@
 
 .button-primary {
     background-color: var(--primary-color);
-    color: white;
+    color: var(--button-secondary-text);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: var(--border-radius);
@@ -742,13 +767,14 @@
 
 .button-secondary {
     background-color: var(--primary-color);
-    color: white;
+    color: var(--button-secondary-text);
     border: 1px solid var(--primary-color);
 }
 
 .button-secondary:hover {
     background-color: var(--primary-color-blue);
     border-color: var(--primary-color-blue);
+    color: var(--button-secondary-text);
 }
 
 .button-danger {

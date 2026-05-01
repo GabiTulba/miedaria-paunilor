@@ -10,6 +10,18 @@ import TextAreaInput from '../../components/forms/TextAreaInput';
 import SelectInput from '../../components/forms/SelectInput';
 import './Admin.css';
 
+function validateRequired(value: string, fieldName: string): string | undefined {
+    if (!value.trim()) return `${fieldName} is required`;
+    return undefined;
+}
+
+function validateSlug(value: string): string | undefined {
+    if (!value.trim()) return 'Slug is required';
+    if (!/^[a-z0-9-]+$/.test(value)) return 'Only lowercase letters, numbers, hyphens';
+    if (value.length > 256) return 'Max 256 characters';
+    return undefined;
+}
+
 interface BlogFormProps {
     isEdit?: boolean;
 }
@@ -191,6 +203,17 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
             )}
 
             <form onSubmit={handleSubmit} className="admin-form">
+                {Object.keys(formErrors).length > 0 && (
+                    <div className="validation-summary" role="alert">
+                        <h4>{t('admin.blog.form.validationErrors')}</h4>
+                        <ul>
+                            {Object.values(formErrors).filter(Boolean).map((err, i) => (
+                                <li key={i}>{err}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 <div className="form-section">
                     <h3>{t('admin.blog.form.basicInfo')}</h3>
                     
@@ -203,6 +226,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             onChange={handleChange}
                             error={formErrors.title}
                             required
+                            validate={(v) => validateRequired(v, 'Title')}
                         />
                         <TextInput
                             id="title_ro"
@@ -212,6 +236,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             onChange={handleChange}
                             error={formErrors.title_ro}
                             required
+                            validate={(v) => validateRequired(v, 'Romanian title')}
                         />
                     </div>
 
@@ -225,6 +250,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             error={formErrors.slug}
                             required
                             helpText={t('admin.blog.form.slugHelp')}
+                            validate={(v) => validateSlug(v)}
                         />
                         <TextInput
                             id="author"
@@ -234,6 +260,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             onChange={handleChange}
                             error={formErrors.author}
                             required
+                            validate={(v) => validateRequired(v, 'Author')}
                         />
                     </div>
 
@@ -266,6 +293,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             required
                             rows={3}
                             helpText={t('admin.blog.form.excerptHelp')}
+                            validate={(v) => validateRequired(v, 'Excerpt')}
                         />
                         <TextAreaInput
                             id="excerpt_ro"
@@ -276,6 +304,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             error={formErrors.excerpt_ro}
                             required
                             rows={3}
+                            validate={(v) => validateRequired(v, 'Romanian excerpt')}
                         />
                     </div>
 
@@ -290,6 +319,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             required
                             rows={10}
                             helpText={t('admin.blog.form.contentHelp')}
+                            validate={(v) => validateRequired(v, 'Content')}
                         />
                         <TextAreaInput
                             id="content_markdown_ro"
@@ -300,6 +330,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             error={formErrors.content_markdown_ro}
                             required
                             rows={10}
+                            validate={(v) => validateRequired(v, 'Romanian content')}
                         />
                     </div>
                 </div>

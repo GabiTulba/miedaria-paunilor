@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface TextInputProps {
   id: string;
@@ -9,9 +9,11 @@ interface TextInputProps {
   error?: string;
   required?: boolean;
   disabled?: boolean;
-  type?: string; // e.g., 'text', 'email', 'password'
+  type?: string;
   placeholder?: string;
   helpText?: string;
+  autoComplete?: string;
+  validate?: (value: string) => string | undefined;
 }
 
 const TextInput: React.FC<TextInputProps> = ({
@@ -26,28 +28,44 @@ const TextInput: React.FC<TextInputProps> = ({
   type = 'text',
   placeholder,
   helpText,
+  autoComplete,
+  validate,
 }) => {
+  const [blurError, setBlurError] = useState<string>();
+  const displayError = error || blurError;
+
+  const handleBlur = () => {
+    if (validate) setBlurError(validate(value));
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (blurError) setBlurError(undefined);
+    onChange(e);
+  };
+
   const helpTextId = helpText ? `${id}-help` : undefined;
-  const errorId = error ? `${id}-error` : undefined;
+  const errorId = displayError ? `${id}-error` : undefined;
   const describedBy = [helpTextId, errorId].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className="form-group">
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id}>{label}{required && <span className="required-indicator">*</span>}</label>
       <input
         type={type}
         id={id}
         name={name}
         value={value}
-        onChange={onChange}
+        onChange={handleChange}
+        onBlur={handleBlur}
         required={required}
         disabled={disabled}
         placeholder={placeholder}
-        aria-invalid={error ? true : undefined}
+        autoComplete={autoComplete}
+        aria-invalid={displayError ? true : undefined}
         aria-describedby={describedBy}
       />
       {helpText && <p className="help-text" id={helpTextId}>{helpText}</p>}
-      {error && <p className="error-message" id={errorId}>{error}</p>}
+      {displayError && <p className="error-message" id={errorId}>{displayError}</p>}
     </div>
   );
 };

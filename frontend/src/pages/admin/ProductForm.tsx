@@ -13,6 +13,37 @@ import { ro } from 'date-fns/locale/ro';
 import { enUS } from 'date-fns/locale/en-US';
 import 'react-datepicker/dist/react-datepicker.css';
 
+function validateRequired(value: string, fieldName: string): string | undefined {
+    if (!value.trim()) return `${fieldName} is required`;
+    return undefined;
+}
+
+function validateProductId(value: string): string | undefined {
+    if (!value.trim()) return 'Product ID is required';
+    if (!/^[a-z0-9_-]+$/.test(value)) return 'Only lowercase letters, numbers, dashes, underscores';
+    if (value.length > 128) return 'Max 128 characters';
+    return undefined;
+}
+
+function validateAbv(value: string): string | undefined {
+    const num = parseFloat(value);
+    if (isNaN(num)) return 'ABV is required';
+    if (num < 0 || num > 99.9) return 'ABV must be 0.0\u201399.9';
+    return undefined;
+}
+
+function validatePositiveNumber(value: string, fieldName: string): string | undefined {
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) return `${fieldName} must be positive`;
+    return undefined;
+}
+
+function validateNonNegative(value: string, fieldName: string): string | undefined {
+    const num = parseFloat(value);
+    if (isNaN(num) || num < 0) return `${fieldName} must be non-negative`;
+    return undefined;
+}
+
 interface ProductFormProps {
     product: ProductFormData;
     setProduct: (product: ProductFormData) => void;
@@ -90,6 +121,17 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                 <p className="form-subtitle">{t('admin.productForm.basicInfo')}</p>
             </div>
 
+            {Object.keys(errors).length > 0 && (
+                <div className="validation-summary" role="alert">
+                    <h4>{t('admin.productForm.validationErrors')}</h4>
+                    <ul>
+                        {Object.values(errors).filter(Boolean).map((err, i) => (
+                            <li key={i}>{err}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
             <div className="form-section">
                 <h2 className="section-title">{t('admin.productForm.basicInfo')}</h2>
                 <div className="section-content">
@@ -104,6 +146,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         error={errors.product_id}
                         placeholder="e.g., classic-hidromel"
                         helpText={t('admin.productForm.productIdHelp')}
+                        validate={(v) => validateProductId(v)}
                     />
                     <TextInput
                         id="product_name"
@@ -114,6 +157,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         required
                         error={errors.product_name}
                         placeholder="e.g., Classic Hidromel"
+                        validate={(v) => validateRequired(v, 'Product name')}
                     />
                     <TextInput
                         id="product_name_ro"
@@ -124,6 +168,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         required
                         error={errors.product_name_ro}
                         placeholder="e.g., Hidromel Clasic"
+                        validate={(v) => validateRequired(v, 'Romanian product name')}
                     />
                     <TextAreaInput
                         id="product_description"
@@ -135,6 +180,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         required
                         error={errors.product_description}
                         placeholder={t('admin.productForm.productDescription')}
+                        validate={(v) => validateRequired(v, 'Description')}
                     />
                     <TextAreaInput
                         id="product_description_ro"
@@ -146,6 +192,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         required
                         error={errors.product_description_ro}
                         placeholder={t('admin.productForm.productDescription')}
+                        validate={(v) => validateRequired(v, 'Romanian description')}
                     />
                     <TextAreaInput
                         id="ingredients"
@@ -157,6 +204,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         required
                         error={errors.ingredients}
                         placeholder={t('admin.productForm.ingredients')}
+                        validate={(v) => validateRequired(v, 'Ingredients')}
                     />
                     <TextAreaInput
                         id="ingredients_ro"
@@ -168,6 +216,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                         required
                         error={errors.ingredients_ro}
                         placeholder={t('admin.productForm.ingredients')}
+                        validate={(v) => validateRequired(v, 'Romanian ingredients')}
                     />
                 </div>
             </div>
@@ -345,6 +394,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                             max="99.9"
                             error={errors.abv}
                             helpText={t('admin.productForm.abvHelp')}
+                            validate={(v) => validateAbv(v)}
                         />
                         <NumberInput
                             id="price"
@@ -357,6 +407,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                             min="0"
                             error={errors.price}
                             helpText={t('admin.productForm.priceHelp')}
+                            validate={(v) => validatePositiveNumber(v, 'Price')}
                         />
                     </div>
                     <div className="form-row">
@@ -371,6 +422,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                             min="0"
                             error={errors.price_ron}
                             helpText={t('admin.productForm.priceRonHelp')}
+                            validate={(v) => validatePositiveNumber(v, 'Price (RON)')}
                         />
                     </div>
                     <div className="form-row">
@@ -384,6 +436,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                             min="0"
                             error={errors.bottle_count}
                             helpText={t('admin.productForm.bottleCount')}
+                            validate={(v) => validateNonNegative(v, 'Bottle count')}
                         />
                         <NumberInput
                             id="bottle_size"
@@ -395,6 +448,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                             min="1"
                             error={errors.bottle_size}
                             helpText={t('admin.productForm.bottleSizeHelp')}
+                            validate={(v) => validatePositiveNumber(v, 'Bottle size')}
                         />
                     </div>
                      <div className="form-row">
@@ -432,6 +486,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                             min="1"
                             error={errors.lot_number}
                             helpText={t('admin.productForm.lotNumberHelp')}
+                            validate={(v) => validatePositiveNumber(v, 'Lot number')}
                         />
                     </div>
                 </div>

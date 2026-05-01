@@ -35,11 +35,21 @@
 }
 
 .logo-image {
-  height: 90px; /* Very tall logo to dominate header space */
+  height: 90px;
   width: auto;
-  filter: brightness(0) invert(1); /* Make logo white to match header */
+  filter: brightness(0) invert(1);
   opacity: 1;
-  transition: opacity var(--duration-slow) ease;
+  transition: opacity var(--duration-slow) ease, filter var(--duration-slow) ease;
+}
+
+:root[data-theme="dark"] .logo-image {
+  filter: brightness(0);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-image {
+    filter: brightness(0);
+  }
 }
 
 .logo:focus-visible {
@@ -58,12 +68,12 @@
 }
 
 .logo:hover .logo-image {
-  opacity: 0.8; /* Same 80% opacity for logo */
+  opacity: 0.7; 
 }
 
 .main-nav {
   display: flex;
-  gap: 1.5rem;
+  gap: 1.3rem;
 }
 
 .main-nav a {

@@ -323,6 +323,7 @@
       "save": "Salvează Produs",
       "update": "Actualizează Produs",
       "cancel": "Anulează",
+      "validationErrors": "Vă rugăm să corectați următoarele erori",
       "validation": {
         "invalidProductId": "Format ID produs invalid",
         "emptyProductName": "Numele produsului este obligatoriu",
@@ -512,8 +513,9 @@
     "updatedOn": "Actualizat la {{date}}"
   },
   "theme": {
-    "system": "Temă: Sistem",
-    "light": "Temă: Deschisă",
-    "dark": "Temă: Întunecată"
+    "label": "Temă",
+    "system": "Sistem",
+    "light": "Deschisă",
+    "dark": "Întunecată"
   }
 }

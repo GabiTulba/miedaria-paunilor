@@ -100,18 +100,33 @@
   --alert-warning-hover: rgba(133, 100, 4, 0.1);
 
   /* Gradient tokens */
-  --gradient-hero: radial-gradient(circle at center, #e7e1cb 0%, #f5f5dc 33%, #ecf0f1 100%);
+  --hero-gradient-color: #e1d9ba;
+  --gradient-hero: radial-gradient(ellipse at center, var(--hero-gradient-color) 0%, var(--secondary-color) 67%);
+    
   --gradient-placeholder: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   --gradient-admin-sidebar: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-color-blue) 100%);
 
   /* Logo hover */
   --logo-hover-bg: rgba(255, 255, 255, 0.8);
 
+  /* Dark mode aware text */
+  --button-secondary-text: white;
+  --overlay-text: white;
+  --login-gradient-start: var(--primary-color);
+  --login-gradient-end: var(--primary-color-blue);
+
   /* Admin sidebar text (white-on-dark) */
   --admin-sidebar-text: rgba(255, 255, 255, 0.8);
   --admin-sidebar-border: rgba(255, 255, 255, 0.1);
   --admin-sidebar-hover: rgba(255, 255, 255, 0.1);
   --admin-sidebar-active: rgba(255, 255, 255, 0.15);
+
+  /* Theme slider */
+  --theme-slider-bg: rgba(255, 255, 255, 0.15);
+  --theme-slider-icon: rgba(255, 255, 255, 0.6);
+  --theme-slider-icon-hover: rgba(255, 255, 255, 0.9);
+  --theme-slider-icon-active: var(--primary-color);
+  --theme-slider-indicator: rgba(255, 255, 255, 0.9);
 }
 
 body {
@@ -179,10 +194,12 @@ button:hover, .button:hover {
 
 .button-secondary {
     background-color: var(--primary-color);
+    color: var(--button-secondary-text);
 }
 
 .button-secondary:hover {
     background-color: var(--secondary-color-hover);
+    color: var(--button-secondary-text);
 }
 
 input[type="text"],
@@ -268,6 +285,32 @@ select option:hover {
   line-height: 1.4;
 }
 
+.required-indicator {
+  color: var(--color-danger);
+  margin-inline-start: 2px;
+}
+
+.validation-summary {
+  background: var(--badge-error-bg);
+  border: 1px solid var(--badge-error-border);
+  color: var(--badge-error-text);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.validation-summary h4 {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+}
+
+.validation-summary ul {
+  margin: 0;
+  padding-inline-start: 1.2rem;
+  line-height: 1.6;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -329,7 +372,7 @@ tr:hover {
 /* Dark mode: system preference (only when no manual override) */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-        --primary-color: #e2e8f0;
+        --primary-color: #cacbcf;
         --secondary-color: #1a202c;
         --accent-color: #f0923e;
         --text-color: #e2e8f0;
@@ -395,11 +438,18 @@ tr:hover {
         --alert-warning-text: #fcd34d;
         --alert-warning-hover: rgba(252, 211, 77, 0.1);
 
-        --gradient-hero: radial-gradient(circle at center, #2d3748 0%, #1a202c 100%);
+
+        --hero-gradient-color: #354a5f;
+        --gradient-hero: radial-gradient(ellipse at center, var(--hero-gradient-color) 0%, var(--secondary-color) 67%);
         --gradient-placeholder: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
         --gradient-admin-sidebar: linear-gradient(180deg, #1a202c 0%, #2a4365 100%);
 
-        --logo-hover-bg: rgba(255, 255, 255, 0.1);
+        --logo-hover-bg: rgba(0, 0, 0, 0.5);
+
+        --button-secondary-text: #1a202c;
+        --overlay-text: #f7fafc;
+        --login-gradient-start: #1a365d;
+        --login-gradient-end: #2a4365;
 
         --admin-sidebar-text: rgba(255, 255, 255, 0.8);
         --admin-sidebar-border: rgba(255, 255, 255, 0.1);
@@ -408,12 +458,18 @@ tr:hover {
 
         --shadow-focus: 0 0 0 3px rgba(240, 146, 62, 0.3);
         --shadow-focus-light: 0 0 0 3px rgba(240, 146, 62, 0.15);
+
+        --theme-slider-bg: rgba(0, 0, 0, 0.2);
+        --theme-slider-icon: rgba(0, 0, 0, 0.4);
+        --theme-slider-icon-hover: rgba(0, 0, 0, 0.7);
+        --theme-slider-icon-active: #1a202c;
+        --theme-slider-indicator: rgba(255, 255, 255, 0.85);
     }
 }
 
 /* Dark mode: manual toggle */
 :root[data-theme="dark"] {
-    --primary-color: #e2e8f0;
+     --primary-color: #cacbcf;
     --secondary-color: #1a202c;
     --accent-color: #f0923e;
     --text-color: #e2e8f0;
@@ -479,11 +535,18 @@ tr:hover {
     --alert-warning-text: #fcd34d;
     --alert-warning-hover: rgba(252, 211, 77, 0.1);
 
-    --gradient-hero: radial-gradient(circle at center, #2d3748 0%, #1a202c 100%);
+    --hero-gradient-color: #4d6984;
+    --gradient-hero: radial-gradient(ellipse at center, var(--hero-gradient-color) 0%, var(--secondary-color) 67%);
+       
     --gradient-placeholder: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
     --gradient-admin-sidebar: linear-gradient(180deg, #1a202c 0%, #2a4365 100%);
 
-    --logo-hover-bg: rgba(255, 255, 255, 0.1);
+    --logo-hover-bg: rgba(0, 0, 0, 0.5);
+
+    --button-secondary-text: #1a202c;
+    --overlay-text: #f7fafc;
+    --login-gradient-start: #1a365d;
+    --login-gradient-end: #2a4365;
 
     --admin-sidebar-text: rgba(255, 255, 255, 0.8);
     --admin-sidebar-border: rgba(255, 255, 255, 0.1);
@@ -492,6 +555,12 @@ tr:hover {
 
     --shadow-focus: 0 0 0 3px rgba(240, 146, 62, 0.3);
     --shadow-focus-light: 0 0 0 3px rgba(240, 146, 62, 0.15);
+
+    --theme-slider-bg: rgba(0, 0, 0, 0.2);
+    --theme-slider-icon: rgba(0, 0, 0, 0.4);
+    --theme-slider-icon-hover: rgba(0, 0, 0, 0.7);
+    --theme-slider-icon-active: #1a202c;
+    --theme-slider-indicator: rgba(255, 255, 255, 0.85);
 }
 
 .error-state {

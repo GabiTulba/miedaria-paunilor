@@ -10,12 +10,12 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    color: var(--white-color);
+    color: var(--overlay-text);
 }
 
 .about-hero-content h1 {
     font-size: clamp(2.2rem, 1.78rem + 0.91vw, 3rem);
-    color: var(--white-color);
+    color: var(--overlay-text);
     max-width: 800px;
 }
 

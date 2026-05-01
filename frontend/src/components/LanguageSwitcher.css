@@ -1,22 +1,21 @@
 .language-switcher {
   display: flex;
   gap: 4px;
-  margin-inline-start: 20px;
 }
 
 .language-btn {
   background: none;
   border: none;
   color: var(--secondary-color);
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: var(--border-radius);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color var(--duration-slow) ease, color var(--duration-slow) ease;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   position: relative;
 }
 
@@ -48,7 +47,7 @@
 }
 
 .language-btn .flag {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .language-btn .language-code {
