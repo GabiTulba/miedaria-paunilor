@@ -50,35 +50,45 @@
 
 .contact-info li {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 1rem;
     margin-bottom: 1.5rem;
     font-size: 1.1rem;
 }
 
+.contact-info li span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 /* Basic icon placeholders */
 .icon-phone, .icon-email, .icon-location {
     display: inline-block;
+    flex-shrink: 0;
     width: 24px;
     height: 24px;
     background-color: var(--accent-color);
     -webkit-mask-size: cover;
     mask-size: cover;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
 }
 
 .icon-phone {
-    -webkit-mask-image: url('https://api.iconify.design/material-symbols/phone-in-talk-outline.svg');
-    mask-image: url('https://api.iconify.design/material-symbols/phone-in-talk-outline.svg');
+    -webkit-mask-image: url('/icon-phone.svg');
+    mask-image: url('/icon-phone.svg');
 }
 
 .icon-email {
-    -webkit-mask-image: url('https://api.iconify.design/material-symbols/mail-outline.svg');
-    mask-image: url('https://api.iconify.design/material-symbols/mail-outline.svg');
+    -webkit-mask-image: url('/icon-email.svg');
+    mask-image: url('/icon-email.svg');
 }
 
 .icon-location {
-    -webkit-mask-image: url('https://api.iconify.design/material-symbols/location-on-outline.svg');
-    mask-image: url('https://api.iconify.design/material-symbols/location-on-outline.svg');
+    -webkit-mask-image: url('/icon-location.svg');
+    mask-image: url('/icon-location.svg');
 }
 
 .contact-form-container {
