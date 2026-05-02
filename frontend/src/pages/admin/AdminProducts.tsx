@@ -181,9 +181,31 @@ function AdminProducts() {
                     )}
                 </div>
             ) : loading ? (
-                <div className="loading-state">
-                    <div className="loading-icon"></div>
-                    <p>{t('common.loading')}</p>
+                <div className="products-table-container">
+                    <table className="products-table">
+                        <thead>
+                            <tr>
+                                <th>{t('admin.products.product')}</th>
+                                <th>{t('admin.products.type')}</th>
+                                <th>{t('common.price')}</th>
+                                <th>{t('admin.products.stock')}</th>
+                                <th>{t('admin.products.status')}</th>
+                                <th>{t('admin.products.actions')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {[1, 2, 3, 4, 5].map(i => (
+                                <tr key={i}>
+                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '120px' }} /></td>
+                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '80px' }} /></td>
+                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '60px' }} /></td>
+                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '40px' }} /></td>
+                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '70px' }} /></td>
+                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '100px' }} /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             ) : (
                 <>

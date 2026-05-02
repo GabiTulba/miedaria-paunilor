@@ -224,29 +224,57 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23dc2626'%3E%3Cpath d='M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z'/%3E%3C/svg%3E");
 }
 
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .login-input {
+    padding-right: 44px;
+}
+
 .password-toggle {
-    all: unset;
     position: absolute;
-    right: 12px;
+    right: 6px;
     top: 50%;
     transform: translateY(-50%);
-    cursor: pointer;
-    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
     color: var(--color-text-light);
-    padding: 4px;
-    transition: color var(--duration-normal) ease;
+    cursor: pointer;
+    transition: none;
 }
 
 .password-toggle:hover {
+    background: rgba(255, 255, 255, 0.4);
     color: var(--text-color);
 }
 
-.password-input-wrapper {
-    position: relative;
+.password-toggle:active {
+    transform: translateY(-50%);
 }
 
-.password-input-wrapper input {
-    padding-inline-end: 40px;
+.password-toggle:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: -2px;
+}
+
+.password-toggle-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: block;
+}
+
+.password-toggle-icon.hidden {
+    display: none;
 }
 
 .login-button {

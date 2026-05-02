@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
@@ -13,6 +13,7 @@ function AdminLogin() {
     const { setToken } = useContext(AuthContext);
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const formRef = useRef<HTMLFormElement>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,6 +29,10 @@ function AdminLogin() {
             }
         } catch (err) {
             setError(t('admin.login.invalidCredentials'));
+            formRef.current?.classList.add('shake');
+            formRef.current?.addEventListener('animationend', () => {
+                formRef.current?.classList.remove('shake');
+            }, { once: true });
             console.error(err);
         }
     };
@@ -41,7 +46,7 @@ function AdminLogin() {
                         <p>{t('admin.login.subtitle')}</p>
                     </div>
                     
-                    <form onSubmit={handleSubmit} className="login-form">
+                    <form onSubmit={handleSubmit} className="login-form" ref={formRef}>
                         <div className="form-group">
                             <label htmlFor="username">{t('admin.login.username')}</label>
                             <input
@@ -73,8 +78,18 @@ function AdminLogin() {
                                     className="password-toggle"
                                     onClick={() => setShowPassword(!showPassword)}
                                     aria-label={showPassword ? t('admin.login.hidePassword') : t('admin.login.showPassword')}
+                                    tabIndex={-1}
                                 >
-                                    {showPassword ? '\u25E1' : '\u2299'}
+                                    <img
+                                        src="/eye_open.svg"
+                                        alt=""
+                                        className={`password-toggle-icon${showPassword ? '' : ' hidden'}`}
+                                    />
+                                    <img
+                                        src="/eye_closed.svg"
+                                        alt=""
+                                        className={`password-toggle-icon${!showPassword ? '' : ' hidden'}`}
+                                    />
                                 </button>
                             </div>
                         </div>

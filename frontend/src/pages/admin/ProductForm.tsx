@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { Image, ProductFormData } from '../../types';
 import { useTranslation } from 'react-i18next';
 import TextInput from '../../components/forms/TextInput';
@@ -59,6 +60,18 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
     const { enums, loading, error } = useFetchEnums();
     const { t } = useTranslation();
     const language = useLanguage();
+    const formRef = useRef<HTMLFormElement>(null);
+
+    const errorCount = Object.keys(errors).length;
+    useEffect(() => {
+        if (errorCount > 0 && formRef.current) {
+            formRef.current.classList.add('shake');
+            const form = formRef.current;
+            const handler = () => form.classList.remove('shake');
+            form.addEventListener('animationend', handler, { once: true });
+            return () => form.removeEventListener('animationend', handler);
+        }
+    }, [errorCount]);
     
     // Register locales for date picker
     registerLocale('en', enUS);
@@ -115,7 +128,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
     }
     
     return (
-        <form onSubmit={onSubmit} className="admin-product-form">
+        <form onSubmit={onSubmit} className="admin-product-form" ref={formRef}>
             <div className="form-header">
                 <h1>{isEdit ? t('admin.productForm.editTitle') : t('admin.productForm.createTitle')}</h1>
                 <p className="form-subtitle">{t('admin.productForm.basicInfo')}</p>

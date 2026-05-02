@@ -10,12 +10,16 @@
     flex-direction: column;
     text-decoration: none;
     color: inherit;
-    height: 100%; /* Ensure cards in a grid have consistent height */
 }
 
 .product-card:hover {
     transform: translateY(-5px);
     box-shadow: var(--shadow-md);
+}
+
+.product-card:has(.skeleton):hover {
+    transform: none;
+    box-shadow: none;
 }
 
 .product-card:has(a:focus-visible) {

@@ -177,10 +177,28 @@
     background-color: var(--white-color);
 }
 
-.quantity-selector span {
-    padding: 0 10px;
+.quantity-selector .quantity-input {
+    width: 3.5ch;
+    padding: 10px 0;
+    border: none;
+    text-align: center;
     font-weight: 500;
     font-size: 1.1rem;
+    font-family: inherit;
+    color: var(--text-color);
+    background: transparent;
+    -moz-appearance: textfield;
+}
+
+.quantity-selector .quantity-input::-webkit-outer-spin-button,
+.quantity-selector .quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quantity-selector .quantity-input:focus {
+    outline: none;
+    background-color: var(--color-gray-100);
 }
 
 .add-to-cart-btn {

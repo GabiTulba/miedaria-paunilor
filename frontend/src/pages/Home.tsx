@@ -61,7 +61,9 @@ function Home() {
                             <h2>{t('home.featuredProducts')}</h2>
                              <div className="product-grid">
                              {isLoading ? (
-                                 <div className="loader">{t('common.loading')}</div>
+                                 [1, 2, 3].map(i => (
+                                     <ProductCard key={i} renderSkeleton />
+                                 ))
                              ) : (
                                  featuredProducts.map(productWithImage => (
                                      <ProductCard
@@ -83,7 +85,29 @@ function Home() {
                             <h2>{t('home.latestBlogPosts')}</h2>
                             <div className="blog-grid">
                                 {isLoading ? (
-                                    <div className="loader">{t('common.loading')}</div>
+                                    [1, 2, 3].map(i => (
+                                        <article key={i} className="blog-post-card">
+                                            <div className="blog-post-header">
+                                                <h3 className="blog-post-title">
+                                                    <span className="skeleton" style={{ display: 'block', height: '1.2em', width: '85%' }} />
+                                                </h3>
+                                                <div className="blog-post-meta">
+                                                    <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '25%' }} />
+                                                    <span>
+                                                        <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '40%' }} />
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="blog-post-excerpt">
+                                                <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem' }} />
+                                                <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem', width: '92%' }} />
+                                                <span className="skeleton" style={{ display: 'block', height: '1em', width: '70%' }} />
+                                            </div>
+                                            <div className="blog-post-actions">
+                                                <span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '90px' }} />
+                                            </div>
+                                        </article>
+                                    ))
                                 ) : (
                                     latestBlogPosts.map(post => (
                                         <article key={post.id} className="blog-post-card">

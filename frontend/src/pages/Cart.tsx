@@ -118,12 +118,36 @@ function Cart() {
                                          <p className="cart-item-price">{toFixed(item.price)} {item.currency}</p>
                                          <div className="quantity-selector-cart">
                                              <button
-                                                 onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                                                 onClick={(e) => {
+                                                     updateQuantity(item.product_id, item.quantity - 1);
+                                                     (e.target as HTMLButtonElement).classList.add('success-pulse');
+                                                     (e.target as HTMLButtonElement).addEventListener('animationend', function() {
+                                                         (this as HTMLButtonElement).classList.remove('success-pulse');
+                                                     }, { once: true });
+                                                 }}
                                                  disabled={item.quantity <= 1}
                                              >-</button>
-                                             <span>{item.quantity}</span>
+                                             <input
+                                                 type="number"
+                                                 className="quantity-input"
+                                                 value={item.quantity}
+                                                 min={1}
+                                                 max={Math.min(99, item.availableStock)}
+                                                 onChange={(e) => {
+                                                     const val = parseInt(e.target.value, 10);
+                                                     if (!isNaN(val) && val >= 1 && val < 100) {
+                                                         updateQuantity(item.product_id, Math.min(val, item.availableStock), item.availableStock);
+                                                     }
+                                                 }}
+                                             />
                                              <button
-                                                 onClick={() => updateQuantity(item.product_id, item.quantity + 1, item.availableStock)}
+                                                 onClick={(e) => {
+                                                     updateQuantity(item.product_id, item.quantity + 1, item.availableStock);
+                                                     (e.target as HTMLButtonElement).classList.add('success-pulse');
+                                                     (e.target as HTMLButtonElement).addEventListener('animationend', function() {
+                                                         (this as HTMLButtonElement).classList.remove('success-pulse');
+                                                     }, { once: true });
+                                                 }}
                                                  disabled={item.quantity >= item.availableStock}
                                              >+</button>
                                          </div>

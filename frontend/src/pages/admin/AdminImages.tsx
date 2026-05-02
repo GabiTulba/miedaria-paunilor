@@ -164,7 +164,28 @@ const AdminImages: React.FC = () => {
               <p className="error-message">{imagesError}</p>
               <button onClick={fetchImages} className="button button-secondary">{t('admin.products.retry')}</button>
             </div>
-          ) : images.length === 0 && !imagesLoading ? (
+          ) : imagesLoading ? (
+            <div className="images-grid-view">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="image-card">
+                  <div className="image-preview">
+                    <div className="skeleton" style={{ width: '100%', height: '100%', minHeight: '200px' }} />
+                  </div>
+                  <div className="image-info">
+                    <div className="image-name">
+                      <span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '70%' }} />
+                    </div>
+                    <div className="image-meta">
+                      <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '50%' }} />
+                    </div>
+                  </div>
+                  <div className="image-actions">
+                    <span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '100%' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : images.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon image-icon"></div>
               <h3>{t('admin.images.noImages')}</h3>

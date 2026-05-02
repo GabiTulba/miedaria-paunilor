@@ -4,21 +4,6 @@
 ================================================================================
 
 ================================================================================
-MEDIUM PRIORITY (Modernization for 2026)
-================================================================================
-
-[M6] Missing Micro-Interactions
--------------------------------------------------------------------------------
-- No skeleton loading animations
-- No error shake animations for validation
-- No success animations for form submissions
-- No ripple/scale on button clicks
-- Blog post title hover has no transition
-  File: frontend/src/pages/Home.css (lines 176-178)
-- Select hover has no transition
-  File: frontend/src/index.css (lines 122-125)
-
-================================================================================
 LOW PRIORITY (Polish)
 ================================================================================
 

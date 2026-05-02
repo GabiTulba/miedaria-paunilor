@@ -145,9 +145,28 @@
     background-color: var(--white-color);
 }
 
-.quantity-selector-cart span {
-    padding: 0 10px;
+.quantity-selector-cart .quantity-input {
+    width: 3.5ch;
+    padding: 8px 0;
+    border: none;
+    text-align: center;
     font-weight: 500;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--text-color);
+    background: transparent;
+    -moz-appearance: textfield;
+}
+
+.quantity-selector-cart .quantity-input::-webkit-outer-spin-button,
+.quantity-selector-cart .quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quantity-selector-cart .quantity-input:focus {
+    outline: none;
+    background-color: var(--color-gray-100);
 }
 
 .cart-item-subtotal {
@@ -178,6 +197,7 @@
 }
 
 .remove-item-btn:hover {
+    background-color: var(--secondary-color);
     color: var(--remove-hover);
 }
 

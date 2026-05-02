@@ -114,9 +114,18 @@ function AdminDashboard() {
             </div>
 
             {loading ? (
-                <div className="loading-state">
-                    <div className="loading-icon"></div>
-                    <p>{t('common.loading')}</p>
+                <div className="stats-grid">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="stat-card">
+                            <div className="stat-icon">
+                                <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
+                            </div>
+                            <div className="stat-content">
+                                <h3><span className="skeleton" style={{ display: 'inline-block', height: '2rem', width: '60px' }} /></h3>
+                                <p><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '120px' }} /></p>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : products.length > 0 && (
                 <div className="recent-products">

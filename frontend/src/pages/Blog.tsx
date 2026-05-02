@@ -48,27 +48,50 @@ function Blog() {
     if (error) {
         return (
             <div className="blog-page">
-                <div className="blog-container">
-                    <ErrorDisplay
-                        error={error}
-                        onRetry={() => setFetchTrigger(n => n + 1)}
-                        retryLabel={t('common.retry')}
-                    />
-                </div>
+                <ErrorDisplay
+                    error={error}
+                    onRetry={() => setFetchTrigger(n => n + 1)}
+                    retryLabel={t('common.retry')}
+                />
             </div>
         );
     }
 
     return (
         <div className="blog-page">
-            <div className="blog-container">
-                <header className="blog-header">
+            <header className="blog-header">
                     <h1>{t('blog.title')}</h1>
                     <p>{t('blog.description')}</p>
                 </header>
 
                 <div className="blog-content">
-                {blogPosts.length === 0 && !loading ? (
+                {loading ? (
+                    <div className="blog-posts">
+                        {[1, 2, 3].map(i => (
+                            <article key={i} className="blog-post-card">
+                                <div className="blog-post-header">
+                                    <h2 className="blog-post-title">
+                                        <span className="skeleton" style={{ display: 'block', height: '1.3em', width: '85%' }} />
+                                    </h2>
+                                    <div className="blog-post-meta">
+                                        <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '25%' }} />
+                                        <span>
+                                            <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '40%' }} />
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="blog-post-excerpt">
+                                    <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem' }} />
+                                    <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem', width: '92%' }} />
+                                    <span className="skeleton" style={{ display: 'block', height: '1em', width: '70%' }} />
+                                </div>
+                                <div className="blog-post-actions">
+                                    <span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '90px' }} />
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                ) : blogPosts.length === 0 && !loading ? (
                     <div className="no-posts">
                         <p>{t('blog.noPosts')}</p>
                     </div>
@@ -156,7 +179,6 @@ function Blog() {
                     onNextPage={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 />
                 </div>
-            </div>
         </div>
     );
 }

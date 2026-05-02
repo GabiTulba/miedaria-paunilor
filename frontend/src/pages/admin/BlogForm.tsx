@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { NewBlogPost, UpdateBlogPost } from '../../types';
@@ -46,6 +46,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
     const { token } = useContext(AuthContext);
     const { showToast } = useToast();
     const navigate = useNavigate();
+    const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
         if (isEdit && id && token) {
@@ -182,6 +183,10 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
             } else {
                 setError(err.response?.data?.message || t('common.error'));
             }
+            formRef.current?.classList.add('shake');
+            formRef.current?.addEventListener('animationend', () => {
+                formRef.current?.classList.remove('shake');
+            }, { once: true });
         } finally {
             setLoading(false);
         }
@@ -202,7 +207,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="admin-form">
+            <form onSubmit={handleSubmit} className="admin-form" ref={formRef}>
                 {Object.keys(formErrors).length > 0 && (
                     <div className="validation-summary" role="alert">
                         <h4>{t('admin.blog.form.validationErrors')}</h4>

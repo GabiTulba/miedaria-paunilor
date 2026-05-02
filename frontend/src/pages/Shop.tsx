@@ -264,7 +264,11 @@ function Shop() {
 
                 <main className="product-display">
                     {isLoading ? (
-                        <div className="loader">{t('common.loading')}</div>
+                        <div className="product-grid">
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <ProductCard key={i} renderSkeleton />
+                            ))}
+                        </div>
                     ) : products.length === 0 ? (
                         <div className="empty-state">
                             <div className="empty-state-icon search-empty-icon"></div>

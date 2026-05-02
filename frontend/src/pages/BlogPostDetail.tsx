@@ -58,12 +58,45 @@ function BlogPostDetail() {
         return () => { controller.abort(); };
     }, [slug, i18n.language, fetchTrigger]);
 
-    if (loading) return <div className="loader">{t('common.loading')}</div>;
+    if (loading) {
+        return (
+            <div className="blog-page">
+                <div className="blog-back-link">
+                    <Link to="/blog">&larr; {t('blog.backToBlog')}</Link>
+                </div>
+                <main className="blog-post-detail">
+                    <header className="blog-post-header">
+                        <h1 className="blog-post-title">
+                            <span className="skeleton" style={{ display: 'block', height: '1.5em', width: '80%' }} />
+                        </h1>
+                        <div className="blog-post-meta">
+                            <span className="skeleton" style={{ display: 'inline-block', height: '0.9em', width: '25%' }} />
+                            <span className="blog-post-author">
+                                <span className="skeleton" style={{ display: 'inline-block', height: '0.9em', width: '35%' }} />
+                            </span>
+                        </div>
+                    </header>
+                    <div className="blog-post-content">
+                        <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem' }} />
+                        <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem', width: '95%' }} />
+                        <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem' }} />
+                        <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem', width: '80%' }} />
+                        <span className="skeleton" style={{ display: 'block', height: '1em', marginTop: '1rem', marginBottom: '0.5rem' }} />
+                        <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem', width: '85%' }} />
+                        <span className="skeleton" style={{ display: 'block', height: '1em', width: '65%' }} />
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     if (error || !blogPost) {
         return (
             <div className="blog-page">
-                <div className="blog-container">
+                <div className="blog-back-link">
+                    <Link to="/blog">&larr; {t('blog.backToBlog')}</Link>
+                </div>
+                <main className="blog-post-detail">
                     <ErrorDisplay
                         error={error || t('blog.notFound')}
                         onRetry={!is404 && error ? () => setFetchTrigger(n => n + 1) : undefined}
@@ -72,92 +105,93 @@ function BlogPostDetail() {
                     <Link to="/blog" className="back-to-blog" style={{ display: 'block', textAlign: 'center', marginTop: '1rem' }}>
                         {t('blog.backToBlog')}
                     </Link>
-                </div>
+                </main>
             </div>
         );
     }
 
     return (
         <div className="blog-page">
-            <div className="blog-container blog-post-detail">
-                <article className="blog-post-card">
-                    <header className="blog-post-header">
-                        <h1 className="blog-post-title">{blogPost.title}</h1>
-                        <div className="blog-post-meta">
-                            <span className="blog-post-date">
-                                {blogPost.published_at ? formatDate(blogPost.published_at) : ''}
-                            </span>
-                            <span className="blog-post-author">
-                                {t('blog.byAuthor', { author: blogPost.author })}
-                            </span>
-                            {blogPost.updated_at !== blogPost.published_at && (
-                                <span className="blog-post-updated">
-                                    {t('blog.updatedOn', { date: formatDate(blogPost.updated_at) })}
-                                </span>
-                            )}
-                        </div>
-                    </header>
-                    
-                     <div className="blog-post-content">
-                         <ReactMarkdown
-                             remarkPlugins={[remarkGfm]}
-                             components={{
-                                 img: ({node, ...props}) => {
-                                     // Extract size from alt text like "Alt text {width=200}"
-                                     const altText = props.alt || '';
-                                     const sizeMatch = altText.match(/\{width=(\d+)\}/);
-                                     const classNameMatch = altText.match(/\{class=(\w+)\}/);
-                                     
-                                     let style: React.CSSProperties = {maxWidth: '100%', height: 'auto'};
-                                     let className = '';
-                                     let cleanAlt = altText;
-                                     
-                                     if (sizeMatch) {
-                                         style = {width: `${sizeMatch[1]}px`, height: 'auto', maxWidth: '100%'};
-                                         cleanAlt = altText.replace(/\{width=\d+\}/, '').trim();
-                                     }
-                                     
-                                     if (classNameMatch) {
-                                         className = classNameMatch[1];
-                                         cleanAlt = altText.replace(/\{class=\w+\}/, '').trim();
-                                     }
-                                     
-                                     return <img {...props} alt={cleanAlt} style={style} className={className} />;
-                                 },
-                                 // Handle table components
-                                 table: ({node, children, ...props}) => (
-                                     <table className="blog-table" {...props}>
-                                         {children}
-                                     </table>
-                                 ),
-                                 thead: ({node, children, ...props}) => (
-                                     <thead {...props}>{children}</thead>
-                                 ),
-                                 tbody: ({node, children, ...props}) => (
-                                     <tbody {...props}>{children}</tbody>
-                                 ),
-                                 tr: ({node, children, ...props}) => (
-                                     <tr {...props}>{children}</tr>
-                                 ),
-                                 th: ({node, children, ...props}) => (
-                                     <th {...props}>{children}</th>
-                                 ),
-                                 td: ({node, children, ...props}) => (
-                                     <td {...props}>{children}</td>
-                                 )
-                             }}
-                         >
-                             {blogPost.content_markdown}
-                         </ReactMarkdown>
-                     </div>
-                    
-                    <div className="blog-post-actions">
-                        <Link to="/blog" className="back-to-blog">
-                            {t('blog.backToBlog')}
-                        </Link>
-                    </div>
-                </article>
+            <div className="blog-back-link">
+                <Link to="/blog">&larr; {t('blog.backToBlog')}</Link>
             </div>
+            <main className="blog-post-detail">
+                <header className="blog-post-header">
+                    <h1 className="blog-post-title">{blogPost.title}</h1>
+                    <div className="blog-post-meta">
+                        <span className="blog-post-date">
+                            {blogPost.published_at ? formatDate(blogPost.published_at) : ''}
+                        </span>
+                        <span className="blog-post-author">
+                            {t('blog.byAuthor', { author: blogPost.author })}
+                        </span>
+                        {blogPost.updated_at !== blogPost.published_at && (
+                            <span className="blog-post-updated">
+                                {t('blog.updatedOn', { date: formatDate(blogPost.updated_at) })}
+                            </span>
+                        )}
+                    </div>
+                </header>
+
+                <div className="blog-post-content">
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            img: ({node, ...props}) => {
+                                // Extract size from alt text like "Alt text {width=200}"
+                                const altText = props.alt || '';
+                                const sizeMatch = altText.match(/\{width=(\d+)\}/);
+                                const classNameMatch = altText.match(/\{class=(\w+)\}/);
+
+                                let style: React.CSSProperties = {maxWidth: '100%', height: 'auto'};
+                                let className = '';
+                                let cleanAlt = altText;
+
+                                if (sizeMatch) {
+                                    style = {width: `${sizeMatch[1]}px`, height: 'auto', maxWidth: '100%'};
+                                    cleanAlt = altText.replace(/\{width=\d+\}/, '').trim();
+                                }
+
+                                if (classNameMatch) {
+                                    className = classNameMatch[1];
+                                    cleanAlt = altText.replace(/\{class=\w+\}/, '').trim();
+                                }
+
+                                return <img {...props} alt={cleanAlt} style={style} className={className} />;
+                            },
+                            // Handle table components
+                            table: ({node, children, ...props}) => (
+                                <table className="blog-table" {...props}>
+                                    {children}
+                                </table>
+                            ),
+                            thead: ({node, children, ...props}) => (
+                                <thead {...props}>{children}</thead>
+                            ),
+                            tbody: ({node, children, ...props}) => (
+                                <tbody {...props}>{children}</tbody>
+                            ),
+                            tr: ({node, children, ...props}) => (
+                                <tr {...props}>{children}</tr>
+                            ),
+                            th: ({node, children, ...props}) => (
+                                <th {...props}>{children}</th>
+                            ),
+                            td: ({node, children, ...props}) => (
+                                <td {...props}>{children}</td>
+                            )
+                        }}
+                    >
+                        {blogPost.content_markdown}
+                    </ReactMarkdown>
+                </div>
+
+                <div className="blog-post-actions">
+                    <Link to="/blog" className="back-to-blog">
+                        {t('blog.backToBlog')}
+                    </Link>
+                </div>
+            </main>
         </div>
     );
 }

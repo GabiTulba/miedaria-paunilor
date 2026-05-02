@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LocalizedProductWithImage } from '../types';
@@ -49,22 +49,56 @@ function ProductDetails() {
         return () => { controller.abort(); };
     }, [productId, i18n.language, fetchTrigger]);
 
+    const addToCartBtnRef = useRef<HTMLButtonElement>(null);
+
     const handleAddToCart = () => {
         if (productWithImage?.product) {
             addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count);
             showToast(t('cart.addedToCart'), 'success');
+            if (addToCartBtnRef.current) {
+                addToCartBtnRef.current.classList.add('success-pulse');
+                addToCartBtnRef.current.onanimationend = () => {
+                    addToCartBtnRef.current?.classList.remove('success-pulse');
+                };
+            }
         }
     };
 
     if (isLoading) {
-        return <div className="loader">{t('common.loading')}</div>;
+        return (
+            <div className="product-details-page">
+                <div className="back-to-shop">
+                    <Link to="/shop">&larr; {t('common.backToShop')}</Link>
+                </div>
+                <div className="product-details-content">
+                    <div className="product-image-column">
+                        <div className="skeleton" style={{ width: '100%', aspectRatio: '1/1', borderRadius: 'var(--radius-md)' }} />
+                    </div>
+                    <div className="product-info-section">
+                        <div className="skeleton" style={{ height: '2em', width: '80%', marginBottom: '0.75rem' }} />
+                        <div className="skeleton" style={{ height: '1.5em', width: '25%', marginBottom: '1.5rem' }} />
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            {[1, 2, 3, 4, 5].map(i => (
+                                <div key={i} style={{ display: 'flex', marginBottom: '0.5rem' }}>
+                                    <span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '100px' }} />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="skeleton" style={{ height: '1em', marginBottom: '0.5rem' }} />
+                        <div className="skeleton" style={{ height: '1em', width: '85%', marginBottom: '2rem' }} />
+                        <div className="skeleton" style={{ height: '3em', marginBottom: '1.5rem' }} />
+                        <div className="skeleton" style={{ height: '3em' }} />
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     if (error || !productWithImage) {
         return (
             <div className="product-details-page">
                 <div className="back-to-shop">
-                    <Link to="/shop">&larr; {t('common.back')} {t('navigation.shop')}</Link>
+                    <Link to="/shop">&larr; {t('common.backToShop')}</Link>
                 </div>
                 <ErrorDisplay
                     error={error || t('errors.notFound')}
@@ -80,7 +114,7 @@ function ProductDetails() {
     return (
         <div className="product-details-page">
             <div className="back-to-shop">
-                <Link to="/shop">&larr; {t('common.back')} {t('navigation.shop')}</Link>
+                <Link to="/shop">&larr; {t('common.backToShop')}</Link>
             </div>
             <div className="product-details-content">
                 <div className="product-image-column">
@@ -186,13 +220,28 @@ function ProductDetails() {
                               <div className="cart-controls">
                                   <div className="quantity-selector">
                                       <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
-                                      <span>{quantity}</span>
+                                      <input
+                                          type="number"
+                                          className="quantity-input"
+                                          value={quantity}
+                                          min={1}
+                                          max={Math.min(99, product.bottle_count)}
+                                          onChange={(e) => {
+                                              const val = parseInt(e.target.value, 10);
+                                              if (!isNaN(val) && val >= 1 && val < 100) {
+                                                  setQuantity(Math.min(val, product.bottle_count));
+                                              } else if (e.target.value === '') {
+                                                  setQuantity(1);
+                                              }
+                                          }}
+                                      />
                                       <button
                                           onClick={() => setQuantity(Math.min(product.bottle_count, quantity + 1))}
                                           disabled={quantity >= product.bottle_count}
                                       >+</button>
                                   </div>
                                   <button
+                                      ref={addToCartBtnRef}
                                       className="button add-to-cart-btn"
                                       onClick={handleAddToCart}
                                       disabled={!isInStock(product.bottle_count)}

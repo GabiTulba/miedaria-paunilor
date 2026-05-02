@@ -9,11 +9,45 @@ import { getImageUrl } from '../lib/api';
 import './ProductCard.css';
 
 interface ProductCardProps {
-  productWithImage: LocalizedProductWithImage;
+  productWithImage?: LocalizedProductWithImage;
+  renderSkeleton?: boolean;
 }
 
-function ProductCard({ productWithImage }: ProductCardProps) {
+function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
   const { t } = useTranslation();
+
+  if (renderSkeleton) {
+    return (
+      <div className="product-card">
+        <div className="product-card-main">
+          <div className="product-card-image">
+            <div className="skeleton" style={{ width: '100%', height: '100%' }} />
+          </div>
+          <div className="product-card-content">
+            <div className="skeleton" style={{ height: '1.2em', marginBottom: '10px', width: '90%' }} />
+            <div className="product-details">
+              <div className="product-details-line">
+                <span className="skeleton" style={{ height: '0.75em', width: '45%', marginRight: '8px' }} />
+                <span className="skeleton" style={{ height: '0.75em', width: '35%' }} />
+              </div>
+              <div className="product-details-line">
+                <span className="skeleton" style={{ height: '0.75em', width: '40%', marginRight: '8px' }} />
+                <span className="skeleton" style={{ height: '0.75em', width: '25%' }} />
+              </div>
+            </div>
+            <p className="price">
+              <span className="skeleton" style={{ display: 'inline-block', height: '1.1em', width: '35%' }} />
+            </p>
+            <p className="availability">
+              <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '55%' }} />
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!productWithImage) return null;
 
   const { product, image } = productWithImage;
   const stockStatus = getStockStatus(product.bottle_count, 'shop', t);

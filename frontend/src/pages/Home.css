@@ -189,6 +189,7 @@
 .blog-post-title a {
     color: var(--text-color);
     text-decoration: none;
+    transition: color var(--duration-normal) ease;
 }
 
 .blog-post-title a:hover {

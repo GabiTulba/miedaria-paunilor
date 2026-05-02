@@ -129,6 +129,61 @@
   --theme-slider-indicator: rgba(255, 255, 255, 0.9);
 }
 
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+  }
+
+  @keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+}
+
+/* ==========================================================================
+   Skeleton Loading
+   ========================================================================== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 25%,
+    var(--color-gray-100) 50%,
+    var(--color-gray-200) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+}
+
+/* Shake & pulse utility classes */
+.shake {
+  animation: shake 0.4s ease;
+}
+
+.success-pulse {
+  animation: successPulse 0.4s ease;
+}
+
 body {
   font-family: var(--font-body);
   margin: 0;
@@ -192,6 +247,11 @@ button:hover, .button:hover {
   color: var(--white-color);
 }
 
+button:active, .button:active {
+  transform: scale(0.995);
+  transition: transform var(--duration-fast) ease;
+}
+
 .button-secondary {
     background-color: var(--primary-color);
     color: var(--button-secondary-text);
@@ -217,7 +277,7 @@ select {
   box-sizing: border-box;
   font-family: var(--font-body);
   font-size: 1rem;
-  transition: border-color var(--duration-slow) ease, box-shadow var(--duration-slow) ease, background-color var(--duration-slow) ease;
+  transition: border-color var(--duration-normal) ease, box-shadow var(--duration-normal) ease, background-color var(--duration-normal) ease, color var(--duration-normal) ease;
   background-color: var(--white-color);
   color: var(--text-color);
 }
@@ -411,7 +471,7 @@ tr:hover {
         --primary-color-blue: #63b3ed;
         --danger-hover: #e53e3e;
         --warning-hover: #ecc94b;
-        --remove-hover: #e53e3e;
+        --remove-hover: #c0392b;
         --secondary-color-hover: #63b3ed;
 
         --color-surface-alt: #2d3748;
@@ -508,7 +568,7 @@ tr:hover {
     --primary-color-blue: #63b3ed;
     --danger-hover: #e53e3e;
     --warning-hover: #ecc94b;
-    --remove-hover: #e53e3e;
+    --remove-hover: #c0392b;
     --secondary-color-hover: #63b3ed;
 
     --color-surface-alt: #2d3748;
