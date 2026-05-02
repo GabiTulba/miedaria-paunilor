@@ -79,7 +79,7 @@
 
 .cart-content {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr;
     gap: 2rem;
     align-items: flex-start;
 }
@@ -88,12 +88,14 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    container-type: inline-size;
 }
 
 .cart-item {
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     background-color: var(--white-color);
     padding: 20px;
     border-radius: var(--border-radius);
@@ -195,6 +197,8 @@
     color: var(--error-color);
     cursor: pointer;
     transition: color var(--duration-slow);
+    margin-top: 1rem;
+    align-self: flex-end;
 }
 
 .remove-item-btn:hover {
@@ -207,8 +211,8 @@
     padding: 20px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
-    position: sticky;
-    top: 100px;
+    position: static;
+    margin-top: 2rem;
 }
 
 .cart-summary h3 {
@@ -244,23 +248,25 @@
     text-align: center;
 }
 
-@media (max-width: 992px) {
-    .cart-content {
-        grid-template-columns: 1fr;
+@container (min-width: 500px) {
+    .cart-item {
+        flex-direction: row;
+        align-items: center;
     }
-    .cart-summary {
-        position: static;
-        margin-top: 2rem;
+    .remove-item-btn {
+        margin-top: 0;
+        align-self: auto;
     }
 }
 
-@media (max-width: 768px) {
-    .cart-item {
-        flex-direction: column;
-        align-items: flex-start;
+/* boundary normalized 992 -> 1024 (canonical scale) */
+@media (min-width: 1024px) {
+    .cart-content {
+        grid-template-columns: 2fr 1fr;
     }
-    .remove-item-btn {
-        margin-top: 1rem;
-        align-self: flex-end;
+    .cart-summary {
+        position: sticky;
+        top: 100px;
+        margin-top: 0;
     }
 }

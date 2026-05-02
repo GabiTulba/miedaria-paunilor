@@ -25,13 +25,13 @@
 
 .product-details-content {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Two equal columns */
-    gap: 4rem;
+    grid-template-columns: 1fr;
+    gap: 2rem;
     background-color: var(--white-color);
-    padding: 3rem;
+    padding: 1.5rem;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
-    align-items: start; /* Align items to the start of their grid area */
+    align-items: start;
 }
 
 /* Right column container for centered image */
@@ -225,11 +225,10 @@
     font-style: italic;
 }
 
-@media (max-width: 992px) {
+@media (min-width: 768px) {
     .product-details-content {
-        grid-template-columns: 1fr;
-        gap: 2.5rem;
         padding: 2rem;
+        gap: 2.5rem;
     }
     .product-detail-image {
         max-width: 500px;
@@ -241,20 +240,20 @@
     }
 }
 
-@media (max-width: 768px) {
+/* boundary normalized 992 -> 1024 (canonical scale) */
+@media (min-width: 1024px) {
     .product-details-content {
-        padding: 1.5rem;
-        gap: 2rem;
-    }
-    .add-to-cart-section {
-        flex-direction: column;
-        align-items: stretch;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        padding: 3rem;
     }
     .product-detail-image {
-        max-width: 100%;
+        max-width: none;
+        margin: 0;
     }
     .placeholder-image.product-detail-image {
-        max-width: 100%;
+        max-width: none;
+        margin: 0;
     }
 }
 
@@ -292,17 +291,18 @@
 /* Product details grid */
 .product-details-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem 2rem; /* More space between columns (2rem) than rows (1.5rem) */
+    grid-template-columns: 1fr;
+    gap: 1rem;
     margin-top: 0.5rem;
 }
 
 .detail-item {
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
     padding: 0.5rem 0;
     border-bottom: 1px solid var(--color-gray-200);
-    gap: 0.5rem; /* Reduced space between label and value */
+    gap: 0.1rem;
 }
 
 .detail-label {
@@ -316,14 +316,14 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (min-width: 768px) {
     .product-details-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem; /* Reduced gap for mobile */
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem 2rem;
     }
-    
+
     .detail-item {
-        flex-direction: column;
-        gap: 0.1rem; /* Even less space on mobile */
+        flex-direction: row;
+        gap: 0.5rem;
     }
 }

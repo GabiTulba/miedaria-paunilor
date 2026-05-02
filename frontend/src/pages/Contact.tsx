@@ -36,10 +36,7 @@ function Contact() {
                         <li> 
                             <i className="icon-location"></i> 
                             <span>
-                                {t('contact.address')}: 
-                                <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
-                                    {address}
-                                </a>
+                                {t('contact.address')}: <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer"> {address}</a>
                             </span> 
                         </li> 
                     </ul> 

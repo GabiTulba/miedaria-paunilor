@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500&display=swap');
 
+/* Breakpoint scale (mobile-first, min-width):
+   sm 480 · md 640 · lg 768 · xl 1024 · 2xl 1280
+   Mirror in src/styles/breakpoints.ts.
+   Container queries used; floor: Safari 16+, Chrome 105+, Firefox 110+. */
+
 :root {
   --primary-color: #2c3e50;
   --secondary-color: #ecf0f1;

@@ -1,6 +1,9 @@
 .language-switcher {
   display: flex;
   gap: 4px;
+  margin-inline-start: 0;
+  margin-top: 10px;
+  justify-content: center;
 }
 
 .language-btn {
@@ -47,25 +50,20 @@
 }
 
 .language-btn .flag {
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .language-btn .language-code {
   font-weight: 500;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 768px) {
   .language-switcher {
-    margin-inline-start: 0;
-    margin-top: 10px;
-    justify-content: center;
+    margin-top: 0;
+    justify-content: flex-start;
   }
-  
-  .language-btn {
-    padding: 6px 10px;
-  }
-  
+
   .language-btn .flag {
-    font-size: 16px;
+    font-size: 14px;
   }
 }

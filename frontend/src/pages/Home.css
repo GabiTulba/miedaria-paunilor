@@ -14,12 +14,12 @@
     background: var(--gradient-hero);
     color: var(--text-color);
     text-align: center;
-    padding: 60px 20px 80px;
+    padding: 40px 20px 60px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 50vh;
+    min-height: 40vh;
     position: relative;
     overflow: hidden;
 }
@@ -31,7 +31,7 @@
 }
 
 .hero-logo {
-    width: 300px;
+    width: 180px;
     height: auto;
     opacity: 0.8;
     filter: brightness(1) contrast(1);
@@ -97,7 +97,7 @@
 /* Featured Products */
 .featured-products {
     background-color: var(--secondary-color);
-    padding: 60px 0;
+    padding: 40px 0;
     text-align: center;
 }
 
@@ -132,7 +132,7 @@
 /* Blog Teaser */
 .blog-teaser {
     background-color: var(--secondary-color);
-    padding: 60px 0;
+    padding: 40px 0;
     text-align: center;
 }
 
@@ -151,9 +151,9 @@
 .blog-grid {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
     margin-bottom: 3rem;
-    max-width: 800px;
+    max-width: 100%;
     margin-inline: auto;
 }
 
@@ -168,6 +168,7 @@
     height: 100%;
     text-decoration: none;
     color: inherit;
+    padding: 1.25rem;
 }
 
 .blog-post-card:hover {
@@ -182,7 +183,7 @@
 
 .blog-post-title {
     margin: 0 0 10px 0;
-    font-size: 1.2em;
+    font-size: 1.2rem;
     color: var(--text-color);
 }
 
@@ -199,8 +200,8 @@
 .blog-post-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    font-size: 0.85em;
+    gap: 0.75rem;
+    font-size: 0.85rem;
     color: var(--color-text-light);
     margin-bottom: 10px;
 }
@@ -260,8 +261,13 @@
 /* About Teaser */
 .about-teaser {
     background-color: var(--secondary-color);
-    padding: 60px 0; /* Adjusted padding as container will handle horizontal */
+    padding: 40px 0; /* Adjusted padding as container will handle horizontal */
     text-align: center;
+}
+
+.teaser-content h2,
+.featured-content h2 {
+    margin-top: 1.5rem;
 }
 
 .teaser-content h2,
@@ -274,33 +280,33 @@
     margin-bottom: 2rem;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 768px) {
     .hero-section {
-        padding: 40px 20px 60px;
-        min-height: 40vh;
+        padding: 60px 20px 80px;
+        min-height: 50vh;
     }
     .hero-logo {
-        width: 180px;
+        width: 300px;
     }
     .teaser-content h2,
     .featured-content h2 {
-        margin-top: 1.5rem;
+        margin-top: 0;
     }
     .featured-products, .blog-teaser, .about-teaser {
-        padding: 40px 0;
+        padding: 60px 0;
     }
     .blog-grid {
-        gap: 1.25rem;
-        max-width: 100%;
+        gap: 1.5rem;
+        max-width: 800px;
     }
     .blog-post-card {
-        padding: 1.25rem;
+        padding: 0;
     }
     .blog-post-title {
-        font-size: 1.2rem;
+        font-size: 1.2em;
     }
     .blog-post-meta {
-        font-size: 0.85rem;
-        gap: 0.75rem;
+        font-size: 0.85em;
+        gap: 10px;
     }
 }

@@ -2,13 +2,13 @@
 .header {
   background-color: var(--primary-color);
   color: var(--white-color);
-  padding: 10px 0; /* Slightly more padding for balance */
+  padding: 8px 0;
   box-shadow: var(--shadow);
   position: sticky;
   top: 0;
   z-index: 1000;
   width: 100%;
-  min-height: 100px; /* Ensure header has enough height for large logo */
+  min-height: 70px;
 }
 
 .header .container {
@@ -29,13 +29,13 @@
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 15px; /* Increased gap for larger logo */
+  gap: 8px;
   height: 100%;
-  transition: opacity var(--duration-slow) ease;
+  transition: opacity var(--duration-slow) ease, color var(--duration-slow) ease;
 }
 
 .logo-image {
-  height: 90px;
+  height: 55px;
   width: auto;
   filter: brightness(0) invert(1);
   opacity: 1;
@@ -57,30 +57,40 @@
     outline-offset: 2px;
 }
 
-
-.logo {
-  transition: color var(--duration-slow) ease;
-}
-
 .logo:hover {
   text-decoration: none;
   color: var(--logo-hover-bg);
 }
 
 .logo:hover .logo-image {
-  opacity: 0.7; 
+  opacity: 0.7;
 }
 
 .main-nav {
   display: flex;
-  gap: 1.3rem;
+  position: absolute;
+  left: -100%;
+  top: 78px;
+  flex-direction: column;
+  background-color: var(--primary-color);
+  width: 100%;
+  text-align: center;
+  transition: var(--duration-slow);
+  gap: 0;
+  box-shadow: var(--shadow-lg);
+}
+
+.main-nav.active {
+  left: 0;
 }
 
 .main-nav a {
   color: var(--secondary-color);
   font-weight: 500;
-  padding: 8px 12px;
-  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  width: 100%;
+  border-radius: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   transition: background-color var(--duration-slow) ease, color var(--duration-slow) ease;
   position: relative;
   text-decoration: none;
@@ -99,20 +109,8 @@
   outline-offset: 2px;
 }
 
-.main-nav a.active::after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60%;
-  height: 3px;
-  background-color: var(--accent-color);
-  border-radius: 2px;
-}
-
 .hamburger {
-  display: none;
+  display: block;
   cursor: pointer;
   background: none;
   border: none;
@@ -141,71 +139,69 @@
   padding: 0 20px;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 480px) {
   .header {
-    min-height: 80px; /* Reduced for tablet */
+    padding: 10px 0;
+    min-height: 80px;
   }
-  
+
   .logo {
     gap: 10px;
   }
-  
+
   .logo-image {
-    height: 65px; /* Large on tablet */
-  }
-  
-  .main-nav {
-    top: 90px; /* Adjusted for tablet header */
+    height: 65px;
   }
 
   .main-nav {
-    position: absolute;
-    left: -100%;
-    top: 110px; /* Increased to match taller header */
-    flex-direction: column;
-    background-color: var(--primary-color);
-    width: 100%;
-    text-align: center;
-    transition: var(--duration-slow);
-    gap: 0;
-    box-shadow: var(--shadow-lg);
-  }
-
-  .main-nav.active {
-    left: 0;
-  }
-
-  .main-nav a {
-    padding: 1.5rem;
-    width: 100%;
-    border-radius: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .main-nav a.active::after {
-    display: none;
-  }
-
-  .hamburger {
-    display: block;
+    top: 110px;
   }
 }
 
-@media (max-width: 480px) {
+@media (min-width: 768px) {
   .header {
-    min-height: 70px; /* Reduced for phone */
-    padding: 8px 0;
+    min-height: 100px;
   }
-  
+
   .logo {
-    gap: 8px;
+    gap: 15px;
   }
-  
+
   .logo-image {
-    height: 55px; /* Prominent on phone */
+    height: 90px;
   }
-  
+
   .main-nav {
-    top: 78px; /* Adjusted for phone header */
+    position: static;
+    left: auto;
+    top: auto;
+    flex-direction: row;
+    width: auto;
+    background-color: transparent;
+    box-shadow: none;
+    gap: 1.3rem;
+  }
+
+  .main-nav a {
+    padding: 8px 12px;
+    width: auto;
+    border-radius: var(--border-radius);
+    border-bottom: none;
+  }
+
+  .main-nav a.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 3px;
+    background-color: var(--accent-color);
+    border-radius: 2px;
+  }
+
+  .hamburger {
+    display: none;
   }
 }
