@@ -224,13 +224,18 @@ function ProductDetails() {
                              </div>
                               <div className="cart-controls">
                                   <div className="quantity-selector">
-                                      <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
+                                      <button
+                                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                          aria-label={t('product.decreaseQuantity')}
+                                          disabled={quantity <= 1}
+                                      >-</button>
                                       <input
                                           type="number"
                                           className="quantity-input"
                                           value={quantity}
                                           min={1}
                                           max={Math.min(99, product.bottle_count)}
+                                          aria-label={t('product.quantity')}
                                           onChange={(e) => {
                                               const val = parseInt(e.target.value, 10);
                                               if (!isNaN(val) && val >= 1 && val < 100) {
@@ -243,6 +248,7 @@ function ProductDetails() {
                                       <button
                                           onClick={() => setQuantity(Math.min(product.bottle_count, quantity + 1))}
                                           disabled={quantity >= product.bottle_count}
+                                          aria-label={t('product.increaseQuantity')}
                                       >+</button>
                                   </div>
                                   <button

@@ -222,7 +222,9 @@
     "lowStock": "Stoc Redus",
     "available": "Disponibil",
     "unavailable": "Indisponibil",
-    "maxQuantityReached": "Cantitate maximă atinsă ({{count}} disponibile)"
+    "maxQuantityReached": "Cantitate maximă atinsă ({{count}} disponibile)",
+    "decreaseQuantity": "Scade cantitatea",
+    "increaseQuantity": "Crește cantitatea"
   },
   "cart": {
     "title": "Coșul Tău de Cumpărături",
