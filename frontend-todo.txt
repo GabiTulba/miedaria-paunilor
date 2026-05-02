@@ -6,21 +6,6 @@
 ================================================================================
 MOBILE UX
 ================================================================================
-
-[MOB3] Shop Page -- Filters & Grid
--------------------------------------------------------------------------------
-- 9 filter groups stack vertically on mobile -- excessive scrolling, no
-  collapse/expand toggle. Need overlay/drawer pattern instead of sidebar.
-  File: frontend/src/pages/Shop.tsx (lines 65-253)
-  File: frontend/src/pages/Shop.css (lines 209-233)
-- Sidebar hidden at 992px but grid layout remains 1fr with no mobile
-  optimization
-- No filter count badge to show active filters at a glance on mobile
-- Product grid should go single-column on small screens; card sizing and image
-  aspect ratio need tuning
-- No "No products found" empty state when filters match nothing -- especially
-  confusing on mobile with collapsed sidebar (see also H3)
-
 [MOB4] Product Details
 -------------------------------------------------------------------------------
 - Quantity selector buttons too small to tap on mobile -- need >= 44x44px touch
