@@ -7,17 +7,6 @@
 MOBILE UX
 ================================================================================
 
-[MOB1] Full Mobile Redesign Needed
--------------------------------------------------------------------------------
-Current state: media queries exist but layout is desktop-first and janky on
-mobile browsers. Full responsive redesign needed, not just breakpoint patches.
-
-Approach:
-  - Audit with Chrome DevTools: 375px (iPhone SE), 390px (iPhone 14), 768px
-  - Switch to mobile-first CSS (min-width breakpoints instead of max-width)
-  - Use CSS container queries for component-level responsiveness
-  - Test on real devices, not just browser emulation
-
 [MOB2] Navigation & Header
 -------------------------------------------------------------------------------
 - Hamburger menu missing aria-expanded, aria-label -- unusable for screen

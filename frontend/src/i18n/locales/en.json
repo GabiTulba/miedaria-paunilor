@@ -147,7 +147,8 @@
     "reports": "Reports",
     "settings": "Settings",
     "toggleMenu": "Toggle navigation menu",
-    "main": "Main navigation"
+    "main": "Main navigation",
+    "skipToContent": "Skip to content"
   },
   "home": {
     "heroTitle": "Authentic Mead. Purity Perfected.",

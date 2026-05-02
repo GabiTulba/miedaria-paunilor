@@ -1,4 +1,5 @@
 .theme-slider {
+    --theme-slider-step: 30px;
     display: flex;
     align-items: center;
     position: relative;

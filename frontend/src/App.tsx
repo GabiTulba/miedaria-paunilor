@@ -1,5 +1,5 @@
 import { Outlet, Link, NavLink, useLocation } from "react-router-dom";
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from './context/CartContext';
 import LanguageSwitcher from './components/LanguageSwitcher';
@@ -14,10 +14,57 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+    if (!isMobile) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const firstLink = navRef.current?.querySelector<HTMLElement>('a');
+    firstLink?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMobileMenuOpen(false);
+        hamburgerRef.current?.focus();
+      }
+    };
+
+    const handlePointerDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (
+        navRef.current &&
+        !navRef.current.contains(target) &&
+        hamburgerRef.current &&
+        !hamburgerRef.current.contains(target)
+      ) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('pointerdown', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileMenuOpen]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -27,6 +74,7 @@ function App() {
 
   return (
     <>
+      <a href="#main-content" className="skip-link">{t('navigation.skipToContent')}</a>
       <header className="header">
         <div className="container">
           <Link to="/" className="logo">
@@ -35,19 +83,22 @@ function App() {
           </Link>
           <nav
             id="main-navigation"
+            ref={navRef}
             className={`main-nav ${isMobileMenuOpen ? 'active' : ''}`}
             aria-label={t('navigation.main')}
           >
-            <NavLink to="/home" onClick={toggleMobileMenu}>{t('navigation.home')}</NavLink>
-            <NavLink to="/shop" onClick={toggleMobileMenu}>{t('navigation.shop')}</NavLink>
-            <NavLink to="/blog" onClick={toggleMobileMenu}>{t('blog.title')}</NavLink>
-            <NavLink to="/about-us" onClick={toggleMobileMenu}>{t('navigation.aboutUs')}</NavLink>
-            <NavLink to="/contact" onClick={toggleMobileMenu}>{t('navigation.contact')}</NavLink>
-            <NavLink to="/cart" onClick={toggleMobileMenu}>{t('navigation.cart')} {itemCount > 0 && `(${itemCount})`}</NavLink>
+            <NavLink to="/home">{t('navigation.home')}</NavLink>
+            <NavLink to="/shop">{t('navigation.shop')}</NavLink>
+            <NavLink to="/blog">{t('blog.title')}</NavLink>
+            <NavLink to="/about-us">{t('navigation.aboutUs')}</NavLink>
+            <NavLink to="/contact">{t('navigation.contact')}</NavLink>
+            <NavLink to="/cart">{t('navigation.cart')} {itemCount > 0 && `(${itemCount})`}</NavLink>
             <ThemeToggle />
             <LanguageSwitcher />
           </nav>
           <button
+            ref={hamburgerRef}
+            type="button"
             className="hamburger"
             onClick={toggleMobileMenu}
             aria-expanded={isMobileMenuOpen}

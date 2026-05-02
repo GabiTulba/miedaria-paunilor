@@ -51,7 +51,7 @@ export default function ThemeToggle() {
             ))}
             <div
                 className="theme-slider-indicator"
-                style={{ transform: `translateX(${positionIndex * 30}px) translateY(-50%)` }}
+                style={{ transform: `translateX(calc(var(--theme-slider-step) * ${positionIndex})) translateY(-50%)` }}
             />
         </div>
     );
