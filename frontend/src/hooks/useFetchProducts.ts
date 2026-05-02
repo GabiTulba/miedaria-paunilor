@@ -9,6 +9,7 @@ interface UseFetchProductsResult {
   isLoading: boolean;
   error: string | null;
   hasMore: boolean;
+  totalPages: number;
   refetch: () => void;
 }
 
@@ -34,6 +35,7 @@ export const useFetchProducts = (
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
   const [fetchTrigger, setFetchTrigger] = useState(0);
 
   const refetch = useCallback(() => {
@@ -80,12 +82,12 @@ export const useFetchProducts = (
         }
         params.append('page', String(page));
         params.append('per_page', String(PER_PAGE));
-        params.append('limit', String(PER_PAGE + 1));
         url = `${url}?${params.toString()}`;
 
         const data = await api.get(url, { signal: controller.signal });
-        setHasMore(data.length > PER_PAGE);
-        setProducts(data.slice(0, PER_PAGE));
+        setTotalPages(data.total_pages ?? 1);
+        setHasMore(page < (data.total_pages ?? 1));
+        setProducts(data.items ?? []);
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
         setError(i18n.t('errors.fetchProducts'));
@@ -99,5 +101,5 @@ export const useFetchProducts = (
     return () => { controller.abort(); };
   }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, page, language]);
 
-  return { products, isLoading, error, hasMore, refetch };
+  return { products, isLoading, error, hasMore, totalPages, refetch };
 };

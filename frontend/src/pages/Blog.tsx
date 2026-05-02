@@ -17,6 +17,7 @@ function Blog() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
+    const [totalPages, setTotalPages] = useState(1);
     const [fetchTrigger, setFetchTrigger] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
@@ -29,9 +30,10 @@ function Blog() {
         const fetchBlogPosts = async () => {
             try {
                 setLoading(true);
-                const posts = await api.getBlogPosts(page, BLOG_PER_PAGE, BLOG_PER_PAGE + 1, controller.signal);
-                setHasMore(posts.length > BLOG_PER_PAGE);
-                setBlogPosts(posts.slice(0, BLOG_PER_PAGE));
+                const data = await api.getBlogPosts(page, BLOG_PER_PAGE, controller.signal);
+                setTotalPages(data.total_pages ?? 1);
+                setHasMore(page < (data.total_pages ?? 1));
+                setBlogPosts(data.items ?? []);
                 setError(null);
             } catch (err) {
                 if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -105,7 +107,7 @@ function Blog() {
                                         </h2>
                                         <div className="blog-post-meta">
                                             <span className="blog-post-date">
-                                                {formatDate(post.published_at)}
+                                                {post.published_at ? formatDate(post.published_at) : ''}
                                             </span>
                                             <span className="blog-post-author">
                                                 {t('blog.byAuthor', { author: post.author })}
@@ -175,6 +177,7 @@ function Blog() {
                 <Pagination
                     page={page}
                     hasMore={hasMore}
+                    totalPages={totalPages}
                     onPrevPage={() => { setPage(page - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                     onNextPage={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 />

@@ -20,6 +20,7 @@ function AdminBlog() {
     const [error, setError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
+    const [totalPages, setTotalPages] = useState(1);
     const [fetchTrigger, setFetchTrigger] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
@@ -43,9 +44,10 @@ function AdminBlog() {
 
             try {
                 setLoading(true);
-                const posts = await api.getBlogPostsAdmin(token, page, ADMIN_BLOG_PER_PAGE, ADMIN_BLOG_PER_PAGE + 1, controller.signal);
-                setHasMore(posts.length > ADMIN_BLOG_PER_PAGE);
-                setBlogPosts(posts.slice(0, ADMIN_BLOG_PER_PAGE));
+                const data = await api.getBlogPostsAdmin(token, page, ADMIN_BLOG_PER_PAGE, controller.signal);
+                setTotalPages(data.total_pages ?? 1);
+                setHasMore(page < (data.total_pages ?? 1));
+                setBlogPosts(data.items ?? []);
                 setError(null);
             } catch (err) {
                 if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -168,7 +170,7 @@ function AdminBlog() {
                                         </div>
                                     </td>
                                     <td>{post.author}</td>
-                                    <td>{formatDate(post.published_at)}</td>
+                                    <td>{post.published_at ? formatDate(post.published_at) : '—'}</td>
                                     <td>
                                         <span className={`status-badge ${post.is_published ? 'status-active' : 'status-draft'}`}>
                                             {post.is_published ? t('admin.blog.status.published') : t('admin.blog.status.draft')}
@@ -195,6 +197,7 @@ function AdminBlog() {
                 <Pagination
                     page={page}
                     hasMore={hasMore}
+                    totalPages={totalPages}
                     onPrevPage={() => setPage(page - 1)}
                     onNextPage={() => setPage(page + 1)}
                 />

@@ -429,6 +429,117 @@ impl Default for IncludeDeleted {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+pub fn count_all_products(
+    conn: &mut PgConnection,
+    in_stock: Option<bool>,
+    product_type_filter: Option<MeadType>,
+    sweetness_filter: Option<SweetnessType>,
+    turbidity_filter: Option<TurbidityType>,
+    effervescence_filter: Option<EffervescenceType>,
+    acidity_filter: Option<AcidityType>,
+    tannins_filter: Option<TanninsType>,
+    body_filter: Option<BodyType>,
+) -> QueryResult<i64> {
+    count_products_internal(
+        conn,
+        IncludeDeleted::Active,
+        in_stock,
+        product_type_filter,
+        sweetness_filter,
+        turbidity_filter,
+        effervescence_filter,
+        acidity_filter,
+        tannins_filter,
+        body_filter,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn count_all_products_admin(
+    conn: &mut PgConnection,
+    include_deleted: IncludeDeleted,
+    in_stock: Option<bool>,
+    product_type_filter: Option<MeadType>,
+    sweetness_filter: Option<SweetnessType>,
+    turbidity_filter: Option<TurbidityType>,
+    effervescence_filter: Option<EffervescenceType>,
+    acidity_filter: Option<AcidityType>,
+    tannins_filter: Option<TanninsType>,
+    body_filter: Option<BodyType>,
+) -> QueryResult<i64> {
+    count_products_internal(
+        conn,
+        include_deleted,
+        in_stock,
+        product_type_filter,
+        sweetness_filter,
+        turbidity_filter,
+        effervescence_filter,
+        acidity_filter,
+        tannins_filter,
+        body_filter,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn count_products_internal(
+    conn: &mut PgConnection,
+    include_deleted: IncludeDeleted,
+    in_stock: Option<bool>,
+    product_type_filter: Option<MeadType>,
+    sweetness_filter: Option<SweetnessType>,
+    turbidity_filter: Option<TurbidityType>,
+    effervescence_filter: Option<EffervescenceType>,
+    acidity_filter: Option<AcidityType>,
+    tannins_filter: Option<TanninsType>,
+    body_filter: Option<BodyType>,
+) -> QueryResult<i64> {
+    use crate::schema::products::dsl::*;
+
+    let mut query = products.into_boxed();
+
+    match include_deleted {
+        IncludeDeleted::Active => query = query.filter(deleted_at.is_null()),
+        IncludeDeleted::Deleted => query = query.filter(deleted_at.is_not_null()),
+        IncludeDeleted::All => {}
+    }
+
+    if let Some(true) = in_stock {
+        query = query.filter(bottle_count.gt(0));
+    }
+
+    if let Some(filter_value) = product_type_filter {
+        query = query.filter(product_type.eq(filter_value));
+    }
+
+    if let Some(filter_value) = sweetness_filter {
+        query = query.filter(sweetness.eq(filter_value));
+    }
+
+    if let Some(filter_value) = turbidity_filter {
+        query = query.filter(turbidity.eq(filter_value));
+    }
+
+    if let Some(filter_value) = effervescence_filter {
+        query = query.filter(effervescence.eq(filter_value));
+    }
+
+    if let Some(filter_value) = acidity_filter {
+        query = query.filter(acidity.eq(filter_value));
+    }
+
+    if let Some(filter_value) = tannins_filter {
+        query = query.filter(tannins.eq(filter_value));
+    }
+
+    if let Some(filter_value) = body_filter {
+        query = query.filter(body.eq(filter_value));
+    }
+
+    query.count().get_result(conn)
+}
+
 pub fn get_all_products(
     conn: &mut PgConnection,
     order_by: Option<&str>,

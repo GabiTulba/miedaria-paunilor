@@ -1,15 +1,18 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from "../../context/AuthContext";
+import ConfirmModal from "../../components/ConfirmModal";
 import './Admin.css';
 
 function AdminLayout() {
     const { setToken } = useContext(AuthContext);
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     const handleLogout = () => {
+        setShowLogoutConfirm(false);
         setToken(null);
         navigate('/admin');
     };
@@ -40,7 +43,7 @@ function AdminLayout() {
                     </NavLink>
                 </nav>
                 <div className="sidebar-footer">
-                    <button onClick={handleLogout} className="logout-button">
+                    <button onClick={() => setShowLogoutConfirm(true)} className="logout-button">
                         <span className="logout-icon"></span>
                         <span>{t('common.logout')}</span>
                     </button>
@@ -49,6 +52,17 @@ function AdminLayout() {
             <main className="admin-main-content">
                 <Outlet />
             </main>
+            {showLogoutConfirm && (
+                <ConfirmModal
+                    title={t('admin.logout.confirmTitle')}
+                    message={t('admin.logout.confirmMessage')}
+                    confirmLabel={t('common.logout')}
+                    cancelLabel={t('common.cancel')}
+                    onConfirm={handleLogout}
+                    onCancel={() => setShowLogoutConfirm(false)}
+                    variant="danger"
+                />
+            )}
         </div>
     );
 }

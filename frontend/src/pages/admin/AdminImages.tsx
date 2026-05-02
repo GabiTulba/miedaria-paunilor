@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { api, getImageUrl } from '../../lib/api';
+import { getImageUrl } from '../../lib/api';
+import { Image } from '../../types';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useAdminImages } from '../../hooks/useAdminImages';
 import './Admin.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const AdminImages: React.FC = () => {
   const { token } = useAuth();
@@ -13,6 +16,8 @@ const AdminImages: React.FC = () => {
   const { showToast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const { images, setImages, loading: imagesLoading, error: imagesError, refetch: fetchImages } = useAdminImages(token);
   const [renamingImageId, setRenamingImageId] = useState<string | null>(null);
@@ -28,24 +33,71 @@ const AdminImages: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async () => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) setSelectedFile(file);
+  };
+
+  const handleFileUpload = () => {
     if (!selectedFile || !token) return;
 
     setLoading(true);
+    setUploadProgress(0);
 
     const formData = new FormData();
     formData.append('image', selectedFile);
 
-    try {
-      const newImage = await api.uploadImage(formData, token);
-      setImages((prevImages) => [...prevImages, newImage]);
-      showToast(`${t('common.success')}: ${newImage.file_name}`, 'success');
-      setSelectedFile(null);
-    } catch (error: any) {
-      showToast(`${t('common.error')}: ${error.response?.data?.message || error.message}`, 'error');
-    } finally {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_BASE_URL}/admin/images`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        setUploadProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
       setLoading(false);
-    }
+      setUploadProgress(null);
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const newImage: Image = JSON.parse(xhr.responseText);
+          setImages((prevImages) => [...prevImages, newImage]);
+          showToast(`${t('common.success')}: ${newImage.file_name}`, 'success');
+          setSelectedFile(null);
+        } catch {
+          showToast(t('common.error'), 'error');
+        }
+      } else {
+        try {
+          const body = JSON.parse(xhr.responseText);
+          showToast(`${t('common.error')}: ${body?.message || xhr.statusText}`, 'error');
+        } catch {
+          showToast(`${t('common.error')}: ${xhr.statusText}`, 'error');
+        }
+      }
+    };
+
+    xhr.onerror = () => {
+      setLoading(false);
+      setUploadProgress(null);
+      showToast(t('common.error'), 'error');
+    };
+
+    xhr.send(formData);
   };
 
   const handleRenameClick = (image: Image) => {
@@ -62,14 +114,16 @@ const AdminImages: React.FC = () => {
     if (!newFileName.trim() || !token) return;
     setRenameLoading(true);
     try {
+      const { api } = await import('../../lib/api');
       const updatedImage = await api.updateImage(imageId, newFileName, token);
       setImages((prevImages) =>
         prevImages.map((img) => (img.id === imageId ? updatedImage : img))
       );
       showToast(`${t('common.success')}: ${updatedImage.file_name}`, 'success');
       handleCancelRename();
-    } catch (error: any) {
-      showToast(`${t('common.error')}: ${error.response?.data?.message || error.message}`, 'error');
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      showToast(`${t('common.error')}: ${err.response?.data?.message || err.message}`, 'error');
     } finally {
       setRenameLoading(false);
     }
@@ -85,14 +139,16 @@ const AdminImages: React.FC = () => {
     setConfirmDeleteId(null);
     setDeleteLoading(imageId);
     try {
+      const { api } = await import('../../lib/api');
       await api.deleteImage(imageId, token);
       setImages((prevImages) => prevImages.filter((img) => img.id !== imageId));
       showToast(t('admin.images.deleteSuccess'), 'success');
-    } catch (error: any) {
-      if (error.response && error.response.status === 409) {
+    } catch (error) {
+      const err = error as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      if (err.response && err.response.status === 409) {
         showToast(t('admin.images.deleteError'), 'error');
       } else {
-        showToast(`${t('common.error')}: ${error.response?.data?.message || error.message}`, 'error');
+        showToast(`${t('common.error')}: ${err.response?.data?.message || err.message}`, 'error');
       }
     } finally {
       setDeleteLoading(null);
@@ -114,17 +170,23 @@ const AdminImages: React.FC = () => {
             <h2>{t('admin.images.upload')}</h2>
             <div className="upload-icon upload-icon-symbol"></div>
           </div>
-          <div className="upload-area" onClick={() => document.getElementById('file-input')?.click()}>
+          <div
+            className={`upload-area${isDragging ? ' upload-area--dragging' : ''}`}
+            onClick={() => document.getElementById('file-input')?.click()}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             <div className="upload-placeholder">
               <div className="upload-placeholder-icon image-icon"></div>
               <p>{t('admin.images.dragDrop')}</p>
               <p className="upload-hint">{t('admin.images.supportedFormats')}, {t('admin.images.maxSize')}</p>
             </div>
-            <input 
+            <input
               id="file-input"
-              type="file" 
-              onChange={handleFileChange} 
-              accept="image/*" 
+              type="file"
+              onChange={handleFileChange}
+              accept="image/*"
               style={{ display: 'none' }}
             />
           </div>
@@ -136,8 +198,14 @@ const AdminImages: React.FC = () => {
               </div>
             </div>
           )}
-          <button 
-            onClick={handleFileUpload} 
+          {uploadProgress !== null && (
+            <div className="upload-progress">
+              <progress value={uploadProgress} max={100} className="upload-progress-bar" />
+              <span className="upload-progress-label">{uploadProgress}%</span>
+            </div>
+          )}
+          <button
+            onClick={handleFileUpload}
             disabled={!selectedFile || loading}
             className="button button-primary upload-button"
           >
@@ -212,15 +280,15 @@ const AdminImages: React.FC = () => {
                           autoFocus
                         />
                         <div className="rename-actions">
-                          <button 
-                            onClick={() => handleSaveRename(image.id)} 
+                          <button
+                            onClick={() => handleSaveRename(image.id)}
                             disabled={renameLoading}
                             className="button button-small button-success"
                           >
                             {t('common.save')}
                           </button>
-                          <button 
-                            onClick={handleCancelRename} 
+                          <button
+                            onClick={handleCancelRename}
                             disabled={renameLoading}
                             className="button button-small button-secondary"
                           >
@@ -249,7 +317,7 @@ const AdminImages: React.FC = () => {
                   <div className="image-actions">
                     {renamingImageId === image.id ? null : (
                       <>
-                        <button 
+                        <button
                           onClick={() => handleRenameClick(image)}
                           className="button button-small button-secondary"
                           disabled={deleteLoading === image.id}
@@ -261,7 +329,7 @@ const AdminImages: React.FC = () => {
                           disabled={deleteLoading === image.id}
                           className="button button-small button-danger"
                         >
-                          {deleteLoading === image.id ? t('admin.images.delete') : t('admin.images.delete')}
+                          {deleteLoading === image.id ? t('common.deleting') : t('admin.images.delete')}
                         </button>
                       </>
                     )}

@@ -28,7 +28,7 @@ function Shop() {
     const { t } = useTranslation();
 
     const { enums } = useFetchEnums();
-    const { products, isLoading, error, hasMore, refetch } = useFetchProducts(
+    const { products, isLoading, error, hasMore, totalPages, refetch } = useFetchProducts(
         orderBy,
         inStock,
         orderDirection,
@@ -289,6 +289,7 @@ function Shop() {
                         <Pagination
                             page={page}
                             hasMore={hasMore}
+                            totalPages={totalPages}
                             onPrevPage={() => { setPage(page - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                             onNextPage={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                         />

@@ -241,7 +241,7 @@ Enum validation is handled at two levels: serde rejects invalid values during JS
 
 **Enum API Endpoint:** The backend provides a `/api/enums` GET endpoint that returns all enum values with their string representations and bilingual display labels (English and Romanian). String values are derived from serde serialization of each enum variant. This eliminates duplication between frontend and backend.
 
-**Frontend Enum Integration:** The frontend uses the `useFetchEnums` hook to fetch enum values from the backend. All components use the `getEnumLabel(value, enumType, t)` utility function from `enums.ts` for consistent translated enum labels. The function maps `EnumValues` keys (e.g., `mead_type`) to translation keys (e.g., `meadType`) via `ENUM_TYPE_TO_TRANSLATION_KEY`, with a `formatEnumLabel` fallback for missing translations.
+**Frontend Enum Integration:** The frontend uses the `useFetchEnums` hook to fetch enum values from the backend. All components use the `getEnumLabel(value, enumType, t)` utility function from `enums.ts` for consistent translated enum labels. The function maps `EnumValues` keys (e.g., `mead_type`) to translation keys (e.g., `meadType`) via `ENUM_TYPE_TO_TRANSLATION_KEY`, with a `formatEnumLabel` fallback for missing translations. The `EnumContext` validates the API response shape on receipt — if any expected enum key is missing or not an array, it sets an error state and discards the response rather than storing malformed data.
 
 ### Features
 Axum is used to interact with the frontend, dealing with:
@@ -285,6 +285,7 @@ Diesel is used to interact with the database, dealing with:
     *   Blog post validation enforces length limits: title/title_ro (512), slug (256), excerpt/excerpt_ro (1024), author (256).
     *   Enum product attributes are validated at the serde deserialization layer (invalid values rejected before handler code runs) and at the PostgreSQL ENUM type level.
     *   Returning specific error types for different validation failures.
+    *   **Paginated List Endpoints:** All four list endpoints (`/api/products`, `/api/admin/products`, `/api/blog`, `/api/admin/blog`) return a `PaginatedResponse<T>` struct with `items: Vec<T>` and `total_pages: u64`. The backend runs a separate `COUNT(*)` query (mirroring the same filters) alongside the paginated fetch. The `PaginatedResponse<T: Serialize>` generic struct is defined in `models.rs`.
     *   **Enhanced Product Filtering:** The `/api/products` GET endpoint supports comprehensive filtering by all product attributes including:
         *   `product_type` - Filter by mead type (hidromel, melomel, metheglin, etc.)
         *   `sweetness` - Filter by sweetness level (bone-dry, dry, semi-dry, etc.)
@@ -320,28 +321,29 @@ The frontend website is structured as follows:
 / -- redirects to home/
     home/ -- A visually appealing landing page with a hero section, featured products (showing the 3 latest in-stock meads by bottling date), latest blog posts, and teasers for other sections. Displays images using UUID-based URLs.
     shop/ -- Displays all products in a grid, with a comprehensive sidebar for filtering by product attributes (mead type, sweetness, turbidity, effervescence, acidity, tannins, body), sorting (price, volume, or bottling_date), and stock status. Displays images using UUID-based URLs.
-        shop/[product_id]/ -- A detailed view of a single product with an "Add to Cart" button and quantity selector. Displays images using UUID-based URLs.
+        shop/[product_id]/ -- A detailed view of a single product with breadcrumb navigation, an "Add to Cart" button and quantity selector. Displays images using UUID-based URLs.
     blog/ -- Displays blog posts in reverse chronological order with markdown rendering and bilingual support.
-        blog/[slug]/ -- A detailed view of a single blog post with full markdown content.
+        blog/[slug]/ -- A detailed view of a single blog post with breadcrumb navigation and full markdown content.
     cart/ -- A summary of the items in the shopping cart, with options to update quantities, remove items, or clear the cart. Includes a warning message indicating the checkout system is under development and instructing users to send orders via WhatsApp.
     about-us/ -- A static page with a modern design telling the story of the meadery.
     contact/ -- A static page with contact information.
+    * -- 404 Not Found page for any unmatched route.
     admin/ -- A login page for administrators.
-        admin/dashboard/ -- A protected admin section with a sidebar for navigation.
+        admin/dashboard/ -- A protected admin section with a sidebar for navigation. Logout requires confirmation.
             admin/dashboard/products -- A page to manage products (create, edit, delete) with a modern table view. Product forms include image selection from uploaded images.
-            admin/dashboard/images -- A page to manage images (upload, display, rename, delete). Displays a user-friendly error message if attempting to delete an image in use.
+            admin/dashboard/images -- A page to manage images (upload via click or drag-and-drop with progress bar, display, rename, delete). Displays a user-friendly error message if attempting to delete an image in use.
             admin/dashboard/blog -- A page to manage blog posts (create, edit, delete) with markdown editor and bilingual support.
 ```
 All pages are fully implemented and fetch data from the backend where applicable.
 The frontend uses two type families: `LocalizedProduct`/`LocalizedProductWithImage`/`LocalizedBlogPost` for public-facing components (single-language fields from Accept-Language negotiation), and `Product`/`ProductWithImage`/`BlogPost`/`ProductFormData` for admin edit forms (full bilingual fields).
 
 ### Frontend Architecture Patterns
-*   **Custom Hooks:** The `useFetchProducts` hook encapsulates logic for fetching product data with loading and error states, returning `LocalizedProductWithImage[]`. The `useFetchEnums` hook fetches enum values from the backend API. The `useLanguage` hook (`hooks/useLanguage.ts`) provides a type-safe `Language` union type (`'en' | 'ro'`) wrapping `i18n.language`. The `useFormattedDate` hook (`hooks/useFormattedDate.ts`) returns a locale-aware date formatting function using the current language.
-*   **Reusable Components:** The `ProductCard` component provides a consistent UI structure for displaying individual product cards across different pages with a clean two-line product summary layout (mead type and sweetness on the first line, ABV and volume on the second line with aligned pipe separators).
+*   **Custom Hooks:** The `useFetchProducts` hook encapsulates logic for fetching product data with loading and error states, returning `LocalizedProductWithImage[]` along with `totalPages` and `hasMore` from the paginated backend response. The `useFetchEnums` hook fetches enum values from the backend API. The `useLanguage` hook (`hooks/useLanguage.ts`) provides a type-safe `Language` union type (`'en' | 'ro'`) wrapping `i18n.language`. The `useFormattedDate` hook (`hooks/useFormattedDate.ts`) returns a locale-aware date formatting function using the current language.
+*   **Reusable Components:** The `ProductCard` component provides a consistent UI structure for displaying individual product cards across different pages with a clean two-line product summary layout (mead type and sweetness on the first line, ABV and volume on the second line with aligned pipe separators). Product images use `loading="lazy"` and `decoding="async"`, with a placeholder shown on load error. The `Breadcrumb` component renders accessible breadcrumb navigation (`aria-label="breadcrumb"`, `aria-current="page"`) and is used on product detail and blog post detail pages. The `Pagination` component shows "Page X of Y" when `totalPages` is provided, and all pagination buttons meet the 44×44px minimum touch target size.
 *   **Modular Form Components:** Generic, reusable form input components (`TextInput`, `TextAreaInput`, `NumberInput`, `SelectInput`) centralize input rendering, labeling, and error display logic with support for help text and placeholders.
 *   **Environment-Based Configuration:** The frontend uses `import.meta.env.VITE_API_BASE_URL` for API configuration, centralizing settings through environment variables. TypeScript environment type definitions are provided in `src/vite-env.d.ts`.
  *   **Stock Availability Utilities:** The `stockAvailability.ts` module provides utility functions (`getShopStockStatus`, `getProductDetailsStockStatus`, `isInStock`) for consistent stock status display across the application with appropriate CSS classes and descriptions.
-  *   **Number Utilities:** The `numberUtils.ts` module provides utility functions (`toNumber`, `toFixed`) for safely converting between string and number representations of decimal values, ensuring consistent handling of product prices and ABV values across the application.
+  *   **Number Utilities:** The `numberUtils.ts` module provides utility functions (`toFixed`) for formatting decimal values. The `abv`, `price`, and `price_ron` fields in `Product` and `LocalizedProduct` types are `number` (not `number | string`) — the API always returns JSON numbers for these fields.
   *   **Date Utilities:** The `dateUtils.ts` module provides comprehensive date formatting and parsing utilities (`formatDateForDisplay`, `parseDateForBackend`, `isValidDisplayDate`) for converting between backend YYYY-MM-DD format and UI DD/MM/YYYY format with validation.
 *   **Enhanced Admin UI:** The admin interface features a modern, intuitive design with:
     *   **Dashboard:** Statistics cards showing product counts, inventory value, and low stock alerts

@@ -17,6 +17,7 @@ use backend::enum_crud;
 use backend::image_crud;
 use backend::language::Language;
 use backend::localized::{LocalizedBlogPost, LocalizedProductWithImage};
+use backend::models::PaginatedResponse;
 use backend::product_crud::ProductWithImage;
 use backend::sitemap_crud;
 use backend::enums::*;
@@ -242,7 +243,7 @@ async fn get_all_products(
     State(app_state): State<Arc<AppState>>,
     query: Query<GetProductsQuery>,
     lang: Language,
-) -> Result<(VaryLang, Json<Vec<LocalizedProductWithImage>>), AppError> {
+) -> Result<(VaryLang, Json<PaginatedResponse<LocalizedProductWithImage>>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
     let per_page = query.per_page.unwrap_or(20).min(100) as i64;
@@ -251,6 +252,18 @@ async fn get_all_products(
     let limit = query.limit
         .map(|l| (l as i64).min(per_page + 1))
         .unwrap_or(per_page);
+
+    let total_count = product_crud::count_all_products(
+        &mut conn,
+        query.in_stock,
+        query.product_type,
+        query.sweetness,
+        query.turbidity,
+        query.effervescence,
+        query.acidity,
+        query.tannins,
+        query.body,
+    )?;
 
     let products = product_crud::get_all_products(
         &mut conn,
@@ -268,12 +281,14 @@ async fn get_all_products(
         offset,
     )?;
 
-    let localized: Vec<_> = products
+    let items: Vec<_> = products
         .into_iter()
         .map(|p| LocalizedProductWithImage::from_product_with_image(p, lang))
         .collect();
 
-    Ok((vary_accept_language(), Json(localized)))
+    let total_pages = (total_count as u64).div_ceil(per_page as u64);
+
+    Ok((vary_accept_language(), Json(PaginatedResponse { items, total_pages })))
 }
 
 async fn get_product_by_id(
@@ -331,7 +346,7 @@ pub struct GetAdminProductsQuery {
 async fn list_products_admin(
     State(app_state): State<Arc<AppState>>,
     query: Query<GetAdminProductsQuery>,
-) -> Result<Json<Vec<product_crud::ProductWithImage>>, AppError> {
+) -> Result<Json<PaginatedResponse<product_crud::ProductWithImage>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
     let per_page = query.per_page.unwrap_or(20).min(100) as i64;
@@ -342,9 +357,24 @@ async fn list_products_admin(
         .map(|l| (l as i64).min(per_page + 1))
         .unwrap_or(per_page);
 
-    let products = product_crud::get_all_products_admin(
+    let include_deleted = query.include_deleted.unwrap_or_default();
+
+    let total_count = product_crud::count_all_products_admin(
         &mut conn,
-        query.include_deleted.unwrap_or_default(),
+        include_deleted,
+        query.in_stock,
+        query.product_type,
+        query.sweetness,
+        query.turbidity,
+        query.effervescence,
+        query.acidity,
+        query.tannins,
+        query.body,
+    )?;
+
+    let items = product_crud::get_all_products_admin(
+        &mut conn,
+        include_deleted,
         query.order_by.as_deref(),
         query.in_stock,
         query.order_direction.as_deref(),
@@ -359,7 +389,9 @@ async fn list_products_admin(
         offset,
     )?;
 
-    Ok(Json(products))
+    let total_pages = (total_count as u64).div_ceil(per_page as u64);
+
+    Ok(Json(PaginatedResponse { items, total_pages }))
 }
 
 async fn restore_product_handler(
@@ -425,7 +457,7 @@ async fn get_all_blog_posts(
     State(app_state): State<Arc<AppState>>,
     query: Query<GetBlogPostsQuery>,
     lang: Language,
-) -> Result<(VaryLang, Json<Vec<LocalizedBlogPost>>), AppError> {
+) -> Result<(VaryLang, Json<PaginatedResponse<LocalizedBlogPost>>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
     let per_page = query.per_page.unwrap_or(10).min(50) as i64;
     let page = query.page.unwrap_or(1).max(1) as i64;
@@ -433,18 +465,20 @@ async fn get_all_blog_posts(
     let limit = query.limit
         .map(|l| (l as i64).min(per_page + 1))
         .unwrap_or(per_page);
+    let total_count = blog_crud::count_all_blog_posts(&mut conn)?;
     let posts = blog_crud::get_all_blog_posts(&mut conn, limit, offset)?;
-    let localized: Vec<_> = posts
+    let items: Vec<_> = posts
         .into_iter()
         .map(|p| LocalizedBlogPost::from_blog_post(p, lang))
         .collect();
-    Ok((vary_accept_language(), Json(localized)))
+    let total_pages = (total_count as u64).div_ceil(per_page as u64);
+    Ok((vary_accept_language(), Json(PaginatedResponse { items, total_pages })))
 }
 
 async fn get_all_blog_posts_admin(
     State(app_state): State<Arc<AppState>>,
     query: Query<GetBlogPostsQuery>,
-) -> Result<Json<Vec<models::BlogPost>>, AppError> {
+) -> Result<Json<PaginatedResponse<models::BlogPost>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
     let per_page = query.per_page.unwrap_or(10).min(50) as i64;
     let page = query.page.unwrap_or(1).max(1) as i64;
@@ -452,8 +486,10 @@ async fn get_all_blog_posts_admin(
     let limit = query.limit
         .map(|l| (l as i64).min(per_page + 1))
         .unwrap_or(per_page);
-    let posts = blog_crud::get_all_blog_posts_admin(&mut conn, limit, offset)?;
-    Ok(Json(posts))
+    let total_count = blog_crud::count_all_blog_posts_admin(&mut conn)?;
+    let items = blog_crud::get_all_blog_posts_admin(&mut conn, limit, offset)?;
+    let total_pages = (total_count as u64).div_ceil(per_page as u64);
+    Ok(Json(PaginatedResponse { items, total_pages }))
 }
 
 async fn get_blog_post_by_slug(

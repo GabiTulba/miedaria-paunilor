@@ -1,0 +1,26 @@
+.breadcrumb {
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+    margin-bottom: 1rem;
+}
+
+.breadcrumb-item a {
+    color: var(--color-text-light);
+    text-decoration: none;
+    transition: color var(--duration-fast, 150ms) ease;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.breadcrumb-item span[aria-current="page"] {
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+.breadcrumb-separator {
+    color: var(--color-text-light);
+    opacity: 0.6;
+}

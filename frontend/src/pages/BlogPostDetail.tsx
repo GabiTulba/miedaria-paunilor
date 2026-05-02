@@ -1,16 +1,18 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
 import { useFormattedDate } from '../hooks/useFormattedDate';
 import ErrorDisplay from '../components/ErrorDisplay';
+import Breadcrumb from '../components/Breadcrumb';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Blog.css';
 
 function BlogPostDetail() {
     const { slug } = useParams<{ slug: string }>();
+    const navigate = useNavigate();
     const [blogPost, setBlogPost] = useState<LocalizedBlogPost | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -58,12 +60,14 @@ function BlogPostDetail() {
         return () => { controller.abort(); };
     }, [slug, i18n.language, fetchTrigger]);
 
+    const backLink = (
+        <button onClick={() => navigate(-1)} className="back-link">&larr; {t('blog.backToBlog')}</button>
+    );
+
     if (loading) {
         return (
             <div className="blog-page">
-                <div className="blog-back-link">
-                    <Link to="/blog">&larr; {t('blog.backToBlog')}</Link>
-                </div>
+                <div className="blog-back-link">{backLink}</div>
                 <main className="blog-post-detail">
                     <header className="blog-post-header">
                         <h1 className="blog-post-title">
@@ -93,18 +97,14 @@ function BlogPostDetail() {
     if (error || !blogPost) {
         return (
             <div className="blog-page">
-                <div className="blog-back-link">
-                    <Link to="/blog">&larr; {t('blog.backToBlog')}</Link>
-                </div>
+                <div className="blog-back-link">{backLink}</div>
                 <main className="blog-post-detail">
                     <ErrorDisplay
                         error={error || t('blog.notFound')}
                         onRetry={!is404 && error ? () => setFetchTrigger(n => n + 1) : undefined}
                         retryLabel={t('common.retry')}
                     />
-                    <Link to="/blog" className="back-to-blog" style={{ display: 'block', textAlign: 'center', marginTop: '1rem' }}>
-                        {t('blog.backToBlog')}
-                    </Link>
+                    <div style={{ textAlign: 'center', marginTop: '1rem' }}>{backLink}</div>
                 </main>
             </div>
         );
@@ -112,9 +112,12 @@ function BlogPostDetail() {
 
     return (
         <div className="blog-page">
-            <div className="blog-back-link">
-                <Link to="/blog">&larr; {t('blog.backToBlog')}</Link>
-            </div>
+            <Breadcrumb items={[
+                { label: t('navigation.home'), to: '/home' },
+                { label: t('blog.title'), to: '/blog' },
+                { label: blogPost.title },
+            ]} />
+            <div className="blog-back-link">{backLink}</div>
             <main className="blog-post-detail">
                 <header className="blog-post-header">
                     <h1 className="blog-post-title">{blogPost.title}</h1>
@@ -138,7 +141,6 @@ function BlogPostDetail() {
                         remarkPlugins={[remarkGfm]}
                         components={{
                             img: ({node, ...props}) => {
-                                // Extract size from alt text like "Alt text {width=200}"
                                 const altText = props.alt || '';
                                 const sizeMatch = altText.match(/\{width=(\d+)\}/);
                                 const classNameMatch = altText.match(/\{class=(\w+)\}/);
@@ -159,7 +161,6 @@ function BlogPostDetail() {
 
                                 return <img {...props} alt={cleanAlt} style={style} className={className} />;
                             },
-                            // Handle table components
                             table: ({node, children, ...props}) => (
                                 <table className="blog-table" {...props}>
                                     {children}
@@ -187,9 +188,7 @@ function BlogPostDetail() {
                 </div>
 
                 <div className="blog-post-actions">
-                    <Link to="/blog" className="back-to-blog">
-                        {t('blog.backToBlog')}
-                    </Link>
+                    {backLink}
                 </div>
             </main>
         </div>

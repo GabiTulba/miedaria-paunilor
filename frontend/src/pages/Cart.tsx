@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { api } from '../lib/api';
-import { toFixed, toNumber } from '../utils/numberUtils';
+import { toFixed } from '../utils/numberUtils';
 import { useLanguage } from '../hooks/useLanguage';
 import './Cart.css';
 
@@ -82,7 +82,7 @@ function Cart() {
 
     const getTotalPrice = () => {
         return cartItems.reduce((total, item) => {
-            return total + toNumber(item.price) * item.quantity;
+            return total + item.price * item.quantity;
         }, 0).toFixed(2);
     };
 
@@ -162,7 +162,7 @@ function Cart() {
                                              </div>
                                          )}
                                          <p className="cart-item-subtotal">
-                                              {t('cart.subtotal')}: {toFixed(toNumber(item.price) * item.quantity)} {item.currency}
+                                              {t('cart.subtotal')}: {toFixed(item.price * item.quantity)} {item.currency}
                                          </p>
                                     </div>
                                     <button className="remove-item-btn" onClick={() => removeFromCart(item.product_id)}>

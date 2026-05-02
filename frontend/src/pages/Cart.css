@@ -128,7 +128,7 @@
     cursor: pointer;
     font-size: 1rem;
     color: var(--color-gray-500);
-    transition: all var(--duration-normal) ease;
+    transition: background-color, color var(--duration-normal) ease;
 }
 
 .quantity-selector-cart button:hover:not(:disabled) {
@@ -156,6 +156,7 @@
     color: var(--text-color);
     background: transparent;
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 .quantity-selector-cart .quantity-input::-webkit-outer-spin-button,

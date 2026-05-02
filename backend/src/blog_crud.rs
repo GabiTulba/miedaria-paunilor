@@ -140,6 +140,17 @@ pub fn create_blog_post(
         .map_err(BlogCreationError::from)
 }
 
+pub fn count_all_blog_posts(conn: &mut PgConnection) -> QueryResult<i64> {
+    blog_posts::table
+        .filter(blog_posts::is_published.eq(true))
+        .count()
+        .get_result(conn)
+}
+
+pub fn count_all_blog_posts_admin(conn: &mut PgConnection) -> QueryResult<i64> {
+    blog_posts::table.count().get_result(conn)
+}
+
 pub fn get_all_blog_posts(
     conn: &mut PgConnection,
     limit: i64,

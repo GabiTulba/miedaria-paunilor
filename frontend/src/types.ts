@@ -22,11 +22,11 @@ export interface Product {
   acidity: string;
   tannins: string;
   body: string;
-  abv: number | string; // Decimal as number or string
+  abv: number;
   bottle_count: number;
   bottle_size: number;
-  price: number | string; // Decimal as number or string
-  price_ron: number | string; // Decimal as number or string
+  price: number;
+  price_ron: number;
   image_id: string | null; // Reference to Image.id, nullable
   bottling_date: string; // Date in ISO format (YYYY-MM-DD)
   lot_number: number; // Positive integer
@@ -93,10 +93,10 @@ export interface LocalizedProduct {
   acidity: string;
   tannins: string;
   body: string;
-  abv: number | string;
+  abv: number;
   bottle_count: number;
   bottle_size: number;
-  price: number | string;
+  price: number;
   currency: string;
   image_id: string | null;
   bottling_date: string;
@@ -118,6 +118,11 @@ export interface LocalizedBlogPost {
   published_at: string | null;
   updated_at: string;
   is_published: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total_pages: number;
 }
 
 export interface LoginCredentials {

@@ -36,6 +36,7 @@ function AdminProducts() {
     const [actionId, setActionId] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
+    const [totalPages, setTotalPages] = useState(1);
     const [fetchTrigger, setFetchTrigger] = useState(0);
     const [deletedFilter, setDeletedFilter] = useState<DeletedFilter>('active');
     const [searchParams, setSearchParams] = useSearchParams();
@@ -58,10 +59,10 @@ function AdminProducts() {
                     include_deleted: deletedFilter,
                     page,
                     per_page: ADMIN_PRODUCTS_PER_PAGE,
-                    limit: ADMIN_PRODUCTS_PER_PAGE + 1,
                 }, controller.signal);
-                setHasMore(data.length > ADMIN_PRODUCTS_PER_PAGE);
-                setProducts(data.slice(0, ADMIN_PRODUCTS_PER_PAGE));
+                setTotalPages(data.total_pages ?? 1);
+                setHasMore(page < (data.total_pages ?? 1));
+                setProducts(data.items ?? []);
             } catch (err) {
                 if (err instanceof DOMException && err.name === 'AbortError') return;
                 console.error('Failed to fetch products:', err);
@@ -327,6 +328,7 @@ function AdminProducts() {
                 <Pagination
                     page={page}
                     hasMore={hasMore}
+                    totalPages={totalPages}
                     onPrevPage={() => setPage(page - 1)}
                     onNextPage={() => setPage(page + 1)}
                 />

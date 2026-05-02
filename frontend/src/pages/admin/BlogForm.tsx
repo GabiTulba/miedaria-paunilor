@@ -54,7 +54,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                 try {
                     setLoading(true);
                     const posts = await api.getBlogPostsAdmin(token);
-                    const post = posts.find(p => p.id === id);
+                    const post = posts.items.find(p => p.id === id);
                     if (post) {
                         setFormData({
                             title: post.title,

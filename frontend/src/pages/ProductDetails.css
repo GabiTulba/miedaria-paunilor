@@ -10,10 +10,17 @@
     margin-bottom: 2rem;
 }
 
-.back-to-shop a {
+.back-to-shop a,
+.back-link {
     color: var(--text-color);
     text-decoration: none;
     font-weight: 500;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
 }
 
 .product-details-content {
@@ -160,7 +167,7 @@
     cursor: pointer;
     font-size: 1.2rem;
     color: var(--color-gray-500);
-    transition: all var(--duration-normal) ease;
+    transition: background-color, color var(--duration-normal) ease;
 }
 
 .quantity-selector button:hover:not(:disabled) {

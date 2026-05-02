@@ -4,53 +4,10 @@
 ================================================================================
 
 ================================================================================
-LOW PRIORITY (Polish)
+LOW PRIORITY (Polish) -- COMPLETED
 ================================================================================
 
-[L1] Navigation Improvements
--------------------------------------------------------------------------------
-- No breadcrumbs -- product detail, blog detail, admin pages lack hierarchy
-- No 404 page -- invalid routes get generic error with no link to home/shop
-- Admin logout -- no confirmation dialog
-  File: frontend/src/pages/admin/AdminLayout.tsx (line 43)
-- Hard back-links -- always go to /shop or /blog, not browser history
-
-[L2] Image Handling
--------------------------------------------------------------------------------
-- No lazy loading on product images
-- No error fallback if image fails to load
-- No skeleton while images load
-- AdminImages drag-and-drop -- text says "drag and drop" but no actual DnD
-  File: frontend/src/pages/admin/AdminImages.tsx (line 159)
-- No upload progress bar
-- Delete button shows same text whether loading or not
-  File: frontend/src/pages/admin/AdminImages.tsx (line 287)
-
-[L3] Pagination Improvements
--------------------------------------------------------------------------------
-- Shows "Page 3" -- should show "Page 3 of 7"
-- No loading indicator between pages
-- Buttons too small for mobile thumbs
-  File: frontend/src/components/Pagination.tsx
-
-[L4] Type Safety Risks
--------------------------------------------------------------------------------
-- abv, price, price_ron typed as number | string -- defensive toNumber() calls
-  everywhere instead of parsing at API boundary
-  File: frontend/src/types.ts (lines 25, 28-29, 96, 99-100)
-- enums.mead_type.map() crashes if backend returns unexpected shape
-  File: frontend/src/hooks/useFetchEnums.ts (line 20)
-- No Zod/validation at API response boundary
-
-[L5] Minor CSS Issues
--------------------------------------------------------------------------------
-- Unnecessary -webkit- prefixes (not needed since ~2020)
-  File: frontend/src/App.css (line 103)
-- transition: all used in places (performance; should specify properties)
-- .availability.low-stock -- #ffc107 yellow text on white may fail WCAG AA
-  File: frontend/src/components/ProductCard.css (line 147)
-- AdminProducts double-fetch when deleting last product on page
-  File: frontend/src/pages/admin/AdminProducts.tsx (lines 77-81)
+All L1-L5 items resolved. See git history for details.
 
 ================================================================================
 MOBILE UX (Consolidated)

@@ -23,6 +23,7 @@ import AdminBlog from './pages/admin/AdminBlog';
 import BlogForm from './pages/admin/BlogForm';
 import Blog from './pages/Blog';
 import BlogPostDetail from './pages/BlogPostDetail';
+import NotFound from './pages/NotFound';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -40,6 +41,7 @@ const router = createBrowserRouter([
       { path: 'blog/:slug', element: <BlogPostDetail /> },
       { path: 'about-us', element: <AboutUs /> },
       { path: 'contact', element: <Contact /> },
+      { path: '*', element: <NotFound /> },
       {
         path: 'admin',
         element: <AdminLayout />,

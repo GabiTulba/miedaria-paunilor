@@ -1,4 +1,4 @@
-import { ApiError, ApiErrorResponse, BlogPost, LocalizedBlogPost, LocalizedProductWithImage, LoginCredentials, NewBlogPost, Product, ProductFormData, ProductWithImage, UpdateBlogPost } from '../types';
+import { ApiError, ApiErrorResponse, BlogPost, LocalizedBlogPost, LocalizedProductWithImage, LoginCredentials, NewBlogPost, PaginatedResponse, Product, ProductFormData, ProductWithImage, UpdateBlogPost } from '../types';
 import i18n from '../i18n/config';
 
 export function getImageUrl(id: string): string {
@@ -55,8 +55,7 @@ export const api = {
         body?: string;
         page?: number;
         per_page?: number;
-        limit?: number;
-    }, signal?: AbortSignal): Promise<LocalizedProductWithImage[]> => {
+    }, signal?: AbortSignal): Promise<PaginatedResponse<LocalizedProductWithImage>> => {
         const queryParams = new URLSearchParams();
         if (params) {
             if (params.order_by) queryParams.append('order_by', params.order_by);
@@ -71,7 +70,6 @@ export const api = {
             if (params.body) queryParams.append('body', params.body);
             if (params.page !== undefined) queryParams.append('page', String(params.page));
             if (params.per_page !== undefined) queryParams.append('per_page', String(params.per_page));
-            if (params.limit !== undefined) queryParams.append('limit', String(params.limit));
         }
         const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
         return request(`/products${queryString}`, { signal });
@@ -128,13 +126,11 @@ export const api = {
         include_deleted?: 'active' | 'deleted' | 'all';
         page?: number;
         per_page?: number;
-        limit?: number;
-    }, signal?: AbortSignal): Promise<ProductWithImage[]> => {
+    }, signal?: AbortSignal): Promise<PaginatedResponse<ProductWithImage>> => {
         const queryParams = new URLSearchParams();
         if (params?.include_deleted) queryParams.append('include_deleted', params.include_deleted);
         if (params?.page !== undefined) queryParams.append('page', String(params.page));
         if (params?.per_page !== undefined) queryParams.append('per_page', String(params.per_page));
-        if (params?.limit !== undefined) queryParams.append('limit', String(params.limit));
         const qs = queryParams.toString() ? `?${queryParams.toString()}` : '';
         return request(`/admin/products${qs}`, {
             method: 'GET',
@@ -199,22 +195,20 @@ export const api = {
     },
 
     // Blog CRUD Operations
-    getBlogPosts: (page?: number, per_page?: number, limit?: number, signal?: AbortSignal): Promise<LocalizedBlogPost[]> => {
+    getBlogPosts: (page?: number, per_page?: number, signal?: AbortSignal): Promise<PaginatedResponse<LocalizedBlogPost>> => {
         const params = new URLSearchParams();
         if (page !== undefined) params.append('page', String(page));
         if (per_page !== undefined) params.append('per_page', String(per_page));
-        if (limit !== undefined) params.append('limit', String(limit));
         const qs = params.toString() ? `?${params.toString()}` : '';
         return request(`/blog${qs}`, { signal });
     },
     getBlogPostBySlug: (slug: string, signal?: AbortSignal): Promise<LocalizedBlogPost> => request(`/blog/${slug}`, { signal }),
     
     // Admin blog operations
-    getBlogPostsAdmin: async (token: string, page?: number, per_page?: number, limit?: number, signal?: AbortSignal): Promise<BlogPost[]> => {
+    getBlogPostsAdmin: async (token: string, page?: number, per_page?: number, signal?: AbortSignal): Promise<PaginatedResponse<BlogPost>> => {
         const params = new URLSearchParams();
         if (page !== undefined) params.append('page', String(page));
         if (per_page !== undefined) params.append('per_page', String(per_page));
-        if (limit !== undefined) params.append('limit', String(limit));
         const qs = params.toString() ? `?${params.toString()}` : '';
         return request(`/admin/blog/admin${qs}`, {
             method: 'GET',

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LocalizedProductWithImage } from '../types';
 import { getEnumLabel } from '../enums';
@@ -15,6 +16,12 @@ interface ProductCardProps {
 
 function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
   const { t } = useTranslation();
+  const [imgError, setImgError] = useState(false);
+
+  const imageId = productWithImage?.image?.id;
+  useEffect(() => {
+    setImgError(false);
+  }, [imageId]);
 
   if (renderSkeleton) {
     return (
@@ -57,11 +64,14 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
       <Link to={`/shop/${product.product_id}`}>
         <div className="product-card-main">
           <div className="product-card-image">
-            {image ? (
+            {image && !imgError ? (
               <img
                 src={getImageUrl(image.id)}
                 alt={product.product_name}
                 className="product-image"
+                loading="lazy"
+                decoding="async"
+                onError={() => setImgError(true)}
               />
             ) : (
               <div className="placeholder-image">{t('admin.productForm.noImage')}</div>

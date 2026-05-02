@@ -1,3 +1,4 @@
+use serde::Serialize;
 use crate::enums::*;
 use crate::schema::*;
 use chrono;
@@ -5,6 +6,12 @@ use diesel::prelude::*;
 use rust_decimal::Decimal;
 
 use uuid;
+
+#[derive(Serialize)]
+pub struct PaginatedResponse<T: Serialize> {
+    pub items: Vec<T>,
+    pub total_pages: u64,
+}
 
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = crate::schema::admin_users)]

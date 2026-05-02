@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LocalizedProductWithImage } from '../types';
 import { api } from '../lib/api';
@@ -12,11 +12,13 @@ import { toFixed } from '../utils/numberUtils';
 import { useFormattedDate } from '../hooks/useFormattedDate';
 import CollapsibleSection from '../components/CollapsibleSection';
 import ErrorDisplay from '../components/ErrorDisplay';
+import Breadcrumb from '../components/Breadcrumb';
 
 import './ProductDetails.css';
 
 function ProductDetails() {
     const { productId } = useParams<{ productId: string }>();
+    const navigate = useNavigate();
     const [productWithImage, setProductWithImage] = useState<LocalizedProductWithImage | null>(null);
     const [quantity, setQuantity] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
@@ -64,12 +66,14 @@ function ProductDetails() {
         }
     };
 
+    const backLink = (
+        <button onClick={() => navigate(-1)} className="back-link">&larr; {t('common.backToShop')}</button>
+    );
+
     if (isLoading) {
         return (
             <div className="product-details-page">
-                <div className="back-to-shop">
-                    <Link to="/shop">&larr; {t('common.backToShop')}</Link>
-                </div>
+                <div className="back-to-shop">{backLink}</div>
                 <div className="product-details-content">
                     <div className="product-image-column">
                         <div className="skeleton" style={{ width: '100%', aspectRatio: '1/1', borderRadius: 'var(--radius-md)' }} />
@@ -97,9 +101,7 @@ function ProductDetails() {
     if (error || !productWithImage) {
         return (
             <div className="product-details-page">
-                <div className="back-to-shop">
-                    <Link to="/shop">&larr; {t('common.backToShop')}</Link>
-                </div>
+                <div className="back-to-shop">{backLink}</div>
                 <ErrorDisplay
                     error={error || t('errors.notFound')}
                     onRetry={error ? () => setFetchTrigger(n => n + 1) : undefined}
@@ -113,9 +115,12 @@ function ProductDetails() {
 
     return (
         <div className="product-details-page">
-            <div className="back-to-shop">
-                <Link to="/shop">&larr; {t('common.backToShop')}</Link>
-            </div>
+            <Breadcrumb items={[
+                { label: t('navigation.home'), to: '/home' },
+                { label: t('navigation.shop'), to: '/shop' },
+                { label: product.product_name },
+            ]} />
+            <div className="back-to-shop">{backLink}</div>
             <div className="product-details-content">
                 <div className="product-image-column">
                     {image ? (

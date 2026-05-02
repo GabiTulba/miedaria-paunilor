@@ -159,7 +159,7 @@
 }
 
 .availability.low-stock {
-  color: var(--color-warning);
+  color: #b45309;
 }
 
 .availability.out-of-stock {

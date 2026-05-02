@@ -68,7 +68,7 @@
     cursor: pointer;
     border: 2px solid var(--border-color);
     border-radius: var(--radius-sm);
-    transition: all var(--duration-normal) ease;
+    transition: background-color, border-color, color var(--duration-normal) ease;
     accent-color: var(--accent-color);
 }
 
@@ -105,7 +105,7 @@
     border-radius: var(--border-radius);
     cursor: pointer;
     font-size: 0.95rem;
-    transition: all var(--duration-normal) ease;
+    transition: background-color, color var(--duration-normal) ease;
     font-weight: 500;
 }
 
@@ -137,7 +137,7 @@
     font-family: var(--font-body);
     font-size: clamp(0.95rem, 0.92rem + 0.06vw, 1rem);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition: background-color, color, box-shadow var(--duration-normal) ease;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;

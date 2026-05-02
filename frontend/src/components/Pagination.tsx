@@ -4,11 +4,12 @@ import './Pagination.css';
 interface PaginationProps {
     page: number;
     hasMore: boolean;
+    totalPages?: number;
     onPrevPage: () => void;
     onNextPage: () => void;
 }
 
-function Pagination({ page, hasMore, onPrevPage, onNextPage }: PaginationProps) {
+function Pagination({ page, hasMore, totalPages, onPrevPage, onNextPage }: PaginationProps) {
     const { t } = useTranslation();
     return (
         <nav className="pagination-section" aria-label={t('common.pagination')}>
@@ -21,7 +22,9 @@ function Pagination({ page, hasMore, onPrevPage, onNextPage }: PaginationProps) 
                 >
                     ← {t('common.previous')}
                 </button>
-                <span className="pagination-page" aria-current="page">{t('common.page')} {page}</span>
+                <span className="pagination-page" aria-current="page">
+                    {t('common.page')} {page}{totalPages ? ` ${t('common.of')} ${totalPages}` : ''}
+                </span>
                 <button
                     className="pagination-btn"
                     onClick={onNextPage}

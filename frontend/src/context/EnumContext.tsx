@@ -25,6 +25,13 @@ export function EnumProvider({ children }: { children: ReactNode }) {
             try {
                 setLoading(true);
                 const response = await api.get('/enums', { signal: controller.signal }) as EnumValues;
+                const expectedKeys: Array<keyof EnumValues> = ['mead_type', 'sweetness', 'turbidity', 'effervescence', 'acidity', 'tannins', 'body'];
+                const isValid = expectedKeys.every(key => Array.isArray(response[key]));
+                if (!isValid) {
+                    console.error('Enum response missing expected keys or not arrays');
+                    setError('Failed to fetch enum values');
+                    return;
+                }
                 setEnums(response);
                 setError(null);
             } catch (err) {

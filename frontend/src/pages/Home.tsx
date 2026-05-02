@@ -25,11 +25,11 @@ function Home() {
                 params.append('in_stock', 'true');
                 const queryString = params.toString();
                 const url = `/products${queryString ? `?${queryString}` : ''}`;
-                const products = await api.get(url, { signal: controller.signal });
-                setFeaturedProducts(products.slice(0, 3));
+                const productsData = await api.get(url, { signal: controller.signal });
+                setFeaturedProducts((productsData.items ?? productsData).slice(0, 3));
 
-                const blogPosts = await api.getBlogPosts(undefined, undefined, undefined, controller.signal);
-                setLatestBlogPosts(blogPosts.slice(0, 3));
+                const blogData = await api.getBlogPosts(undefined, undefined, controller.signal);
+                setLatestBlogPosts((blogData.items ?? []).slice(0, 3));
             } catch (error) {
                 if (error instanceof DOMException && error.name === 'AbortError') return;
                 console.error("Failed to fetch data:", error);

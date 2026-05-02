@@ -16,6 +16,7 @@
     "update": "Actualizează",
     "submit": "Trimite",
     "loading": "Se încarcă...",
+    "deleting": "Se șterge...",
     "error": "Eroare",
     "success": "Succes",
     "warning": "Atenționare",
@@ -26,6 +27,7 @@
     "next": "Următor",
     "previous": "Anterior",
     "page": "Pagina",
+    "of": "din",
     "pagination": "Paginare",
     "previousPage": "Mergi la pagina anterioară",
     "nextPage": "Mergi la pagina următoare",
@@ -236,6 +238,10 @@
     "addedToCart": "Adăugat în coș"
   },
   "admin": {
+    "logout": {
+      "confirmTitle": "Confirmare Deconectare",
+      "confirmMessage": "Ești sigur că vrei să te deconectezi?"
+    },
     "login": {
       "title": "Autentificare Admin",
       "subtitle": "Introdu credențialele pentru a accesa panoul de administrare",

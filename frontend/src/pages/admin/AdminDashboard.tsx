@@ -18,7 +18,7 @@ function AdminDashboard() {
         const fetchProducts = async () => {
             try {
                 const productsData = await api.getProducts(undefined, controller.signal);
-                setProducts(productsData);
+                setProducts(productsData.items ?? []);
             } catch (error) {
                 if (error instanceof DOMException && error.name === 'AbortError') return;
                 console.error("Failed to fetch products:", error);

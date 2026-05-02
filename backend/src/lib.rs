@@ -42,13 +42,15 @@ pub struct AppState {
 // Export modules and their contents
 pub use crate::auth::{Claims, LoginPayload, LoginResponse};
 pub use crate::blog_crud::{
-    create_blog_post, delete_blog_post, get_all_blog_posts, get_all_blog_posts_admin,
-    get_blog_post_by_slug, get_blog_post_by_id, update_blog_post,
+    count_all_blog_posts, count_all_blog_posts_admin, create_blog_post, delete_blog_post,
+    get_all_blog_posts, get_all_blog_posts_admin, get_blog_post_by_slug, get_blog_post_by_id,
+    update_blog_post,
 };
-pub use crate::models::{AdminUser, NewAdminUser, NewProduct, NewUser, Product, User};
+pub use crate::models::{AdminUser, NewAdminUser, NewProduct, NewUser, PaginatedResponse, Product, User};
 pub use crate::product_crud::{
-    create_product, delete_product, get_all_products, get_all_products_admin, get_product,
-    get_product_admin, hard_delete_product, restore_product, update_product, IncludeDeleted,
+    count_all_products, count_all_products_admin, create_product, delete_product, get_all_products,
+    get_all_products_admin, get_product, get_product_admin, hard_delete_product, restore_product,
+    update_product, IncludeDeleted,
 };
 pub use crate::schema::*;
 pub use crate::user_crud::{
