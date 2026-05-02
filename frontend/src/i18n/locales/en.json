@@ -194,7 +194,10 @@
     "clearFilters": "Clear All Filters",
     "characteristics": "Mead characteristics",
     "searchByName": "Search by name",
-    "searchPlaceholder": "Search products..."
+    "searchPlaceholder": "Search products...",
+    "showFilters": "Show Filters",
+    "closeFilters": "Close filters",
+    "activeFiltersCount": "{{count}} active filters"
   },
   "product": {
     "addToCart": "Add to Cart",

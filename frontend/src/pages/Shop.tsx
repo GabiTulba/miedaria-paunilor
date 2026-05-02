@@ -22,11 +22,26 @@ function Shop() {
     const [tannins, setTannins] = useState<string>('');
     const [body, setBody] = useState<string>('');
     const [search, setSearch] = useState<string>('');
+    const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
     const filtersInitialized = useRef(false);
+    const filtersTriggerRef = useRef<HTMLButtonElement>(null);
+    const filtersAsideRef = useRef<HTMLElement>(null);
     const { t } = useTranslation();
+
+    const activeFilterCount =
+        (orderBy !== '' ? 1 : 0) +
+        (inStock ? 1 : 0) +
+        (productType !== '' ? 1 : 0) +
+        (sweetness !== '' ? 1 : 0) +
+        (turbidity !== '' ? 1 : 0) +
+        (effervescence !== '' ? 1 : 0) +
+        (acidity !== '' ? 1 : 0) +
+        (tannins !== '' ? 1 : 0) +
+        (body !== '' ? 1 : 0) +
+        (search !== '' ? 1 : 0);
 
     const { enums } = useFetchEnums();
     const { products, isLoading, error, hasMore, totalPages, refetch } = useFetchProducts(
@@ -53,6 +68,49 @@ function Shop() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, search]);
 
+    useEffect(() => {
+        if (!isFiltersOpen) return;
+
+        const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+        if (!isMobile) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        const focusable = filtersAsideRef.current?.querySelector<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        focusable?.focus();
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setIsFiltersOpen(false);
+                filtersTriggerRef.current?.focus();
+            }
+        };
+
+        const handlePointerDown = (e: PointerEvent) => {
+            const target = e.target as Node;
+            if (
+                filtersAsideRef.current &&
+                !filtersAsideRef.current.contains(target) &&
+                filtersTriggerRef.current &&
+                !filtersTriggerRef.current.contains(target)
+            ) {
+                setIsFiltersOpen(false);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('pointerdown', handlePointerDown);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('pointerdown', handlePointerDown);
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isFiltersOpen]);
+
     if (error) {
         return (
             <div className="shop-page">
@@ -72,9 +130,43 @@ function Shop() {
                 <p>{t('shop.subtitle')}</p>
             </header>
             
+            <button
+                ref={filtersTriggerRef}
+                type="button"
+                className="filters-trigger"
+                onClick={() => setIsFiltersOpen(true)}
+                aria-expanded={isFiltersOpen}
+                aria-controls="filters-sidebar"
+            >
+                <span>{t('shop.showFilters')}</span>
+                {activeFilterCount > 0 && (
+                    <span
+                        className="filters-trigger-badge"
+                        aria-label={t('shop.activeFiltersCount', { count: activeFilterCount })}
+                    >
+                        {activeFilterCount}
+                    </span>
+                )}
+            </button>
+
             <div className="shop-content">
-                <aside className="filters-sidebar">
-                    <h3>{t('shop.filters')}</h3>
+                <aside
+                    id="filters-sidebar"
+                    ref={filtersAsideRef}
+                    className={`filters-sidebar ${isFiltersOpen ? 'is-open' : ''}`}
+                >
+                    <div className="filters-sidebar-mobile-header">
+                        <h3>{t('shop.filters')}</h3>
+                        <button
+                            type="button"
+                            className="filters-close-btn"
+                            onClick={() => setIsFiltersOpen(false)}
+                            aria-label={t('shop.closeFilters')}
+                        >
+                            ×
+                        </button>
+                    </div>
+                    <h3 className="filters-desktop-heading">{t('shop.filters')}</h3>
 
                     <div className="filter-group">
                         <SelectInput
@@ -134,6 +226,7 @@ function Shop() {
                                 setBody('');
                                 setSearch('');
                                 setPage(1);
+                                setIsFiltersOpen(false);
                             }}
                         >
                             {t('shop.clearFilters')}
@@ -276,6 +369,12 @@ function Shop() {
                         </fieldset>
                     )}
                 </aside>
+
+                <div
+                    className={`filters-backdrop ${isFiltersOpen ? 'is-open' : ''}`}
+                    onClick={() => setIsFiltersOpen(false)}
+                    aria-hidden="true"
+                />
 
                 <main className="product-display">
                     {isLoading ? (

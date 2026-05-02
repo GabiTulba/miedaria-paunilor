@@ -7,21 +7,6 @@
 MOBILE UX
 ================================================================================
 
-[MOB2] Navigation & Header
--------------------------------------------------------------------------------
-- Hamburger menu missing aria-expanded, aria-label -- unusable for screen
-  readers on mobile (see also C3)
-  File: frontend/src/App.tsx (line 38)
-- Sticky nav height eats screen space on small phones
-  File: frontend/src/App.css
-- Main nav positioned off-screen with left: -100% -- focus trap risk; keyboard
-  users can tab into invisible nav
-  File: frontend/src/App.css (line 142)
-- Logo image jumps between fixed heights (90px, 65px, 55px) with no
-  intermediate tablet size
-  File: frontend/src/App.css
-- No skip-to-content link for keyboard/mobile screen reader users (see also C3)
-
 [MOB3] Shop Page -- Filters & Grid
 -------------------------------------------------------------------------------
 - 9 filter groups stack vertically on mobile -- excessive scrolling, no

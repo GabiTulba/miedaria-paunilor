@@ -194,7 +194,10 @@
     "clearFilters": "Șterge Toate Filtrele",
     "characteristics": "Caracteristici mied",
     "searchByName": "Caută după nume",
-    "searchPlaceholder": "Caută produse..."
+    "searchPlaceholder": "Caută produse...",
+    "showFilters": "Arată filtrele",
+    "closeFilters": "Închide filtrele",
+    "activeFiltersCount": "{{count}} filtre active"
   },
   "product": {
     "addToCart": "Adaugă în Coș",
