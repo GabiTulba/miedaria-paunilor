@@ -191,7 +191,9 @@
     "body": "Corp",
     "allBody": "Toate Nivelurile",
     "clearFilters": "Șterge Toate Filtrele",
-    "characteristics": "Caracteristici mied"
+    "characteristics": "Caracteristici mied",
+    "searchByName": "Caută după nume",
+    "searchPlaceholder": "Caută produse..."
   },
   "product": {
     "addToCart": "Adaugă în Coș",

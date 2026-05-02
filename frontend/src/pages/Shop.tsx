@@ -21,6 +21,7 @@ function Shop() {
     const [acidity, setAcidity] = useState<string>('');
     const [tannins, setTannins] = useState<string>('');
     const [body, setBody] = useState<string>('');
+    const [search, setSearch] = useState<string>('');
     const [searchParams, setSearchParams] = useSearchParams();
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
@@ -39,6 +40,7 @@ function Shop() {
         acidity,
         tannins,
         body,
+        search,
         page
     );
 
@@ -49,7 +51,7 @@ function Shop() {
         }
         setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body]);
+    }, [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, search]);
 
     if (error) {
         return (
@@ -130,11 +132,24 @@ function Shop() {
                                 setAcidity('');
                                 setTannins('');
                                 setBody('');
+                                setSearch('');
                                 setPage(1);
                             }}
                         >
                             {t('shop.clearFilters')}
                         </button>
+                    </div>
+
+                    <div className="filter-group">
+                        <label htmlFor="search-input">{t('shop.searchByName')}</label>
+                        <input
+                            id="search-input"
+                            type="text"
+                            className="search-input"
+                            placeholder={t('shop.searchPlaceholder')}
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
                     </div>
 
                     {enums && (

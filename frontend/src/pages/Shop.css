@@ -157,6 +157,30 @@
     box-shadow: var(--shadow-focus-light);
 }
 
+.search-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--white-color);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    font-size: clamp(0.95rem, 0.92rem + 0.06vw, 1rem);
+    transition: background-color, color, box-shadow var(--duration-normal) ease;
+    box-sizing: border-box;
+}
+
+.search-input:hover {
+    border-color: var(--primary-color);
+    background-color: var(--color-surface-alt);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: var(--shadow-focus-light);
+}
+
 .filter-group select option {
     padding: 8px;
     background-color: var(--white-color);

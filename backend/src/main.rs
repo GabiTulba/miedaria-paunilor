@@ -221,6 +221,7 @@ pub struct GetProductsQuery {
     acidity: Option<AcidityType>,
     tannins: Option<TanninsType>,
     body: Option<BodyType>,
+    search: Option<String>,
     page: Option<u32>,
     per_page: Option<u32>,
     limit: Option<u32>,
@@ -263,6 +264,7 @@ async fn get_all_products(
         query.acidity,
         query.tannins,
         query.body,
+        query.search.as_deref(),
     )?;
 
     let products = product_crud::get_all_products(
@@ -277,6 +279,7 @@ async fn get_all_products(
         query.acidity,
         query.tannins,
         query.body,
+        query.search.as_deref(),
         limit,
         offset,
     )?;

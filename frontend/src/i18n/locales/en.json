@@ -191,7 +191,9 @@
     "body": "Body",
     "allBody": "All Body",
     "clearFilters": "Clear All Filters",
-    "characteristics": "Mead characteristics"
+    "characteristics": "Mead characteristics",
+    "searchByName": "Search by name",
+    "searchPlaceholder": "Search products..."
   },
   "product": {
     "addToCart": "Add to Cart",

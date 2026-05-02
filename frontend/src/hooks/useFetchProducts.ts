@@ -28,6 +28,7 @@ export const useFetchProducts = (
   acidity: string,
   tannins: string,
   body: string,
+  search: string,
   page: number
 ): UseFetchProductsResult => {
   const language = useLanguage();
@@ -80,6 +81,9 @@ export const useFetchProducts = (
         if (body) {
           params.append('body', body);
         }
+        if (search) {
+          params.append('search', search);
+        }
         params.append('page', String(page));
         params.append('per_page', String(PER_PAGE));
         url = `${url}?${params.toString()}`;
@@ -99,7 +103,7 @@ export const useFetchProducts = (
 
     fetchProducts();
     return () => { controller.abort(); };
-  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, page, language]);
+  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, search, page, language]);
 
   return { products, isLoading, error, hasMore, totalPages, refetch };
 };

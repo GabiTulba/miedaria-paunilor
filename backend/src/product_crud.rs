@@ -440,6 +440,7 @@ pub fn count_all_products(
     acidity_filter: Option<AcidityType>,
     tannins_filter: Option<TanninsType>,
     body_filter: Option<BodyType>,
+    search: Option<&str>,
 ) -> QueryResult<i64> {
     count_products_internal(
         conn,
@@ -452,6 +453,7 @@ pub fn count_all_products(
         acidity_filter,
         tannins_filter,
         body_filter,
+        search,
     )
 }
 
@@ -479,6 +481,7 @@ pub fn count_all_products_admin(
         acidity_filter,
         tannins_filter,
         body_filter,
+        None,
     )
 }
 
@@ -494,6 +497,7 @@ fn count_products_internal(
     acidity_filter: Option<AcidityType>,
     tannins_filter: Option<TanninsType>,
     body_filter: Option<BodyType>,
+    search: Option<&str>,
 ) -> QueryResult<i64> {
     use crate::schema::products::dsl::*;
 
@@ -537,6 +541,13 @@ fn count_products_internal(
         query = query.filter(body.eq(filter_value));
     }
 
+    if let Some(search_term) = search {
+        let pattern = format!("%{}%", search_term);
+        query = query.filter(
+            product_name.ilike(pattern.clone()).or(product_name_ro.ilike(pattern))
+        );
+    }
+
     query.count().get_result(conn)
 }
 
@@ -552,6 +563,7 @@ pub fn get_all_products(
     acidity_filter: Option<AcidityType>,
     tannins_filter: Option<TanninsType>,
     body_filter: Option<BodyType>,
+    search: Option<&str>,
     limit: i64,
     offset: i64,
 ) -> QueryResult<Vec<ProductWithImage>> {
@@ -568,6 +580,7 @@ pub fn get_all_products(
         acidity_filter,
         tannins_filter,
         body_filter,
+        search,
         limit,
         offset,
     )
@@ -602,6 +615,7 @@ pub fn get_all_products_admin(
         acidity_filter,
         tannins_filter,
         body_filter,
+        None,
         limit,
         offset,
     )
@@ -620,6 +634,7 @@ fn get_products_internal(
     acidity_filter: Option<AcidityType>,
     tannins_filter: Option<TanninsType>,
     body_filter: Option<BodyType>,
+    search: Option<&str>,
     limit: i64,
     offset: i64,
 ) -> QueryResult<Vec<ProductWithImage>> {
@@ -665,6 +680,13 @@ fn get_products_internal(
 
     if let Some(filter_value) = body_filter {
         query = query.filter(body.eq(filter_value));
+    }
+
+    if let Some(search_term) = search {
+        let pattern = format!("%{}%", search_term);
+        query = query.filter(
+            product_name.ilike(pattern.clone()).or(product_name_ro.ilike(pattern))
+        );
     }
 
     if let Some(order_by_col) = order_by {
