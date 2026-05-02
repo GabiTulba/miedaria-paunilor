@@ -6,16 +6,6 @@
 ================================================================================
 MOBILE UX
 ================================================================================
-[MOB5] Cart Page
--------------------------------------------------------------------------------
-- Cart table layout breaks on narrow screens -- needs card-based mobile layout
-  File: frontend/src/pages/Cart.tsx
-- Quantity +/- buttons same tap target issue as ProductDetails
-  File: frontend/src/pages/Cart.tsx (lines 44-56)
-- Cart summary sticky positioning has no transition when switching to static
-  at breakpoint
-  File: frontend/src/pages/Cart.css (lines 157-164)
-
 [MOB6] Blog
 -------------------------------------------------------------------------------
 - ReactMarkdown table rendering overflows on mobile -- tables not responsive

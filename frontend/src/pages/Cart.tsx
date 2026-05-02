@@ -125,6 +125,7 @@ function Cart() {
                                                          (this as HTMLButtonElement).classList.remove('success-pulse');
                                                      }, { once: true });
                                                  }}
+                                                 aria-label={t('product.decreaseQuantity')}
                                                  disabled={item.quantity <= 1}
                                              >-</button>
                                              <input
@@ -133,6 +134,7 @@ function Cart() {
                                                  value={item.quantity}
                                                  min={1}
                                                  max={Math.min(99, item.availableStock)}
+                                                 aria-label={t('product.quantity')}
                                                  onChange={(e) => {
                                                      const val = parseInt(e.target.value, 10);
                                                      if (!isNaN(val) && val >= 1 && val < 100) {
@@ -148,6 +150,7 @@ function Cart() {
                                                          (this as HTMLButtonElement).classList.remove('success-pulse');
                                                      }, { once: true });
                                                  }}
+                                                 aria-label={t('product.increaseQuantity')}
                                                  disabled={item.quantity >= item.availableStock}
                                              >+</button>
                                          </div>
@@ -165,7 +168,7 @@ function Cart() {
                                               {t('cart.subtotal')}: {toFixed(item.price * item.quantity)} {item.currency}
                                          </p>
                                     </div>
-                                    <button className="remove-item-btn" onClick={() => removeFromCart(item.product_id)}>
+                                    <button className="remove-item-btn" onClick={() => removeFromCart(item.product_id)} aria-label={t('cart.remove')}>
                                         &times;
                                     </button>
                                 </div>
