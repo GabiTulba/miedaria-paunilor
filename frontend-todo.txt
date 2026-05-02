@@ -4,21 +4,10 @@
 ================================================================================
 
 ================================================================================
-LOW PRIORITY (Polish) -- COMPLETED
+MOBILE UX
 ================================================================================
 
-All L1-L5 items resolved. See git history for details.
-
-================================================================================
-MOBILE UX (Consolidated)
-================================================================================
-
-This section consolidates all mobile-specific findings from the UX audit and
-the project todo.txt into one place. Items referenced in other sections above
-are cross-referenced but not removed -- this section is the authoritative
-mobile checklist.
-
-[MOB1] Full Mobile Redesign Needed (from todo.txt)
+[MOB1] Full Mobile Redesign Needed
 -------------------------------------------------------------------------------
 Current state: media queries exist but layout is desktop-first and janky on
 mobile browsers. Full responsive redesign needed, not just breakpoint patches.
