@@ -141,9 +141,11 @@ function Blog() {
                                                  },
                                                  // Handle table components for excerpts too
                                                  table: ({node, children, ...props}) => (
-                                                     <table className="blog-table" {...props}>
-                                                         {children}
-                                                     </table>
+                                                     <div className="blog-table-wrapper" tabIndex={0} role="region" aria-label="table">
+                                                         <table className="blog-table" {...props}>
+                                                             {children}
+                                                         </table>
+                                                     </div>
                                                  ),
                                                  thead: ({node, children, ...props}) => (
                                                      <thead {...props}>{children}</thead>
