@@ -1,3 +1,4 @@
+/* JS/TS mirror of the breakpoint scale. CSS counterpart: ./breakpoints.css. */
 export const BREAKPOINTS = {
     sm: 480,
     md: 640,

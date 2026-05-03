@@ -103,7 +103,7 @@
     }
 }
 
-@media (min-width: 480px) {
+@media (--bp-sm) {
     .toast-container {
         right: 20px;
         left: auto;

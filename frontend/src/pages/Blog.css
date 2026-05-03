@@ -252,19 +252,19 @@
 }
 
 /* Responsive design */
-@media (min-width: 480px) {
+@media (--bp-sm) {
     .blog-post-detail {
         padding: 1rem 0.75rem;
     }
 }
 
-@media (min-width: 768px) {
+@media (--bp-lg) {
     .blog-post-detail {
         padding: 2rem 1rem;
     }
 }
 
-@media (min-width: 1024px) {
+@media (--bp-xl) {
     .blog-page {
         padding: 2rem 1.5rem;
     }

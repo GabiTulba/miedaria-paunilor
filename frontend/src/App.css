@@ -131,34 +131,65 @@
   justify-content: center;
 }
 
-@media (max-width: 1023px) {
+/* Mobile/tablet sizing for in-nav theme slider & language switcher (touch
+   scale-up). Desktop reverts to the standard component defaults below. */
+.main-nav .theme-slider {
+  --theme-slider-step: 34px;
+  padding: 4px;
+  margin-top: 1rem;
+}
+
+.main-nav .language-switcher {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.main-nav .theme-slider-option {
+  width: 34px;
+  height: 32px;
+}
+
+.main-nav .theme-slider-indicator {
+  width: 32px;
+  height: 30px;
+}
+
+.main-nav .language-btn {
+  padding: 8px 12px;
+}
+
+.main-nav .language-btn .flag {
+  font-size: 18px;
+}
+
+@media (--bp-xl) {
   .main-nav .theme-slider {
-    --theme-slider-step: 34px;
-    padding: 4px;
-    margin-top: 1rem;
+    --theme-slider-step: 30px;
+    padding: 3px;
+    margin-top: 0;
   }
 
   .main-nav .language-switcher {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
+    margin-top: 0;
+    margin-bottom: 0;
   }
 
   .main-nav .theme-slider-option {
-    width: 34px;
-    height: 32px;
+    width: 30px;
+    height: 28px;
   }
 
   .main-nav .theme-slider-indicator {
-    width: 32px;
-    height: 30px;
+    width: 28px;
+    height: 26px;
   }
 
   .main-nav .language-btn {
-    padding: 8px 12px;
+    padding: 6px 10px;
   }
 
   .main-nav .language-btn .flag {
-    font-size: 18px;
+    font-size: 14px;
   }
 }
 
@@ -227,7 +258,7 @@
   padding: 0 20px;
 }
 
-@media (min-width: 480px) {
+@media (--bp-sm) {
   .header {
     padding: 10px 0;
     min-height: 80px;
@@ -238,7 +269,7 @@
   }
 }
 
-@media (min-width: 768px) {
+@media (--bp-lg) {
   .header {
     min-height: 100px;
   }
@@ -248,7 +279,7 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (--bp-xl) {
   .main-nav {
     position: static;
     left: auto;

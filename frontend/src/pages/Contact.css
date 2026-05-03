@@ -112,14 +112,14 @@
     width: 100%;
 }
 
-@media (min-width: 768px) {
+@media (--bp-lg) {
     .contact-content {
         padding: 2rem;
     }
 }
 
 /* boundary normalized 992 -> 1024 (canonical scale) */
-@media (min-width: 1024px) {
+@media (--bp-xl) {
     .contact-content {
         grid-template-columns: 1fr 1fr;
     }

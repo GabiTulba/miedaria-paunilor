@@ -54,7 +54,7 @@
     margin-bottom: 1.5rem;
 }
 
-@media (min-width: 768px) {
+@media (--bp-lg) {
     .about-hero {
         height: 50vh;
     }

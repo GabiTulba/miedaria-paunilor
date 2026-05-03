@@ -420,13 +420,13 @@
     container-type: inline-size;
 }
 
-@media (min-width: 640px) {
+@media (--bp-md) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (min-width: 1024px) {
+@media (--bp-xl) {
     .stats-grid {
         grid-template-columns: repeat(4, 1fr);
     }
@@ -496,13 +496,13 @@
     gap: 1.5rem;
 }
 
-@media (min-width: 640px) {
+@media (--bp-md) {
     .actions-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (min-width: 1024px) {
+@media (--bp-xl) {
     .actions-grid {
         grid-template-columns: repeat(4, 1fr);
     }
@@ -792,7 +792,7 @@
     min-width: 0;
 }
 
-.product-image {
+.admin-page .product-image {
     width: 40px;
     height: 40px;
     border-radius: 8px;
@@ -938,29 +938,28 @@
     border-color: var(--danger-hover);
 }
 
-/* Mobile touch-target minimums for admin inputs and buttons (<768px) */
-@media (max-width: 767px) {
-    .admin-page input:not([type="checkbox"]):not([type="radio"]),
-    .admin-page select,
-    .admin-page textarea,
-    .admin-page button,
-    .admin-page [role="button"],
-    .admin-page .button {
-        min-height: var(--touch-target-min);
-    }
-    .admin-page button,
-    .admin-page [role="button"],
-    .admin-page .button {
-        min-width: var(--touch-target-min);
-    }
-    .admin-page .react-datepicker__input-container input {
-        min-height: var(--touch-target-min);
-    }
+/* Touch-target minimums for admin inputs and buttons (a11y floor; applies
+   at all viewports — WCAG 2.5.5/2.5.8). */
+.admin-page input:not([type="checkbox"]):not([type="radio"]),
+.admin-page select,
+.admin-page textarea,
+.admin-page button,
+.admin-page [role="button"],
+.admin-page .button {
+    min-height: var(--touch-target-min);
+}
+.admin-page button,
+.admin-page [role="button"],
+.admin-page .button {
+    min-width: var(--touch-target-min);
+}
+.admin-page .react-datepicker__input-container input {
+    min-height: var(--touch-target-min);
 }
 
 /* Mobile card layout for admin tables (<768px). The 768px+ media block
    restores standard table rendering. */
-@media (max-width: 767px) {
+@media (--bp-md-down) {
     .products-table thead,
     .admin-table thead,
     .admin-table colgroup {
@@ -1033,7 +1032,7 @@
         align-items: center;
         gap: 0.875rem;
     }
-    .product-image {
+    .admin-page .product-image {
         width: 64px;
         height: 64px;
     }
@@ -1054,7 +1053,7 @@
 }
 
 /* Tablet horizontal scroll with sticky first column (768-1023px) */
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (--bp-lg-only) {
     .table-responsive {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
@@ -1288,14 +1287,14 @@
     gap: 1rem;
 }
 
-@media (min-width: 640px) {
+@media (--bp-md) {
     .images-grid-view {
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: 1.5rem;
     }
 }
 
-@media (min-width: 1024px) {
+@media (--bp-xl) {
     .images-grid-view {
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
@@ -1411,7 +1410,7 @@
     overflow-wrap: anywhere;
 }
 
-@media (max-width: 767px) {
+@media (--bp-md-down) {
     .image-actions {
         flex-direction: column;
     }
@@ -1688,7 +1687,7 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E");
 }
 
-@media (min-width: 768px) {
+@media (--bp-lg) {
     .admin-main-content {
         padding: 2rem;
     }
@@ -1739,7 +1738,7 @@
         align-items: center;
         gap: 0.75rem;
     }
-    .product-image {
+    .admin-page .product-image {
         width: 50px;
         height: 50px;
     }
@@ -1760,7 +1759,7 @@
 }
 
 /* boundary normalized 992 -> 1024 (canonical scale) */
-@media (min-width: 1024px) {
+@media (--bp-xl) {
     .admin-layout {
         flex-direction: row;
     }
@@ -1790,7 +1789,7 @@
     }
 }
 
-@media (min-width: 1024px) {
+@media (--bp-xl) {
     .images-grid {
         grid-template-columns: 360px 1fr;
     }

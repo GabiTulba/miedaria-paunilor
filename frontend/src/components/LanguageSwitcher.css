@@ -57,7 +57,7 @@
   font-weight: 500;
 }
 
-@media (min-width: 768px) {
+@media (--bp-lg) {
   .language-switcher {
     margin-top: 0;
     justify-content: flex-start;

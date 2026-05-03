@@ -108,7 +108,7 @@
     box-sizing: border-box;
 }
 
-.product-grid {
+.featured-products .product-grid {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -117,7 +117,7 @@
     container-type: inline-size;
 }
 
-.product-grid > .product-card {
+.featured-products .product-grid > .product-card {
     width: 100%;
     max-width: 350px;
 }
@@ -280,7 +280,7 @@
     margin-bottom: 2rem;
 }
 
-@media (min-width: 768px) {
+@media (--bp-lg) {
     .hero-section {
         padding: 60px 20px 80px;
         min-height: 50vh;
