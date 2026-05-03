@@ -7,30 +7,6 @@
 MOBILE UX
 ================================================================================
 
-[MOB7] Admin Panel -- Completely Unusable on Mobile
--------------------------------------------------------------------------------
-- Admin sidebar has no mobile hamburger -- no way to navigate on phones
-  File: frontend/src/pages/admin/AdminLayout.tsx
-  File: frontend/src/pages/admin/Admin.css (line 1325)
-- Admin sidebar only has responsive rules at 992px and 768px, no intermediate
-  tablet breakpoint
-- Products table overflows on small screens -- no horizontal scroll indicator,
-  action buttons not mobile-sized, thumbnails tiny
-  File: frontend/src/pages/admin/AdminProducts.tsx (lines 183-274)
-- Admin dashboard grid jumps from repeat(auto-fit, minmax(240px, 1fr)) to full
-  reflow at 992px with no intermediate state
-  File: frontend/src/pages/admin/Admin.css (lines 1325-1444)
-- BlogForm two 10-row textareas side-by-side -- unusable on mobile, should
-  stack responsively
-  File: frontend/src/pages/admin/BlogForm.tsx (lines 288-300)
-- Admin image grid not responsive at different breakpoints; upload section and
-  images section both full-width
-  File: frontend/src/pages/admin/AdminImages.tsx
-- Admin forms: input fields, date picker, image selector all need mobile
-  treatment
-- Admin stat cards loading state shows '...' -- even worse on small screens
-  where layout shifts
-
 [MOB8] Touch Targets & Tap Sizing
 -------------------------------------------------------------------------------
 - Pagination buttons too small for mobile thumbs -- need >= 44x44px

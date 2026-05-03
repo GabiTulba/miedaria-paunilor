@@ -255,20 +255,20 @@ function AdminProducts() {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>
+                                            <td data-label={t('admin.products.type')}>
                                                 <span className="product-type">{product.product_type}</span>
                                             </td>
-                                            <td>
+                                            <td data-label={t('common.price')}>
                                                 <span className="product-price">
                                                     {toFixed(product.price)} EUR
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td data-label={t('admin.products.stock')}>
                                                 <div className="stock-cell">
                                                     <span className="stock-count">{product.bottle_count}</span>
                                                 </div>
                                             </td>
-                                            <td>
+                                            <td data-label={t('admin.products.status')}>
                                                 {(() => {
                                                     const stockStatus = getStockStatus(product.bottle_count, 'admin', t);
                                                     return (
@@ -278,7 +278,7 @@ function AdminProducts() {
                                                     );
                                                 })()}
                                             </td>
-                                            <td>
+                                            <td data-label={t('admin.products.actions')}>
                                                 <div className="action-buttons">
                                                     {!isDeleted ? (
                                                         <>

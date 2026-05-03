@@ -270,30 +270,32 @@ const AdminImages: React.FC = () => {
                       className="image-thumbnail"
                     />
                     {renamingImageId === image.id ? (
-                      <div className="rename-overlay">
-                        <input
-                          type="text"
-                          value={newFileName}
-                          onChange={(e) => setNewFileName(e.target.value)}
-                          disabled={renameLoading}
-                          className="rename-input"
-                          autoFocus
-                        />
-                        <div className="rename-actions">
-                          <button
-                            onClick={() => handleSaveRename(image.id)}
+                      <div className="rename-overlay" role="dialog" aria-modal="true">
+                        <div className="rename-dialog">
+                          <input
+                            type="text"
+                            value={newFileName}
+                            onChange={(e) => setNewFileName(e.target.value)}
                             disabled={renameLoading}
-                            className="button button-small button-success"
-                          >
-                            {t('common.save')}
-                          </button>
-                          <button
-                            onClick={handleCancelRename}
-                            disabled={renameLoading}
-                            className="button button-small button-secondary"
-                          >
-                            {t('common.cancel')}
-                          </button>
+                            className="rename-input"
+                            autoFocus
+                          />
+                          <div className="rename-actions">
+                            <button
+                              onClick={() => handleSaveRename(image.id)}
+                              disabled={renameLoading}
+                              className="button button-small button-success"
+                            >
+                              {t('common.save')}
+                            </button>
+                            <button
+                              onClick={handleCancelRename}
+                              disabled={renameLoading}
+                              className="button button-small button-secondary"
+                            >
+                              {t('common.cancel')}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ) : null}

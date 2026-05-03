@@ -169,14 +169,14 @@ function AdminBlog() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{post.author}</td>
-                                    <td>{post.published_at ? formatDate(post.published_at) : '—'}</td>
-                                    <td>
+                                    <td data-label={t('admin.blog.table.author')}>{post.author}</td>
+                                    <td data-label={t('admin.blog.table.published')}>{post.published_at ? formatDate(post.published_at) : '—'}</td>
+                                    <td data-label={t('admin.blog.table.status')}>
                                         <span className={`status-badge ${post.is_published ? 'status-active' : 'status-draft'}`}>
                                             {post.is_published ? t('admin.blog.status.published') : t('admin.blog.status.draft')}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label={t('admin.blog.table.actions')}>
                                         <div className="action-buttons">
                                             <Link to={`/admin/dashboard/blog/${post.id}/edit`} className="button button-small button-secondary">
                                                 {t('common.edit')}
