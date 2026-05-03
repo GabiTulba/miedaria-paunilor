@@ -191,8 +191,24 @@
   width: 25px;
   height: 3px;
   margin: 5px auto;
-  transition: background-color, transform var(--duration-slow) ease-in-out;
+  transition:
+    transform var(--duration-slow) ease-in-out,
+    opacity var(--duration-slow) ease-in-out,
+    background-color var(--duration-slow) ease-in-out;
   background-color: var(--white-color);
+}
+
+.hamburger[aria-expanded='true'] .bar:nth-child(1) {
+  transform: translateY(13px) rotate(45deg);
+}
+
+.hamburger[aria-expanded='true'] .bar:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.hamburger[aria-expanded='true'] .bar:nth-child(3) {
+  transform: translateY(-13px) rotate(-45deg);
 }
 
 .footer {
