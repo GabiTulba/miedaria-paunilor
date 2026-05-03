@@ -201,13 +201,15 @@ function Shop() {
                     )}
 
                      <div className="filter-group checkbox-group">
-                        <input
-                            type="checkbox"
-                            id="inStock"
-                            checked={inStock}
-                            onChange={(e) => setInStock(e.target.checked)}
-                        />
-                        <label htmlFor="inStock">{t('shop.inStockOnly')}</label>
+                        <label htmlFor="inStock" className="checkbox-label">
+                            <input
+                                type="checkbox"
+                                id="inStock"
+                                checked={inStock}
+                                onChange={(e) => setInStock(e.target.checked)}
+                            />
+                            <span>{t('shop.inStockOnly')}</span>
+                        </label>
                     </div>
 
                     <div className="filter-group">

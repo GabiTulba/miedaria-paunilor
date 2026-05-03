@@ -7,15 +7,6 @@
 MOBILE UX
 ================================================================================
 
-[MOB8] Touch Targets & Tap Sizing
--------------------------------------------------------------------------------
-- Pagination buttons too small for mobile thumbs -- need >= 44x44px
-  File: frontend/src/components/Pagination.tsx
-- Quantity +/- buttons throughout (ProductDetails, Cart)
-- Admin action buttons (edit/delete) in product table
-- Shop filter checkboxes -- default browser checkbox size too small for touch
-- CollapsibleSection toggle button needs adequate tap area
-
 [MOB9] Images & Performance on Mobile
 -------------------------------------------------------------------------------
 - No lazy loading on product images -- wastes mobile data

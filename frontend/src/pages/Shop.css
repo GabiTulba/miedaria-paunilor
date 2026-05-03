@@ -93,8 +93,8 @@
     font-size: 2rem;
     line-height: 1;
     cursor: pointer;
-    min-width: 44px;
-    min-height: 44px;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -117,7 +117,7 @@
     gap: 10px;
     margin-bottom: 1.25rem;
     padding: 10px 18px;
-    min-height: 44px;
+    min-height: var(--touch-target-min);
     background-color: var(--white-color);
     color: var(--text-color);
     border: 1px solid var(--border-color);
@@ -186,8 +186,9 @@
 }
 
 .checkbox-group input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
     cursor: pointer;
     border: 2px solid var(--border-color);
     border-radius: var(--radius-sm);
@@ -209,14 +210,16 @@
     box-shadow: var(--shadow-focus);
 }
 
-.checkbox-group label {
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: var(--touch-target-min);
+    padding: 6px 4px;
     cursor: pointer;
     font-size: 0.95rem;
     color: var(--text-color);
     user-select: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 .clear-filters-btn {

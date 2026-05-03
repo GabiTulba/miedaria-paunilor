@@ -61,7 +61,7 @@
     gap: 1rem;
     color: var(--admin-sidebar-text);
     padding: 0.875rem 1rem;
-    min-height: 44px;
+    min-height: var(--touch-target-min);
     text-align: left;
     border-radius: var(--border-radius);
     text-decoration: none;
@@ -173,8 +173,8 @@
     cursor: pointer;
     background: none;
     border: none;
-    min-width: 44px;
-    min-height: 44px;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
     padding: 10px;
 }
 
@@ -317,7 +317,7 @@
 }
 
 .password-input-wrapper .login-input {
-    padding-right: 44px;
+    padding-right: var(--touch-target-min);
 }
 
 .password-toggle {
@@ -946,15 +946,15 @@
     .admin-page button,
     .admin-page [role="button"],
     .admin-page .button {
-        min-height: 44px;
+        min-height: var(--touch-target-min);
     }
     .admin-page button,
     .admin-page [role="button"],
     .admin-page .button {
-        min-width: 44px;
+        min-width: var(--touch-target-min);
     }
     .admin-page .react-datepicker__input-container input {
-        min-height: 44px;
+        min-height: var(--touch-target-min);
     }
 }
 
@@ -1047,7 +1047,7 @@
     }
     .action-buttons > * {
         flex: 1 1 calc(50% - 0.25rem);
-        min-height: 44px;
+        min-height: var(--touch-target-min);
         min-width: 0;
         padding-inline: 0.5rem;
     }
@@ -1417,7 +1417,7 @@
     }
     .image-actions > * {
         width: 100%;
-        min-height: 44px;
+        min-height: var(--touch-target-min);
     }
     /* Rename overlay becomes a fullscreen modal on mobile */
     .rename-overlay {
@@ -1442,7 +1442,7 @@
         justify-content: flex-end;
     }
     .rename-dialog .rename-actions > * {
-        min-height: 44px;
+        min-height: var(--touch-target-min);
     }
 }
 

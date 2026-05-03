@@ -56,6 +56,9 @@
   --radius-xl: 16px;
   --radius-pill: 9999px;
 
+  /* Touch target floor (WCAG 2.5.5 / mobile UX) */
+  --touch-target-min: 44px;
+
   /* Animation timing scale */
   --duration-fast: 0.15s;
   --duration-normal: 0.2s;
