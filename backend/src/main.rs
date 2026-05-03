@@ -183,12 +183,18 @@ async fn upload_image_handler(
     image_crud::upload_image(&mut conn, multipart, &app_state.image_upload_dir).await
 }
 
+#[derive(Debug, serde::Deserialize)]
+pub struct ServeImageQuery {
+    w: Option<u32>,
+}
+
 async fn serve_image_handler(
     State(app_state): State<Arc<AppState>>,
     Path(image_id): Path<uuid::Uuid>,
+    Query(params): Query<ServeImageQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    let (headers, content) = image_crud::serve_image(&mut conn, image_id).await?;
+    let (headers, content) = image_crud::serve_image(&mut conn, image_id, params.w).await?;
     Ok((headers, content))
 }
 

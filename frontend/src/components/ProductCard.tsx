@@ -5,7 +5,7 @@ import { LocalizedProductWithImage } from '../types';
 import { getEnumLabel } from '../enums';
 import { getStockStatus } from '../utils/stockAvailability';
 import { toFixed } from '../utils/numberUtils';
-import { getImageUrl } from '../lib/api';
+import { getImageUrl, getImageSrcSet } from '../lib/api';
 
 import './ProductCard.css';
 
@@ -17,10 +17,12 @@ interface ProductCardProps {
 function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
   const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const imageId = productWithImage?.image?.id;
   useEffect(() => {
     setImgError(false);
+    setImgLoaded(false);
   }, [imageId]);
 
   if (renderSkeleton) {
@@ -65,14 +67,20 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
         <div className="product-card-main">
           <div className="product-card-image">
             {image && !imgError ? (
-              <img
-                src={getImageUrl(image.id)}
-                alt={product.product_name}
-                className="product-image"
-                loading="lazy"
-                decoding="async"
-                onError={() => setImgError(true)}
-              />
+              <>
+                <img
+                  src={getImageUrl(image.id, 640)}
+                  srcSet={getImageSrcSet(image.id)}
+                  sizes="(min-width: 768px) 350px, 100vw"
+                  alt={product.product_name}
+                  className="product-image"
+                  loading="lazy"
+                  decoding="async"
+                  onLoad={() => setImgLoaded(true)}
+                  onError={() => setImgError(true)}
+                />
+                {!imgLoaded && <div className="skeleton product-image-skeleton" />}
+              </>
             ) : (
               <div className="placeholder-image">{t('admin.productForm.noImage')}</div>
             )}

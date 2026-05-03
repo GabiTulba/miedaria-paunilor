@@ -43,6 +43,24 @@
     height: 100%;
 }
 
+/* Wrapper reserves space (4/3) until the image loads, then collapses to the
+   image's natural aspect ratio. */
+.product-detail-image-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+}
+
+.product-detail-image-wrapper.is-loaded {
+    aspect-ratio: auto;
+}
+
+.product-detail-image-skeleton {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+}
+
 /* Image styling for natural dimensions */
 .product-detail-image {
     width: 100%;
@@ -52,6 +70,13 @@
     border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow: var(--shadow-md);
     transition: transform var(--duration-slow) ease, box-shadow var(--duration-slow) ease;
+}
+
+.product-detail-image-wrapper:not(.is-loaded) .product-detail-image {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    object-fit: contain;
 }
 
 @media (hover: hover) and (pointer: fine) {

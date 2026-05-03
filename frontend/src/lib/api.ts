@@ -1,8 +1,14 @@
 import { ApiError, ApiErrorResponse, BlogPost, LocalizedBlogPost, LocalizedProductWithImage, LoginCredentials, NewBlogPost, PaginatedResponse, Product, ProductFormData, ProductWithImage, UpdateBlogPost } from '../types';
 import i18n from '../i18n/config';
 
-export function getImageUrl(id: string): string {
-    return `/images/${id}`;
+export const IMAGE_VARIANT_WIDTHS = [320, 640, 1024, 1600] as const;
+
+export function getImageUrl(id: string, width?: number): string {
+    return width ? `/images/${id}?w=${width}` : `/images/${id}`;
+}
+
+export function getImageSrcSet(id: string): string {
+    return IMAGE_VARIANT_WIDTHS.map(w => `/images/${id}?w=${w} ${w}w`).join(', ');
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;

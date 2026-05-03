@@ -31,7 +31,7 @@
 }
 
 .hero-logo {
-    width: 180px;
+    width: clamp(180px, 18vw + 100px, 300px);
     height: auto;
     opacity: 0.8;
     filter: brightness(1) contrast(1);
@@ -284,9 +284,6 @@
     .hero-section {
         padding: 60px 20px 80px;
         min-height: 50vh;
-    }
-    .hero-logo {
-        width: 300px;
     }
     .teaser-content h2,
     .featured-content h2 {

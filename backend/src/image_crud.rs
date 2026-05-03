@@ -1,6 +1,8 @@
 use axum::{Json, extract::Multipart, http::StatusCode};
 use diesel::prelude::*;
+use image::imageops::FilterType;
 use mime_guess;
+use std::path::{Path, PathBuf};
 use tokio::fs;
 use uuid::Uuid;
 
@@ -11,6 +13,42 @@ use diesel::dsl::count;
 use diesel::pg::PgConnection;
 
 const MAX_IMAGE_SIZE: usize = 50 * 1024 * 1024; // 50MB
+
+pub const VARIANT_WIDTHS: [u32; 4] = [320, 640, 1024, 1600];
+const WEBP_QUALITY: f32 = 80.0;
+
+/// Build the on-disk path for a width variant given the original storage path.
+/// `/uploads/{uuid}.jpg` + width 640 → `/uploads/{uuid}_640.webp`
+fn variant_path(original: &str, width: u32) -> PathBuf {
+    let p = Path::new(original);
+    let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+    let parent = p.parent().unwrap_or_else(|| Path::new(""));
+    parent.join(format!("{}_{}.webp", stem, width))
+}
+
+/// Encode width-variant WebPs next to the original. Skips widths >= source width
+/// (no upscaling). Best-effort: errors are logged and don't fail the upload.
+fn generate_variants(data: &[u8], storage_path: &str) {
+    let img = match image::load_from_memory(data) {
+        Ok(i) => i,
+        Err(e) => {
+            tracing::warn!("Variant generation skipped: decode failed: {:?}", e);
+            return;
+        }
+    };
+    let src_w = img.width();
+
+    for &target_w in VARIANT_WIDTHS.iter().filter(|&&tw| tw < src_w) {
+        let resized = img.resize(target_w, u32::MAX, FilterType::Lanczos3);
+        let rgba = resized.to_rgba8();
+        let encoder = webp::Encoder::from_rgba(&rgba, resized.width(), resized.height());
+        let webp_bytes = encoder.encode(WEBP_QUALITY);
+        let path = variant_path(storage_path, target_w);
+        if let Err(e) = std::fs::write(&path, &*webp_bytes) {
+            tracing::warn!("Failed to write variant {}: {:?}", path.display(), e);
+        }
+    }
+}
 
 /// Detects image format from magic bytes. Returns canonical extension or None if not a known image.
 fn detect_image_format(data: &[u8]) -> Option<&'static str> {
@@ -88,6 +126,8 @@ pub async fn upload_image(
                     "Failed to write image file to disk".to_string(),
                 ));
             }
+
+            generate_variants(&data, &storage_path);
 
             let new_image = NewImage {
                 file_name: original_filename.clone(),
@@ -255,6 +295,16 @@ pub async fn delete_image(
         }
     }
 
+    // Best-effort cleanup of width-variant files; missing files are fine.
+    for &w in VARIANT_WIDTHS.iter() {
+        let path = variant_path(&image_to_delete.storage_path, w);
+        if let Err(e) = tokio::fs::remove_file(&path).await {
+            if e.kind() != std::io::ErrorKind::NotFound {
+                tracing::warn!("Failed to delete variant {}: {:?}", path.display(), e);
+            }
+        }
+    }
+
     // Delete record from DB
     diesel::delete(images::table.find(image_id))
         .execute(conn)
@@ -269,6 +319,7 @@ pub async fn delete_image(
 pub async fn serve_image(
     conn: &mut PgConnection,
     image_id: uuid::Uuid,
+    width: Option<u32>,
 ) -> Result<(axum::http::HeaderMap, Vec<u8>), AppError> {
     let image_record: Image =
         images::table
@@ -286,20 +337,51 @@ pub async fn serve_image(
                 }
             })?;
 
-    let path = image_record.storage_path;
+    // If a known width is requested and the variant exists on disk, serve it.
+    // Unknown widths are rejected; missing variant files fall back to the original.
+    let (path, served_variant) = match width {
+        None => (image_record.storage_path.clone(), false),
+        Some(w) if VARIANT_WIDTHS.contains(&w) => {
+            let vpath = variant_path(&image_record.storage_path, w);
+            if tokio::fs::try_exists(&vpath).await.unwrap_or(false) {
+                (vpath.to_string_lossy().into_owned(), true)
+            } else {
+                (image_record.storage_path.clone(), false)
+            }
+        }
+        Some(w) => {
+            return Err(AppError::BadRequest(format!(
+                "Unsupported image width: {}. Allowed: {:?}",
+                w, VARIANT_WIDTHS
+            )));
+        }
+    };
 
     let file_content = tokio::fs::read(&path).await.map_err(|e| {
         tracing::error!("Error reading image file {}: {:?}", path, e);
         AppError::InternalServerError("Failed to read image file".to_string())
     })?;
 
-    let mime_type = mime_guess::from_path(&path).first_or_octet_stream();
+    let mime_type = if served_variant {
+        "image/webp".to_string()
+    } else {
+        mime_guess::from_path(&path)
+            .first_or_octet_stream()
+            .as_ref()
+            .to_string()
+    };
 
     Ok((
-        axum::http::HeaderMap::from_iter(vec![(
-            axum::http::header::CONTENT_TYPE,
-            mime_type.as_ref().parse().unwrap(),
-        )]),
+        axum::http::HeaderMap::from_iter(vec![
+            (
+                axum::http::header::CONTENT_TYPE,
+                mime_type.parse().unwrap(),
+            ),
+            (
+                axum::http::header::CACHE_CONTROL,
+                "public, max-age=31536000, immutable".parse().unwrap(),
+            ),
+        ]),
         file_content,
     ))
 }

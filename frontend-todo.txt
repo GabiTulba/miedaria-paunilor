@@ -7,16 +7,6 @@
 MOBILE UX
 ================================================================================
 
-[MOB9] Images & Performance on Mobile
--------------------------------------------------------------------------------
-- No lazy loading on product images -- wastes mobile data
-  File: frontend/src/components/ProductCard.tsx
-- No responsive srcset -- oversized images sent to mobile devices
-- No image error fallback -- broken images worse on mobile (no retry)
-- No skeleton/placeholder while images load -- layout shift on slow connections
-- Hero logo jumps from 300px to 180px at 768px with no intermediate size
-  File: frontend/src/pages/Home.css
-
 [MOB10] Typography & Spacing on Mobile
 -------------------------------------------------------------------------------
 - Line heights and spacing scale not optimized for small screens

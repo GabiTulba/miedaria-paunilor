@@ -7,7 +7,7 @@ import { CartContext } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { getEnumLabel } from '../enums';
 import { getStockStatus, isInStock } from '../utils/stockAvailability';
-import { getImageUrl } from '../lib/api';
+import { getImageUrl, getImageSrcSet } from '../lib/api';
 import { toFixed } from '../utils/numberUtils';
 import { useFormattedDate } from '../hooks/useFormattedDate';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -24,6 +24,8 @@ function ProductDetails() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [fetchTrigger, setFetchTrigger] = useState(0);
+    const [imgError, setImgError] = useState(false);
+    const [imgLoaded, setImgLoaded] = useState(false);
     const { addToCart } = useContext(CartContext);
     const { showToast } = useToast();
     const { t, i18n } = useTranslation();
@@ -123,12 +125,20 @@ function ProductDetails() {
             <div className="back-to-shop">{backLink}</div>
             <div className="product-details-content">
                 <div className="product-image-column">
-                    {image ? (
-                        <img
-                            src={getImageUrl(image.id)}
-                            alt={product.product_name}
-                            className="product-detail-image"
-                        />
+                    {image && !imgError ? (
+                        <div className={`product-detail-image-wrapper${imgLoaded ? ' is-loaded' : ''}`}>
+                            <img
+                                src={getImageUrl(image.id, 1024)}
+                                srcSet={getImageSrcSet(image.id)}
+                                sizes="(min-width: 992px) 500px, 100vw"
+                                alt={product.product_name}
+                                className="product-detail-image"
+                                decoding="async"
+                                onLoad={() => setImgLoaded(true)}
+                                onError={() => setImgError(true)}
+                            />
+                            {!imgLoaded && <div className="skeleton product-detail-image-skeleton" />}
+                        </div>
                     ) : (
                         <div className="placeholder-image product-detail-image">{t('admin.productForm.noImage')}</div>
                     )}

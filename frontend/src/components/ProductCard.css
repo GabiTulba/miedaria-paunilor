@@ -40,6 +40,7 @@
 }
 
 .product-card-image {
+    position: relative;
     width: 100%;
     aspect-ratio: 4/3;
     overflow: hidden;
@@ -55,6 +56,12 @@
     object-fit: contain;
     display: block;
     box-shadow: var(--shadow-sm);
+}
+
+.product-image-skeleton {
+    position: absolute;
+    inset: 0;
+    border-radius: 0;
 }
 
 .product-card-content {
