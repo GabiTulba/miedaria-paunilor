@@ -2,8 +2,14 @@
 .shop-page {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 0;
     animation: fadeIn var(--duration-slower) ease-in-out;
+}
+
+@media (min-width: 480px) {
+    .shop-page {
+        padding: 20px;
+    }
 }
 
 .shop-header {
