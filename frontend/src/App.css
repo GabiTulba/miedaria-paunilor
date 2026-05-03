@@ -91,22 +91,24 @@
 .main-nav {
   display: flex;
   position: absolute;
-  left: -100%;
+  left: 0;
   top: 100%;
   flex-direction: column;
   background-color: var(--primary-color);
   width: 100%;
   text-align: center;
-  transition: left var(--duration-slow) ease, visibility 0s linear var(--duration-slow);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--duration-slow) ease, visibility 0s linear var(--duration-slow);
   gap: 0;
   box-shadow: var(--shadow-lg);
   visibility: hidden;
 }
 
 .main-nav.active {
-  left: 0;
+  max-height: 100vh;
   visibility: visible;
-  transition: left var(--duration-slow) ease, visibility 0s linear 0s;
+  transition: max-height var(--duration-slow) ease, visibility 0s linear 0s;
 }
 
 .main-nav a {
@@ -257,6 +259,8 @@
     box-shadow: none;
     gap: 0.75rem;
     visibility: visible;
+    max-height: none;
+    overflow: visible;
     transition: none;
   }
 
