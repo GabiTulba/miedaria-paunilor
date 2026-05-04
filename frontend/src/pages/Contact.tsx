@@ -1,5 +1,6 @@
-import { useTranslation } from 'react-i18next'; 
-import './Contact.css'; 
+import { useTranslation } from 'react-i18next';
+import SEO from '../components/SEO';
+import './Contact.css';
 
 function Contact() { 
     const { t } = useTranslation(); 
@@ -10,9 +11,10 @@ function Contact() {
     const address = "Str. Principală 429B, Urleta, România";
     const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
-    return ( 
-        <div className="contact-page"> 
-            <header className="contact-header"> 
+    return (
+        <div className="contact-page">
+            <SEO canonical="/contact" />
+            <header className="contact-header">
                 <h1>{t('contact.title')}</h1> 
                 <p>{t('contact.formTitle')}</p> 
             </header> 

@@ -8,6 +8,7 @@ import ProductCard from '../components/ProductCard';
 import ErrorDisplay from '../components/ErrorDisplay';
 import Pagination from '../components/Pagination';
 import SelectInput from '../components/forms/SelectInput';
+import SEO from '../components/SEO';
 import './Shop.css';
 
 function Shop() {
@@ -125,6 +126,7 @@ function Shop() {
 
     return (
         <div className="shop-page">
+            <SEO canonical="/shop" />
             <header className="shop-header">
                 <h1>{t('shop.title')}</h1>
                 <p>{t('shop.subtitle')}</p>

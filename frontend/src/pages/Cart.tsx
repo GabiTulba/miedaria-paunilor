@@ -5,6 +5,7 @@ import { CartContext } from '../context/CartContext';
 import { api } from '../lib/api';
 import { toFixed } from '../utils/numberUtils';
 import { useLanguage } from '../hooks/useLanguage';
+import SEO from '../components/SEO';
 import './Cart.css';
 
 function Cart() {
@@ -90,6 +91,7 @@ function Cart() {
 
     return (
         <div className="cart-page">
+            <SEO noindex />
             <header className="cart-header">
                 <h1>{t('cart.title')}</h1>
             </header>

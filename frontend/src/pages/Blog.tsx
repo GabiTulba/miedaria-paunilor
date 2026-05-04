@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import { useFormattedDate } from '../hooks/useFormattedDate';
 import Pagination from '../components/Pagination';
 import ErrorDisplay from '../components/ErrorDisplay';
+import SEO from '../components/SEO';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Blog.css';
@@ -61,6 +62,7 @@ function Blog() {
 
     return (
         <div className="blog-page">
+            <SEO canonical="/blog" />
             <header className="blog-header">
                     <h1>{t('blog.title')}</h1>
                     <p>{t('blog.description')}</p>

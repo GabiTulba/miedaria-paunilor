@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 
 // Import i18n configuration
 import './i18n/config';
@@ -32,8 +33,8 @@ const router = createBrowserRouter([
     path: '/',
     element: <App />,
     children: [
-      { index: true, element: <Navigate to="/home" replace /> },
-      { path: 'home', element: <Home /> },
+      { index: true, element: <Home /> },
+      { path: 'home', element: <Navigate to="/" replace /> },
       { path: 'shop', element: <Shop /> },
       { path: 'shop/:productId', element: <ProductDetails /> },
       { path: 'cart', element: <Cart /> },
@@ -88,7 +89,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <EnumProvider>
         <CartProvider>
           <ToastProvider>
-            <RouterProvider router={router} />
+            <HelmetProvider>
+              <RouterProvider router={router} />
+            </HelmetProvider>
           </ToastProvider>
         </CartProvider>
       </EnumProvider>

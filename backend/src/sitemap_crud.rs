@@ -4,23 +4,12 @@ use chrono::Utc;
 use diesel::prelude::*;
 use serde::Serialize;
 
-const PRIORITY_HOME: f32 = 1.0;
-const PRIORITY_SHOP: f32 = 0.9;
-const PRIORITY_BLOG_INDEX: f32 = 0.8;
-const PRIORITY_PRODUCT: f32 = 0.8;
-const PRIORITY_SECONDARY: f32 = 0.7; // about-us, contact, blog posts
-const PRIORITY_CART: f32 = 0.5;
-
-const CHANGEFREQ_DAILY: &str = "daily";
-const CHANGEFREQ_WEEKLY: &str = "weekly";
-const CHANGEFREQ_MONTHLY: &str = "monthly";
-
 #[derive(Debug, Serialize)]
 pub struct SitemapUrl {
     pub loc: String,
     pub lastmod: String,
-    pub changefreq: String,
-    pub priority: f32,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub images: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -35,6 +24,7 @@ pub fn get_sitemap_data(
     site_url: &str,
 ) -> Result<SitemapData, diesel::result::Error> {
     let products = products::table
+        .filter(products::deleted_at.is_null())
         .select(Product::as_select())
         .load::<Product>(conn)?;
 
@@ -47,40 +37,29 @@ pub fn get_sitemap_data(
 
     let static_urls = vec![
         SitemapUrl {
-            loc: format!("{}/home", site_url),
+            loc: site_url.to_string(),
             lastmod: today.clone(),
-            changefreq: CHANGEFREQ_WEEKLY.to_string(),
-            priority: PRIORITY_HOME,
+            images: vec![],
         },
         SitemapUrl {
             loc: format!("{}/shop", site_url),
             lastmod: today.clone(),
-            changefreq: CHANGEFREQ_DAILY.to_string(),
-            priority: PRIORITY_SHOP,
+            images: vec![],
         },
         SitemapUrl {
             loc: format!("{}/blog", site_url),
             lastmod: today.clone(),
-            changefreq: CHANGEFREQ_WEEKLY.to_string(),
-            priority: PRIORITY_BLOG_INDEX,
+            images: vec![],
         },
         SitemapUrl {
             loc: format!("{}/about-us", site_url),
             lastmod: today.clone(),
-            changefreq: CHANGEFREQ_MONTHLY.to_string(),
-            priority: PRIORITY_SECONDARY,
+            images: vec![],
         },
         SitemapUrl {
             loc: format!("{}/contact", site_url),
-            lastmod: today.clone(),
-            changefreq: CHANGEFREQ_MONTHLY.to_string(),
-            priority: PRIORITY_SECONDARY,
-        },
-        SitemapUrl {
-            loc: format!("{}/cart", site_url),
             lastmod: today,
-            changefreq: CHANGEFREQ_MONTHLY.to_string(),
-            priority: PRIORITY_CART,
+            images: vec![],
         },
     ];
 
@@ -89,8 +68,10 @@ pub fn get_sitemap_data(
         .map(|product| SitemapUrl {
             loc: format!("{}/shop/{}", site_url, product.product_id),
             lastmod: product.updated_at.format("%Y-%m-%d").to_string(),
-            changefreq: CHANGEFREQ_MONTHLY.to_string(),
-            priority: PRIORITY_PRODUCT,
+            images: product
+                .image_id
+                .map(|id| vec![format!("{}/images/{}", site_url, id)])
+                .unwrap_or_default(),
         })
         .collect();
 
@@ -99,8 +80,7 @@ pub fn get_sitemap_data(
         .map(|blog_post| SitemapUrl {
             loc: format!("{}/blog/{}", site_url, blog_post.slug),
             lastmod: blog_post.updated_at.format("%Y-%m-%d").to_string(),
-            changefreq: CHANGEFREQ_MONTHLY.to_string(),
-            priority: PRIORITY_SECONDARY,
+            images: vec![],
         })
         .collect();
 

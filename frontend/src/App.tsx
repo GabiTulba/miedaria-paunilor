@@ -87,7 +87,7 @@ function App() {
             className={`main-nav ${isMobileMenuOpen ? 'active' : ''}`}
             aria-label={t('navigation.main')}
           >
-            <NavLink to="/home">{t('navigation.home')}</NavLink>
+            <NavLink to="/" end>{t('navigation.home')}</NavLink>
             <NavLink to="/shop">{t('navigation.shop')}</NavLink>
             <NavLink to="/blog">{t('blog.title')}</NavLink>
             <NavLink to="/about-us">{t('navigation.aboutUs')}</NavLink>

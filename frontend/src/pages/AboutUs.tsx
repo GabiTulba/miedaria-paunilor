@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next';
+import SEO from '../components/SEO';
 import './AboutUs.css';
 
 function AboutUs() {
     const { t } = useTranslation();
-    
+
     return (
         <div className="about-us-page">
+            <SEO canonical="/about-us" />
             <div className="about-hero">
                 <div className="about-hero-content">
                     <h1>{t('about.title')}: {t('about.story')}</h1>

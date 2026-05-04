@@ -5,6 +5,7 @@ import { LocalizedProductWithImage, LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
 import { useFormattedDate } from '../hooks/useFormattedDate';
 import ProductCard from '../components/ProductCard';
+import SEO from '../components/SEO';
 import './Home.css';
 
 function Home() {
@@ -43,6 +44,7 @@ function Home() {
 
     return (
         <div className="home-page">
+            <SEO canonical="/" />
             <section className="hero-section">
                 <div className="logo-container">
                     <img src="/logo.svg" alt="Miedăria Păunilor" className="hero-logo" />

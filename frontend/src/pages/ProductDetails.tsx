@@ -13,6 +13,7 @@ import { useFormattedDate } from '../hooks/useFormattedDate';
 import CollapsibleSection from '../components/CollapsibleSection';
 import ErrorDisplay from '../components/ErrorDisplay';
 import Breadcrumb from '../components/Breadcrumb';
+import SEO from '../components/SEO';
 
 import './ProductDetails.css';
 
@@ -117,8 +118,9 @@ function ProductDetails() {
 
     return (
         <div className="product-details-page">
+            <SEO />
             <Breadcrumb items={[
-                { label: t('navigation.home'), to: '/home' },
+                { label: t('navigation.home'), to: '/' },
                 { label: t('navigation.shop'), to: '/shop' },
                 { label: product.product_name },
             ]} />

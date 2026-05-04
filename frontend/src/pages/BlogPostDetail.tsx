@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import { useFormattedDate } from '../hooks/useFormattedDate';
 import ErrorDisplay from '../components/ErrorDisplay';
 import Breadcrumb from '../components/Breadcrumb';
+import SEO from '../components/SEO';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Blog.css';
@@ -112,8 +113,9 @@ function BlogPostDetail() {
 
     return (
         <div className="blog-page">
+            <SEO />
             <Breadcrumb items={[
-                { label: t('navigation.home'), to: '/home' },
+                { label: t('navigation.home'), to: '/' },
                 { label: t('blog.title'), to: '/blog' },
                 { label: blogPost.title },
             ]} />
