@@ -1,36 +1,12 @@
 # robots.txt for Miedăria Păunilor
 User-agent: *
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api
+Disallow: /api/
 Allow: /
 
-# Sitemap location
-Sitemap: /sitemap.xml
-
-# Disallow admin area
-Disallow: /admin/
-Disallow: /api/
-
-# Allow all other pages
-Allow: /home/
-Allow: /shop/
-Allow: /blog/
-Allow: /about-us/
-Allow: /contact/
-Allow: /cart/
-
-# Crawl delay (be respectful to the server)
+# Bing/Yandex throttle (Googlebot ignores this)
 Crawl-delay: 2
 
-# Disallow admin area
-Disallow: /admin/
-Disallow: /api/
-
-# Allow all other pages
-Allow: /home/
-Allow: /shop/
-Allow: /blog/
-Allow: /about-us/
-Allow: /contact/
-Allow: /cart/
-
-# Crawl delay (be respectful to the server)
-Crawl-delay: 2
+Sitemap: https://miedaria-paunilor.ro/sitemap.xml

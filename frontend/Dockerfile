@@ -12,29 +12,40 @@ RUN ls -l /app/dist
 # Stage 2: Production
 FROM nginx:1.30.0-alpine
 
-# Install cron and dependencies for sitemap generation
+# Tools needed by the sitemap generator
 RUN apk add --no-cache curl jq tzdata
 
-# Copy built application
+# supercronic — a cron implementation that runs as a non-root user, unlike
+# busybox crond. Pinned version + SHA1 from the upstream release notes:
+#   https://github.com/aptible/supercronic/releases
+ARG SUPERCRONIC_VERSION=0.2.29
+ARG SUPERCRONIC_SHA1SUM=cd48d45c4b10f3f0bfdd3a57d054cd05ac96812b
+ARG SUPERCRONIC_ARCH=amd64
+RUN curl -fsSLO "https://github.com/aptible/supercronic/releases/download/v${SUPERCRONIC_VERSION}/supercronic-linux-${SUPERCRONIC_ARCH}" \
+ && echo "${SUPERCRONIC_SHA1SUM}  supercronic-linux-${SUPERCRONIC_ARCH}" | sha1sum -c - \
+ && mv "supercronic-linux-${SUPERCRONIC_ARCH}" /usr/local/bin/supercronic \
+ && chmod +x /usr/local/bin/supercronic
+
+# Built application + nginx config
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY security-headers.conf /etc/nginx/conf.d/security-headers.conf
 
-# Copy sitemap generation script
+# Sitemap generator + container entrypoint
 COPY generate-sitemap.sh /usr/local/bin/generate-sitemap.sh
-RUN chmod +x /usr/local/bin/generate-sitemap.sh
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/generate-sitemap.sh /usr/local/bin/docker-entrypoint.sh
 
-# Create crontab for nginx user (not root); truncate log daily to prevent unbounded growth
-RUN printf '*/10 * * * * /usr/local/bin/generate-sitemap.sh >> /var/log/sitemap-cron.log 2>&1\n0 0 * * * truncate -s 0 /var/log/sitemap-cron.log\n' > /etc/crontabs/nginx
+# Crontab read by supercronic. Standard 5-field crontab format; supercronic
+# captures each job's stdout/stderr and forwards it through its own logger,
+# so no per-line redirect is needed.
+RUN mkdir -p /etc/supercronic && \
+    printf '*/10 * * * * /usr/local/bin/generate-sitemap.sh\n' > /etc/supercronic/crontab
 
-# Create log file owned by nginx user
-RUN touch /var/log/sitemap-cron.log && chown nginx:nginx /var/log/sitemap-cron.log
-
-# nginx pid file and cache dirs must be writable by nginx user
+# nginx pid file, cache dirs, and webroot must be writable by the nginx worker
 RUN mkdir -p /var/cache/nginx /var/run /run && \
     chown -R nginx:nginx /var/cache/nginx /var/run /run /usr/share/nginx/html
 
 USER nginx
 
-# Start cron in background and nginx in foreground
-CMD sh -c "crond && nginx -g 'daemon off;'"
+CMD ["/usr/local/bin/docker-entrypoint.sh"]

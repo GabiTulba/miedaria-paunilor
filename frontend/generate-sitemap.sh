@@ -4,14 +4,14 @@
 # Runs inside Docker container, generates sitemap.xml in nginx web root
 
 set -e
+PATH=/usr/local/bin:/usr/bin:/bin
 
 # Configuration - inside Docker container
 BACKEND_URL="http://backend:8000"
 SITEMAP_OUTPUT="/usr/share/nginx/html/sitemap.xml"
 TEMP_FILE="/tmp/sitemap.xml"
 
-# Generate sitemap
-echo "Generating sitemap from $BACKEND_URL..."
+echo "[$(date -Is)] Generating sitemap from $BACKEND_URL..."
 
 # Fetch data from backend
 if ! response=$(curl -s -f "$BACKEND_URL/api/sitemap-data"); then
