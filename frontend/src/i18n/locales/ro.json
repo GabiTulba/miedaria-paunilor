@@ -532,5 +532,26 @@
     "system": "Sistem",
     "light": "Deschisă",
     "dark": "Întunecată"
+  },
+  "seo": {
+    "siteName": "Miedăria Păunilor",
+    "pageTitles": {
+      "home": "Acasă",
+      "shop": "Magazin",
+      "blog": "Blog",
+      "about": "Despre Noi",
+      "contact": "Contact",
+      "notFound": "Pagină Negăsită",
+      "cart": "Coș"
+    },
+    "pageDescriptions": {
+      "home": "Pagina Principală",
+      "shop": "Magazin",
+      "blog": "Blog-uri",
+      "about": "Despre Noi",
+      "contact": "Contactează-ne",
+      "notFound": "Pagină Negăsită",
+      "cart": "Coș"
+    }
   }
 }

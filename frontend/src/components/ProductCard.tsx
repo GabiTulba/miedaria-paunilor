@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { LocalizedLink } from './LocalizedLink';
 import { useTranslation } from 'react-i18next';
 import { LocalizedProductWithImage } from '../types';
 import { getEnumLabel } from '../enums';
@@ -63,7 +63,7 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
 
   return (
     <div className="product-card">
-      <Link to={`/shop/${product.product_id}`}>
+      <LocalizedLink to={`/shop/${product.product_id}`}>
         <div className="product-card-main">
           <div className="product-card-image">
             {image && !imgError ? (
@@ -74,6 +74,8 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
                   sizes="(min-width: 768px) 350px, 100vw"
                   alt={product.product_name}
                   className="product-image"
+                  width={640}
+                  height={640}
                   loading="lazy"
                   decoding="async"
                   onLoad={() => setImgLoaded(true)}
@@ -107,7 +109,7 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
              <p className={`availability ${stockStatus.cssClass}`}>{stockStatus.description}</p>
            </div>
         </div>
-      </Link>
+      </LocalizedLink>
     </div>
   );
 }

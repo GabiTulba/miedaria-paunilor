@@ -7,6 +7,10 @@ import { useFormattedDate } from '../hooks/useFormattedDate';
 import ErrorDisplay from '../components/ErrorDisplay';
 import Breadcrumb from '../components/Breadcrumb';
 import SEO from '../components/SEO';
+import { useLanguage } from '../hooks/useLanguage';
+import { getOrigin } from '../lib/origin';
+import { buildArticleLd, buildBreadcrumbLd } from '../lib/structuredData';
+import { stripMarkdown, clamp } from '../lib/text';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Blog.css';
@@ -20,6 +24,7 @@ function BlogPostDetail() {
     const [is404, setIs404] = useState(false);
     const [fetchTrigger, setFetchTrigger] = useState(0);
     const { t, i18n } = useTranslation();
+    const lang = useLanguage();
     const formatDateOptions = useMemo(() => ({
         year: 'numeric' as const,
         month: 'long' as const,
@@ -111,9 +116,32 @@ function BlogPostDetail() {
         );
     }
 
+    const origin = getOrigin();
+    const pagePath = `/${lang}/blog/${blogPost.slug}`;
+    const pageUrl = `${origin}${pagePath}`;
+    const seoDescription = clamp(stripMarkdown(blogPost.excerpt), 160);
+    const articleLd = buildArticleLd({
+        post: blogPost,
+        origin,
+        pageUrl,
+    });
+    const breadcrumbLd = buildBreadcrumbLd(
+        [
+            { name: t('navigation.home'), url: `/${lang}` },
+            { name: t('blog.title'), url: `/${lang}/blog` },
+            { name: blogPost.title, url: pagePath },
+        ],
+        origin
+    );
+
     return (
         <div className="blog-page">
-            <SEO />
+            <SEO
+                title={blogPost.title}
+                description={seoDescription}
+                type="article"
+                structuredData={[articleLd, breadcrumbLd]}
+            />
             <Breadcrumb items={[
                 { label: t('navigation.home'), to: '/' },
                 { label: t('blog.title'), to: '/blog' },
@@ -144,24 +172,32 @@ function BlogPostDetail() {
                         components={{
                             img: ({node, ...props}) => {
                                 const altText = props.alt || '';
-                                const sizeMatch = altText.match(/\{width=(\d+)\}/);
+                                const widthMatch = altText.match(/\{width=(\d+)\}/);
+                                const heightMatch = altText.match(/\{height=(\d+)\}/);
                                 const classNameMatch = altText.match(/\{class=(\w+)\}/);
 
                                 let style: React.CSSProperties = {maxWidth: '100%', height: 'auto'};
                                 let className = '';
                                 let cleanAlt = altText;
+                                const intrinsic: { width?: number; height?: number } = {};
 
-                                if (sizeMatch) {
-                                    style = {width: `${sizeMatch[1]}px`, height: 'auto', maxWidth: '100%'};
-                                    cleanAlt = altText.replace(/\{width=\d+\}/, '').trim();
+                                if (widthMatch) {
+                                    intrinsic.width = parseInt(widthMatch[1], 10);
+                                    style = {width: `${widthMatch[1]}px`, height: 'auto', maxWidth: '100%'};
+                                    cleanAlt = cleanAlt.replace(/\{width=\d+\}/, '').trim();
+                                }
+
+                                if (heightMatch) {
+                                    intrinsic.height = parseInt(heightMatch[1], 10);
+                                    cleanAlt = cleanAlt.replace(/\{height=\d+\}/, '').trim();
                                 }
 
                                 if (classNameMatch) {
                                     className = classNameMatch[1];
-                                    cleanAlt = altText.replace(/\{class=\w+\}/, '').trim();
+                                    cleanAlt = cleanAlt.replace(/\{class=\w+\}/, '').trim();
                                 }
 
-                                return <img {...props} alt={cleanAlt} style={style} className={className} />;
+                                return <img {...props} {...intrinsic} loading="lazy" decoding="async" alt={cleanAlt} style={style} className={className} />;
                             },
                             table: ({node, children, ...props}) => (
                                 <div className="blog-table-wrapper" tabIndex={0} role="region" aria-label="table">

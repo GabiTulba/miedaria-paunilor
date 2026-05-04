@@ -126,7 +126,7 @@ function Shop() {
 
     return (
         <div className="shop-page">
-            <SEO canonical="/shop" />
+            <SEO title={t('seo.pageTitles.shop')} description={t('seo.pageDescriptions.shop')} />
             <header className="shop-header">
                 <h1>{t('shop.title')}</h1>
                 <p>{t('shop.subtitle')}</p>

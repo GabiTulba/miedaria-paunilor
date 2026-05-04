@@ -3,6 +3,8 @@ FROM node:20.20.2-slim AS build
 WORKDIR /app
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ARG VITE_SITE_URL
+ENV VITE_SITE_URL=$VITE_SITE_URL
 COPY package*.json ./
 RUN npm install
 COPY . .
@@ -10,7 +12,9 @@ RUN npm run build
 RUN ls -l /app/dist
 
 # Stage 2: Production
-FROM nginx:1.30.0-alpine
+# fholzer/nginx-brotli is Alpine-based and ships ngx_brotli statically built
+# alongside upstream nginx. Tag tracks the upstream nginx version.
+FROM fholzer/nginx-brotli:v1.30.0
 
 # Tools needed by the sitemap generator
 RUN apk add --no-cache curl jq tzdata
@@ -48,4 +52,7 @@ RUN mkdir -p /var/cache/nginx /var/run /run && \
 
 USER nginx
 
+# fholzer/nginx-brotli sets ENTRYPOINT to nginx; override so our entrypoint
+# script (which itself execs nginx) becomes the container command.
+ENTRYPOINT []
 CMD ["/usr/local/bin/docker-entrypoint.sh"]

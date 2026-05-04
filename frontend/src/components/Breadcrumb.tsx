@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { LocalizedLink } from './LocalizedLink';
 import './Breadcrumb.css';
 
 interface BreadcrumbItem {
@@ -17,7 +17,7 @@ function Breadcrumb({ items }: BreadcrumbProps) {
                 <span key={index} className="breadcrumb-item">
                     {index > 0 && <span className="breadcrumb-separator" aria-hidden="true"> &rsaquo; </span>}
                     {item.to && index < items.length - 1 ? (
-                        <Link to={item.to}>{item.label}</Link>
+                        <LocalizedLink to={item.to}>{item.label}</LocalizedLink>
                     ) : (
                         <span aria-current={index === items.length - 1 ? 'page' : undefined}>{item.label}</span>
                     )}

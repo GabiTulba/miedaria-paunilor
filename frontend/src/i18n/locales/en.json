@@ -533,5 +533,26 @@
     "system": "System",
     "light": "Light",
     "dark": "Dark"
+  },
+  "seo": {
+    "siteName": "Miedăria Păunilor",
+    "pageTitles": {
+      "home": "Home",
+      "shop": "Shop",
+      "blog": "Blog",
+      "about": "About Us",
+      "contact": "Contact",
+      "notFound": "Page Not Found",
+      "cart": "Shopping Cart"
+    },
+    "pageDescriptions": {
+      "home": "Home Page",
+      "shop": "Shop Page",
+      "blog": "Blog Page",
+      "about": "About Us Page",
+      "contact": "Contact Page",
+      "notFound": "Page Not Found",
+      "cart": "Cart Page"
+    }
   }
 }

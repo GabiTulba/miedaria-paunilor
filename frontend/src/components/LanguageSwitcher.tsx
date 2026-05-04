@@ -1,34 +1,45 @@
-import { useTranslation } from 'react-i18next';
-import { useLanguage, Language } from '../hooks/useLanguage';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useLanguage, Language, isLanguage, SUPPORTED_LANGUAGES } from '../hooks/useLanguage';
+
+function swapPathLang(pathname: string, target: Language): string {
+  const segments = pathname.split('/');
+  if (segments.length >= 2 && isLanguage(segments[1])) {
+    segments[1] = target;
+    return segments.join('/') || '/';
+  }
+  return `/${target}${pathname === '/' ? '' : pathname}`;
+}
 
 function LanguageSwitcher() {
-  const { i18n } = useTranslation();
   const language = useLanguage();
+  const navigate = useNavigate();
+  const { pathname, search, hash } = useLocation();
 
-  const changeLanguage = (lng: Language) => {
-    i18n.changeLanguage(lng);
+  const switchLanguage = (lng: Language) => {
+    if (lng === language) return;
+    const target = `${swapPathLang(pathname, lng)}${search}${hash}`;
+    navigate(target, { replace: true });
+  };
+
+  const labels: Record<Language, { flag: string; code: string; title: string; aria: string }> = {
+    en: { flag: '🇬🇧', code: 'EN', title: 'English', aria: 'Switch to English' },
+    ro: { flag: '🇷🇴', code: 'RO', title: 'Română', aria: 'Switch to Romanian' },
   };
 
   return (
     <div className="language-switcher">
-      <button
-        className={`language-btn ${language === 'en' ? 'active' : ''}`}
-        onClick={() => changeLanguage('en')}
-        title="English"
-        aria-label="Switch to English"
-      >
-        <span className="flag" aria-hidden="true">🇬🇧</span>
-        <span className="language-code">EN</span>
-      </button>
-      <button
-        className={`language-btn ${language === 'ro' ? 'active' : ''}`}
-        onClick={() => changeLanguage('ro')}
-        title="Română"
-        aria-label="Switch to Romanian"
-      >
-        <span className="flag" aria-hidden="true">🇷🇴</span>
-        <span className="language-code">RO</span>
-      </button>
+      {SUPPORTED_LANGUAGES.map(lng => (
+        <button
+          key={lng}
+          className={`language-btn ${language === lng ? 'active' : ''}`}
+          onClick={() => switchLanguage(lng)}
+          title={labels[lng].title}
+          aria-label={labels[lng].aria}
+        >
+          <span className="flag" aria-hidden="true">{labels[lng].flag}</span>
+          <span className="language-code">{labels[lng].code}</span>
+        </button>
+      ))}
     </div>
   );
 }

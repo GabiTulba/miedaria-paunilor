@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LocalizedProductWithImage, LocalizedBlogPost } from '../types';
@@ -6,6 +5,9 @@ import { api } from '../lib/api';
 import { useFormattedDate } from '../hooks/useFormattedDate';
 import ProductCard from '../components/ProductCard';
 import SEO from '../components/SEO';
+import { LocalizedLink } from '../components/LocalizedLink';
+import { getOrigin } from '../lib/origin';
+import { buildOrganizationLd, buildLocalBusinessLd } from '../lib/structuredData';
 import './Home.css';
 
 function Home() {
@@ -42,17 +44,23 @@ function Home() {
         return () => { controller.abort(); };
     }, [i18n.language]);
 
+    const origin = getOrigin();
+
     return (
         <div className="home-page">
-            <SEO canonical="/" />
+            <SEO
+                title={t('seo.pageTitles.home')}
+                description={t('seo.pageDescriptions.home')}
+                structuredData={[buildOrganizationLd(origin), buildLocalBusinessLd(origin)]}
+            />
             <section className="hero-section">
                 <div className="logo-container">
-                    <img src="/logo.svg" alt="Miedăria Păunilor" className="hero-logo" />
+                    <img src="/logo.svg" alt="Miedăria Păunilor" className="hero-logo" width={1024} height={1536} />
                 </div>
                 <div className="hero-content">
                     <h1>{t('home.heroTitle')}</h1>
                     <p>{t('home.heroDescription')}</p>
-                    <Link to="/shop" className="button">{t('home.exploreCollection')}</Link>
+                    <LocalizedLink to="/shop" className="button">{t('home.exploreCollection')}</LocalizedLink>
                 </div>
             </section>
 
@@ -115,7 +123,7 @@ function Home() {
                                         <article key={post.id} className="blog-post-card">
                                             <div className="blog-post-header">
                                                 <h3 className="blog-post-title">
-                                                    <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                                                    <LocalizedLink to={`/blog/${post.slug}`}>{post.title}</LocalizedLink>
                                                 </h3>
                                                 <div className="blog-post-meta">
                                                     <span className="blog-post-date">
@@ -130,15 +138,15 @@ function Home() {
                                                 <p>{post.excerpt}</p>
                                             </div>
                                             <div className="blog-post-actions">
-                                                <Link to={`/blog/${post.slug}`} className="read-more-btn">
+                                                <LocalizedLink to={`/blog/${post.slug}`} className="read-more-btn">
                                                     {t('blog.readMore')}
-                                                </Link>
+                                                </LocalizedLink>
                                             </div>
                                         </article>
                                     ))
                                 )}
                             </div>
-                            <Link to="/blog" className="button button-secondary">{t('home.viewAllPosts')}</Link>
+                            <LocalizedLink to="/blog" className="button button-secondary">{t('home.viewAllPosts')}</LocalizedLink>
                         </div>
                     </div>
                 </section>
@@ -149,7 +157,7 @@ function Home() {
                     <div className="teaser-content">
                         <h2>{t('home.ourStory')}</h2>
                         <p>{t('home.ourStoryDescription')}</p>
-                        <Link to="/about-us" className="button button-secondary">{t('home.readMore')}</Link>
+                        <LocalizedLink to="/about-us" className="button button-secondary">{t('home.readMore')}</LocalizedLink>
                     </div>
                 </div>
             </section>

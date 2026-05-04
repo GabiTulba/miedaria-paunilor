@@ -27,3 +27,20 @@
     color: var(--color-text-light);
     margin: 0;
 }
+
+.not-found-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.not-found-links a {
+    color: var(--color-text-light);
+    text-decoration: underline;
+}
+
+.not-found-links a:hover {
+    color: var(--primary-color);
+}

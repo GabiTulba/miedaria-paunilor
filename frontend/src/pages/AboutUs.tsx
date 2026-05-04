@@ -7,7 +7,7 @@ function AboutUs() {
 
     return (
         <div className="about-us-page">
-            <SEO canonical="/about-us" />
+            <SEO title={t('seo.pageTitles.about')} description={t('seo.pageDescriptions.about')} />
             <div className="about-hero">
                 <div className="about-hero-content">
                     <h1>{t('about.title')}: {t('about.story')}</h1>

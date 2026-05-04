@@ -1,4 +1,4 @@
-import { Outlet, Link, NavLink, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useContext, useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from './context/CartContext';
@@ -6,6 +6,8 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import ThemeToggle from './components/ThemeToggle';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/ToastContainer';
+import LangGuard from './components/LangGuard';
+import { LocalizedLink, LocalizedNavLink } from './components/LocalizedLink';
 import './App.css';
 import './components/LanguageSwitcher.css';
 
@@ -77,22 +79,22 @@ function App() {
       <a href="#main-content" className="skip-link">{t('navigation.skipToContent')}</a>
       <header className="header">
         <div className="container">
-          <Link to="/" className="logo">
-            <img src="/logo.svg" alt="Miedăria Păunilor" className="logo-image" />
+          <LocalizedLink to="/" className="logo">
+            <img src="/logo.svg" alt="Miedăria Păunilor" className="logo-image" width={1024} height={1536} />
             Miedăria Păunilor
-          </Link>
+          </LocalizedLink>
           <nav
             id="main-navigation"
             ref={navRef}
             className={`main-nav ${isMobileMenuOpen ? 'active' : ''}`}
             aria-label={t('navigation.main')}
           >
-            <NavLink to="/" end>{t('navigation.home')}</NavLink>
-            <NavLink to="/shop">{t('navigation.shop')}</NavLink>
-            <NavLink to="/blog">{t('blog.title')}</NavLink>
-            <NavLink to="/about-us">{t('navigation.aboutUs')}</NavLink>
-            <NavLink to="/contact">{t('navigation.contact')}</NavLink>
-            <NavLink to="/cart">{t('navigation.cart')} {itemCount > 0 && `(${itemCount})`}</NavLink>
+            <LocalizedNavLink to="/" end>{t('navigation.home')}</LocalizedNavLink>
+            <LocalizedNavLink to="/shop">{t('navigation.shop')}</LocalizedNavLink>
+            <LocalizedNavLink to="/blog">{t('blog.title')}</LocalizedNavLink>
+            <LocalizedNavLink to="/about-us">{t('navigation.aboutUs')}</LocalizedNavLink>
+            <LocalizedNavLink to="/contact">{t('navigation.contact')}</LocalizedNavLink>
+            <LocalizedNavLink to="/cart">{t('navigation.cart')} {itemCount > 0 && `(${itemCount})`}</LocalizedNavLink>
             <ThemeToggle />
             <LanguageSwitcher />
           </nav>
@@ -114,7 +116,9 @@ function App() {
       <ToastContainer />
       <main id="main-content">
         <ErrorBoundary>
-          <Outlet />
+          <LangGuard>
+            <Outlet />
+          </LangGuard>
         </ErrorBoundary>
       </main>
       <footer className="footer">

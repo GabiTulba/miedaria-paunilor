@@ -19,6 +19,7 @@ use backend::language::Language;
 use backend::localized::{LocalizedBlogPost, LocalizedProductWithImage};
 use backend::models::PaginatedResponse;
 use backend::product_crud::ProductWithImage;
+use backend::rss_crud;
 use backend::sitemap_crud;
 use backend::enums::*;
 use backend::product_crud::IncludeDeleted;
@@ -152,6 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/blog", get(get_all_blog_posts))
         .route("/api/blog/{slug}", get(get_blog_post_by_slug))
         .route("/api/sitemap-data", get(get_sitemap_data))
+        .route("/blog/rss.xml", get(get_blog_rss))
         .route("/api/admin/login", post(auth::login))
         .nest("/api/admin", admin_routes)
         .with_state(app_state)
@@ -520,6 +522,24 @@ async fn get_sitemap_data(
     let mut conn = db::get_db_connection(&app_state)?;
     let sitemap_data = sitemap_crud::get_sitemap_data(&mut conn, &app_state.site_url)?;
     Ok(Json(sitemap_data))
+}
+
+async fn get_blog_rss(
+    State(app_state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    let body = rss_crud::generate_rss_xml(&mut conn, &app_state.site_url)?;
+    Ok((
+        StatusCode::OK,
+        [
+            (
+                axum::http::header::CONTENT_TYPE,
+                "application/rss+xml; charset=utf-8",
+            ),
+            (axum::http::header::CACHE_CONTROL, "public, max-age=600"),
+        ],
+        body,
+    ))
 }
 
 async fn create_blog_post(

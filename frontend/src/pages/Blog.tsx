@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
@@ -7,6 +7,7 @@ import { useFormattedDate } from '../hooks/useFormattedDate';
 import Pagination from '../components/Pagination';
 import ErrorDisplay from '../components/ErrorDisplay';
 import SEO from '../components/SEO';
+import { LocalizedLink } from '../components/LocalizedLink';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './Blog.css';
@@ -62,7 +63,7 @@ function Blog() {
 
     return (
         <div className="blog-page">
-            <SEO canonical="/blog" />
+            <SEO title={t('seo.pageTitles.blog')} description={t('seo.pageDescriptions.blog')} />
             <header className="blog-header">
                     <h1>{t('blog.title')}</h1>
                     <p>{t('blog.description')}</p>
@@ -105,7 +106,7 @@ function Blog() {
                                 <article key={post.id} className="blog-post-card">
                                     <div className="blog-post-header">
                                         <h2 className="blog-post-title">
-                                            <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                                            <LocalizedLink to={`/blog/${post.slug}`}>{post.title}</LocalizedLink>
                                         </h2>
                                         <div className="blog-post-meta">
                                             <span className="blog-post-date">
@@ -122,24 +123,32 @@ function Blog() {
                                              components={{
                                                  img: ({node, ...props}) => {
                                                      const altText = props.alt || '';
-                                                     const sizeMatch = altText.match(/\{width=(\d+)\}/);
+                                                     const widthMatch = altText.match(/\{width=(\d+)\}/);
+                                                     const heightMatch = altText.match(/\{height=(\d+)\}/);
                                                      const classNameMatch = altText.match(/\{class=(\w+)\}/);
-                                                     
+
                                                      let style: React.CSSProperties = {maxWidth: '100%', height: 'auto'};
                                                      let className = '';
                                                      let cleanAlt = altText;
-                                                     
-                                                     if (sizeMatch) {
-                                                         style = {width: `${sizeMatch[1]}px`, height: 'auto', maxWidth: '100%'};
-                                                         cleanAlt = altText.replace(/\{width=\d+\}/, '').trim();
+                                                     const intrinsic: { width?: number; height?: number } = {};
+
+                                                     if (widthMatch) {
+                                                         intrinsic.width = parseInt(widthMatch[1], 10);
+                                                         style = {width: `${widthMatch[1]}px`, height: 'auto', maxWidth: '100%'};
+                                                         cleanAlt = cleanAlt.replace(/\{width=\d+\}/, '').trim();
                                                      }
-                                                     
+
+                                                     if (heightMatch) {
+                                                         intrinsic.height = parseInt(heightMatch[1], 10);
+                                                         cleanAlt = cleanAlt.replace(/\{height=\d+\}/, '').trim();
+                                                     }
+
                                                      if (classNameMatch) {
                                                          className = classNameMatch[1];
-                                                         cleanAlt = altText.replace(/\{class=\w+\}/, '').trim();
+                                                         cleanAlt = cleanAlt.replace(/\{class=\w+\}/, '').trim();
                                                      }
-                                                     
-                                                     return <img {...props} alt={cleanAlt} style={style} className={className} />;
+
+                                                     return <img {...props} {...intrinsic} loading="lazy" decoding="async" alt={cleanAlt} style={style} className={className} />;
                                                  },
                                                  // Handle table components for excerpts too
                                                  table: ({node, children, ...props}) => (
@@ -170,9 +179,9 @@ function Blog() {
                                          </ReactMarkdown>
                                      </div>
                                     <div className="blog-post-actions">
-                                        <Link to={`/blog/${post.slug}`} className="read-more-btn">
+                                        <LocalizedLink to={`/blog/${post.slug}`} className="read-more-btn">
                                             {t('blog.readMore')}
-                                        </Link>
+                                        </LocalizedLink>
                                     </div>
                                 </article>
                             ))}

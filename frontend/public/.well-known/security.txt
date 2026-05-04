@@ -1,0 +1,4 @@
+Contact: mailto:miedaria.paunilor@gmail.com
+Expires: 2027-05-04T00:00:00.000Z
+Preferred-Languages: ro, en
+Canonical: https://miedaria-paunilor.ro/.well-known/security.txt

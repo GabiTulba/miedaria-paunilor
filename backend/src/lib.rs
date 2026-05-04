@@ -9,6 +9,7 @@ pub mod language;
 pub mod localized;
 pub mod models;
 pub mod product_crud;
+pub mod rss_crud;
 pub mod schema;
 pub mod sitemap_crud;
 pub mod user_crud;

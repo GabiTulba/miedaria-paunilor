@@ -6,6 +6,7 @@ services:
       context: ./frontend
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_SITE_URL: ${VITE_SITE_URL}
     ports:
       - "80:8080"   # HTTP port for redirect to HTTPS
       - "443:8443"  # HTTPS port

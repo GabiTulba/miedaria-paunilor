@@ -14,6 +14,10 @@ import CollapsibleSection from '../components/CollapsibleSection';
 import ErrorDisplay from '../components/ErrorDisplay';
 import Breadcrumb from '../components/Breadcrumb';
 import SEO from '../components/SEO';
+import { useLanguage } from '../hooks/useLanguage';
+import { getOrigin } from '../lib/origin';
+import { buildProductLd, buildBreadcrumbLd } from '../lib/structuredData';
+import { clamp } from '../lib/text';
 
 import './ProductDetails.css';
 
@@ -30,6 +34,7 @@ function ProductDetails() {
     const { addToCart } = useContext(CartContext);
     const { showToast } = useToast();
     const { t, i18n } = useTranslation();
+    const lang = useLanguage();
     const formatDate = useFormattedDate();
 
     useEffect(() => {
@@ -116,9 +121,34 @@ function ProductDetails() {
 
     const { product, image } = productWithImage;
 
+    const origin = getOrigin();
+    const pagePath = `/${lang}/shop/${product.product_id}`;
+    const pageUrl = `${origin}${pagePath}`;
+    const productImageUrl = image ? `${origin}${getImageUrl(image.id, 1024)}` : null;
+    const seoDescription = clamp(product.product_description, 160);
+    const productLd = buildProductLd({
+        product,
+        imageUrl: productImageUrl,
+        pageUrl,
+    });
+    const breadcrumbLd = buildBreadcrumbLd(
+        [
+            { name: t('navigation.home'), url: `/${lang}` },
+            { name: t('navigation.shop'), url: `/${lang}/shop` },
+            { name: product.product_name, url: pagePath },
+        ],
+        origin
+    );
+
     return (
         <div className="product-details-page">
-            <SEO />
+            <SEO
+                title={product.product_name}
+                description={seoDescription}
+                image={productImageUrl ?? undefined}
+                type="product"
+                structuredData={[productLd, breadcrumbLd]}
+            />
             <Breadcrumb items={[
                 { label: t('navigation.home'), to: '/' },
                 { label: t('navigation.shop'), to: '/shop' },
@@ -135,6 +165,10 @@ function ProductDetails() {
                                 sizes="(min-width: 992px) 500px, 100vw"
                                 alt={product.product_name}
                                 className="product-detail-image"
+                                width={1024}
+                                height={1024}
+                                loading="eager"
+                                fetchPriority="high"
                                 decoding="async"
                                 onLoad={() => setImgLoaded(true)}
                                 onError={() => setImgError(true)}

@@ -1,10 +1,10 @@
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { api } from '../lib/api';
 import { toFixed } from '../utils/numberUtils';
 import { useLanguage } from '../hooks/useLanguage';
+import { LocalizedLink } from '../components/LocalizedLink';
 import SEO from '../components/SEO';
 import './Cart.css';
 
@@ -91,7 +91,7 @@ function Cart() {
 
     return (
         <div className="cart-page">
-            <SEO noindex />
+            <SEO title={t('seo.pageTitles.cart')} description={t('seo.pageDescriptions.cart')} noindex />
             <header className="cart-header">
                 <h1>{t('cart.title')}</h1>
             </header>
@@ -108,7 +108,7 @@ function Cart() {
                 <div className="empty-cart">
                     <div className="empty-state-icon cart-empty-icon"></div>
                     <p>{t('cart.empty')}</p>
-                    <Link to="/shop" className="button">{t('cart.continueShopping')}</Link>
+                    <LocalizedLink to="/shop" className="button">{t('cart.continueShopping')}</LocalizedLink>
                 </div>
             ) : (
                 <div className="cart-content">
