@@ -1,24 +1,29 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useLanguage, Language, isLanguage, SUPPORTED_LANGUAGES } from '../hooks/useLanguage';
-
-function swapPathLang(pathname: string, target: Language): string {
-  const segments = pathname.split('/');
-  if (segments.length >= 2 && isLanguage(segments[1])) {
-    segments[1] = target;
-    return segments.join('/') || '/';
-  }
-  return `/${target}${pathname === '/' ? '' : pathname}`;
-}
+import './LanguageSwitcher.css';
 
 function LanguageSwitcher() {
   const language = useLanguage();
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const { pathname, search, hash } = useLocation();
 
   const switchLanguage = (lng: Language) => {
     if (lng === language) return;
-    const target = `${swapPathLang(pathname, lng)}${search}${hash}`;
-    navigate(target, { replace: true });
+    const segments = pathname.split('/');
+    if (segments.length >= 2 && isLanguage(segments[1])) {
+      segments[1] = lng;
+      const target = `${segments.join('/') || '/'}${search}${hash}`;
+      navigate(target, { replace: true });
+      return;
+    }
+    void i18n.changeLanguage(lng);
+    try {
+      window.localStorage?.setItem('i18nextLng', lng);
+    } catch {
+      // ignore storage failures
+    }
   };
 
   const labels: Record<Language, { flag: string; code: string; title: string; aria: string }> = {

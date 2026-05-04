@@ -111,6 +111,16 @@
 .sidebar-footer {
     padding: 1rem;
     border-top: 1px solid var(--admin-sidebar-border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sidebar-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .logout-button {
@@ -952,6 +962,11 @@
 .admin-page [role="button"],
 .admin-page .button {
     min-width: var(--touch-target-min);
+}
+.admin-page .theme-slider-option,
+.admin-page .language-btn {
+    min-height: 0;
+    min-width: 0;
 }
 .admin-page .react-datepicker__input-container input {
     min-height: var(--touch-target-min);

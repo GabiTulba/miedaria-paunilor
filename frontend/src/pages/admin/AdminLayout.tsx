@@ -3,6 +3,8 @@ import { useContext, useState, useEffect, useRef } from "react";
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from "../../context/AuthContext";
 import ConfirmModal from "../../components/ConfirmModal";
+import ThemeToggle from "../../components/ThemeToggle";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import './Admin.css';
 
@@ -113,6 +115,10 @@ function AdminLayout() {
                     </NavLink>
                 </nav>
                 <div className="sidebar-footer">
+                    <div className="sidebar-controls">
+                        <ThemeToggle />
+                        <LanguageSwitcher />
+                    </div>
                     <button onClick={() => setShowLogoutConfirm(true)} className="logout-button">
                         <span className="logout-icon"></span>
                         <span>{t('common.logout')}</span>

@@ -9,7 +9,6 @@ import ToastContainer from './components/ToastContainer';
 import LangGuard from './components/LangGuard';
 import { LocalizedLink, LocalizedNavLink } from './components/LocalizedLink';
 import './App.css';
-import './components/LanguageSwitcher.css';
 
 function App() {
   const { itemCount } = useContext(CartContext);
