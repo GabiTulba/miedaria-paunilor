@@ -18,8 +18,6 @@ pub struct SitemapUrl {
     pub loc: String,
     pub lastmod: String,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub images: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub alternates: Vec<SitemapAlternate>,
 }
 
@@ -64,19 +62,13 @@ fn build_alternates(site_url: &str, path_suffix: &str) -> Vec<SitemapAlternate> 
 /// Emit one SitemapUrl per supported language for a given path, each carrying
 /// the full set of alternates (so crawlers can discover the language pairing
 /// from any entry).
-fn lang_pair(
-    site_url: &str,
-    path_suffix: &str,
-    lastmod: String,
-    images: Vec<String>,
-) -> Vec<SitemapUrl> {
+fn lang_pair(site_url: &str, path_suffix: &str, lastmod: String) -> Vec<SitemapUrl> {
     let alternates = build_alternates(site_url, path_suffix);
     LANGS
         .iter()
         .map(|lang| SitemapUrl {
             loc: lang_url(site_url, lang, path_suffix),
             lastmod: lastmod.clone(),
-            images: images.clone(),
             alternates: alternates.clone(),
         })
         .collect()
@@ -101,18 +93,14 @@ pub fn get_sitemap_data(
     let static_paths = ["", "/shop", "/blog", "/about-us", "/contact"];
     let static_urls: Vec<SitemapUrl> = static_paths
         .iter()
-        .flat_map(|p| lang_pair(site_url, p, now.clone(), vec![]))
+        .flat_map(|p| lang_pair(site_url, p, now.clone()))
         .collect();
 
     let product_urls: Vec<SitemapUrl> = products
         .iter()
         .flat_map(|product| {
             let path = format!("/shop/{}", product.product_id);
-            let images = product
-                .image_id
-                .map(|id| vec![format!("{}/images/{}", site_url, id)])
-                .unwrap_or_default();
-            lang_pair(site_url, &path, iso_lastmod(product.updated_at), images)
+            lang_pair(site_url, &path, iso_lastmod(product.updated_at))
         })
         .collect();
 
@@ -120,7 +108,7 @@ pub fn get_sitemap_data(
         .iter()
         .flat_map(|blog_post| {
             let path = format!("/blog/{}", blog_post.slug);
-            lang_pair(site_url, &path, iso_lastmod(blog_post.updated_at), vec![])
+            lang_pair(site_url, &path, iso_lastmod(blog_post.updated_at))
         })
         .collect();
 

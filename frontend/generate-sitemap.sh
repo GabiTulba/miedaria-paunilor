@@ -20,18 +20,15 @@ fi
 cat > "$TEMP_FILE" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 EOF
 
 # One <url> per entry. Children rendered:
-#   <image:image>     for each entry in .images (products today)
 #   <xhtml:link>      one per entry in .alternates (hreflang pairs + x-default)
 echo "$response" | jq -r '
     [.static_urls[], .product_urls[], .blog_urls[]] | .[] |
     "  <url>\n    <loc>\(.loc)</loc>\n    <lastmod>\(.lastmod)</lastmod>" +
     ((.alternates // []) | map("\n    <xhtml:link rel=\"alternate\" hreflang=\"\(.hreflang)\" href=\"\(.href)\"/>") | join("")) +
-    ((.images // []) | map("\n    <image:image>\n      <image:loc>\(.)</image:loc>\n    </image:image>") | join("")) +
     "\n  </url>"
 ' >> "$TEMP_FILE"
 
