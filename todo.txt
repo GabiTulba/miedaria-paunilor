@@ -8,59 +8,6 @@ Severity legend: [C]ritical  [H]igh  [M]edium  [L]ow
 Each item: [Sev] FILE:LINE — Issue. Fix.
 
 --------------------------------------------------------------------------------
-B. FRONTEND (React / TypeScript / Vite)
---------------------------------------------------------------------------------
-
-AUTH / SESSION
-[H] frontend/src/context/AuthContext.tsx:22-27 — JWT in `localStorage`. Any successful XSS exfils the admin token. Move to httpOnly + Secure + SameSite=Strict cookie set by the backend on `/api/admin/login`; backend already runs same-origin via nginx so CSRF is mitigable with SameSite alone.
-[M] frontend/src/context/AuthContext.tsx:23-24 — `isValidJwtFormat` only checks dot-count. Decode the `exp` claim (no signature check needed client-side) and treat past-exp tokens as logged out, instead of waiting for the next 401.
-[M] frontend/src/components/ProtectedRoute.tsx — Pure client-side gate. Already backed by server auth, but ensure every admin page also renders nothing until token is verified, otherwise admin UI flashes briefly for unauthenticated users.
-[M] frontend/src/pages/AdminLogin.tsx:23 — Submit button has no `disabled={submitting}`; double-click submits twice. Add disabled + spinner.
-
-XSS / RENDERING
-[H] frontend/src/i18n/config.ts:20 — `interpolation.escapeValue: false`. i18next defaults to escaping; turning it off means any translation that interpolates user-controlled data (e.g., `t('blog.byAuthor', { author })`) renders raw. Either flip to `true` or audit every interpolation site. Recommended: `escapeValue: true`.
-[M] frontend/src/pages/Blog.tsx:121-179 and BlogPostDetail.tsx:170-227 — `react-markdown` is XSS-safe by default, but custom renderers for `a`/`img` should enforce safe URLs. Reject `javascript:` and `data:` (except `data:image/...`) URLs; force `rel="noopener noreferrer"` and `target="_blank"` for external links.
-[L] frontend/src/pages/Blog.tsx:116 + BlogPostDetail.tsx:159 — Author rendered via `t('blog.byAuthor', { author: post.author })`. With `escapeValue: false` (above), this is a real XSS sink because authors come from admin-controlled DB content.
-
-CART / CHECKOUT LOGIC
-[H] frontend/src/pages/Cart.tsx:84-88 — Total computed client-side from cart prices; no checkout exists yet, but when added the server MUST recompute totals from the canonical price list. Add a TODO and ensure backend cart-validation endpoint is the source of truth.
-[H] frontend/src/pages/Cart.tsx:90 — `cartCurrency = cartItems.length > 0 ? cartItems[0].currency : ''` shows blank currency on empty cart. Default to a sensible fallback (`'EUR'` or i18n-aware).
-[M] frontend/src/pages/Cart.tsx:84-88 — `.toFixed(2)` on summed floats accumulates float drift on big carts. Compute in integer cents; format only at display.
-[M] frontend/src/pages/Cart.tsx:54-56 — Setting quantity to 0 silently removes the line. Either confirm or restrict to `≥ 1` and require an explicit delete button.
-[M] frontend/src/pages/Cart.tsx:140-141 — `parseInt(e.target.value, 10)` accepts NaN, negatives, decimals via paste. Clamp to `[1, min(99, stock)]` and reject non-numeric input.
-
-DATA FETCHING / STATE
-[M] frontend/src/pages/Cart.tsx:42-46 — `Promise.all` over per-product fetches; result lookup by `cartItems.find(...)`. If a product is deleted server-side, the matching `find` returns undefined and silently drops the item — surface a "product unavailable" message to the user.
-[M] frontend/src/pages/Cart.tsx:42 — Use `Promise.allSettled` so one failed product doesn't abort the whole cart load.
-[M] frontend/src/pages/Cart.tsx:77 — `useEffect` deps include `language` (unused) with `eslint-disable-next-line react-hooks/exhaustive-deps`. Use `i18n.language` directly and let lint enforce deps.
-[M] frontend/src/hooks/useFetchProducts.ts (~line 106) — Refetches on every filter keystroke + language change, with no debounce or in-flight cancellation. Add `AbortController` and a 250ms debounce on the `search` filter; stale responses can otherwise overwrite fresh ones.
-[M] frontend/src/pages/Shop.tsx:248 — Search input not debounced.
-[L] frontend/src/pages/Home.tsx:32 — `(productsData.items ?? productsData).slice(0, 3)` covers both shapes; pin the API contract to one shape and remove the fallback.
-[L] frontend/src/pages/BlogPostDetail.tsx:50-51 — Abort check after `try` body; race window where `setState` fires post-unmount. Move abort check inside `finally` and gate state with `if (!ac.signal.aborted)`.
-
-FORMS / UX
-[M] frontend/src/components/BlogForm.tsx:148-150 — No submit-button loading state; user re-submits.
-[M] frontend/src/components/admin/ProductForm.tsx:510 — Has `submitting` prop but no spinner; only label changes.
-[M] frontend/src/pages/AdminProductCreate.tsx + AdminProductEdit.tsx — `useUnsavedChanges` exists but isn't wired to the form. Add a beforeunload + in-app navigation guard.
-[M] frontend/src/pages/Shop.tsx:348 — `t('shop.allTanins')` typo (should be `allTannins`); displays the raw key when the typo'd entry is missing.
-[L] frontend/src/components/AdminImages.tsx:316 — `new Date(...).toLocaleDateString()` ignores app i18n. Use the existing `useFormattedDate()` hook for consistency.
-[L] frontend/src/pages/Cart.tsx:125-127 — Direct DOM mutation via `classList.add('success-pulse')`. Use a state-driven className with a CSS animation.
-[L] frontend/src/pages/ProductDetails.tsx:70-72 — `addToCartBtnRef.current.onanimationend = ...` overwrites prior listener; with rapid clicks this leaks. Use `addEventListener` with cleanup or state-driven animation.
-
-ROUTING / SEO
-[M] frontend/src/main.tsx:35-40 — Root `/` redirect to `/{lang}` happens client-side on every visit; bots see a blank shell briefly. Mirror the redirect at the nginx level (302 → preferred-language path based on `Accept-Language`) so crawlers and HTTP clients land on the correct URL immediately.
-[M] frontend/src/pages/Contact.tsx:40 — External link opens in a new tab without `rel="noopener noreferrer"` and without an `aria-label` indicating new-tab.
-[L] frontend/src/main.tsx:60 — Catch-all `*` route is correct but visually hidden among siblings; move to last position in the array for clarity.
-
-API CLIENT
-[M] frontend/src/lib/api.ts:14-17 — Throws synchronously at module load if `VITE_API_BASE_URL` is missing → blank page on misconfigured deploy. Surface a runtime error UI instead.
-[M] frontend/src/lib/api.ts:25-41 — Error handling assumes JSON; if the backend returns text/HTML (502 from nginx, e.g.), `JSON.parse` throws inside the catch. Wrap in try/catch and fall back to `response.text()`.
-
-I18N
-[H] frontend/src/i18n/config.ts:20 — see XSS section: `escapeValue: false` is a footgun.
-[L] frontend/i18n resource files — Verify both `en` and `ro` have `shop.allTannins` (currently misspelled `allTanins` in code, may also be misspelled in resources).
-
---------------------------------------------------------------------------------
 C. INFRASTRUCTURE / DOCKER / NGINX / SSL
 --------------------------------------------------------------------------------
 
@@ -105,13 +52,15 @@ OBSERVABILITY
 [L] frontend/nginx.conf — Default access log format; switch to a JSON format if you ship logs to anything other than tail.
 
 ================================================================================
-PRIORITY (remaining — Section A done)
+PRIORITY (remaining — Sections A + B done)
 ================================================================================
-1. [H] frontend/src/i18n/config.ts:20 — set escapeValue: true (XSS).
-2. [H] frontend/security-headers.conf — add CSP + Permissions-Policy.
-3. [H] scripts/generate-ssl.sh — chmod 600 on private key.
-4. [H] frontend/src/context/AuthContext.tsx — JWT to httpOnly cookie (XSS impact).
-5. [H] frontend/src/pages/Cart.tsx:84-90 — currency fallback + integer-cents totals + server-side recalculation contract for checkout.
+1. [H] frontend/security-headers.conf — add CSP + Permissions-Policy.
+2. [H] scripts/generate-ssl.sh — chmod 600 on private key.
+3. [H] backend + frontend — JWT to httpOnly cookie (requires backend cookie set on
+   /api/admin/login; FE side now decodes exp + auto-logs out on expiry. Migration to
+   cookie still pending and needs FE+BE in lockstep).
+4. [M] frontend/main.tsx + nginx — mirror root `/` lang redirect at nginx level
+   (infra change in section C; FE-side redirect is intentionally kept as fallback).
 ================================================================================
 
 ================================================================================
@@ -241,13 +190,4 @@ F. CROSS-CUTTING — FE/BE
 [L] frontend/src/lib/api.ts:4 (`IMAGE_VARIANT_WIDTHS = [320, 640, 1024, 1600]`) vs backend/src/image_crud.rs:17 (`VARIANT_WIDTHS: [u32; 4] = [320, 640, 1024, 1600]`) — Same array hard-coded twice. Acceptable, but worth a comment cross-referencing the other side, or a single env-driven config.
 [L] frontend/src/pages/admin/AdminProducts.tsx:22-23 (`7 * 24 * 60 * 60 * 1000`) vs backend/src/product_crud.rs:404 (`Duration::days(7)`) — 7-day grace window for hard-delete duplicated. Move to a shared `HARD_DELETE_GRACE_DAYS` constant on each side and add a comment.
 
---------------------------------------------------------------------------------
-STALE PATH REFERENCES IN EXISTING TODO (non-exhaustive sweep while auditing)
---------------------------------------------------------------------------------
-- §B FORMS [M] line 92: `frontend/src/components/BlogForm.tsx:148-150` — file is at `frontend/src/pages/admin/BlogForm.tsx` and the submit button is at line 352-358 (loading flag IS now wired via `disabled={loading}` at 355; the "no submit-button loading state" claim is stale — only the spinner-icon is missing).
-- §B FORMS [M] line 93: `frontend/src/components/admin/ProductForm.tsx:510` — file is at `frontend/src/pages/admin/ProductForm.tsx` and the submit button is at line 509.
-- §B FORMS [M] line 94: `frontend/src/pages/AdminProductCreate.tsx + AdminProductEdit.tsx` — both are at `frontend/src/pages/admin/AdminProductCreate.tsx` / `AdminProductEdit.tsx`.
-- §B AUTH [M] line 68: `frontend/src/pages/AdminLogin.tsx:23` — file is at `frontend/src/pages/admin/AdminLogin.tsx`; submit handler is at line 18, button at line 104. The "no `disabled={submitting}`" claim is correct (button has no disabled state at all).
-- §B FORMS [L] line 96: `frontend/src/components/AdminImages.tsx:316` — file is at `frontend/src/pages/admin/AdminImages.tsx:316` (line still correct).
-- §B XSS [L] line 73: `BlogPostDetail.tsx:159` — line still accurate (file path was always `pages/`).
 ================================================================================

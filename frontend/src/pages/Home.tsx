@@ -22,14 +22,12 @@ function Home() {
         const fetchData = async () => {
             try {
                 setIsLoading(true);
-                const params = new URLSearchParams();
-                params.append('order_by', 'bottling_date');
-                params.append('order_direction', 'desc');
-                params.append('in_stock', 'true');
-                const queryString = params.toString();
-                const url = `/products${queryString ? `?${queryString}` : ''}`;
-                const productsData = await api.get(url, { signal: controller.signal });
-                setFeaturedProducts((productsData.items ?? productsData).slice(0, 3));
+                const productsData = await api.getProducts({
+                    order_by: 'bottling_date',
+                    order_direction: 'desc',
+                    in_stock: true,
+                }, controller.signal);
+                setFeaturedProducts((productsData.items ?? []).slice(0, 3));
 
                 const blogData = await api.getBlogPosts(undefined, undefined, controller.signal);
                 setLatestBlogPosts((blogData.items ?? []).slice(0, 3));

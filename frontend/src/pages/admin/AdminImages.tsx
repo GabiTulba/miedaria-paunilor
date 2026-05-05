@@ -6,6 +6,7 @@ import { getImageUrl } from '../../lib/api';
 import { Image } from '../../types';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useAdminImages } from '../../hooks/useAdminImages';
+import { useFormattedDate } from '../../hooks/useFormattedDate';
 import './Admin.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -14,6 +15,7 @@ const AdminImages: React.FC = () => {
   const { token } = useAuth();
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const formatDate = useFormattedDate();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -313,7 +315,7 @@ const AdminImages: React.FC = () => {
                     </div>
                     <div className="image-meta">
                       <span className="image-id">ID: {image.id.substring(0, 8)}...</span>
-                      <span className="image-date">{new Date(image.created_at).toLocaleDateString()}</span>
+                      <span className="image-date">{formatDate(image.created_at)}</span>
                     </div>
                   </div>
                   <div className="image-actions">

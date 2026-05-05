@@ -188,7 +188,7 @@
     "acidity": "Aciditate",
     "allAcidity": "Toate Nivelurile",
     "tannins": "Taninuri",
-    "allTanins": "Toate Nivelurile",
+    "allTannins": "Toate Nivelurile",
     "body": "Corp",
     "allBody": "Toate Nivelurile",
     "clearFilters": "Șterge Toate Filtrele",
@@ -249,6 +249,11 @@
     "logout": {
       "confirmTitle": "Confirmare Deconectare",
       "confirmMessage": "Ești sigur că vrei să te deconectezi?"
+    },
+    "unsavedChanges": {
+      "title": "Modificări nesalvate",
+      "message": "Ai modificări nesalvate. Sigur vrei să părăsești pagina?",
+      "discard": "Renunță la modificări"
     },
     "login": {
       "title": "Autentificare Admin",
@@ -435,7 +440,8 @@
     "formTitle": "Trimite-ne un Mesaj",
     "name": "Nume",
     "message": "Mesaj",
-    "send": "Trimite Mesaj"
+    "send": "Trimite Mesaj",
+    "addressNewTab": "Deschide adresa {{address}} în Google Maps (filă nouă)"
   },
   "footer": {
     "copyright": "© {{year}} Miedăria Păunilor. Toate drepturile rezervate.",

@@ -14,6 +14,9 @@ import { ro } from 'date-fns/locale/ro';
 import { enUS } from 'date-fns/locale/en-US';
 import 'react-datepicker/dist/react-datepicker.css';
 
+registerLocale('en', enUS);
+registerLocale('ro', ro);
+
 function validateRequired(value: string, fieldName: string): string | undefined {
     if (!value.trim()) return `${fieldName} is required`;
     return undefined;
@@ -72,10 +75,6 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
             return () => form.removeEventListener('animationend', handler);
         }
     }, [errorCount]);
-    
-    // Register locales for date picker
-    registerLocale('en', enUS);
-    registerLocale('ro', ro);
     
     // Convert bottling_date string to Date object for date picker
     const getDatePickerValue = () => {
@@ -507,6 +506,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
 
             <div className="form-actions">
                 <button type="submit" className="button button-primary" disabled={submitting}>
+                    {submitting && <span className="button-spinner" aria-hidden="true" />}
                     {submitting ? t('common.loading') : submitText}
                 </button>
                 <a href="/admin/dashboard/products" className="button button-secondary">{t('admin.productForm.cancel')}</a>

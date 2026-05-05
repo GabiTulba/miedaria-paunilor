@@ -17,7 +17,7 @@ i18n
     fallbackLng: DEFAULT_LANGUAGE,
     supportedLngs: [...SUPPORTED_LANGUAGES],
     interpolation: {
-      escapeValue: false,
+      escapeValue: true,
     },
   });
 

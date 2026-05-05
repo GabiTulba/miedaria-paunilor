@@ -10,6 +10,7 @@ import SEO from '../components/SEO';
 import { LocalizedLink } from '../components/LocalizedLink';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { BLOG_MARKDOWN_COMPONENTS } from '../lib/markdownComponents';
 import './Blog.css';
 
 const BLOG_PER_PAGE = 10;
@@ -120,60 +121,7 @@ function Blog() {
                                      <div className="blog-post-excerpt">
                                          <ReactMarkdown
                                              remarkPlugins={[remarkGfm]}
-                                             components={{
-                                                 img: ({node, ...props}) => {
-                                                     const altText = props.alt || '';
-                                                     const widthMatch = altText.match(/\{width=(\d+)\}/);
-                                                     const heightMatch = altText.match(/\{height=(\d+)\}/);
-                                                     const classNameMatch = altText.match(/\{class=(\w+)\}/);
-
-                                                     let style: React.CSSProperties = {maxWidth: '100%', height: 'auto'};
-                                                     let className = '';
-                                                     let cleanAlt = altText;
-                                                     const intrinsic: { width?: number; height?: number } = {};
-
-                                                     if (widthMatch) {
-                                                         intrinsic.width = parseInt(widthMatch[1], 10);
-                                                         style = {width: `${widthMatch[1]}px`, height: 'auto', maxWidth: '100%'};
-                                                         cleanAlt = cleanAlt.replace(/\{width=\d+\}/, '').trim();
-                                                     }
-
-                                                     if (heightMatch) {
-                                                         intrinsic.height = parseInt(heightMatch[1], 10);
-                                                         cleanAlt = cleanAlt.replace(/\{height=\d+\}/, '').trim();
-                                                     }
-
-                                                     if (classNameMatch) {
-                                                         className = classNameMatch[1];
-                                                         cleanAlt = cleanAlt.replace(/\{class=\w+\}/, '').trim();
-                                                     }
-
-                                                     return <img {...props} {...intrinsic} loading="lazy" decoding="async" alt={cleanAlt} style={style} className={className} />;
-                                                 },
-                                                 // Handle table components for excerpts too
-                                                 table: ({node, children, ...props}) => (
-                                                     <div className="blog-table-wrapper" tabIndex={0} role="region" aria-label="table">
-                                                         <table className="blog-table" {...props}>
-                                                             {children}
-                                                         </table>
-                                                     </div>
-                                                 ),
-                                                 thead: ({node, children, ...props}) => (
-                                                     <thead {...props}>{children}</thead>
-                                                 ),
-                                                 tbody: ({node, children, ...props}) => (
-                                                     <tbody {...props}>{children}</tbody>
-                                                 ),
-                                                 tr: ({node, children, ...props}) => (
-                                                     <tr {...props}>{children}</tr>
-                                                 ),
-                                                 th: ({node, children, ...props}) => (
-                                                     <th {...props}>{children}</th>
-                                                 ),
-                                                 td: ({node, children, ...props}) => (
-                                                     <td {...props}>{children}</td>
-                                                 )
-                                             }}
+                                             components={BLOG_MARKDOWN_COMPONENTS}
                                          >
                                              {post.excerpt}
                                          </ReactMarkdown>

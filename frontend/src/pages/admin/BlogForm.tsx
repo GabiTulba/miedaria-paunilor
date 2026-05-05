@@ -354,6 +354,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                         className="primary-button"
                         disabled={loading}
                     >
+                        {loading && <span className="button-spinner" aria-hidden="true" />}
                         {loading ? t('common.loading') : (isEdit ? t('common.update') : t('common.create'))}
                     </button>
                 </div>

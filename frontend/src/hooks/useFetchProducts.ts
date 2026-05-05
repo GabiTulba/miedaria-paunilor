@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { LocalizedProductWithImage } from '../types';
-import { useLanguage } from './useLanguage';
 import i18n from '../i18n/config';
 
 interface UseFetchProductsResult {
@@ -14,8 +13,7 @@ interface UseFetchProductsResult {
 }
 
 const PER_PAGE = 20;
-
-
+const SEARCH_DEBOUNCE_MS = 250;
 
 export const useFetchProducts = (
   orderBy: string,
@@ -31,17 +29,23 @@ export const useFetchProducts = (
   search: string,
   page: number
 ): UseFetchProductsResult => {
-  const language = useLanguage();
   const [products, setProducts] = useState<LocalizedProductWithImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [fetchTrigger, setFetchTrigger] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
 
   const refetch = useCallback(() => {
     setFetchTrigger(prev => prev + 1);
   }, []);
+
+  useEffect(() => {
+    if (search === debouncedSearch) return;
+    const id = window.setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(id);
+  }, [search, debouncedSearch]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -49,50 +53,27 @@ export const useFetchProducts = (
       setIsLoading(true);
       setError(null);
       try {
-        let url = '/products';
-        const params = new URLSearchParams();
-        if (orderBy) {
-          params.append('order_by', orderBy);
-        }
-        if (inStock) {
-          params.append('in_stock', 'true');
-        }
-        if (orderBy && orderDirection) {
-          params.append('order_direction', orderDirection);
-        }
-        if (productType) {
-          params.append('product_type', productType);
-        }
-        if (sweetness) {
-          params.append('sweetness', sweetness);
-        }
-        if (turbidity) {
-          params.append('turbidity', turbidity);
-        }
-        if (effervescence) {
-          params.append('effervescence', effervescence);
-        }
-        if (acidity) {
-          params.append('acidity', acidity);
-        }
-        if (tannins) {
-          params.append('tannins', tannins);
-        }
-        if (body) {
-          params.append('body', body);
-        }
-        if (search) {
-          params.append('search', search);
-        }
-        params.append('page', String(page));
-        params.append('per_page', String(PER_PAGE));
-        url = `${url}?${params.toString()}`;
-
-        const data = await api.get(url, { signal: controller.signal });
+        const data = await api.getProducts({
+          order_by: orderBy || undefined,
+          order_direction: orderBy ? orderDirection : undefined,
+          in_stock: inStock || undefined,
+          product_type: productType || undefined,
+          sweetness: sweetness || undefined,
+          turbidity: turbidity || undefined,
+          effervescence: effervescence || undefined,
+          acidity: acidity || undefined,
+          tannins: tannins || undefined,
+          body: body || undefined,
+          search: debouncedSearch || undefined,
+          page,
+          per_page: PER_PAGE,
+        }, controller.signal);
+        if (controller.signal.aborted) return;
         setTotalPages(data.total_pages ?? 1);
         setHasMore(page < (data.total_pages ?? 1));
         setProducts(data.items ?? []);
       } catch (err) {
+        if (controller.signal.aborted) return;
         if (err instanceof DOMException && err.name === 'AbortError') return;
         setError(i18n.t('errors.fetchProducts'));
         console.error(err);
@@ -103,7 +84,7 @@ export const useFetchProducts = (
 
     fetchProducts();
     return () => { controller.abort(); };
-  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, search, page, language]);
+  }, [fetchTrigger, orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, debouncedSearch, page]);
 
   return { products, isLoading, error, hasMore, totalPages, refetch };
 };

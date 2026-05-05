@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
@@ -8,6 +8,8 @@ import { Product, ProductFormData, ProductWithImage } from '../../types';
 import ProductForm from './ProductForm';
 import { errorMapping, errorMessageMapping } from './errorMappings';
 import { useAdminImages } from '../../hooks/useAdminImages';
+import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
+import ConfirmModal from '../../components/ConfirmModal';
 
 function AdminProductEdit() {
     const { productId } = useParams<{ productId: string }>();
@@ -21,6 +23,8 @@ function AdminProductEdit() {
     const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages(token);
     const [productLoading, setProductLoading] = useState<boolean>(true);
     const [submitting, setSubmitting] = useState(false);
+    const [savedRef, setSavedRef] = useState(false);
+    const initialSnapshotRef = useRef<string | null>(null);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -32,6 +36,7 @@ function AdminProductEdit() {
             try {
                 const fetchedProductWithImage = await api.getProductByIdAdmin(productId, token);
                 setProductWithImage(fetchedProductWithImage);
+                initialSnapshotRef.current = JSON.stringify(fetchedProductWithImage.product);
             } catch (error: any) {
                 console.error("Failed to fetch product:", error);
             } finally {
@@ -40,6 +45,12 @@ function AdminProductEdit() {
         };
         fetchProduct();
     }, [productId, token]);
+
+    const isDirty = !savedRef
+        && !!productWithImage
+        && initialSnapshotRef.current !== null
+        && JSON.stringify(productWithImage.product) !== initialSnapshotRef.current;
+    const blocker = useUnsavedChanges(isDirty);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -80,6 +91,7 @@ function AdminProductEdit() {
                 const productToUpdate: Product = productWithImage.product;
                 await api.updateProduct(productId, productToUpdate, token);
                 showToast(t('admin.products.updated'), 'success');
+                setSavedRef(true);
                 navigate('/admin/dashboard/products');
             } catch (error: any) {
                 console.error("Failed to update product:", error);
@@ -130,6 +142,17 @@ function AdminProductEdit() {
                 availableImages={availableImages}
                 submitting={submitting}
             />
+            {blocker.state === 'blocked' && (
+                <ConfirmModal
+                    title={t('admin.unsavedChanges.title')}
+                    message={t('admin.unsavedChanges.message')}
+                    confirmLabel={t('admin.unsavedChanges.discard')}
+                    cancelLabel={t('common.cancel')}
+                    onConfirm={() => blocker.proceed?.()}
+                    onCancel={() => blocker.reset?.()}
+                    variant="warning"
+                />
+            )}
         </>
     );
 }

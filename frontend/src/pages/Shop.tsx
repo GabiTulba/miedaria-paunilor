@@ -345,7 +345,7 @@ function Shop() {
                                     value={tannins}
                                     onChange={(e) => setTannins(e.target.value)}
                                     options={[
-                                        { value: '', label: t('shop.allTanins') },
+                                        { value: '', label: t('shop.allTannins') },
                                         ...enums.tannins.map(enumValue => ({
                                             value: enumValue.value,
                                             label: getEnumLabel(enumValue.value, 'tannins', t)

@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext, useRef } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LocalizedProductWithImage } from '../types';
@@ -31,6 +31,7 @@ function ProductDetails() {
     const [fetchTrigger, setFetchTrigger] = useState(0);
     const [imgError, setImgError] = useState(false);
     const [imgLoaded, setImgLoaded] = useState(false);
+    const [addToCartPulsing, setAddToCartPulsing] = useState(false);
     const { addToCart } = useContext(CartContext);
     const { showToast } = useToast();
     const { t, i18n } = useTranslation();
@@ -59,18 +60,12 @@ function ProductDetails() {
         return () => { controller.abort(); };
     }, [productId, i18n.language, fetchTrigger]);
 
-    const addToCartBtnRef = useRef<HTMLButtonElement>(null);
-
     const handleAddToCart = () => {
         if (productWithImage?.product) {
             addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count);
             showToast(t('cart.addedToCart'), 'success');
-            if (addToCartBtnRef.current) {
-                addToCartBtnRef.current.classList.add('success-pulse');
-                addToCartBtnRef.current.onanimationend = () => {
-                    addToCartBtnRef.current?.classList.remove('success-pulse');
-                };
-            }
+            setAddToCartPulsing(true);
+            window.setTimeout(() => setAddToCartPulsing(false), 400);
         }
     };
 
@@ -298,8 +293,7 @@ function ProductDetails() {
                                       >+</button>
                                   </div>
                                   <button
-                                      ref={addToCartBtnRef}
-                                      className="button add-to-cart-btn"
+                                      className={`button add-to-cart-btn${addToCartPulsing ? ' success-pulse' : ''}`}
                                       onClick={handleAddToCart}
                                       disabled={!isInStock(product.bottle_count)}
                                   >

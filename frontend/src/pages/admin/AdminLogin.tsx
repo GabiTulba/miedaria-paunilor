@@ -10,6 +10,7 @@ function AdminLogin() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
     const { setToken } = useContext(AuthContext);
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -17,7 +18,9 @@ function AdminLogin() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (submitting) return;
         setError('');
+        setSubmitting(true);
 
         try {
             const data = await api.adminLogin({ username, password });
@@ -34,6 +37,8 @@ function AdminLogin() {
                 formRef.current?.classList.remove('shake');
             }, { once: true });
             console.error(err);
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -101,8 +106,9 @@ function AdminLogin() {
                             </div>
                         )}
                         
-                        <button type="submit" className="button button-primary login-button">
-                            {t('admin.login.signIn')}
+                        <button type="submit" className="button button-primary login-button" disabled={submitting}>
+                            {submitting && <span className="button-spinner" aria-hidden="true" />}
+                            {submitting ? t('common.loading') : t('admin.login.signIn')}
                         </button>
                     </form>
                 </div>

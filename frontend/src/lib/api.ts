@@ -11,12 +11,14 @@ export function getImageSrcSet(id: string): string {
     return IMAGE_VARIANT_WIDTHS.map(w => `/images/${id}?w=${w} ${w}w`).join(', ');
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-if (!API_BASE_URL) {
-  throw new Error("VITE_API_BASE_URL is not defined in the environment.");
-}
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
 
 async function request(endpoint: string, options: RequestInit = {}) {
+    if (!API_BASE_URL) {
+        const error = new Error("VITE_API_BASE_URL is not defined in the environment.") as ApiError;
+        error.response = { status: 0, data: { message: 'API not configured' } };
+        throw error;
+    }
     const url = `${API_BASE_URL}${endpoint}`;
     const headers = new Headers(options.headers);
     if (!headers.has('Accept-Language')) {
@@ -59,6 +61,7 @@ export const api = {
         acidity?: string;
         tannins?: string;
         body?: string;
+        search?: string;
         page?: number;
         per_page?: number;
     }, signal?: AbortSignal): Promise<PaginatedResponse<LocalizedProductWithImage>> => {
@@ -74,6 +77,7 @@ export const api = {
             if (params.acidity) queryParams.append('acidity', params.acidity);
             if (params.tannins) queryParams.append('tannins', params.tannins);
             if (params.body) queryParams.append('body', params.body);
+            if (params.search) queryParams.append('search', params.search);
             if (params.page !== undefined) queryParams.append('page', String(params.page));
             if (params.per_page !== undefined) queryParams.append('per_page', String(params.per_page));
         }

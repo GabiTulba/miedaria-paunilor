@@ -2,92 +2,88 @@ import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from '../context/CartContext';
 import { api } from '../lib/api';
-import { toFixed } from '../utils/numberUtils';
-import { useLanguage } from '../hooks/useLanguage';
+import { toFixed, toNumber } from '../utils/numberUtils';
 import { LocalizedLink } from '../components/LocalizedLink';
 import SEO from '../components/SEO';
 import './Cart.css';
 
+const DEFAULT_CURRENCY = 'EUR';
+
 function Cart() {
     const { cartItems, removeFromCart, updateQuantity, updateStock, updateProduct, clearCart } = useContext(CartContext);
-    const { t } = useTranslation();
-    const language = useLanguage();
+    const { t, i18n } = useTranslation();
     const [stockWarnings, setStockWarnings] = useState<Record<string, string>>({});
     const [showWarning, setShowWarning] = useState(true);
     const [checkoutMessage, setCheckoutMessage] = useState(false);
+    const [pulsingButtons, setPulsingButtons] = useState<Record<string, true>>({});
+
+    const triggerPulse = (key: string) => {
+        setPulsingButtons(prev => ({ ...prev, [key]: true }));
+        window.setTimeout(() => {
+            setPulsingButtons(prev => {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+            });
+        }, 400);
+    };
 
     useEffect(() => {
         if (cartItems.length === 0) return;
 
         const controller = new AbortController();
         const validateAndSync = async () => {
-            try {
-                const results = await Promise.all(
-                    cartItems.map(item =>
-                        api.getProductById(item.product_id, controller.signal)
-                            .then(data => ({
-                                productId: item.product_id,
-                                stock: data.product.bottle_count,
-                                product_name: data.product.product_name,
-                                price: data.product.price,
-                                currency: data.product.currency,
-                                found: true,
-                            }))
-                            .catch(err => {
-                                if (err instanceof DOMException && err.name === 'AbortError') throw err;
-                                return { productId: item.product_id, stock: 0, product_name: '', price: 0, currency: '', found: false };
-                            })
-                    )
-                );
-                if (controller.signal.aborted) return;
+            const settled = await Promise.allSettled(
+                cartItems.map(item => api.getProductById(item.product_id, controller.signal))
+            );
+            if (controller.signal.aborted) return;
 
-                const warnings: Record<string, string> = {};
-                for (const result of results) {
-                    const cartItem = cartItems.find(i => i.product_id === result.productId);
-
-                    if (!result.found) {
-                        warnings[result.productId] = t('cart.productUnavailable');
-                        updateStock(result.productId, 0);
-                    } else {
-                        updateProduct(result.productId, {
-                            product_name: result.product_name,
-                            price: result.price,
-                            currency: result.currency,
-                        });
-
-                        if (cartItem && result.stock !== cartItem.availableStock) {
-                            updateStock(result.productId, result.stock);
-                            if (result.stock === 0) {
-                                warnings[result.productId] = t('cart.outOfStock');
-                            } else if (cartItem.quantity > result.stock) {
-                                warnings[result.productId] = t('cart.quantityReduced', { max: result.stock });
-                            }
-                        }
+            const warnings: Record<string, string> = {};
+            for (let i = 0; i < cartItems.length; i++) {
+                const cartItem = cartItems[i];
+                const result = settled[i];
+                if (result.status === 'rejected') {
+                    const reason = result.reason;
+                    if (reason instanceof DOMException && reason.name === 'AbortError') return;
+                    warnings[cartItem.product_id] = t('cart.productUnavailable');
+                    updateStock(cartItem.product_id, 0);
+                    continue;
+                }
+                const data = result.value;
+                updateProduct(cartItem.product_id, {
+                    product_name: data.product.product_name,
+                    price: data.product.price,
+                    currency: data.product.currency,
+                });
+                const stock = data.product.bottle_count;
+                if (stock !== cartItem.availableStock) {
+                    updateStock(cartItem.product_id, stock);
+                    if (stock === 0) {
+                        warnings[cartItem.product_id] = t('cart.outOfStock');
+                    } else if (cartItem.quantity > stock) {
+                        warnings[cartItem.product_id] = t('cart.quantityReduced', { max: stock });
                     }
                 }
-                setStockWarnings(warnings);
-            } catch (err) {
-                if (err instanceof DOMException && err.name === 'AbortError') return;
-                console.error('Failed to validate stock:', err);
             }
+            setStockWarnings(warnings);
         };
         validateAndSync();
         return () => { controller.abort(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [language]);
+    }, [i18n.language]);
 
     const handleCheckout = () => {
         setCheckoutMessage(true);
         setTimeout(() => setCheckoutMessage(false), 5000);
     };
 
-    const getTotalPrice = () => {
-        return cartItems.reduce((total, item) => {
-            return total + item.price * item.quantity;
-        }, 0).toFixed(2);
-    };
+    // TODO: when checkout is implemented, totals MUST be recomputed server-side from
+    // the canonical price list before charging. Treat this client-side total as display-only.
+    const getTotalCents = () =>
+        cartItems.reduce((total, item) => total + Math.round(toNumber(item.price) * 100) * item.quantity, 0);
+    const getTotalPrice = () => (getTotalCents() / 100).toFixed(2);
 
-    const cartCurrency = cartItems.length > 0 ? cartItems[0].currency : '';
+    const cartCurrency = cartItems.length > 0 ? cartItems[0].currency : DEFAULT_CURRENCY;
 
     return (
         <div className="cart-page">
@@ -120,12 +116,11 @@ function Cart() {
                                          <p className="cart-item-price">{toFixed(item.price)} {item.currency}</p>
                                          <div className="quantity-selector-cart">
                                              <button
-                                                 onClick={(e) => {
+                                                 className={pulsingButtons[`${item.product_id}-dec`] ? 'success-pulse' : undefined}
+                                                 onClick={() => {
+                                                     if (item.quantity <= 1) return;
                                                      updateQuantity(item.product_id, item.quantity - 1);
-                                                     (e.target as HTMLButtonElement).classList.add('success-pulse');
-                                                     (e.target as HTMLButtonElement).addEventListener('animationend', function() {
-                                                         (this as HTMLButtonElement).classList.remove('success-pulse');
-                                                     }, { once: true });
+                                                     triggerPulse(`${item.product_id}-dec`);
                                                  }}
                                                  aria-label={t('product.decreaseQuantity')}
                                                  disabled={item.quantity <= 1}
@@ -136,21 +131,22 @@ function Cart() {
                                                  value={item.quantity}
                                                  min={1}
                                                  max={Math.min(99, item.availableStock)}
+                                                 step={1}
                                                  aria-label={t('product.quantity')}
                                                  onChange={(e) => {
-                                                     const val = parseInt(e.target.value, 10);
-                                                     if (!isNaN(val) && val >= 1 && val < 100) {
-                                                         updateQuantity(item.product_id, Math.min(val, item.availableStock), item.availableStock);
-                                                     }
+                                                     const raw = e.target.value;
+                                                     if (raw === '') return;
+                                                     const val = parseInt(raw, 10);
+                                                     if (!Number.isInteger(val) || String(val) !== raw.replace(/^0+(?=\d)/, '')) return;
+                                                     const clamped = Math.max(1, Math.min(val, Math.min(99, item.availableStock)));
+                                                     updateQuantity(item.product_id, clamped, item.availableStock);
                                                  }}
                                              />
                                              <button
-                                                 onClick={(e) => {
+                                                 className={pulsingButtons[`${item.product_id}-inc`] ? 'success-pulse' : undefined}
+                                                 onClick={() => {
                                                      updateQuantity(item.product_id, item.quantity + 1, item.availableStock);
-                                                     (e.target as HTMLButtonElement).classList.add('success-pulse');
-                                                     (e.target as HTMLButtonElement).addEventListener('animationend', function() {
-                                                         (this as HTMLButtonElement).classList.remove('success-pulse');
-                                                     }, { once: true });
+                                                     triggerPulse(`${item.product_id}-inc`);
                                                  }}
                                                  aria-label={t('product.increaseQuantity')}
                                                  disabled={item.quantity >= item.availableStock}
@@ -167,7 +163,7 @@ function Cart() {
                                              </div>
                                          )}
                                          <p className="cart-item-subtotal">
-                                              {t('cart.subtotal')}: {toFixed(item.price * item.quantity)} {item.currency}
+                                              {t('cart.subtotal')}: {(Math.round(toNumber(item.price) * 100) * item.quantity / 100).toFixed(2)} {item.currency}
                                          </p>
                                     </div>
                                     <button className="remove-item-btn" onClick={() => removeFromCart(item.product_id)} aria-label={t('cart.remove')}>
