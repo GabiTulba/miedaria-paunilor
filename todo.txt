@@ -8,56 +8,6 @@ Severity legend: [C]ritical  [H]igh  [M]edium  [L]ow
 Each item: [Sev] FILE:LINE — Issue. Fix.
 
 --------------------------------------------------------------------------------
-A. BACKEND (Rust / Axum / Diesel)
---------------------------------------------------------------------------------
-
-AUTHN / AUTHZ
-[H] backend/src/main.rs:148 — `/images/{image_id}` GET is on the public router with no auth and no rate limit. Any UUID guess returns image bytes; admin-only product imagery is enumerable. Decide: keep public (document and harden — at least rate-limit + ETag/cache) or move admin/private images behind auth.
-[M] backend/src/auth.rs:83-122 — `auth_middleware` only validates JWT signature/exp; it does not verify the `sub` still corresponds to a row in `admin_users`. Currently not exploitable (only `/api/admin/login` mints tokens, via `get_admin`), but if `regular_users` ever gets a login route, every admin endpoint becomes accessible. Add an explicit admin lookup in the middleware.
-[M] backend/src/auth.rs:35-42 — `extract_client_ip` trusts `X-Real-IP` / `X-Forwarded-For` from any caller. Behind nginx this is fine, but if the backend is ever exposed directly the rate limiter is trivially bypassed by spoofing the header. Either bind the listener to the docker network only (already true) and document the assumption, or accept these headers only when `req.peer_addr()` is in a trusted CIDR.
-[M] backend/src/auth.rs:67 — JWT expiration sourced from `JWT_EXPIRATION_HOURS` with no upper bound; misconfiguration (e.g., `8760` hours = 1 year) silently accepted. Clamp to a sane max (e.g., 24h) and log a warning.
-[L] backend/src/utils.rs:16 — Password hashing `.expect("Failed to hash password")` panics the whole process on Argon2 OOM/failure. Return `Result<String, AppError>`.
-[L] backend/src/auth.rs:45-64 — Failed login attempts log nothing (only JWT decode errors are logged). Add `tracing::warn!` with username + client IP on auth failure for audit trails.
-
-CORS / SECURITY HEADERS
-[H] backend/src/main.rs:121-125 — `CorsLayer::new().allow_methods(Any).allow_headers(Any)`. Whitelist explicitly: `[GET, POST, PUT, DELETE, OPTIONS]` and `[CONTENT_TYPE, AUTHORIZATION, ACCEPT_LANGUAGE]`. `allow_origin` is already correct (single origin from env).
-[M] backend/src/main.rs (no security-headers middleware) — Backend responses lack `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`. Nginx adds them on the frontend domain, but `/api/*` and `/images/*` go through nginx too, so verify the `add_header` directives apply to proxied paths (nginx clears `add_header` if the proxied location adds its own — see Infra §C).
-
-INPUT VALIDATION / INJECTION
-[M] backend/src/product_crud.rs (search_term ILIKE, ~line 544) — User search input is wrapped with `format!("%{}%", search_term)` and passed to Diesel's `.ilike(...)`. Diesel parameterizes the value (no SQL injection), but there is no length cap; an attacker can submit a 10MB string and force Postgres to scan with a giant pattern. Cap to ~100 chars and reject inputs that are entirely whitespace/`%`/`_`.
-[M] backend/src/blog_crud.rs:95-100 — `content_markdown` and `content_markdown_ro` are accepted with no size limit. Cap at ~200KB; oversize would otherwise tie up the DB on every read.
-[M] backend/src/product_crud.rs:165-184 — Bottling-date validation uses `chrono::Local::now().date_naive()`; the container TZ is not set. Use `Utc::now()` consistently. Also no upper bound on `bottle_count` (i32) — cap at e.g. 1,000,000.
-[M] backend/src/product_crud.rs:98-101 — `Decimal::new(9999999, 2)` upper bound is 99,999.99 (fine), but no minimum-price check beyond DB constraint `> 0`. Decide on a business minimum (e.g., 1.00 EUR) and validate explicitly.
-[M] backend/src/main.rs:160 — `DefaultBodyLimit::max(52_428_800)` (50MB) applies globally. JSON endpoints don't need 50MB. Apply 50MB only to `/api/admin/images` and tighten everything else to e.g. 256KB.
-[L] backend/src/blog_crud.rs:198-216 — `update_blog_post` does not pre-validate slug uniqueness on slug change; relies on DB constraint and surfaces a generic error. Add a pre-check and return 409.
-
-FILE UPLOAD / IMAGE HANDLING
-[H] backend/src/image_crud.rs:208-224 (update_image) — `UpdateImage` allows the client to PATCH `storage_path`. A compromised admin token (or future role expansion) could rewrite `storage_path` to `../../etc/passwd` and `serve_image` would happily read it (path is joined to `image_upload_dir` without canonicalization checks). Remove `storage_path` from the `UpdateImage` payload entirely; only `alt_text`/display fields should be updatable.
-[H] backend/src/image_crud.rs:54-77 — Upload validates magic bytes (good) but does not actually decode the image to confirm it's well-formed. A polyglot file (valid JPEG header + zip/exe payload) passes. Run `image::load_from_memory(&data)?` after the magic-byte check and reject on decode failure. Variant generation already does this, but only after persisting.
-[H] backend/src/image_crud.rs (variant generation) — No image-bomb (decompression-bomb) limit. Add `image::Limits` with `max_image_width`/`max_image_height`/`max_alloc` before `load_from_memory`.
-[M] backend/src/main.rs:55,118 — `IMAGE_UPLOAD_DIR` from env is used unverified. Canonicalize at startup and refuse if it doesn't exist or isn't writable; otherwise startup with `IMAGE_UPLOAD_DIR=/etc` silently corrupts the host.
-[L] backend/src/image_crud.rs (serve_image) — No `Cache-Control` for images served on the hot path; nginx may already cache, but explicit `public, max-age=...` + `ETag` would reduce backend load.
-
-DATABASE / RACE CONDITIONS
-[H] backend/migrations/.../up.sql:39 — `products.image_id REFERENCES images(id)` lacks `ON DELETE` action; deleting an image while products reference it errors out, not the desired soft fallback. Use `ON DELETE SET NULL`.
-[M] backend/migrations/.../up.sql — Missing index on `products.image_id` (FK lookups), and on `products.deleted_at` separately for archive queries (only the partial `idx_products_active` exists).
-[M] backend/migrations/.../up.sql (blog_posts) — `published_at` is nullable and indexed; consider a composite `(is_published, published_at DESC)` instead.
-[M] backend/src/db.rs:20-28 — r2d2 pool uses defaults (max_size=10). Configure explicitly (`Pool::builder().max_size(...)` and `.connection_timeout(...)`) to match expected concurrency and to surface saturation early.
-[M] backend/src/product_crud.rs (no checkout/order code present) — When ordering is added, decrementing `bottle_count` MUST happen inside a transaction with `SELECT ... FOR UPDATE` or via `UPDATE products SET bottle_count = bottle_count - $1 WHERE product_id = $2 AND bottle_count >= $1 RETURNING bottle_count` — otherwise concurrent checkouts oversell. Pre-emptive note since the DB schema currently invites this bug.
-
-ERROR HANDLING / INFO DISCLOSURE
-[M] backend/src/error.rs (~line 118-123, 251) — Several variants surface raw DB error strings to the client (`"Database error: {msg}"`, `"Duplicate value violates unique constraint: {name}"`). Log the detail at `error!` server-side; return a generic message + a stable error code to the client.
-[M] backend/src/auth.rs:59 — `format!("Database error: {}", e)` exposes diesel error text on a 500 from the login path. Same fix.
-
-RATE LIMITING / DOS
-[M] backend/src/main.rs (admin routes) — Only `/api/admin/login` is rate-limited (`build_login_limiter`). Bulk endpoints (`POST /api/admin/products`, image upload, blog create) have no per-user throttle. A compromised admin token can DoS the disk via image uploads.
-[M] backend/src/main.rs (public api) — `/api/products`, `/api/blog`, `/images/*` have no rate limit at the app layer (nginx also has none — see Infra §C).
-
-DEAD / UNUSED CODE
-[L] backend/src/user_crud.rs:77-85 — `regular_users` CRUD is implemented but never wired to a route. Either wire it (and add the auth role-check above) or delete it; dead code is a future foot-gun.
-[L] backend/src/product_crud.rs (soft-delete) — Soft-deleting a product does not remove its image variant files. Disk usage grows monotonically. Either delete variants on soft-delete or run a periodic cleanup keyed off `deleted_at`.
-
---------------------------------------------------------------------------------
 B. FRONTEND (React / TypeScript / Vite)
 --------------------------------------------------------------------------------
 
@@ -155,18 +105,13 @@ OBSERVABILITY
 [L] frontend/nginx.conf — Default access log format; switch to a JSON format if you ship logs to anything other than tail.
 
 ================================================================================
-PRIORITY (suggested first 10 to ship)
+PRIORITY (remaining — Section A done)
 ================================================================================
-1.  [H] frontend/src/i18n/config.ts:20 — set escapeValue: true (XSS).
-2.  [H] backend/src/image_crud.rs:208-224 — drop storage_path from UpdateImage (path traversal).
-3.  [H] backend/src/image_crud.rs:54-77 — decode-validate uploads + image::Limits (image bomb).
-4.  [H] backend/src/main.rs:121-125 — explicit CORS methods/headers (not Any).
-5.  [H] frontend/security-headers.conf — add CSP + Permissions-Policy.
-6.  [H] scripts/generate-ssl.sh — chmod 600 on private key.
-7.  [H] backend/migrations/.../up.sql — products.image_id ON DELETE SET NULL + missing indexes.
-8.  [H] frontend/src/context/AuthContext.tsx — JWT to httpOnly cookie (XSS impact).
-9.  [H] backend/src/main.rs:148 — decide image-serve auth model; rate-limit at minimum.
-10. [H] frontend/src/pages/Cart.tsx:84-90 — currency fallback + integer-cents totals + server-side recalculation contract for checkout.
+1. [H] frontend/src/i18n/config.ts:20 — set escapeValue: true (XSS).
+2. [H] frontend/security-headers.conf — add CSP + Permissions-Policy.
+3. [H] scripts/generate-ssl.sh — chmod 600 on private key.
+4. [H] frontend/src/context/AuthContext.tsx — JWT to httpOnly cookie (XSS impact).
+5. [H] frontend/src/pages/Cart.tsx:84-90 — currency fallback + integer-cents totals + server-side recalculation contract for checkout.
 ================================================================================
 
 ================================================================================
