@@ -1,12 +1,27 @@
 use axum::Json;
 use axum::http::StatusCode;
-use axum::response::IntoResponse;
+use axum::response::{IntoResponse, Response};
 use serde::Serialize;
 
 use crate::blog_crud::{BlogCreationError, BlogUpdateError};
 use crate::product_crud::{
     HardDeleteError, ProductCreationError, ProductUpdateError, RestoreError, SoftDeleteError,
 };
+
+/// Builds a generic 500 response for database failures. Logs the actual error
+/// server-side so it stays diagnosable, but the client sees only a stable
+/// message — avoids leaking schema details (constraint/table/column names) to
+/// callers, which could otherwise accelerate reconnaissance.
+fn db_error_response(context: &str, detail: impl std::fmt::Display) -> Response {
+    tracing::error!(context = context, error = %detail, "db error");
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(ErrorResponse {
+            message: "Internal server error".to_string(),
+        }),
+    )
+        .into_response()
+}
 
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
@@ -53,13 +68,9 @@ impl IntoResponse for AppError {
                     }),
                 )
                     .into_response(),
-                BlogCreationError::DatabaseError(msg) => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse {
-                        message: format!("Database error: {}", msg),
-                    }),
-                )
-                    .into_response(),
+                BlogCreationError::DatabaseError(msg) => {
+                    db_error_response("blog_creation", msg)
+                }
                 BlogCreationError::UnknownError => (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse {
@@ -84,13 +95,16 @@ impl IntoResponse for AppError {
                     }),
                 )
                     .into_response(),
-                BlogUpdateError::DatabaseError(msg) => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
+                BlogUpdateError::DuplicateSlug => (
+                    StatusCode::CONFLICT,
                     Json(ErrorResponse {
-                        message: format!("Database error: {}", msg),
+                        message: "Blog post with this slug already exists.".to_string(),
                     }),
                 )
                     .into_response(),
+                BlogUpdateError::DatabaseError(msg) => {
+                    db_error_response("blog_update", msg)
+                }
                 BlogUpdateError::UnknownError => (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse {
@@ -115,13 +129,9 @@ impl IntoResponse for AppError {
                     }),
                 )
                     .into_response(),
-                ProductCreationError::DatabaseError(msg) => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse {
-                        message: format!("Database error: {}", msg),
-                    }),
-                )
-                    .into_response(),
+                ProductCreationError::DatabaseError(msg) => {
+                    db_error_response("product_creation", msg)
+                }
                 ProductCreationError::UnknownError => (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse {
@@ -146,13 +156,9 @@ impl IntoResponse for AppError {
                     }),
                 )
                     .into_response(),
-                ProductUpdateError::DatabaseError(msg) => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse {
-                        message: format!("Database error: {}", msg),
-                    }),
-                )
-                    .into_response(),
+                ProductUpdateError::DatabaseError(msg) => {
+                    db_error_response("product_update", msg)
+                }
                 ProductUpdateError::UnknownError => (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse {
@@ -194,7 +200,7 @@ impl IntoResponse for AppError {
             AppError::TooManyRequests => (
                 StatusCode::TOO_MANY_REQUESTS,
                 Json(ErrorResponse {
-                    message: "Too many login attempts. Try again later.".to_string(),
+                    message: "Too many requests. Try again later.".to_string(),
                 }),
             )
                 .into_response(),
@@ -232,25 +238,43 @@ impl From<diesel::result::Error> for AppError {
         match error {
             DieselError::NotFound => AppError::NotFound("Resource not found".to_string()),
             DieselError::DatabaseError(kind, info) => match kind {
-                DatabaseErrorKind::UniqueViolation => AppError::BadRequest(format!(
-                    "Duplicate value violates unique constraint: {}",
-                    info.constraint_name().unwrap_or("unknown")
-                )),
-                DatabaseErrorKind::ForeignKeyViolation => AppError::BadRequest(format!(
-                    "Foreign key constraint violated: {}",
-                    info.constraint_name().unwrap_or("unknown")
-                )),
-                DatabaseErrorKind::NotNullViolation => AppError::BadRequest(format!(
-                    "Required field missing: {}",
-                    info.column_name().unwrap_or("unknown")
-                )),
-                DatabaseErrorKind::CheckViolation => AppError::BadRequest(format!(
-                    "Value failed check constraint: {}",
-                    info.constraint_name().unwrap_or("unknown")
-                )),
-                _ => AppError::InternalServerError(format!("Database error: {}", info.message())),
+                DatabaseErrorKind::UniqueViolation => {
+                    tracing::warn!(
+                        constraint = info.constraint_name().unwrap_or("unknown"),
+                        "unique violation"
+                    );
+                    AppError::BadRequest("Duplicate value".to_string())
+                }
+                DatabaseErrorKind::ForeignKeyViolation => {
+                    tracing::warn!(
+                        constraint = info.constraint_name().unwrap_or("unknown"),
+                        "foreign-key violation"
+                    );
+                    AppError::BadRequest("Foreign key constraint violated".to_string())
+                }
+                DatabaseErrorKind::NotNullViolation => {
+                    tracing::warn!(
+                        column = info.column_name().unwrap_or("unknown"),
+                        "not-null violation"
+                    );
+                    AppError::BadRequest("Required field missing".to_string())
+                }
+                DatabaseErrorKind::CheckViolation => {
+                    tracing::warn!(
+                        constraint = info.constraint_name().unwrap_or("unknown"),
+                        "check violation"
+                    );
+                    AppError::BadRequest("Value failed check constraint".to_string())
+                }
+                _ => {
+                    tracing::error!(kind = ?kind, message = info.message(), "db error");
+                    AppError::InternalServerError("Internal server error".to_string())
+                }
             },
-            _ => AppError::InternalServerError(format!("Database error: {}", error)),
+            other => {
+                tracing::error!(error = %other, "db error");
+                AppError::InternalServerError("Internal server error".to_string())
+            }
         }
     }
 }
@@ -262,7 +286,10 @@ impl From<SoftDeleteError> for AppError {
             SoftDeleteError::AlreadyDeleted => {
                 AppError::Conflict("Product is already deleted".to_string())
             }
-            SoftDeleteError::DatabaseError(msg) => AppError::InternalServerError(msg),
+            SoftDeleteError::DatabaseError(msg) => {
+                tracing::error!(error = %msg, "soft-delete db error");
+                AppError::InternalServerError("Internal server error".to_string())
+            }
         }
     }
 }
@@ -274,7 +301,10 @@ impl From<RestoreError> for AppError {
             RestoreError::NotDeleted => {
                 AppError::BadRequest("Product is not deleted".to_string())
             }
-            RestoreError::DatabaseError(msg) => AppError::InternalServerError(msg),
+            RestoreError::DatabaseError(msg) => {
+                tracing::error!(error = %msg, "restore db error");
+                AppError::InternalServerError("Internal server error".to_string())
+            }
         }
     }
 }
@@ -290,7 +320,10 @@ impl From<HardDeleteError> for AppError {
                 "Product cannot be permanently deleted until {}",
                 eligible_at.format("%Y-%m-%dT%H:%M:%SZ")
             )),
-            HardDeleteError::DatabaseError(msg) => AppError::InternalServerError(msg),
+            HardDeleteError::DatabaseError(msg) => {
+                tracing::error!(error = %msg, "hard-delete db error");
+                AppError::InternalServerError("Internal server error".to_string())
+            }
         }
     }
 }

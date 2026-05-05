@@ -21,24 +21,9 @@ pub struct AdminUser {
     pub hashed_password: String,
 }
 
-#[derive(Queryable, Selectable)]
-#[diesel(table_name = crate::schema::users)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct User {
-    pub username: String,
-    pub hashed_password: String,
-}
-
 #[derive(Insertable)]
 #[diesel(table_name = admin_users)]
 pub struct NewAdminUser<'a> {
-    pub username: &'a str,
-    pub hashed_password: &'a str,
-}
-
-#[derive(Insertable)]
-#[diesel(table_name = users)]
-pub struct NewUser<'a> {
     pub username: &'a str,
     pub hashed_password: &'a str,
 }
@@ -65,6 +50,15 @@ pub struct NewImage {
 #[derive(serde::Deserialize, AsChangeset, Debug)]
 #[diesel(table_name = images)]
 pub struct UpdateImage {
+    pub file_name: Option<String>,
+}
+
+/// Internal changeset including server-managed `storage_path`. Never accept
+/// `storage_path` from clients — it would let an attacker point the row at any
+/// path on disk via a path-traversal payload.
+#[derive(AsChangeset, Debug)]
+#[diesel(table_name = images)]
+pub struct UpdateImageInternal {
     pub file_name: Option<String>,
     pub storage_path: Option<String>,
 }

@@ -1,3 +1,4 @@
+use crate::AppError;
 use crate::enums::*;
 use crate::models::{Image, NewProduct, Product};
 use crate::schema::*;
@@ -6,6 +7,32 @@ use diesel::prelude::*;
 use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use rust_decimal::Decimal;
 use serde::Serialize;
+
+const MAX_SEARCH_TERM_LEN: usize = 100;
+
+/// Validates a free-text search term before it reaches Diesel's `ILIKE`.
+/// Caps length so an attacker can't force a multi-megabyte pattern scan,
+/// and rejects entirely-wildcard payloads that would match every row.
+pub fn validate_search_term(s: &str) -> Result<(), AppError> {
+    if s.len() > MAX_SEARCH_TERM_LEN {
+        return Err(AppError::BadRequest(format!(
+            "Search term must be at most {} characters",
+            MAX_SEARCH_TERM_LEN
+        )));
+    }
+    let trimmed = s.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::BadRequest(
+            "Search term must not be empty".to_string(),
+        ));
+    }
+    if trimmed.chars().all(|c| c == '%' || c == '_') {
+        return Err(AppError::BadRequest(
+            "Search term must contain at least one non-wildcard character".to_string(),
+        ));
+    }
+    Ok(())
+}
 
 #[derive(Debug, Serialize)]
 pub enum ProductValidationError {
@@ -21,9 +48,12 @@ pub enum ProductValidationError {
     EmptyIngredientsRo,
     InvalidAbv,
     InvalidBottleCount,
+    BottleCountTooLarge,
     InvalidBottleSize,
     InvalidPrice,
     InvalidPriceRon,
+    PriceBelowMinimum,
+    PriceRonBelowMinimum,
     InvalidAbvPrecision,
     InvalidPricePrecision,
     InvalidPriceRonPrecision,
@@ -90,6 +120,8 @@ impl<'a> From<&'a Product> for ProductValidationInput<'a> {
     }
 }
 
+const MAX_BOTTLE_COUNT: i32 = 1_000_000;
+
 fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationError> {
     // ABV: 0.0–99.9 (DECIMAL(3,1))
     let abv_min = Decimal::new(0, 1);
@@ -99,6 +131,8 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
     let price_max_eur = Decimal::new(9999999, 2);
     // RON price: 0.00–99999.99 (DECIMAL(7,2))
     let price_max_ron = Decimal::new(9999999, 2);
+    // Business minimum: prices below 1.00 are almost certainly mis-entered.
+    let price_min_business = Decimal::new(100, 2);
 
     let mut errors = Vec::new();
 
@@ -151,9 +185,11 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
         errors.push(ProductValidationError::InvalidAbvPrecision);
     }
 
-    // bottle_count: Non-negative integer.
+    // bottle_count: Non-negative integer with a sane upper bound.
     if input.bottle_count < 0 {
         errors.push(ProductValidationError::InvalidBottleCount);
+    } else if input.bottle_count > MAX_BOTTLE_COUNT {
+        errors.push(ProductValidationError::BottleCountTooLarge);
     }
 
     // bottle_size: Positive integer (mililiters of volume).
@@ -164,6 +200,8 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
     // price: Decimal with two digits of precision.
     if input.price < price_min || input.price > price_max_eur {
         errors.push(ProductValidationError::InvalidPrice);
+    } else if input.price < price_min_business {
+        errors.push(ProductValidationError::PriceBelowMinimum);
     }
     if input.price.scale() > 2 {
         errors.push(ProductValidationError::InvalidPricePrecision);
@@ -172,13 +210,16 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
     // price_ron: Decimal with two digits of precision.
     if input.price_ron < price_min || input.price_ron > price_max_ron {
         errors.push(ProductValidationError::InvalidPriceRon);
+    } else if input.price_ron < price_min_business {
+        errors.push(ProductValidationError::PriceRonBelowMinimum);
     }
     if input.price_ron.scale() > 2 {
         errors.push(ProductValidationError::InvalidPriceRonPrecision);
     }
 
-    // bottling_date: Date - should not be in the future
-    let today = chrono::Local::now().date_naive();
+    // bottling_date: Date — should not be in the future. Use UTC so the
+    // result doesn't depend on the container's TZ env.
+    let today = Utc::now().date_naive();
     if input.bottling_date > today {
         errors.push(ProductValidationError::InvalidBottlingDate);
     }

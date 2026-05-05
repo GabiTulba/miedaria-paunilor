@@ -5,7 +5,6 @@ use axum::{
     response::{AppendHeaders, IntoResponse},
     routing::{delete, get, post, put},
 };
-use diesel::r2d2::ConnectionManager;
 use dotenvy::dotenv;
 use std::{env, net::SocketAddr, sync::Arc};
 
@@ -23,7 +22,10 @@ use backend::rss_crud;
 use backend::sitemap_crud;
 use backend::enums::*;
 use backend::product_crud::IncludeDeleted;
-use backend::{AppState, auth, build_login_limiter, db, models, product_crud};
+use backend::{
+    AppState, auth, build_admin_limiter, build_image_serve_limiter, build_login_limiter,
+    build_public_api_limiter, db, models, product_crud,
+};
 
 struct Config {
     database_url: String,
@@ -65,9 +67,50 @@ impl Config {
             .parse::<u16>()
             .map_err(|_| "BACKEND_PORT must be a valid port number (0-65535)".to_string())?;
 
-        let jwt_expiration_hours = jwt_expiration_hours_str
+        // Create the upload dir if missing, canonicalize it, and probe writability.
+        // Doing this once at startup avoids a misconfigured `IMAGE_UPLOAD_DIR=/etc`
+        // silently corrupting the host the first time someone uploads a file.
+        std::fs::create_dir_all(&image_upload_dir).map_err(|e| {
+            format!(
+                "IMAGE_UPLOAD_DIR `{}` could not be created: {}",
+                image_upload_dir, e
+            )
+        })?;
+        let canonical_upload_dir = std::fs::canonicalize(&image_upload_dir)
+            .map_err(|e| {
+                format!(
+                    "IMAGE_UPLOAD_DIR `{}` could not be canonicalized: {}",
+                    image_upload_dir, e
+                )
+            })?
+            .to_string_lossy()
+            .into_owned();
+        let probe = std::path::Path::new(&canonical_upload_dir).join(".write_probe");
+        std::fs::write(&probe, b"").map_err(|e| {
+            format!(
+                "IMAGE_UPLOAD_DIR `{}` is not writable: {}",
+                canonical_upload_dir, e
+            )
+        })?;
+        let _ = std::fs::remove_file(&probe);
+        let image_upload_dir = canonical_upload_dir;
+
+        let parsed_jwt_expiration_hours = jwt_expiration_hours_str
             .parse::<i64>()
             .map_err(|_| "JWT_EXPIRATION_HOURS must be a valid integer".to_string())?;
+
+        const JWT_EXP_MIN_HOURS: i64 = 1;
+        const JWT_EXP_MAX_HOURS: i64 = 24;
+        let jwt_expiration_hours = parsed_jwt_expiration_hours.clamp(JWT_EXP_MIN_HOURS, JWT_EXP_MAX_HOURS);
+        if jwt_expiration_hours != parsed_jwt_expiration_hours {
+            tracing::warn!(
+                requested = parsed_jwt_expiration_hours,
+                clamped = jwt_expiration_hours,
+                "JWT_EXPIRATION_HOURS clamped to [{}, {}]",
+                JWT_EXP_MIN_HOURS,
+                JWT_EXP_MAX_HOURS
+            );
+        }
 
         Ok(Config {
             database_url,
@@ -95,14 +138,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     });
 
-    use axum::http::HeaderValue;
-    use tower_http::cors::Any;
+    use axum::http::{HeaderValue, Method, header};
     use tower_http::cors::CorsLayer;
 
-    let manager = ConnectionManager::<diesel::pg::PgConnection>::new(&config.database_url);
-    let pool = r2d2::Pool::builder()
-        .build(manager)
-        .expect("Failed to create pool.");
+    let pool = db::establish_pooled_connection(&config.database_url)
+        .expect("Failed to create database pool");
 
     let allowed_origin = config
         .allowed_origin
@@ -112,6 +152,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app_state = Arc::new(AppState {
         pool,
         login_limiter: build_login_limiter(),
+        image_serve_limiter: build_image_serve_limiter(),
+        admin_limiter: build_admin_limiter(),
+        public_api_limiter: build_public_api_limiter(),
         site_url: config.allowed_origin.clone(),
         jwt_secret: config.jwt_secret,
         jwt_expiration_hours: config.jwt_expiration_hours,
@@ -120,9 +163,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cors = CorsLayer::new()
         .allow_origin(allowed_origin)
-        .allow_methods(Any)
-        .allow_headers(Any)
-        .expose_headers([axum::http::header::VARY]);
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers([
+            header::CONTENT_TYPE,
+            header::AUTHORIZATION,
+            header::ACCEPT_LANGUAGE,
+        ])
+        .expose_headers([header::VARY]);
 
     let admin_routes = Router::new()
         .route("/protected", get(protected_route))
@@ -135,29 +188,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/blog/{id}", delete(delete_blog_post))
         .route("/blog/admin", get(get_all_blog_posts_admin))
         .route("/images", get(list_images))
-        .route("/images", post(upload_image_handler)) // Updated to use wrapper
+        .route(
+            "/images",
+            post(upload_image_handler).layer(DefaultBodyLimit::max(52_428_800)), // 50MB only for image upload
+        )
         .route("/images/{image_id}", put(update_image_meta_handler)) // Updated to use wrapper
         .route("/images/{image_id}", delete(delete_image_wrapper)) // Updated to use wrapper
         .route_layer(axum::middleware::from_fn_with_state(
             app_state.clone(),
             auth::auth_middleware,
         ))
-        .layer(cors.clone());
+        .route_layer(axum::middleware::from_fn_with_state(
+            app_state.clone(),
+            auth::admin_rate_limit,
+        ));
 
-    let app = Router::new()
-        .route("/images/{image_id}", get(serve_image_handler)) // Updated to use wrapper
-        .route("/health", get(health_check))
-        .route("/api/enums", get(get_enum_values))
+    let public_image_route = Router::new()
+        .route("/images/{image_id}", get(serve_image_handler))
+        .route_layer(axum::middleware::from_fn_with_state(
+            app_state.clone(),
+            auth::image_serve_rate_limit,
+        ));
+
+    let public_api_routes = Router::new()
         .route("/api/products", get(get_all_products))
         .route("/api/products/{product_id}", get(get_product_by_id))
         .route("/api/blog", get(get_all_blog_posts))
         .route("/api/blog/{slug}", get(get_blog_post_by_slug))
+        .route_layer(axum::middleware::from_fn_with_state(
+            app_state.clone(),
+            auth::public_api_rate_limit,
+        ));
+
+    let app = Router::new()
+        .merge(public_image_route)
+        .merge(public_api_routes)
+        .route("/health", get(health_check))
+        .route("/api/enums", get(get_enum_values))
         .route("/api/sitemap-data", get(get_sitemap_data))
         .route("/blog/rss.xml", get(get_blog_rss))
         .route("/api/admin/login", post(auth::login))
         .nest("/api/admin", admin_routes)
         .with_state(app_state)
-        .layer(DefaultBodyLimit::max(52_428_800)) // 50MB limit
+        .layer(DefaultBodyLimit::max(256 * 1024)) // 256KB default; image upload route overrides to 50MB
         .layer(cors)
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
@@ -254,6 +327,10 @@ async fn get_all_products(
     lang: Language,
 ) -> Result<(VaryLang, Json<PaginatedResponse<LocalizedProductWithImage>>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
+
+    if let Some(s) = query.search.as_deref() {
+        product_crud::validate_search_term(s)?;
+    }
 
     let per_page = query.per_page.unwrap_or(20).min(100) as i64;
     let page = query.page.unwrap_or(1).max(1) as i64;
@@ -453,7 +530,20 @@ async fn delete_product(
     Path(product_id): Path<String>,
 ) -> Result<StatusCode, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
+
+    // Snapshot the image path while the product still exists so we can clean
+    // up its variant files after the soft-delete succeeds. Original is kept on
+    // disk to allow restore.
+    let storage_path = product_crud::get_product_admin(&mut conn, &product_id)?
+        .and_then(|p| p.image)
+        .map(|img| img.storage_path);
+
     product_crud::delete_product(&mut conn, &product_id)?;
+
+    if let Some(path) = storage_path {
+        image_crud::delete_image_variants(&path).await;
+    }
+
     Ok(StatusCode::NO_CONTENT)
 }
 

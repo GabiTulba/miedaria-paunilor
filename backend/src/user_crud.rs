@@ -1,7 +1,20 @@
-use crate::models::{AdminUser, NewAdminUser, NewUser, User};
+use crate::models::{AdminUser, NewAdminUser};
 use crate::schema::*;
 use crate::utils;
 use diesel::prelude::*;
+
+#[derive(Debug)]
+struct HashError(String);
+impl std::fmt::Display for HashError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "password hashing failed: {}", self.0)
+    }
+}
+impl std::error::Error for HashError {}
+
+fn hash_to_diesel_error(e: argon2::password_hash::Error) -> diesel::result::Error {
+    diesel::result::Error::QueryBuilderError(Box::new(HashError(e.to_string())))
+}
 
 macro_rules! impl_user_crud {
     (
@@ -18,7 +31,7 @@ macro_rules! impl_user_crud {
             username: &str,
             password: &str,
         ) -> QueryResult<$model> {
-            let hash = utils::hash_password(password);
+            let hash = utils::hash_password(password).map_err(hash_to_diesel_error)?;
             let new_user = $new_model {
                 username,
                 hashed_password: &hash,
@@ -44,7 +57,7 @@ macro_rules! impl_user_crud {
         ) -> QueryResult<()> {
             match $get(conn, user)? {
                 Some(_) => {
-                    let hash = utils::hash_password(new_password);
+                    let hash = utils::hash_password(new_password).map_err(hash_to_diesel_error)?;
                     diesel::update($table::table)
                         .filter($table::username.eq(user))
                         .set($table::hashed_password.eq(hash))
@@ -72,14 +85,4 @@ impl_user_crud!(
     table = admin_users,
     model = AdminUser,
     new_model = NewAdminUser,
-);
-
-impl_user_crud!(
-    create = create_regular,
-    get = get_regular,
-    update_password = update_regular_password,
-    delete = delete_regular,
-    table = users,
-    model = User,
-    new_model = NewUser,
 );

@@ -2,20 +2,38 @@ use axum::{Json, extract::Multipart, http::StatusCode};
 use diesel::prelude::*;
 use image::imageops::FilterType;
 use mime_guess;
+use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use tokio::fs;
 use uuid::Uuid;
 
 use crate::AppError;
-use crate::models::{Image, NewImage, UpdateImage};
+use crate::models::{Image, NewImage, UpdateImage, UpdateImageInternal};
 use crate::schema::{images, products};
 use diesel::dsl::count;
 use diesel::pg::PgConnection;
 
 const MAX_IMAGE_SIZE: usize = 50 * 1024 * 1024; // 50MB
+const MAX_DECODED_PIXELS: u32 = 8000;
+const MAX_DECODE_ALLOC: u64 = 256 * 1024 * 1024;
 
 pub const VARIANT_WIDTHS: [u32; 4] = [320, 640, 1024, 1600];
 const WEBP_QUALITY: f32 = 80.0;
+
+/// Decodes an in-memory image with bounded width/height and allocation budget,
+/// to defuse decompression-bomb payloads (small file, huge decoded buffer).
+fn decode_with_limits(data: &[u8]) -> Result<image::DynamicImage, image::ImageError> {
+    let reader = image::ImageReader::new(Cursor::new(data))
+        .with_guessed_format()
+        .map_err(image::ImageError::IoError)?;
+    let mut limits = image::Limits::default();
+    limits.max_image_width = Some(MAX_DECODED_PIXELS);
+    limits.max_image_height = Some(MAX_DECODED_PIXELS);
+    limits.max_alloc = Some(MAX_DECODE_ALLOC);
+    let mut reader = reader;
+    reader.limits(limits);
+    reader.decode()
+}
 
 /// Build the on-disk path for a width variant given the original storage path.
 /// `/uploads/{uuid}.jpg` + width 640 → `/uploads/{uuid}_640.webp`
@@ -28,14 +46,7 @@ fn variant_path(original: &str, width: u32) -> PathBuf {
 
 /// Encode width-variant WebPs next to the original. Skips widths >= source width
 /// (no upscaling). Best-effort: errors are logged and don't fail the upload.
-fn generate_variants(data: &[u8], storage_path: &str) {
-    let img = match image::load_from_memory(data) {
-        Ok(i) => i,
-        Err(e) => {
-            tracing::warn!("Variant generation skipped: decode failed: {:?}", e);
-            return;
-        }
-    };
+fn generate_variants(img: &image::DynamicImage, storage_path: &str) {
     let src_w = img.width();
 
     for &target_w in VARIANT_WIDTHS.iter().filter(|&&tw| tw < src_w) {
@@ -115,6 +126,13 @@ pub async fn upload_image(
                 )
             })?;
 
+            // Magic bytes only confirm the header; fully decode (with size/alloc
+            // limits) so polyglot files and decompression bombs can't slip past.
+            let decoded = decode_with_limits(&data).map_err(|e| {
+                tracing::warn!("Image decode rejected: {:?}", e);
+                AppError::BadRequest("Invalid or oversized image file.".to_string())
+            })?;
+
             let file_size = data.len() as i64;
             let image_uuid = Uuid::new_v4();
             let storage_filename = format!("{}.{}", image_uuid, extension);
@@ -127,7 +145,7 @@ pub async fn upload_image(
                 ));
             }
 
-            generate_variants(&data, &storage_path);
+            generate_variants(&decoded, &storage_path);
 
             let new_image = NewImage {
                 file_name: original_filename.clone(),
@@ -186,7 +204,7 @@ pub async fn get_image_by_id(
 pub async fn update_image(
     conn: &mut PgConnection,
     image_id: uuid::Uuid,
-    mut updated_image_data: UpdateImage,
+    updated_image_data: UpdateImage,
     upload_dir: &str,
 ) -> Result<Json<Image>, AppError> {
     // Check if the image exists
@@ -203,30 +221,41 @@ pub async fn update_image(
             }
         })?;
 
-    // If file_name is updated, rename the file on the filesystem
-    if let Some(new_file_name) = updated_image_data.file_name.clone() {
-        if new_file_name != existing_image.file_name {
-            let old_storage_path = existing_image.storage_path;
-            let extension = old_storage_path.split('.').last().unwrap_or("png");
+    // The on-disk filename is `{image_id}.{ext}`, derived server-side from the
+    // image UUID. We never let the caller dictate `storage_path` — see
+    // `UpdateImageInternal` doc comment.
+    let mut changeset = UpdateImageInternal {
+        file_name: updated_image_data.file_name.clone(),
+        storage_path: None,
+    };
+
+    if let Some(new_file_name) = updated_image_data.file_name.as_ref() {
+        if new_file_name != &existing_image.file_name {
+            let old_storage_path = &existing_image.storage_path;
+            let extension = Path::new(old_storage_path)
+                .extension()
+                .and_then(|s| s.to_str())
+                .unwrap_or("png");
             let new_storage_filename = format!("{}.{}", image_id, extension);
             let new_storage_path = format!("{}/{}", upload_dir, new_storage_filename);
 
-            if let Err(e) = tokio::fs::rename(&old_storage_path, &new_storage_path).await {
-                tracing::error!(
-                    "Error renaming file from {} to {}: {:?}",
-                    old_storage_path, new_storage_path, e
-                );
-                return Err(AppError::InternalServerError(
-                    "Failed to rename image file".to_string(),
-                ));
+            if old_storage_path != &new_storage_path {
+                if let Err(e) = tokio::fs::rename(old_storage_path, &new_storage_path).await {
+                    tracing::error!(
+                        "Error renaming file from {} to {}: {:?}",
+                        old_storage_path, new_storage_path, e
+                    );
+                    return Err(AppError::InternalServerError(
+                        "Failed to rename image file".to_string(),
+                    ));
+                }
+                changeset.storage_path = Some(new_storage_path);
             }
-            // Update the storage_path in the database as well
-            updated_image_data.storage_path = Some(new_storage_path);
         }
     }
 
     let updated_image: Image = diesel::update(images::table.find(image_id))
-        .set(&updated_image_data)
+        .set(&changeset)
         .get_result(conn)
         .map_err(|e| {
             tracing::error!("Error updating image in DB: {:?}", e);
@@ -314,6 +343,20 @@ pub async fn delete_image(
         })?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// Best-effort removal of width-variant WebPs for an image. Used to reclaim
+/// disk when a product is soft-deleted (the original is preserved so the
+/// image can be reused if the product is restored).
+pub async fn delete_image_variants(storage_path: &str) {
+    for &w in VARIANT_WIDTHS.iter() {
+        let path = variant_path(storage_path, w);
+        if let Err(e) = tokio::fs::remove_file(&path).await {
+            if e.kind() != std::io::ErrorKind::NotFound {
+                tracing::warn!("Failed to delete variant {}: {:?}", path.display(), e);
+            }
+        }
+    }
 }
 
 pub async fn serve_image(

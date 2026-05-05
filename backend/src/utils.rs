@@ -9,12 +9,11 @@ pub fn is_valid_slug(s: &str) -> bool {
     !s.is_empty() && s.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_')
 }
 
-pub fn hash_password(password: &str) -> String {
+pub fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {
     let salt = SaltString::generate(&mut OsRng);
     Argon2::default()
         .hash_password(password.as_bytes(), &salt)
-        .expect("Failed to hash password")
-        .to_string()
+        .map(|h| h.to_string())
 }
 
 pub fn verify_password(password: &str, stored_hash: &str) -> bool {

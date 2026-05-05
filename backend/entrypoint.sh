@@ -7,9 +7,13 @@ while ! pg_isready -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER; do
 done
 echo "PostgreSQL started"
 
-# Create the database (if missing) AND run migrations
+# Create the database if missing, then apply any pending migrations.
+# `diesel setup` only runs migrations on first DB creation, so we follow up
+# with `migration run` so subsequent deploys pick up new migrations.
 echo "Setting up database..."
 diesel setup
+echo "Running pending migrations..."
+diesel migration run
 
 # Add admin user
 echo "Adding admin user..."
