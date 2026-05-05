@@ -1,0 +1,308 @@
+================================================================================
+MIEDARIA PAUNILOR — FULL CODEBASE AUDIT (security / logic / UX)
+Generated: 2026-05-05
+================================================================================
+
+Severity legend: [C]ritical  [H]igh  [M]edium  [L]ow
+
+Each item: [Sev] FILE:LINE — Issue. Fix.
+
+--------------------------------------------------------------------------------
+A. BACKEND (Rust / Axum / Diesel)
+--------------------------------------------------------------------------------
+
+AUTHN / AUTHZ
+[H] backend/src/main.rs:148 — `/images/{image_id}` GET is on the public router with no auth and no rate limit. Any UUID guess returns image bytes; admin-only product imagery is enumerable. Decide: keep public (document and harden — at least rate-limit + ETag/cache) or move admin/private images behind auth.
+[M] backend/src/auth.rs:83-122 — `auth_middleware` only validates JWT signature/exp; it does not verify the `sub` still corresponds to a row in `admin_users`. Currently not exploitable (only `/api/admin/login` mints tokens, via `get_admin`), but if `regular_users` ever gets a login route, every admin endpoint becomes accessible. Add an explicit admin lookup in the middleware.
+[M] backend/src/auth.rs:35-42 — `extract_client_ip` trusts `X-Real-IP` / `X-Forwarded-For` from any caller. Behind nginx this is fine, but if the backend is ever exposed directly the rate limiter is trivially bypassed by spoofing the header. Either bind the listener to the docker network only (already true) and document the assumption, or accept these headers only when `req.peer_addr()` is in a trusted CIDR.
+[M] backend/src/auth.rs:67 — JWT expiration sourced from `JWT_EXPIRATION_HOURS` with no upper bound; misconfiguration (e.g., `8760` hours = 1 year) silently accepted. Clamp to a sane max (e.g., 24h) and log a warning.
+[L] backend/src/utils.rs:16 — Password hashing `.expect("Failed to hash password")` panics the whole process on Argon2 OOM/failure. Return `Result<String, AppError>`.
+[L] backend/src/auth.rs:45-64 — Failed login attempts log nothing (only JWT decode errors are logged). Add `tracing::warn!` with username + client IP on auth failure for audit trails.
+
+CORS / SECURITY HEADERS
+[H] backend/src/main.rs:121-125 — `CorsLayer::new().allow_methods(Any).allow_headers(Any)`. Whitelist explicitly: `[GET, POST, PUT, DELETE, OPTIONS]` and `[CONTENT_TYPE, AUTHORIZATION, ACCEPT_LANGUAGE]`. `allow_origin` is already correct (single origin from env).
+[M] backend/src/main.rs (no security-headers middleware) — Backend responses lack `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`. Nginx adds them on the frontend domain, but `/api/*` and `/images/*` go through nginx too, so verify the `add_header` directives apply to proxied paths (nginx clears `add_header` if the proxied location adds its own — see Infra §C).
+
+INPUT VALIDATION / INJECTION
+[M] backend/src/product_crud.rs (search_term ILIKE, ~line 544) — User search input is wrapped with `format!("%{}%", search_term)` and passed to Diesel's `.ilike(...)`. Diesel parameterizes the value (no SQL injection), but there is no length cap; an attacker can submit a 10MB string and force Postgres to scan with a giant pattern. Cap to ~100 chars and reject inputs that are entirely whitespace/`%`/`_`.
+[M] backend/src/blog_crud.rs:95-100 — `content_markdown` and `content_markdown_ro` are accepted with no size limit. Cap at ~200KB; oversize would otherwise tie up the DB on every read.
+[M] backend/src/product_crud.rs:165-184 — Bottling-date validation uses `chrono::Local::now().date_naive()`; the container TZ is not set. Use `Utc::now()` consistently. Also no upper bound on `bottle_count` (i32) — cap at e.g. 1,000,000.
+[M] backend/src/product_crud.rs:98-101 — `Decimal::new(9999999, 2)` upper bound is 99,999.99 (fine), but no minimum-price check beyond DB constraint `> 0`. Decide on a business minimum (e.g., 1.00 EUR) and validate explicitly.
+[M] backend/src/main.rs:160 — `DefaultBodyLimit::max(52_428_800)` (50MB) applies globally. JSON endpoints don't need 50MB. Apply 50MB only to `/api/admin/images` and tighten everything else to e.g. 256KB.
+[L] backend/src/blog_crud.rs:198-216 — `update_blog_post` does not pre-validate slug uniqueness on slug change; relies on DB constraint and surfaces a generic error. Add a pre-check and return 409.
+
+FILE UPLOAD / IMAGE HANDLING
+[H] backend/src/image_crud.rs:208-224 (update_image) — `UpdateImage` allows the client to PATCH `storage_path`. A compromised admin token (or future role expansion) could rewrite `storage_path` to `../../etc/passwd` and `serve_image` would happily read it (path is joined to `image_upload_dir` without canonicalization checks). Remove `storage_path` from the `UpdateImage` payload entirely; only `alt_text`/display fields should be updatable.
+[H] backend/src/image_crud.rs:54-77 — Upload validates magic bytes (good) but does not actually decode the image to confirm it's well-formed. A polyglot file (valid JPEG header + zip/exe payload) passes. Run `image::load_from_memory(&data)?` after the magic-byte check and reject on decode failure. Variant generation already does this, but only after persisting.
+[H] backend/src/image_crud.rs (variant generation) — No image-bomb (decompression-bomb) limit. Add `image::Limits` with `max_image_width`/`max_image_height`/`max_alloc` before `load_from_memory`.
+[M] backend/src/main.rs:55,118 — `IMAGE_UPLOAD_DIR` from env is used unverified. Canonicalize at startup and refuse if it doesn't exist or isn't writable; otherwise startup with `IMAGE_UPLOAD_DIR=/etc` silently corrupts the host.
+[L] backend/src/image_crud.rs (serve_image) — No `Cache-Control` for images served on the hot path; nginx may already cache, but explicit `public, max-age=...` + `ETag` would reduce backend load.
+
+DATABASE / RACE CONDITIONS
+[H] backend/migrations/.../up.sql:39 — `products.image_id REFERENCES images(id)` lacks `ON DELETE` action; deleting an image while products reference it errors out, not the desired soft fallback. Use `ON DELETE SET NULL`.
+[M] backend/migrations/.../up.sql — Missing index on `products.image_id` (FK lookups), and on `products.deleted_at` separately for archive queries (only the partial `idx_products_active` exists).
+[M] backend/migrations/.../up.sql (blog_posts) — `published_at` is nullable and indexed; consider a composite `(is_published, published_at DESC)` instead.
+[M] backend/src/db.rs:20-28 — r2d2 pool uses defaults (max_size=10). Configure explicitly (`Pool::builder().max_size(...)` and `.connection_timeout(...)`) to match expected concurrency and to surface saturation early.
+[M] backend/src/product_crud.rs (no checkout/order code present) — When ordering is added, decrementing `bottle_count` MUST happen inside a transaction with `SELECT ... FOR UPDATE` or via `UPDATE products SET bottle_count = bottle_count - $1 WHERE product_id = $2 AND bottle_count >= $1 RETURNING bottle_count` — otherwise concurrent checkouts oversell. Pre-emptive note since the DB schema currently invites this bug.
+
+ERROR HANDLING / INFO DISCLOSURE
+[M] backend/src/error.rs (~line 118-123, 251) — Several variants surface raw DB error strings to the client (`"Database error: {msg}"`, `"Duplicate value violates unique constraint: {name}"`). Log the detail at `error!` server-side; return a generic message + a stable error code to the client.
+[M] backend/src/auth.rs:59 — `format!("Database error: {}", e)` exposes diesel error text on a 500 from the login path. Same fix.
+
+RATE LIMITING / DOS
+[M] backend/src/main.rs (admin routes) — Only `/api/admin/login` is rate-limited (`build_login_limiter`). Bulk endpoints (`POST /api/admin/products`, image upload, blog create) have no per-user throttle. A compromised admin token can DoS the disk via image uploads.
+[M] backend/src/main.rs (public api) — `/api/products`, `/api/blog`, `/images/*` have no rate limit at the app layer (nginx also has none — see Infra §C).
+
+DEAD / UNUSED CODE
+[L] backend/src/user_crud.rs:77-85 — `regular_users` CRUD is implemented but never wired to a route. Either wire it (and add the auth role-check above) or delete it; dead code is a future foot-gun.
+[L] backend/src/product_crud.rs (soft-delete) — Soft-deleting a product does not remove its image variant files. Disk usage grows monotonically. Either delete variants on soft-delete or run a periodic cleanup keyed off `deleted_at`.
+
+--------------------------------------------------------------------------------
+B. FRONTEND (React / TypeScript / Vite)
+--------------------------------------------------------------------------------
+
+AUTH / SESSION
+[H] frontend/src/context/AuthContext.tsx:22-27 — JWT in `localStorage`. Any successful XSS exfils the admin token. Move to httpOnly + Secure + SameSite=Strict cookie set by the backend on `/api/admin/login`; backend already runs same-origin via nginx so CSRF is mitigable with SameSite alone.
+[M] frontend/src/context/AuthContext.tsx:23-24 — `isValidJwtFormat` only checks dot-count. Decode the `exp` claim (no signature check needed client-side) and treat past-exp tokens as logged out, instead of waiting for the next 401.
+[M] frontend/src/components/ProtectedRoute.tsx — Pure client-side gate. Already backed by server auth, but ensure every admin page also renders nothing until token is verified, otherwise admin UI flashes briefly for unauthenticated users.
+[M] frontend/src/pages/AdminLogin.tsx:23 — Submit button has no `disabled={submitting}`; double-click submits twice. Add disabled + spinner.
+
+XSS / RENDERING
+[H] frontend/src/i18n/config.ts:20 — `interpolation.escapeValue: false`. i18next defaults to escaping; turning it off means any translation that interpolates user-controlled data (e.g., `t('blog.byAuthor', { author })`) renders raw. Either flip to `true` or audit every interpolation site. Recommended: `escapeValue: true`.
+[M] frontend/src/pages/Blog.tsx:121-179 and BlogPostDetail.tsx:170-227 — `react-markdown` is XSS-safe by default, but custom renderers for `a`/`img` should enforce safe URLs. Reject `javascript:` and `data:` (except `data:image/...`) URLs; force `rel="noopener noreferrer"` and `target="_blank"` for external links.
+[L] frontend/src/pages/Blog.tsx:116 + BlogPostDetail.tsx:159 — Author rendered via `t('blog.byAuthor', { author: post.author })`. With `escapeValue: false` (above), this is a real XSS sink because authors come from admin-controlled DB content.
+
+CART / CHECKOUT LOGIC
+[H] frontend/src/pages/Cart.tsx:84-88 — Total computed client-side from cart prices; no checkout exists yet, but when added the server MUST recompute totals from the canonical price list. Add a TODO and ensure backend cart-validation endpoint is the source of truth.
+[H] frontend/src/pages/Cart.tsx:90 — `cartCurrency = cartItems.length > 0 ? cartItems[0].currency : ''` shows blank currency on empty cart. Default to a sensible fallback (`'EUR'` or i18n-aware).
+[M] frontend/src/pages/Cart.tsx:84-88 — `.toFixed(2)` on summed floats accumulates float drift on big carts. Compute in integer cents; format only at display.
+[M] frontend/src/pages/Cart.tsx:54-56 — Setting quantity to 0 silently removes the line. Either confirm or restrict to `≥ 1` and require an explicit delete button.
+[M] frontend/src/pages/Cart.tsx:140-141 — `parseInt(e.target.value, 10)` accepts NaN, negatives, decimals via paste. Clamp to `[1, min(99, stock)]` and reject non-numeric input.
+
+DATA FETCHING / STATE
+[M] frontend/src/pages/Cart.tsx:42-46 — `Promise.all` over per-product fetches; result lookup by `cartItems.find(...)`. If a product is deleted server-side, the matching `find` returns undefined and silently drops the item — surface a "product unavailable" message to the user.
+[M] frontend/src/pages/Cart.tsx:42 — Use `Promise.allSettled` so one failed product doesn't abort the whole cart load.
+[M] frontend/src/pages/Cart.tsx:77 — `useEffect` deps include `language` (unused) with `eslint-disable-next-line react-hooks/exhaustive-deps`. Use `i18n.language` directly and let lint enforce deps.
+[M] frontend/src/hooks/useFetchProducts.ts (~line 106) — Refetches on every filter keystroke + language change, with no debounce or in-flight cancellation. Add `AbortController` and a 250ms debounce on the `search` filter; stale responses can otherwise overwrite fresh ones.
+[M] frontend/src/pages/Shop.tsx:248 — Search input not debounced.
+[L] frontend/src/pages/Home.tsx:32 — `(productsData.items ?? productsData).slice(0, 3)` covers both shapes; pin the API contract to one shape and remove the fallback.
+[L] frontend/src/pages/BlogPostDetail.tsx:50-51 — Abort check after `try` body; race window where `setState` fires post-unmount. Move abort check inside `finally` and gate state with `if (!ac.signal.aborted)`.
+
+FORMS / UX
+[M] frontend/src/components/BlogForm.tsx:148-150 — No submit-button loading state; user re-submits.
+[M] frontend/src/components/admin/ProductForm.tsx:510 — Has `submitting` prop but no spinner; only label changes.
+[M] frontend/src/pages/AdminProductCreate.tsx + AdminProductEdit.tsx — `useUnsavedChanges` exists but isn't wired to the form. Add a beforeunload + in-app navigation guard.
+[M] frontend/src/pages/Shop.tsx:348 — `t('shop.allTanins')` typo (should be `allTannins`); displays the raw key when the typo'd entry is missing.
+[L] frontend/src/components/AdminImages.tsx:316 — `new Date(...).toLocaleDateString()` ignores app i18n. Use the existing `useFormattedDate()` hook for consistency.
+[L] frontend/src/pages/Cart.tsx:125-127 — Direct DOM mutation via `classList.add('success-pulse')`. Use a state-driven className with a CSS animation.
+[L] frontend/src/pages/ProductDetails.tsx:70-72 — `addToCartBtnRef.current.onanimationend = ...` overwrites prior listener; with rapid clicks this leaks. Use `addEventListener` with cleanup or state-driven animation.
+
+ROUTING / SEO
+[M] frontend/src/main.tsx:35-40 — Root `/` redirect to `/{lang}` happens client-side on every visit; bots see a blank shell briefly. Mirror the redirect at the nginx level (302 → preferred-language path based on `Accept-Language`) so crawlers and HTTP clients land on the correct URL immediately.
+[M] frontend/src/pages/Contact.tsx:40 — External link opens in a new tab without `rel="noopener noreferrer"` and without an `aria-label` indicating new-tab.
+[L] frontend/src/main.tsx:60 — Catch-all `*` route is correct but visually hidden among siblings; move to last position in the array for clarity.
+
+API CLIENT
+[M] frontend/src/lib/api.ts:14-17 — Throws synchronously at module load if `VITE_API_BASE_URL` is missing → blank page on misconfigured deploy. Surface a runtime error UI instead.
+[M] frontend/src/lib/api.ts:25-41 — Error handling assumes JSON; if the backend returns text/HTML (502 from nginx, e.g.), `JSON.parse` throws inside the catch. Wrap in try/catch and fall back to `response.text()`.
+
+I18N
+[H] frontend/src/i18n/config.ts:20 — see XSS section: `escapeValue: false` is a footgun.
+[L] frontend/i18n resource files — Verify both `en` and `ro` have `shop.allTannins` (currently misspelled `allTanins` in code, may also be misspelled in resources).
+
+--------------------------------------------------------------------------------
+C. INFRASTRUCTURE / DOCKER / NGINX / SSL
+--------------------------------------------------------------------------------
+
+DOCKER
+[H] docker-compose.yml — No `depends_on: { database: { condition: service_healthy } }` on backend; backend can race the DB on startup. `entrypoint.sh` uses `pg_isready` so it's mostly fine, but add the compose-level dependency anyway for clarity and faster failure.
+[M] backend/Dockerfile:37 — `gosu` is installed but never used; `entrypoint.sh` runs migrations + `add_admin_user` as root before any USER switch (or no switch). Either switch to `gosu appuser` for setup commands or drop gosu.
+[M] backend/entrypoint.sh — No `set -euo pipefail`. If `diesel setup` or `add_admin_user` fails, the container still starts the API with a half-initialized state.
+[M] backend/entrypoint.sh — `$POSTGRES_HOST`, `$POSTGRES_PORT`, `$POSTGRES_USER`, `$ADMIN_USERNAME`, `$ADMIN_PASSWORD` are unquoted. Quote everywhere; consider passing the password via stdin to avoid having it in argv (visible via /proc).
+[M] backend/entrypoint.sh — `./add_admin_user $ADMIN_USERNAME $ADMIN_PASSWORD` — exit code is not checked. Add `|| { echo 'admin user setup failed'; exit 1; }` (or accept "already exists" specifically).
+[M] frontend/Dockerfile:17 — Base image `fholzer/nginx-brotli:v1.30.0` is community-maintained and not digest-pinned. Pin by digest, or build brotli into the official `nginx:1.30-alpine`.
+[L] docker-compose.yml — Image tags (`postgres:16.2-alpine`, etc.) are not digest-pinned. Pin for reproducibility.
+[L] frontend/docker-entrypoint.sh:7 — `... || true` swallows sitemap-generation errors silently. Log a warning instead.
+[L] backend/Dockerfile + frontend/Dockerfile — apt/apk packages installed without explicit versions. Acceptable trade-off but worth noting.
+
+NGINX
+[H] frontend/security-headers.conf — Missing `Content-Security-Policy`. Add a strict policy:
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+[M] frontend/security-headers.conf — Missing `Permissions-Policy` (disable camera/mic/geolocation by default).
+[M] frontend/nginx.conf — No `limit_req` / `limit_conn` zones. Add `limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;` and apply to `/api/` and `/images/`.
+[M] frontend/nginx.conf:18 (`client_max_body_size 50M`) — Applies globally. Restrict 50M to the admin-image-upload location only; cap everywhere else at e.g. 256k.
+[M] frontend/nginx.conf — Verify `add_header` directives in `security-headers.conf` are inherited by proxied locations. In nginx, `add_header` does NOT inherit if a child location adds its own header. Either include `security-headers.conf` inside every `location` block or rely on a single top-level inclusion with no overrides below.
+[M] frontend/security-headers.conf:1 — `Strict-Transport-Security max-age=63072000` (2y). Acceptable for prod, but drop to 5min during dev with self-signed certs. Consider templating via env or splitting `nginx.dev.conf` / `nginx.prod.conf`.
+[L] frontend/nginx.conf:109 — SPA index `Cache-Control "no-cache"` allows 304s. Use `no-cache, no-store, must-revalidate` to force re-download after deploys.
+[L] frontend/nginx.conf — Add `error_page 404 /index.html;` so the SPA renders its own NotFound for deep links.
+[L] frontend/nginx.conf — Gzip + secrets-on-the-wire is a (small) BREACH risk for authenticated endpoints. Disable gzip on `/api/admin/*` responses, or set `gzip_proxied no-store off;` carefully.
+
+SSL / SECRETS
+[H] scripts/generate-ssl.sh:19-20 — Private key chmod `644` (world-readable). Must be `600` (owner only).
+[M] env.sample — Contains `POSTGRES_PASSWORD=password`, `ADMIN_PASSWORD=password`, `JWT_SECRET=my-super-secret-key`. Replace with placeholders like `<change-me-strong-random>` and add a comment that these MUST be overridden.
+[M] .gitignore — Verify `.env`, `ssl/key.pem`, and `ssl/cert.pem` are ignored. Confirm via `git check-ignore -v .env ssl/key.pem`.
+[L] scripts/generate-ssl.sh — 90-day validity is short for local dev; 365 days reduces friction. P-384 is fine but P-256 has wider compatibility.
+[L] tests/smoke-test.sh:48 — `curl -sk` skips cert verification. Acceptable for self-signed in dev; document why.
+[L] scripts/seed_data.py:291-293 — Disables TLS verification unconditionally; gate on `localhost`/`127.0.0.1` so it can't be pointed at prod with verification off.
+
+DATABASE MIGRATIONS
+[M] backend/migrations/.../up.sql — Add `ON DELETE SET NULL` to `products.image_id` (see Backend §A).
+[M] backend/migrations/.../up.sql — Add explicit indexes: `products(image_id)`, `products(deleted_at)`, and consider composite `blog_posts(is_published, published_at DESC)`.
+[L] backend/migrations/.../up.sql — Confirm `prices` are stored in `NUMERIC(7,2)` (not `float`). Review for any monetary columns using floating types.
+
+OBSERVABILITY
+[L] backend/src/main.rs:86-91 — Logs to stdout via `tracing-subscriber`; no structured JSON. For prod, set `RUST_LOG=info` and consider `tracing_subscriber::fmt().json()`.
+[L] frontend/nginx.conf — Default access log format; switch to a JSON format if you ship logs to anything other than tail.
+
+================================================================================
+PRIORITY (suggested first 10 to ship)
+================================================================================
+1.  [H] frontend/src/i18n/config.ts:20 — set escapeValue: true (XSS).
+2.  [H] backend/src/image_crud.rs:208-224 — drop storage_path from UpdateImage (path traversal).
+3.  [H] backend/src/image_crud.rs:54-77 — decode-validate uploads + image::Limits (image bomb).
+4.  [H] backend/src/main.rs:121-125 — explicit CORS methods/headers (not Any).
+5.  [H] frontend/security-headers.conf — add CSP + Permissions-Policy.
+6.  [H] scripts/generate-ssl.sh — chmod 600 on private key.
+7.  [H] backend/migrations/.../up.sql — products.image_id ON DELETE SET NULL + missing indexes.
+8.  [H] frontend/src/context/AuthContext.tsx — JWT to httpOnly cookie (XSS impact).
+9.  [H] backend/src/main.rs:148 — decide image-serve auth model; rate-limit at minimum.
+10. [H] frontend/src/pages/Cart.tsx:84-90 — currency fallback + integer-cents totals + server-side recalculation contract for checkout.
+================================================================================
+
+================================================================================
+ADDENDUM — REFACTORING / TECH DEBT / DUPLICATION AUDIT
+Generated: 2026-05-05
+================================================================================
+
+Severity legend (reused): [H]igh  [M]edium  [L]ow
+
+--------------------------------------------------------------------------------
+D. BACKEND — REFACTORING / TECH DEBT / DUPLICATION
+--------------------------------------------------------------------------------
+
+DUPLICATION
+[H] backend/src/product_crud.rs:489-552 vs 624-724 — `count_products_internal` and `get_products_internal` duplicate the entire filter chain (in_stock, product_type, sweetness, turbidity, effervescence, acidity, tannins, body, search ILIKE) verbatim. Extract a single `apply_product_filters<Q>(query, ...)` generic helper that both sites call; the only difference today is `.left_join(images)` and selection — both of those happen after filtering.
+[H] backend/src/product_crud.rs:432-486 — `count_all_products` and `count_all_products_admin` are 50-line wrappers that just forward to `count_products_internal` with different `IncludeDeleted` and `search` defaults. Same shape for `get_all_products` (554-587) vs `get_all_products_admin` (589-622). Collapse to one public function each that takes an `IncludeDeleted` parameter; let `main.rs` choose the value (or a `ProductListOptions` struct).
+[H] backend/src/main.rs:251-302 vs 357-406 — `get_all_products` (public) and `list_products_admin` duplicate the page/per_page/limit/offset arithmetic, the count query, the list query, and the `total_pages` math. Extract `paginate(page, per_page, limit, total_count)` returning `(limit, offset, total_pages)` and a `PaginationParams` deserializer; reuse for blog handlers (467-503) too.
+[H] backend/src/main.rs:467-503 — `get_all_blog_posts` and `get_all_blog_posts_admin` repeat the per_page/page/offset/limit/total_pages block twice; same as products. Same extraction.
+[H] backend/src/product_crud.rs:34-91 — `ProductValidationInput` has two near-identical `From<&NewProduct>` and `From<&Product>` impls with 14-field copy each. Either replace with a trait `AsValidationInput` implemented by both, or make `NewProduct` a strict subset of `Product` and convert via a single helper. Today, adding a field requires editing three places.
+[M] backend/src/product_crud.rs:358-415 (restore_product, hard_delete_product) — Both functions begin with the same `select(deleted_at).first::<Option<DateTime<Utc>>>` "load deleted_at, decide" preamble. Extract `fn load_deleted_at(conn, id) -> QueryResult<Option<Option<DateTime<Utc>>>>` and pattern-match on the result.
+[M] backend/src/blog_crud.rs:34-69 — `BlogCreationError::from(DieselError)` and `BlogUpdateError::from(DieselError)` both `format!("{:?} - {:?}", kind, info)` for the generic `DatabaseError` arm — and `product_crud.rs:202-218 / 279-289` do the same dance for `ProductCreationError`/`ProductUpdateError`. Extract a single `fn diesel_to_db_error_string(kind, info) -> String` (or just have all four delegate to `AppError::from(diesel::result::Error)` and stop wrapping).
+[M] backend/src/main.rs:180-218, 460-465 — Every handler repeats `let mut conn = db::get_db_connection(&app_state)?;` as its first line (~25 sites). That's fine, but several handlers do nothing else interesting (e.g. `delete_image_wrapper`, `update_image_meta_handler`, `serve_image_handler`, `list_images`, `upload_image_handler`) — they're pure plumbing that exists only because the module-level CRUD functions take `conn` instead of `&AppState`. Either move the conn-acquisition into the CRUD layer (then handlers become 1-liners) or accept the duplication and delete the wrapper handlers entirely by giving the CRUD functions an axum-compatible signature.
+[M] backend/src/main.rs:220-243 vs 339-355 — `GetProductsQuery` and `GetAdminProductsQuery` differ only by `search: Option<String>` (public has it) and `include_deleted` (admin has it). Make a single struct with both `Option`s and ignore the irrelevant one in each handler, OR extract the shared 9 enum filter fields into `ProductFilters` and `#[serde(flatten)]` it.
+[M] backend/src/enums.rs — Each of 7 enums (MeadType, SweetnessType, TurbidityType, EffervescenceType, AcidityType, TanninsType, BodyType) repeats the same `#[derive]` block and a hand-written `pub fn all() -> Vec<Self> { vec![Self::A, Self::B, ...] }`. Replace with a `enum_with_all!` macro that emits the derives + `all()` from the variant list, or use `strum::EnumIter` and `Vec::from_iter(Self::iter())`.
+[M] backend/src/enum_crud.rs:33-43 — `get_all_enum_values` calls `map_enum_values(MeadType::all())` 7 times in a row; same shape every time. The whole module exists to box up the enum lists. With the `strum`/macro approach above, this file becomes ~10 lines.
+[M] backend/src/localized.rs:52-91 vs 103-128 — Two separate `from_*` constructors each duplicate the `match lang { Ro => (..._ro,...), En => (...,...) }` selection pattern. Could be expressed by a small `pick<T>(lang, en: T, ro: T) -> T` helper used in both constructors and anywhere else this RO/EN split appears.
+[L] backend/src/rss_crud.rs:25-79 — The XML is built with `xml.push_str(&format!(...))` repeatedly. Either use the `quick-xml` writer (already a transitive dep candidate) or extract a `write_element(&mut xml, name, value)` helper. Currently every element repeats the `format!("      <name>{}</name>\n", xml_escape(...))` skeleton.
+
+MODULE STRUCTURE
+[M] backend/src/main.rs (whole file, 573 lines) — `main.rs` mixes router wiring, ~20 handler functions, query-param structs (`GetProductsQuery`, `GetAdminProductsQuery`, `GetBlogPostsQuery`, `ServeImageQuery`), and the `vary_accept_language` helper. Split into `routes/mod.rs` + `routes/product.rs` + `routes/blog.rs` + `routes/image.rs`; `main.rs` should be only `Config`, state setup, and the router tree.
+[M] backend/src/lib.rs:43-61 — Re-exports nearly every public symbol from every submodule (`pub use crate::auth::...`, `pub use crate::blog_crud::...`, `pub use crate::user_crud::...`). `main.rs` then imports both `backend::blog_crud` AND `backend::create_admin` etc. Pick one: either `pub use` everything (and import only via the crate root) or keep modules namespaced (and drop the re-exports). The current mix is just noise.
+[M] backend/src/db.rs:12-28 — Two unused functions: `establish_connection` (raw, no pool) and `establish_pooled_connection` (pool, but app already builds its pool inline in `main.rs:102-105`). Neither is called from the binary. Either delete them, or have `main.rs` call `establish_pooled_connection` instead of duplicating the pool builder.
+[M] backend/src/lib.rs:50-55 — Re-exports `create_regular`, `delete_regular`, `update_regular_password`, `get_regular` but `regular_users` has no route (already noted in §A as dead). `impl_user_crud!` macro in `user_crud.rs:6-65` instantiates the entire CRUD twice for unused tables.
+[L] backend/src/main.rs:188-191 — `ServeImageQuery` is declared in `main.rs` but only used by `serve_image_handler`. If routes are split out per resource, this struct moves with it.
+[L] backend/src/error.rs:11-20 — `ErrorResponse` is `pub` and `ValidationErrorResponse<E>` is private. They're both response shapes; make consistency explicit (both pub, in a `responses` module) so the FE-shared types stay obvious.
+
+ERROR HANDLING
+[H] backend/src/error.rs:37-203 — 165-line `IntoResponse` impl is a 6-deep nested match. Each variant arm hand-builds `(StatusCode, Json(ErrorResponse { message }))`. Extract `fn json_error(status, msg) -> Response` and a `(StatusCode, &'static str)` table for static-message variants; the match collapses to 1-2 lines per arm. Also consider replacing the giant enum with a single `AppError { status, code, message, details }` struct + an error-code enum — the proliferation of `*CreationError`, `*UpdateError`, `SoftDeleteError`, `RestoreError`, `HardDeleteError` is itself the duplication driver.
+[H] backend/src/error.rs vs blog_crud.rs vs product_crud.rs — Five separate ad-hoc error enums (`BlogCreationError`, `BlogUpdateError`, `ProductCreationError`, `ProductUpdateError`, `SoftDeleteError`, `RestoreError`, `HardDeleteError`) each have a hand-written `From<DieselError>` and a hand-written `From<X> for AppError` impl. New entity = 14 lines of boilerplate. Replace with one shared `RepositoryError { NotFound, Conflict(String), Validation(Vec<X>), Database(String) }` and a generic validation-error wrapper.
+[M] backend/src/error.rs:118-123, 149-154, 87-93, 56-62 — Four arms format `"Database error: {msg}"` identically (already partly in §A re info disclosure). Even ignoring info-disclosure, they're textbook duplicate code-paths.
+[M] backend/src/product_crud.rs:283-289, 313, 324, 333, 348, 366, 379, 387, 398, 415 — `DatabaseError(String)` arms scattered across multiple enums all stringify diesel errors via `info.message().to_string()` or `e.to_string()`. Pick one and stick with it; better yet, never stringify — keep `diesel::result::Error` and let `impl From<DieselError> for AppError` (already at error.rs:229) handle it once.
+[L] backend/src/db.rs:30-37 — `get_db_connection` returns `Result<_, StatusCode>` but every caller does `?` which goes through `From<StatusCode> for AppError` (error.rs:298-306). Change the return to `Result<_, AppError>` directly; the StatusCode round-trip serves no purpose.
+
+OTHER
+[M] backend/src/main.rs:121-125 — `cors` is built once and `.clone()`d onto two routers, but the second `.layer(cors)` at line 161 is applied to the global app while admin_routes already has `.layer(cors.clone())` at 145. Effectively double-applies CORS to admin routes; pick one layering point.
+[M] backend/src/main.rs:222-236 + 343-354 — `GetProductsQuery` exposes `limit` separately from `per_page`. The handler then computes `let limit = query.limit.map(|l| (l as i64).min(per_page + 1)).unwrap_or(per_page);` — a piece of magic that allows callers to fetch fewer than per_page results. No frontend uses this. Remove `limit` from both query structs and the helpers; simplify pagination to `(page, per_page)` only.
+[M] backend/src/main.rs:107-110, 115 — `config.allowed_origin` is parsed into `HeaderValue` for CORS AND copied into `AppState.site_url` as `String`. Two representations of the same value, mutated independently (the trailing `/` would diverge between them). Centralize: `AppState.site_url` is the canonical string; CORS parses from it.
+[M] backend/src/blog_crud.rs:198-217 — `update_blog_post` does an UPDATE then optionally does a second UPDATE to set `published_at`. Two round-trips for one logical operation. Combine: include `published_at` in the first set when `is_published` flips to true (compute in Rust before the UPDATE).
+[M] backend/src/product_crud.rs:692-716 — `order_by` matching is done in Rust with `match order_by_col` and then ascending/descending decided per-column. With 3 sortable columns × 2 directions = 6 nested branches. Extract a small `OrderSpec { column, direction }` value and `apply_order(query, OrderSpec)` helper, or build a static `ORDER_FIELDS: &[(&str, fn(query, dir) -> query)]` table.
+[M] backend/src/image_crud.rs:79-155 — `upload_image` is a 76-line function that does directory creation, multipart consumption, magic-byte detection, disk write, variant generation, and DB insert. Split into `parse_multipart_image -> (filename, bytes, ext)`, `persist_image_to_disk(...)`, and `record_image(...)`.
+[L] backend/src/utils.rs:8-9 — `is_valid_slug` accepts `_` (underscore). The corresponding FE regexes diverge: ProductForm.tsx:24 uses `/^[a-z0-9_-]+$/` (matches), but BlogForm.tsx:120 uses `/^[a-z0-9-]+$/` (no underscore). Pick one rule and put it in one file shared between FE/BE conceptually (or just document the divergence and align FE blog form with BE).
+[L] backend/src/main.rs:41-48 — `require!` macro shadowing pattern (`unwrap_or_else` with side-effect on `missing` Vec) is clever but obscure. A small `fn required(name: &str, missing: &mut Vec<&str>) -> String` reads cleaner.
+[L] backend/src/sitemap_crud.rs:31-37 — `iso_lastmod_now` and `iso_lastmod` use the same format string `"%Y-%m-%dT%H:%M:%S%:z"`. Hoist to a `const ISO_FORMAT: &str = ...`.
+
+--------------------------------------------------------------------------------
+E. FRONTEND — REFACTORING / TECH DEBT / DUPLICATION
+--------------------------------------------------------------------------------
+
+DUPLICATION
+[H] frontend/src/pages/Blog.tsx:121-176 vs frontend/src/pages/BlogPostDetail.tsx:172-224 — The entire `ReactMarkdown` `components={...}` prop (img with `{width=...}{height=...}{class=...}` parsing, table/thead/tbody/tr/th/td wrappers) is duplicated verbatim across the two files. Extract to `frontend/src/lib/markdown.tsx` exporting `BLOG_MARKDOWN_COMPONENTS` (or a `<BlogMarkdown markdown={...}/>` component) used by both.
+[H] frontend/src/hooks/useFetchProducts.ts:46-106 vs frontend/src/lib/api.ts:51-82 — Both build URLSearchParams from the exact same product filter set (order_by, in_stock, order_direction, product_type, sweetness, turbidity, effervescence, acidity, tannins, body, page, per_page, search). The hook reimplements `api.getProducts` instead of calling it. Replace the hook body with `api.getProducts({...filters}, controller.signal)`.
+[H] frontend/src/pages/Shop.tsx:174-372 — Same SelectInput-with-`enums.X.map(...)`-pattern is repeated 7 times (productType, sweetness, turbidity, effervescence, acidity, tannins, body) — only the enum key, label translation, and "all" placeholder differ. Extract `<EnumSelect kind="sweetness" value={sweetness} onChange={setSweetness} />` driven by a config table; the JSX block shrinks ~150 lines.
+[H] frontend/src/pages/admin/ProductForm.tsx:268-391 — Mirror of the same problem inside ProductForm: 7 SelectInput blocks each with `enums.X.map(...)`. Use the same `<EnumSelect>` component proposed above.
+[H] frontend/src/pages/admin/AdminProducts.tsx:50-76 vs AdminBlog.tsx:40-62 vs Blog.tsx:30-50 vs BlogPostDetail.tsx:37-67 vs Cart.tsx:19-77 vs Home.tsx:20-45 vs ProductDetails.tsx:40-60 vs AdminDashboard.tsx:16-31 — The "useEffect with AbortController + try/catch + AbortError early-return + setLoading + signal-aborted check in finally" pattern repeats verbatim in ~8 components. Extract a `useFetch<T>(fetcher: (signal) => Promise<T>, deps)` hook returning `{ data, loading, error, refetch }`.
+[H] frontend/src/pages/admin/AdminProducts.tsx:42-44 vs AdminBlog.tsx:26-27 vs Shop.tsx:28-29 vs Blog.tsx:25-26 — `const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10)); const setPage = (p: number) => setSearchParams(...)` inlined in 4+ components. Extract `usePageParam()` hook.
+[H] frontend/src/pages/admin/AdminProductCreate.tsx:86-101 vs AdminProductEdit.tsx:86-99 — Backend-validation-error-mapping block is identical: `error.response.data.errors.forEach(err => ...errorMapping[err]...)`. Plus BlogForm.tsx:170-182 has the same shape but with hand-written if/else mappings instead of the `errorMapping` table. Unify by (1) moving BlogForm to use the same `errorMapping`/`errorMessageMapping` table approach and (2) extracting `function mapBackendValidationErrors(err, mapping): Record<string,string>` to errorMappings.ts.
+[H] frontend/src/pages/admin/ProductForm.tsx:17-46 vs frontend/src/pages/admin/BlogForm.tsx:13-23 — Both files define their own `validateRequired`, `validatePositiveNumber`, `validateNonNegative`, `validateAbv`, `validateSlug` etc. Extract to `frontend/src/lib/validators.ts`.
+[H] frontend/src/pages/admin/AdminProducts.tsx:184-210 + AdminBlog.tsx:73-91 + AdminImages.tsx:236-254 + ProductDetails.tsx:81-107 + ProductCard.tsx:40-69 + Blog.tsx:73-98 + BlogPostDetail.tsx:73-101 + Home.tsx:97-120 — Skeleton-loader markup is hand-rolled with inline `style={{ height: '...', width: '...' }}` everywhere. Centralize: `<Skeleton h="1em" w="80%" />`, `<TableSkeleton rows=5 cols=6 />`, etc. Currently 80+ near-identical `<span className="skeleton" style={{...}} />` lines.
+[M] frontend/src/pages/admin/AdminProducts.tsx:20-30 — `canHardDelete` and `hardDeleteEligibleDate` both compute `deletedDate.getTime() + 7 * 24 * 60 * 60 * 1000`. Extract `HARD_DELETE_GRACE_DAYS = 7` and `addGraceDays(date)`. The 7-day window is also business logic the backend (product_crud.rs:404) checks; the magic number lives in two places.
+[M] frontend/src/pages/admin/AdminProducts.tsx:107-111 + AdminBlog.tsx:81-85 — `if (items.length === 1 && page > 1) setPage(page - 1) else setFetchTrigger(...)` — same "after-delete back-page" logic in two places. Extract.
+[M] frontend/src/pages/admin/AdminLayout.tsx:32-68 vs frontend/src/App.tsx:29-68 vs frontend/src/pages/Shop.tsx:72-113 — The "lock body scroll, focus first link, escape closes, click-outside closes" pattern is implemented three times for hamburger/sidebar/filters. Extract `useFocusTrapDrawer({ open, onClose, drawerRef, triggerRef })`.
+[M] frontend/src/lib/api.ts:204-224 + 131-146 + 51-82 — Each function with optional pagination params reimplements `URLSearchParams` building (`if (page !== undefined) params.append('page', String(page))`). Extract `function buildQuery(params: Record<string, unknown>): string`.
+[M] frontend/src/pages/Blog.tsx:194-195 + Shop.tsx:411-412 — `setPage(...); window.scrollTo({ top: 0, behavior: 'smooth' })` repeated in `onPrevPage`/`onNextPage` callbacks. Move into `<Pagination>` itself or a `usePaginatedScroll()` helper.
+[L] frontend/src/lib/api.ts:93-103, 105-115 — `createProduct` and `updateProduct` both build the same `payload = { ...productData, image_id: productData.image_id || null }`. Extract `normalizeProductPayload`.
+[L] frontend/src/i18n/locales/index.d.ts (not read but referenced) and JSON files — likely have duplicated EN/RO key trees that would benefit from a typed wrapper.
+
+COMPONENT STRUCTURE
+[H] frontend/src/pages/admin/ProductForm.tsx (519 lines) — Mixes: validators (top of file), date formatting helpers (`getDatePickerValue`/`handleDateChange`), the form UI with 4 sections, and registers date-picker locales as a side-effect inside the component body (lines 77-78 — runs on every render). Split: validators → lib/validators.ts; date helpers → utils/dateUtils.ts (getDatePickerValue/handleDateChange already partially live there); registerLocale → top-level module side-effect or wrap in `useEffect`. The component itself should be sub-form components (BasicInfoSection, ImageSection, CharacteristicsSection, PricingSection).
+[H] frontend/src/pages/admin/BlogForm.tsx (365 lines) — Holds its own fetch-on-mount, its own form state, its own validation, its own submit, its own backend-error mapping inline. Compare to `ProductForm.tsx` which is purely presentational and lets `AdminProductCreate`/`AdminProductEdit` own state. Refactor BlogForm to mirror that pattern (BlogForm = pure form; AdminBlogCreate/Edit pages own state + submit), so list/create/edit consistency matches products.
+[H] frontend/src/pages/admin/AdminImages.tsx (361 lines) — File-upload, file-rename, file-delete, drag-drop, XHR plumbing all in one component. Extract `useImageUpload()` hook (XHR + progress) and `<ImageCard />` sub-component.
+[M] frontend/src/pages/Shop.tsx (420 lines) — Mixes filter state (10 useStates), URL-param sync, mobile-drawer focus trap (40 lines of effect), and the entire 7-select filter sidebar JSX. Reduce filter state to a single `useReducer` or a `useFilters` hook returning `{filters, setFilter, clearFilters, activeCount}` — currently each filter has its own setter and the clear-all button at line 220-237 has to enumerate every setter by hand (12 setter calls).
+[M] frontend/src/pages/admin/AdminProducts.tsx:43-44 + AdminBlog.tsx:26-27 + Shop.tsx:28-29 + Blog.tsx:25-26 — Repeated inline `useSearchParams`/setPage usage; see DUPLICATION above.
+[M] frontend/src/components/ProductCard.tsx:24-38 — Two separate `useEffect`s (one resetting load state on imageId, one re-checking `img.complete` after every render) plus a ref-based image. The "image-cached-before-listener" workaround (the unconditional second effect with no dependency array) runs on every render — it works but is a code smell. Consolidate into a single onLoad/onError + initial state computed from `imgRef.current?.complete`.
+[M] frontend/src/components/SEO.tsx:22-29 — `swapLangPrefix` is a private helper that overlaps with `withLangPrefix` in `hooks/useLocalizedNavigate.ts:5-10`. Both transform a path to a different language prefix. Move to one shared `lib/langPath.ts`.
+[L] frontend/src/types.ts (~144 lines) — Types like `ApiError`, `ApiErrorResponse`, `LoginCredentials`, `ProductFormData` live alongside DB-mirroring types. Split into `types/api.ts` (request/response shapes), `types/models.ts` (DB-mirrors), `types/forms.ts` (form-only).
+[L] frontend/src/components/ErrorBoundary.tsx:1 — `ErrorBoundary` imports `i18n` from `'../i18n/config'` directly to translate error messages. Hooks/components everywhere else use `useTranslation`. The class component can't use hooks, but a tiny functional `<ErrorFallback>` rendered as `fallback` would. Acceptable, just inconsistent.
+
+HOOKS / DATA FETCHING
+[H] frontend/src/hooks/useFetchProducts.ts (whole file) — Reimplements `api.getProducts` plumbing inline rather than calling `api.getProducts`. Currently double-defines the URLSearchParams construction and skips the `api.getProducts` typed signature in favour of `api.get`. Replace body with `api.getProducts({...filters, page, per_page: PER_PAGE}, controller.signal)`. Notes: the hook also passes `language` as an effect dep but never uses it in the body (already in §B; the right fix is to use `useLanguage()` and let i18n header drive the response language without a re-fetch dep).
+[H] frontend/src/context/EnumContext.tsx + frontend/src/hooks/useFetchEnums.ts — `useFetchEnums` is a 14-line wrapper over `useContext(EnumContext)`. Either delete the hook (consumers use `useContext(EnumContext)` directly) or delete the context (the hook does fetching + caching itself in a useState). Currently both exist and the hook adds zero behavior on top of the context.
+[M] frontend/src/hooks/useAdminImages.ts — Per-component fetch with no cache. `AdminImages`, `AdminProductCreate`, and `AdminProductEdit` all instantiate it independently → 3 GET /admin/images on a single navigation flow. Consider an `ImagesContext` or a small SWR-style cache keyed on `token`.
+[M] frontend/src/pages/admin/BlogForm.tsx:51-80 — `getBlogPostsAdmin(token)` then `posts.items.find(p => p.id === id)` to populate the edit form. That fetches every blog post just to find one. Add `api.getBlogPostByIdAdmin(id, token)` (and a backend route — currently only `get_blog_post_by_slug` is exposed). Pre-existing dependency on a non-existent endpoint is a refactor blocker.
+[M] frontend/src/pages/admin/AdminProductEdit.tsx:25-42 + frontend/src/pages/admin/AdminProductCreate.tsx (no fetch) — Edit page handles `productLoading` state separately from `imagesLoading` (useAdminImages); they're combined ad hoc at line 69-71 and 106. Replace both single-shot loaders with the proposed `useFetch<T>` hook so they aggregate cleanly.
+[L] frontend/src/context/EnumContext.tsx:28-34 — Validates the API response shape inline (`expectedKeys.every(key => Array.isArray(...))`). Move this to a `validateEnumResponse(...)` helper next to the EnumValues type definition.
+
+FORMS
+[H] frontend/src/pages/admin/BlogForm.tsx:108-146 — Local `validateForm` duplicates the per-field `validate` props passed to `<TextInput>` for every field. The shared form components (TextInput etc.) already support `validate`; the form-level checker exists in parallel. Drive form-level validation off the shared `validate` props (collect errors at submit time) instead of repeating validation rules.
+[H] frontend/src/pages/admin/ProductForm.tsx + AdminProductCreate.tsx + AdminProductEdit.tsx + BlogForm.tsx — No shared form-state primitive. Each page hand-rolls handleChange/handleNumericChange/setFormData. Introduce a tiny `useForm<T>()` hook (or pull in `react-hook-form`) so the boilerplate disappears and the dirty-tracking that `useUnsavedChanges` (already authored, never wired) can actually run.
+[M] frontend/src/components/forms/TextInput.tsx + TextAreaInput.tsx + NumberInput.tsx — Three near-duplicate components: same blurError state, same handleBlur/handleChange wiring, same describedBy id construction, same JSX skeleton (label + input + helpText + errorMessage). Extract a shared `<FormField>` wrapper that owns the label/help/error chrome, and let TextInput/TextAreaInput/NumberInput be 5-line specializations.
+[M] frontend/src/pages/admin/ProductForm.tsx:108-116 — `handleChange` and `handleNumericChange` are two parallel handlers. With `<NumberInput onChange={...}>` already typed `e: ChangeEvent<HTMLInputElement>`, the numeric coercion can live inside `NumberInput` (emit a `number` via a separate `onValueChange` prop) and the page only ever has one `handleChange`.
+[M] frontend/src/pages/admin/BlogForm.tsx:82-105 — `handleChange` sniffs `name === 'is_published'` and `type === 'checkbox'` to coerce types. This logic is form-shape-specific and shouldn't live in the generic handler. Use a typed `<BooleanSelect>` (or radio) for is_published that emits a boolean directly.
+[M] frontend/src/pages/admin/ProductForm.tsx:66-74 + BlogForm.tsx:186-189 + AdminLogin.tsx:32-35 — Three separate hand-rolled "form-shake on validation error" effects; same pattern (add `shake` class, listen for `animationend` once, remove). Extract `useShakeOnError(formRef, errorCount)`.
+[L] frontend/src/pages/admin/errorMappings.ts:30-53 — `errorMessageMapping` is a flat object of English strings with no i18n wrapping; user gets English error text regardless of `i18n.language`. Either translate each via i18n keys at the call site or move strings into the i18n resource files.
+[L] frontend/src/pages/admin/ProductForm.tsx:77-78 — `registerLocale('en', enUS); registerLocale('ro', ro);` runs every render and pollutes the global react-datepicker registry. Move to module-top-level (one-time side effect) or a `useEffect(() => {...}, [])`.
+
+OTHER
+[M] frontend/src/pages/Cart.tsx:122-128 + 148-153 + ProductDetails.tsx:69-72 — Three separate hand-rolled `success-pulse`/`onanimationend` snippets manipulating classList directly. Extract a `<PulseButton>` or a `useElementPulse(ref)` hook.
+[M] frontend/src/pages/Home.tsx:25-32 — Hand-builds product query params instead of using `api.getProducts({order_by: 'bottling_date', order_direction: 'desc', in_stock: true})`. Same pattern as `useFetchProducts` (hook also bypasses `api.getProducts`). Use the typed API helper.
+[M] frontend/src/pages/Cart.tsx:25-41 — `Promise.all` with a per-item `.then/.catch` to convert errors into a `found:false` shape. Replace with `Promise.allSettled` (already noted in §B as a behavior fix; mention here as a refactor: the per-item `.catch` returning a sentinel object is a workaround for not using allSettled).
+[L] frontend/src/lib/api.ts:14-17 — Throws at module load time if `VITE_API_BASE_URL` is missing (also in §B); from a refactor angle, this should live in a small `function getApiBaseUrl()` lazy-initialized so tests can stub it without crashing on import.
+[L] frontend/src/utils/dateUtils.ts:8-67 — `formatDateForDisplay` and `parseDateForBackend` exist but no caller uses them (the only consumer is `getTodayIsoDate` which is used in AdminProductCreate). Either wire the DD/MM display path through these helpers (currently ProductForm.tsx:80-106 reimplements the same parsing inline) or delete.
+[L] frontend/src/utils/errorUtils.ts:11-27 — `categorizeError` is exported but never imported anywhere in the codebase. Either consume it from the API client error path (currently each page does `err.response?.status` matching by hand) or delete.
+[L] frontend/src/lib/api.ts:178-183 — `getImageById` exists but no component calls it. Dead.
+[L] frontend/src/pages/admin/AdminLayout.tsx + frontend/src/App.tsx — Both implement a hamburger/drawer pattern. The CSS classes differ (admin-hamburger vs hamburger, admin-sidebar vs main-nav) but the JS is identical. Reusable `<Drawer>` component would apply.
+
+--------------------------------------------------------------------------------
+F. CROSS-CUTTING — FE/BE
+--------------------------------------------------------------------------------
+
+[H] backend/src/enums.rs (7 enums) vs frontend/src/enums.ts:18-26 + i18n resources — Each enum's variants live in three places: Rust enums (kebab-case via DbValueStyle), TS `ENUM_TYPE_TO_TRANSLATION_KEY` mapping table, and i18n JSON keys (`enums.meadType.<value>`). Adding a new mead style requires touching all three. Either generate the FE enum file from the BE (simple `cargo run` codegen → `enums.gen.ts`) or expose `/api/enums` as the source of truth and remove the FE static type — `useFetchEnums` already loads them.
+[H] backend/src/product_crud.rs (ProductValidationError variants) vs frontend/src/pages/admin/errorMappings.ts:3-27 — Backend defines `InvalidProductId`, `EmptyProductName`, etc.; frontend `errorMapping` mirrors all of them as string keys. Two truth tables, drift is silent. Backend `errorMappings.ts:17 InvalidTaninsType` (single n) vs backend `enums.rs:114 TanninsType` (double n) shows the drift has already begun. Generate or share the variant list.
+[M] backend/src/models.rs:46-55 (Image), :72-104 (Product), :136-152 (BlogPost) vs frontend/src/types.ts:1-79 — DTOs are duplicated (field names match; nullability sometimes differs — BE `deleted_at: Option<DateTime<Utc>>` vs FE `deleted_at: string | null`). Consider OpenAPI/typeshare/ts-rs codegen so models stay in sync.
+[M] backend/src/main.rs:222-236 (`GetProductsQuery`) vs frontend/src/lib/api.ts:51-64 (`getProducts` params type) — Filter parameters are typed in both places. The frontend declares them as `string | undefined`; backend strongly types `Option<MeadType>` etc. New filter requires synchronizing both. Same suggestion: generate API client.
+[M] frontend/src/types.ts:9-35 (`Product`) vs backend's `LocalizedProduct` shape (localized.rs:9-31) — Public `/api/products` returns `LocalizedProduct` (single name/description/price/currency), admin returns full `Product`. The FE `Product` and `LocalizedProduct` are both declared in types.ts and used in different code paths. Document the contract (or split into two API clients: `api.public.*` vs `api.admin.*`).
+[M] backend/src/utils.rs:8-9 `is_valid_slug` vs frontend/src/pages/admin/ProductForm.tsx:24 `/^[a-z0-9_-]+$/` vs frontend/src/pages/admin/BlogForm.tsx:120 `/^[a-z0-9-]+$/` — Three different validators for "slug-like identifier". The blog FE rejects underscores, the product FE accepts them, and the BE also accepts them. Reconcile.
+[M] backend/src/blog_crud.rs:75-119 (max lengths: title 512, excerpt 1024, author 256) vs frontend/src/pages/admin/BlogForm.tsx (no maxlength on inputs) — Backend caps are not surfaced as `maxLength` on `<TextInput>`. User can exceed silently and only learn after submit. Hoist the limits to a shared constants module conceptually, or at least mirror them on the FE inputs.
+[L] frontend/src/lib/api.ts:4 (`IMAGE_VARIANT_WIDTHS = [320, 640, 1024, 1600]`) vs backend/src/image_crud.rs:17 (`VARIANT_WIDTHS: [u32; 4] = [320, 640, 1024, 1600]`) — Same array hard-coded twice. Acceptable, but worth a comment cross-referencing the other side, or a single env-driven config.
+[L] frontend/src/pages/admin/AdminProducts.tsx:22-23 (`7 * 24 * 60 * 60 * 1000`) vs backend/src/product_crud.rs:404 (`Duration::days(7)`) — 7-day grace window for hard-delete duplicated. Move to a shared `HARD_DELETE_GRACE_DAYS` constant on each side and add a comment.
+
+--------------------------------------------------------------------------------
+STALE PATH REFERENCES IN EXISTING TODO (non-exhaustive sweep while auditing)
+--------------------------------------------------------------------------------
+- §B FORMS [M] line 92: `frontend/src/components/BlogForm.tsx:148-150` — file is at `frontend/src/pages/admin/BlogForm.tsx` and the submit button is at line 352-358 (loading flag IS now wired via `disabled={loading}` at 355; the "no submit-button loading state" claim is stale — only the spinner-icon is missing).
+- §B FORMS [M] line 93: `frontend/src/components/admin/ProductForm.tsx:510` — file is at `frontend/src/pages/admin/ProductForm.tsx` and the submit button is at line 509.
+- §B FORMS [M] line 94: `frontend/src/pages/AdminProductCreate.tsx + AdminProductEdit.tsx` — both are at `frontend/src/pages/admin/AdminProductCreate.tsx` / `AdminProductEdit.tsx`.
+- §B AUTH [M] line 68: `frontend/src/pages/AdminLogin.tsx:23` — file is at `frontend/src/pages/admin/AdminLogin.tsx`; submit handler is at line 18, button at line 104. The "no `disabled={submitting}`" claim is correct (button has no disabled state at all).
+- §B FORMS [L] line 96: `frontend/src/components/AdminImages.tsx:316` — file is at `frontend/src/pages/admin/AdminImages.tsx:316` (line still correct).
+- §B XSS [L] line 73: `BlogPostDetail.tsx:159` — line still accurate (file path was always `pages/`).
+================================================================================
