@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LocalizedLink } from './LocalizedLink';
 import { useTranslation } from 'react-i18next';
 import { LocalizedProductWithImage } from '../types';
@@ -18,12 +18,24 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
   const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const imageId = productWithImage?.image?.id;
   useEffect(() => {
     setImgError(false);
     setImgLoaded(false);
   }, [imageId]);
+
+  // Cached images can become `complete` before React attaches the onLoad
+  // listener, so the event never fires. Re-check after each render.
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img || imgLoaded || imgError) return;
+    if (img.complete) {
+      if (img.naturalWidth > 0) setImgLoaded(true);
+      else setImgError(true);
+    }
+  });
 
   if (renderSkeleton) {
     return (
@@ -69,6 +81,7 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
             {image && !imgError ? (
               <>
                 <img
+                  ref={imgRef}
                   src={getImageUrl(image.id, 640)}
                   srcSet={getImageSrcSet(image.id)}
                   sizes="(min-width: 768px) 350px, 100vw"
