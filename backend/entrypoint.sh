@@ -1,8 +1,9 @@
 #!/bin/sh
+set -eu
 
 # Wait for database to be ready
 echo "Waiting for postgres..."
-while ! pg_isready -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER; do
+while ! pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER"; do
   sleep 1
 done
 echo "PostgreSQL started"
@@ -15,10 +16,11 @@ diesel setup
 echo "Running pending migrations..."
 diesel migration run
 
-# Add admin user
+# Add admin user. add_admin_user is expected to be idempotent — it returns 0 if
+# the user already exists. With `set -e`, a non-zero exit aborts the container
+# instead of starting the API in a half-initialized state.
 echo "Adding admin user..."
-./add_admin_user $ADMIN_USERNAME $ADMIN_PASSWORD
+./add_admin_user "$ADMIN_USERNAME" "$ADMIN_PASSWORD"
 
-# Drop privileges and exec server as appuser (PID 1, proper signal handling)
 echo "Starting server..."
 exec ./backend

@@ -7,60 +7,14 @@ Severity legend: [C]ritical  [H]igh  [M]edium  [L]ow
 
 Each item: [Sev] FILE:LINE — Issue. Fix.
 
---------------------------------------------------------------------------------
-C. INFRASTRUCTURE / DOCKER / NGINX / SSL
---------------------------------------------------------------------------------
-
-DOCKER
-[H] docker-compose.yml — No `depends_on: { database: { condition: service_healthy } }` on backend; backend can race the DB on startup. `entrypoint.sh` uses `pg_isready` so it's mostly fine, but add the compose-level dependency anyway for clarity and faster failure.
-[M] backend/Dockerfile:37 — `gosu` is installed but never used; `entrypoint.sh` runs migrations + `add_admin_user` as root before any USER switch (or no switch). Either switch to `gosu appuser` for setup commands or drop gosu.
-[M] backend/entrypoint.sh — No `set -euo pipefail`. If `diesel setup` or `add_admin_user` fails, the container still starts the API with a half-initialized state.
-[M] backend/entrypoint.sh — `$POSTGRES_HOST`, `$POSTGRES_PORT`, `$POSTGRES_USER`, `$ADMIN_USERNAME`, `$ADMIN_PASSWORD` are unquoted. Quote everywhere; consider passing the password via stdin to avoid having it in argv (visible via /proc).
-[M] backend/entrypoint.sh — `./add_admin_user $ADMIN_USERNAME $ADMIN_PASSWORD` — exit code is not checked. Add `|| { echo 'admin user setup failed'; exit 1; }` (or accept "already exists" specifically).
-[M] frontend/Dockerfile:17 — Base image `fholzer/nginx-brotli:v1.30.0` is community-maintained and not digest-pinned. Pin by digest, or build brotli into the official `nginx:1.30-alpine`.
-[L] docker-compose.yml — Image tags (`postgres:16.2-alpine`, etc.) are not digest-pinned. Pin for reproducibility.
-[L] frontend/docker-entrypoint.sh:7 — `... || true` swallows sitemap-generation errors silently. Log a warning instead.
-[L] backend/Dockerfile + frontend/Dockerfile — apt/apk packages installed without explicit versions. Acceptable trade-off but worth noting.
-
-NGINX
-[H] frontend/security-headers.conf — Missing `Content-Security-Policy`. Add a strict policy:
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
-[M] frontend/security-headers.conf — Missing `Permissions-Policy` (disable camera/mic/geolocation by default).
-[M] frontend/nginx.conf — No `limit_req` / `limit_conn` zones. Add `limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;` and apply to `/api/` and `/images/`.
-[M] frontend/nginx.conf:18 (`client_max_body_size 50M`) — Applies globally. Restrict 50M to the admin-image-upload location only; cap everywhere else at e.g. 256k.
-[M] frontend/nginx.conf — Verify `add_header` directives in `security-headers.conf` are inherited by proxied locations. In nginx, `add_header` does NOT inherit if a child location adds its own header. Either include `security-headers.conf` inside every `location` block or rely on a single top-level inclusion with no overrides below.
-[M] frontend/security-headers.conf:1 — `Strict-Transport-Security max-age=63072000` (2y). Acceptable for prod, but drop to 5min during dev with self-signed certs. Consider templating via env or splitting `nginx.dev.conf` / `nginx.prod.conf`.
-[L] frontend/nginx.conf:109 — SPA index `Cache-Control "no-cache"` allows 304s. Use `no-cache, no-store, must-revalidate` to force re-download after deploys.
-[L] frontend/nginx.conf — Add `error_page 404 /index.html;` so the SPA renders its own NotFound for deep links.
-[L] frontend/nginx.conf — Gzip + secrets-on-the-wire is a (small) BREACH risk for authenticated endpoints. Disable gzip on `/api/admin/*` responses, or set `gzip_proxied no-store off;` carefully.
-
-SSL / SECRETS
-[H] scripts/generate-ssl.sh:19-20 — Private key chmod `644` (world-readable). Must be `600` (owner only).
-[M] env.sample — Contains `POSTGRES_PASSWORD=password`, `ADMIN_PASSWORD=password`, `JWT_SECRET=my-super-secret-key`. Replace with placeholders like `<change-me-strong-random>` and add a comment that these MUST be overridden.
-[M] .gitignore — Verify `.env`, `ssl/key.pem`, and `ssl/cert.pem` are ignored. Confirm via `git check-ignore -v .env ssl/key.pem`.
-[L] scripts/generate-ssl.sh — 90-day validity is short for local dev; 365 days reduces friction. P-384 is fine but P-256 has wider compatibility.
-[L] tests/smoke-test.sh:48 — `curl -sk` skips cert verification. Acceptable for self-signed in dev; document why.
-[L] scripts/seed_data.py:291-293 — Disables TLS verification unconditionally; gate on `localhost`/`127.0.0.1` so it can't be pointed at prod with verification off.
-
-DATABASE MIGRATIONS
-[M] backend/migrations/.../up.sql — Add `ON DELETE SET NULL` to `products.image_id` (see Backend §A).
-[M] backend/migrations/.../up.sql — Add explicit indexes: `products(image_id)`, `products(deleted_at)`, and consider composite `blog_posts(is_published, published_at DESC)`.
-[L] backend/migrations/.../up.sql — Confirm `prices` are stored in `NUMERIC(7,2)` (not `float`). Review for any monetary columns using floating types.
-
-OBSERVABILITY
-[L] backend/src/main.rs:86-91 — Logs to stdout via `tracing-subscriber`; no structured JSON. For prod, set `RUST_LOG=info` and consider `tracing_subscriber::fmt().json()`.
-[L] frontend/nginx.conf — Default access log format; switch to a JSON format if you ship logs to anything other than tail.
-
 ================================================================================
-PRIORITY (remaining — Sections A + B done)
+PRIORITY (remaining — Sections A + B + C done)
 ================================================================================
-1. [H] frontend/security-headers.conf — add CSP + Permissions-Policy.
-2. [H] scripts/generate-ssl.sh — chmod 600 on private key.
-3. [H] backend + frontend — JWT to httpOnly cookie (requires backend cookie set on
+1. [H] backend + frontend — JWT to httpOnly cookie (requires backend cookie set on
    /api/admin/login; FE side now decodes exp + auto-logs out on expiry. Migration to
    cookie still pending and needs FE+BE in lockstep).
-4. [M] frontend/main.tsx + nginx — mirror root `/` lang redirect at nginx level
-   (infra change in section C; FE-side redirect is intentionally kept as fallback).
+2. [M] frontend/main.tsx + nginx — mirror root `/` lang redirect at nginx level
+   (FE-side redirect is intentionally kept as fallback).
 ================================================================================
 
 ================================================================================

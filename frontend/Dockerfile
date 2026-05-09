@@ -13,8 +13,9 @@ RUN ls -l /app/dist
 
 # Stage 2: Production
 # fholzer/nginx-brotli is Alpine-based and ships ngx_brotli statically built
-# alongside upstream nginx. Tag tracks the upstream nginx version.
-FROM fholzer/nginx-brotli:v1.30.0
+# alongside upstream nginx. Tag tracks the upstream nginx version. Digest pinned
+# so a tag mutation cannot silently change the runtime image.
+FROM fholzer/nginx-brotli:v1.30.0@sha256:97e44114905ab8f7db6c7c8212e22f6d7eb45c5215423f39226d416827e33692
 
 # Tools needed by the sitemap generator
 RUN apk add --no-cache curl jq tzdata

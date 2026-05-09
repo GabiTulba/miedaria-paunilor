@@ -34,7 +34,7 @@ FROM debian:trixie-slim
 # Install runtime dependencies
 # postgresql-client for pg_isready, openssl and libpq-dev for the Rust app runtime
 RUN apt-get update && \
-    apt-get install -y openssl libpq-dev ca-certificates postgresql-client gosu && \
+    apt-get install -y openssl libpq-dev ca-certificates postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user

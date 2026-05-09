@@ -126,12 +126,22 @@ impl Config {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "backend=info,tower_http=info".parse().unwrap()),
-        )
-        .init();
+
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| "backend=info,tower_http=info".parse().unwrap());
+
+    // RUST_LOG_JSON=1 emits one JSON object per line; default is the
+    // human-readable formatter for local development.
+    if std::env::var("RUST_LOG_JSON").ok().as_deref() == Some("1") {
+        tracing_subscriber::fmt()
+            .with_env_filter(env_filter)
+            .json()
+            .init();
+    } else {
+        tracing_subscriber::fmt()
+            .with_env_filter(env_filter)
+            .init();
+    }
 
     let config = Config::from_env().unwrap_or_else(|e| {
         tracing::error!("{}", e);

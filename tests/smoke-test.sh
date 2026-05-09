@@ -45,6 +45,8 @@ if ! docker compose ps 2>/dev/null | grep -q "running"; then
 else
     section "Live API (${BASE_URL})"
 
+    # -k skips TLS verification; intentional for self-signed local dev certs.
+    # Do NOT carry this flag into production smoke tests.
     CURL="curl -sk --max-time 5"
 
     # Health
