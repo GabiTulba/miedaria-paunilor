@@ -18,7 +18,7 @@ use backend::language::Language;
 use backend::localized::{LocalizedBlogPost, LocalizedProductWithImage};
 use backend::models::PaginatedResponse;
 use backend::pagination::{self, PageQuery};
-use backend::product_crud::ProductWithImage;
+use backend::product_crud::{ListProductsOptions, ProductFilters, ProductWithImage};
 use backend::rss_crud;
 use backend::sitemap_crud;
 use backend::enums::*;
@@ -304,8 +304,9 @@ async fn delete_image_wrapper(
 #[derive(Debug, serde::Deserialize)]
 pub struct GetProductsQuery {
     order_by: Option<String>,
-    in_stock: Option<bool>,
     order_direction: Option<String>,
+    search: Option<String>,
+    in_stock: Option<bool>,
     product_type: Option<MeadType>,
     sweetness: Option<SweetnessType>,
     turbidity: Option<TurbidityType>,
@@ -313,15 +314,38 @@ pub struct GetProductsQuery {
     acidity: Option<AcidityType>,
     tannins: Option<TanninsType>,
     body: Option<BodyType>,
-    search: Option<String>,
-    #[serde(flatten)]
-    page: PageQuery,
+    page: Option<u32>,
+    per_page: Option<u32>,
+}
+
+impl GetProductsQuery {
+    fn filters(&self) -> ProductFilters {
+        ProductFilters {
+            in_stock: self.in_stock,
+            product_type: self.product_type,
+            sweetness: self.sweetness,
+            turbidity: self.turbidity,
+            effervescence: self.effervescence,
+            acidity: self.acidity,
+            tannins: self.tannins,
+            body: self.body,
+        }
+    }
+    fn page_query(&self) -> PageQuery {
+        PageQuery { page: self.page, per_page: self.per_page }
+    }
 }
 
 #[derive(Debug, serde::Deserialize)]
 pub struct GetBlogPostsQuery {
-    #[serde(flatten)]
-    page: PageQuery,
+    page: Option<u32>,
+    per_page: Option<u32>,
+}
+
+impl GetBlogPostsQuery {
+    fn page_query(&self) -> PageQuery {
+        PageQuery { page: self.page, per_page: self.per_page }
+    }
 }
 
 type VaryLang = AppendHeaders<[(axum::http::HeaderName, &'static str); 1]>;
@@ -341,37 +365,18 @@ async fn get_all_products(
         product_crud::validate_search_term(s)?;
     }
 
-    let page = query.page.resolve(20, 100);
+    let page = query.page_query().resolve(20, 100);
 
-    let total_count = product_crud::count_all_products(
-        &mut conn,
-        query.in_stock,
-        query.product_type,
-        query.sweetness,
-        query.turbidity,
-        query.effervescence,
-        query.acidity,
-        query.tannins,
-        query.body,
-        query.search.as_deref(),
-    )?;
+    let opts = ListProductsOptions {
+        include_deleted: IncludeDeleted::Active,
+        filters: query.filters(),
+        search: query.search.as_deref(),
+        order_by: query.order_by.as_deref(),
+        order_direction: query.order_direction.as_deref(),
+    };
 
-    let products = product_crud::get_all_products(
-        &mut conn,
-        query.order_by.as_deref(),
-        query.in_stock,
-        query.order_direction.as_deref(),
-        query.product_type,
-        query.sweetness,
-        query.turbidity,
-        query.effervescence,
-        query.acidity,
-        query.tannins,
-        query.body,
-        query.search.as_deref(),
-        page.limit,
-        page.offset,
-    )?;
+    let total_count = product_crud::count_products(&mut conn, &opts)?;
+    let products = product_crud::list_products(&mut conn, &opts, page.limit, page.offset)?;
 
     let items: Vec<_> = products
         .into_iter()
@@ -421,8 +426,8 @@ async fn protected_route(Extension(claims): Extension<auth::Claims>) -> Result<S
 pub struct GetAdminProductsQuery {
     include_deleted: Option<IncludeDeleted>,
     order_by: Option<String>,
-    in_stock: Option<bool>,
     order_direction: Option<String>,
+    in_stock: Option<bool>,
     product_type: Option<MeadType>,
     sweetness: Option<SweetnessType>,
     turbidity: Option<TurbidityType>,
@@ -430,8 +435,26 @@ pub struct GetAdminProductsQuery {
     acidity: Option<AcidityType>,
     tannins: Option<TanninsType>,
     body: Option<BodyType>,
-    #[serde(flatten)]
-    page: PageQuery,
+    page: Option<u32>,
+    per_page: Option<u32>,
+}
+
+impl GetAdminProductsQuery {
+    fn filters(&self) -> ProductFilters {
+        ProductFilters {
+            in_stock: self.in_stock,
+            product_type: self.product_type,
+            sweetness: self.sweetness,
+            turbidity: self.turbidity,
+            effervescence: self.effervescence,
+            acidity: self.acidity,
+            tannins: self.tannins,
+            body: self.body,
+        }
+    }
+    fn page_query(&self) -> PageQuery {
+        PageQuery { page: self.page, per_page: self.per_page }
+    }
 }
 
 async fn list_products_admin(
@@ -440,39 +463,18 @@ async fn list_products_admin(
 ) -> Result<Json<PaginatedResponse<product_crud::ProductWithImage>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
-    let page = query.page.resolve(20, 100);
+    let page = query.page_query().resolve(20, 100);
 
-    let include_deleted = query.include_deleted.unwrap_or_default();
+    let opts = ListProductsOptions {
+        include_deleted: query.include_deleted.unwrap_or_default(),
+        filters: query.filters(),
+        search: None,
+        order_by: query.order_by.as_deref(),
+        order_direction: query.order_direction.as_deref(),
+    };
 
-    let total_count = product_crud::count_all_products_admin(
-        &mut conn,
-        include_deleted,
-        query.in_stock,
-        query.product_type,
-        query.sweetness,
-        query.turbidity,
-        query.effervescence,
-        query.acidity,
-        query.tannins,
-        query.body,
-    )?;
-
-    let items = product_crud::get_all_products_admin(
-        &mut conn,
-        include_deleted,
-        query.order_by.as_deref(),
-        query.in_stock,
-        query.order_direction.as_deref(),
-        query.product_type,
-        query.sweetness,
-        query.turbidity,
-        query.effervescence,
-        query.acidity,
-        query.tannins,
-        query.body,
-        page.limit,
-        page.offset,
-    )?;
+    let total_count = product_crud::count_products(&mut conn, &opts)?;
+    let items = product_crud::list_products(&mut conn, &opts, page.limit, page.offset)?;
 
     let total_pages = pagination::total_pages(total_count, page.per_page);
 
@@ -557,7 +559,7 @@ async fn get_all_blog_posts(
     lang: Language,
 ) -> Result<(VaryLang, Json<PaginatedResponse<LocalizedBlogPost>>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    let page = query.page.resolve(10, 50);
+    let page = query.page_query().resolve(10, 50);
     let total_count = blog_crud::count_all_blog_posts(&mut conn)?;
     let posts = blog_crud::get_all_blog_posts(&mut conn, page.limit, page.offset)?;
     let items: Vec<_> = posts
@@ -573,7 +575,7 @@ async fn get_all_blog_posts_admin(
     query: Query<GetBlogPostsQuery>,
 ) -> Result<Json<PaginatedResponse<models::BlogPost>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    let page = query.page.resolve(10, 50);
+    let page = query.page_query().resolve(10, 50);
     let total_count = blog_crud::count_all_blog_posts_admin(&mut conn)?;
     let items = blog_crud::get_all_blog_posts_admin(&mut conn, page.limit, page.offset)?;
     let total_pages = pagination::total_pages(total_count, page.per_page);

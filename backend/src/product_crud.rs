@@ -456,306 +456,139 @@ pub fn hard_delete_product(conn: &mut PgConnection, id: &str) -> Result<(), Hard
         .map_err(|e| HardDeleteError::DatabaseError(e.to_string()))
 }
 
-#[derive(Debug, Clone, Copy, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, serde::Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum IncludeDeleted {
+    #[default]
     Active,
     Deleted,
     All,
 }
 
-impl Default for IncludeDeleted {
-    fn default() -> Self {
-        Self::Active
-    }
+#[derive(Debug, Default, Clone, Copy, serde::Deserialize)]
+pub struct ProductFilters {
+    pub in_stock: Option<bool>,
+    pub product_type: Option<MeadType>,
+    pub sweetness: Option<SweetnessType>,
+    pub turbidity: Option<TurbidityType>,
+    pub effervescence: Option<EffervescenceType>,
+    pub acidity: Option<AcidityType>,
+    pub tannins: Option<TanninsType>,
+    pub body: Option<BodyType>,
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn count_all_products(
-    conn: &mut PgConnection,
-    in_stock: Option<bool>,
-    product_type_filter: Option<MeadType>,
-    sweetness_filter: Option<SweetnessType>,
-    turbidity_filter: Option<TurbidityType>,
-    effervescence_filter: Option<EffervescenceType>,
-    acidity_filter: Option<AcidityType>,
-    tannins_filter: Option<TanninsType>,
-    body_filter: Option<BodyType>,
-    search: Option<&str>,
-) -> QueryResult<i64> {
-    count_products_internal(
-        conn,
-        IncludeDeleted::Active,
-        in_stock,
-        product_type_filter,
-        sweetness_filter,
-        turbidity_filter,
-        effervescence_filter,
-        acidity_filter,
-        tannins_filter,
-        body_filter,
-        search,
-    )
+#[derive(Debug, Default, Clone, Copy)]
+pub struct ListProductsOptions<'a> {
+    pub include_deleted: IncludeDeleted,
+    pub filters: ProductFilters,
+    pub search: Option<&'a str>,
+    pub order_by: Option<&'a str>,
+    pub order_direction: Option<&'a str>,
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn count_all_products_admin(
-    conn: &mut PgConnection,
-    include_deleted: IncludeDeleted,
-    in_stock: Option<bool>,
-    product_type_filter: Option<MeadType>,
-    sweetness_filter: Option<SweetnessType>,
-    turbidity_filter: Option<TurbidityType>,
-    effervescence_filter: Option<EffervescenceType>,
-    acidity_filter: Option<AcidityType>,
-    tannins_filter: Option<TanninsType>,
-    body_filter: Option<BodyType>,
-) -> QueryResult<i64> {
-    count_products_internal(
-        conn,
-        include_deleted,
-        in_stock,
-        product_type_filter,
-        sweetness_filter,
-        turbidity_filter,
-        effervescence_filter,
-        acidity_filter,
-        tannins_filter,
-        body_filter,
-        None,
-    )
+/// Apply the shared product filter chain (deleted_at + 8 filters + search) to
+/// any boxed query whose source includes the products table. Reassigns `$q`.
+macro_rules! apply_product_filters {
+    ($q:ident, $opts:expr) => {{
+        use crate::schema::products::dsl as p;
+        match $opts.include_deleted {
+            IncludeDeleted::Active => $q = $q.filter(p::deleted_at.is_null()),
+            IncludeDeleted::Deleted => $q = $q.filter(p::deleted_at.is_not_null()),
+            IncludeDeleted::All => {}
+        }
+        if let Some(true) = $opts.filters.in_stock {
+            $q = $q.filter(p::bottle_count.gt(0));
+        }
+        if let Some(v) = $opts.filters.product_type {
+            $q = $q.filter(p::product_type.eq(v));
+        }
+        if let Some(v) = $opts.filters.sweetness {
+            $q = $q.filter(p::sweetness.eq(v));
+        }
+        if let Some(v) = $opts.filters.turbidity {
+            $q = $q.filter(p::turbidity.eq(v));
+        }
+        if let Some(v) = $opts.filters.effervescence {
+            $q = $q.filter(p::effervescence.eq(v));
+        }
+        if let Some(v) = $opts.filters.acidity {
+            $q = $q.filter(p::acidity.eq(v));
+        }
+        if let Some(v) = $opts.filters.tannins {
+            $q = $q.filter(p::tannins.eq(v));
+        }
+        if let Some(v) = $opts.filters.body {
+            $q = $q.filter(p::body.eq(v));
+        }
+        if let Some(s) = $opts.search {
+            let pattern = format!("%{}%", s);
+            $q = $q.filter(
+                p::product_name
+                    .ilike(pattern.clone())
+                    .or(p::product_name_ro.ilike(pattern)),
+            );
+        }
+    }};
 }
 
-#[allow(clippy::too_many_arguments)]
-fn count_products_internal(
+/// Apply the order_by/order_direction pair if recognized. Unknown column names
+/// leave the query unordered (preserves prior behavior).
+macro_rules! apply_product_order {
+    ($q:ident, $opts:expr) => {{
+        use crate::schema::products::dsl as p;
+        if let Some(col) = $opts.order_by {
+            let desc = $opts.order_direction == Some("desc");
+            $q = match col {
+                "price" => {
+                    if desc {
+                        $q.order(p::price.desc())
+                    } else {
+                        $q.order(p::price.asc())
+                    }
+                }
+                "volume" => {
+                    if desc {
+                        $q.order(p::bottle_size.desc())
+                    } else {
+                        $q.order(p::bottle_size.asc())
+                    }
+                }
+                "bottling_date" => {
+                    if desc {
+                        $q.order(p::bottling_date.desc())
+                    } else {
+                        $q.order(p::bottling_date.asc())
+                    }
+                }
+                _ => $q,
+            };
+        }
+    }};
+}
+
+pub fn count_products(
     conn: &mut PgConnection,
-    include_deleted: IncludeDeleted,
-    in_stock: Option<bool>,
-    product_type_filter: Option<MeadType>,
-    sweetness_filter: Option<SweetnessType>,
-    turbidity_filter: Option<TurbidityType>,
-    effervescence_filter: Option<EffervescenceType>,
-    acidity_filter: Option<AcidityType>,
-    tannins_filter: Option<TanninsType>,
-    body_filter: Option<BodyType>,
-    search: Option<&str>,
+    opts: &ListProductsOptions<'_>,
 ) -> QueryResult<i64> {
-    use crate::schema::products::dsl::*;
+    use crate::schema::products::dsl::products;
 
     let mut query = products.into_boxed();
-
-    match include_deleted {
-        IncludeDeleted::Active => query = query.filter(deleted_at.is_null()),
-        IncludeDeleted::Deleted => query = query.filter(deleted_at.is_not_null()),
-        IncludeDeleted::All => {}
-    }
-
-    if let Some(true) = in_stock {
-        query = query.filter(bottle_count.gt(0));
-    }
-
-    if let Some(filter_value) = product_type_filter {
-        query = query.filter(product_type.eq(filter_value));
-    }
-
-    if let Some(filter_value) = sweetness_filter {
-        query = query.filter(sweetness.eq(filter_value));
-    }
-
-    if let Some(filter_value) = turbidity_filter {
-        query = query.filter(turbidity.eq(filter_value));
-    }
-
-    if let Some(filter_value) = effervescence_filter {
-        query = query.filter(effervescence.eq(filter_value));
-    }
-
-    if let Some(filter_value) = acidity_filter {
-        query = query.filter(acidity.eq(filter_value));
-    }
-
-    if let Some(filter_value) = tannins_filter {
-        query = query.filter(tannins.eq(filter_value));
-    }
-
-    if let Some(filter_value) = body_filter {
-        query = query.filter(body.eq(filter_value));
-    }
-
-    if let Some(search_term) = search {
-        let pattern = format!("%{}%", search_term);
-        query = query.filter(
-            product_name.ilike(pattern.clone()).or(product_name_ro.ilike(pattern))
-        );
-    }
-
+    apply_product_filters!(query, opts);
     query.count().get_result(conn)
 }
 
-pub fn get_all_products(
+pub fn list_products(
     conn: &mut PgConnection,
-    order_by: Option<&str>,
-    in_stock: Option<bool>,
-    order_direction: Option<&str>,
-    product_type_filter: Option<MeadType>,
-    sweetness_filter: Option<SweetnessType>,
-    turbidity_filter: Option<TurbidityType>,
-    effervescence_filter: Option<EffervescenceType>,
-    acidity_filter: Option<AcidityType>,
-    tannins_filter: Option<TanninsType>,
-    body_filter: Option<BodyType>,
-    search: Option<&str>,
-    limit: i64,
-    offset: i64,
-) -> QueryResult<Vec<ProductWithImage>> {
-    get_products_internal(
-        conn,
-        IncludeDeleted::Active,
-        order_by,
-        in_stock,
-        order_direction,
-        product_type_filter,
-        sweetness_filter,
-        turbidity_filter,
-        effervescence_filter,
-        acidity_filter,
-        tannins_filter,
-        body_filter,
-        search,
-        limit,
-        offset,
-    )
-}
-
-pub fn get_all_products_admin(
-    conn: &mut PgConnection,
-    include_deleted: IncludeDeleted,
-    order_by: Option<&str>,
-    in_stock: Option<bool>,
-    order_direction: Option<&str>,
-    product_type_filter: Option<MeadType>,
-    sweetness_filter: Option<SweetnessType>,
-    turbidity_filter: Option<TurbidityType>,
-    effervescence_filter: Option<EffervescenceType>,
-    acidity_filter: Option<AcidityType>,
-    tannins_filter: Option<TanninsType>,
-    body_filter: Option<BodyType>,
-    limit: i64,
-    offset: i64,
-) -> QueryResult<Vec<ProductWithImage>> {
-    get_products_internal(
-        conn,
-        include_deleted,
-        order_by,
-        in_stock,
-        order_direction,
-        product_type_filter,
-        sweetness_filter,
-        turbidity_filter,
-        effervescence_filter,
-        acidity_filter,
-        tannins_filter,
-        body_filter,
-        None,
-        limit,
-        offset,
-    )
-}
-
-fn get_products_internal(
-    conn: &mut PgConnection,
-    include_deleted: IncludeDeleted,
-    order_by: Option<&str>,
-    in_stock: Option<bool>,
-    order_direction: Option<&str>,
-    product_type_filter: Option<MeadType>,
-    sweetness_filter: Option<SweetnessType>,
-    turbidity_filter: Option<TurbidityType>,
-    effervescence_filter: Option<EffervescenceType>,
-    acidity_filter: Option<AcidityType>,
-    tannins_filter: Option<TanninsType>,
-    body_filter: Option<BodyType>,
-    search: Option<&str>,
+    opts: &ListProductsOptions<'_>,
     limit: i64,
     offset: i64,
 ) -> QueryResult<Vec<ProductWithImage>> {
     use crate::schema::images::dsl::images;
-    use crate::schema::products::dsl::*;
-    use diesel::ExpressionMethods;
+    use crate::schema::products::dsl::products;
 
     let mut query = products.left_join(images).into_boxed();
-
-    match include_deleted {
-        IncludeDeleted::Active => query = query.filter(deleted_at.is_null()),
-        IncludeDeleted::Deleted => query = query.filter(deleted_at.is_not_null()),
-        IncludeDeleted::All => {}
-    }
-
-    if let Some(true) = in_stock {
-        query = query.filter(bottle_count.gt(0));
-    }
-
-    if let Some(filter_value) = product_type_filter {
-        query = query.filter(product_type.eq(filter_value));
-    }
-
-    if let Some(filter_value) = sweetness_filter {
-        query = query.filter(sweetness.eq(filter_value));
-    }
-
-    if let Some(filter_value) = turbidity_filter {
-        query = query.filter(turbidity.eq(filter_value));
-    }
-
-    if let Some(filter_value) = effervescence_filter {
-        query = query.filter(effervescence.eq(filter_value));
-    }
-
-    if let Some(filter_value) = acidity_filter {
-        query = query.filter(acidity.eq(filter_value));
-    }
-
-    if let Some(filter_value) = tannins_filter {
-        query = query.filter(tannins.eq(filter_value));
-    }
-
-    if let Some(filter_value) = body_filter {
-        query = query.filter(body.eq(filter_value));
-    }
-
-    if let Some(search_term) = search {
-        let pattern = format!("%{}%", search_term);
-        query = query.filter(
-            product_name.ilike(pattern.clone()).or(product_name_ro.ilike(pattern))
-        );
-    }
-
-    if let Some(order_by_col) = order_by {
-        query = match order_by_col {
-            "price" => {
-                if let Some("desc") = order_direction {
-                    query.order(price.desc())
-                } else {
-                    query.order(price.asc())
-                }
-            }
-            "volume" => {
-                if let Some("desc") = order_direction {
-                    query.order(bottle_size.desc())
-                } else {
-                    query.order(bottle_size.asc())
-                }
-            }
-            "bottling_date" => {
-                if let Some("desc") = order_direction {
-                    query.order(bottling_date.desc())
-                } else {
-                    query.order(bottling_date.asc())
-                }
-            }
-            _ => query,
-        };
-    }
+    apply_product_filters!(query, opts);
+    apply_product_order!(query, opts);
 
     query
         .select(ProductWithImage::as_select())
