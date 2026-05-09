@@ -8,6 +8,7 @@ pub mod image_crud;
 pub mod language;
 pub mod localized;
 pub mod models;
+pub mod pagination;
 pub mod product_crud;
 pub mod rss_crud;
 pub mod schema;

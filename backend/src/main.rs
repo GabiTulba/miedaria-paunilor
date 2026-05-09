@@ -17,6 +17,7 @@ use backend::image_crud;
 use backend::language::Language;
 use backend::localized::{LocalizedBlogPost, LocalizedProductWithImage};
 use backend::models::PaginatedResponse;
+use backend::pagination::{self, PageQuery};
 use backend::product_crud::ProductWithImage;
 use backend::rss_crud;
 use backend::sitemap_crud;
@@ -313,16 +314,14 @@ pub struct GetProductsQuery {
     tannins: Option<TanninsType>,
     body: Option<BodyType>,
     search: Option<String>,
-    page: Option<u32>,
-    per_page: Option<u32>,
-    limit: Option<u32>,
+    #[serde(flatten)]
+    page: PageQuery,
 }
 
 #[derive(Debug, serde::Deserialize)]
 pub struct GetBlogPostsQuery {
-    page: Option<u32>,
-    per_page: Option<u32>,
-    limit: Option<u32>,
+    #[serde(flatten)]
+    page: PageQuery,
 }
 
 type VaryLang = AppendHeaders<[(axum::http::HeaderName, &'static str); 1]>;
@@ -342,12 +341,7 @@ async fn get_all_products(
         product_crud::validate_search_term(s)?;
     }
 
-    let per_page = query.per_page.unwrap_or(20).min(100) as i64;
-    let page = query.page.unwrap_or(1).max(1) as i64;
-    let offset = (page - 1) * per_page;
-    let limit = query.limit
-        .map(|l| (l as i64).min(per_page + 1))
-        .unwrap_or(per_page);
+    let page = query.page.resolve(20, 100);
 
     let total_count = product_crud::count_all_products(
         &mut conn,
@@ -375,8 +369,8 @@ async fn get_all_products(
         query.tannins,
         query.body,
         query.search.as_deref(),
-        limit,
-        offset,
+        page.limit,
+        page.offset,
     )?;
 
     let items: Vec<_> = products
@@ -384,7 +378,7 @@ async fn get_all_products(
         .map(|p| LocalizedProductWithImage::from_product_with_image(p, lang))
         .collect();
 
-    let total_pages = (total_count as u64).div_ceil(per_page as u64);
+    let total_pages = pagination::total_pages(total_count, page.per_page);
 
     Ok((vary_accept_language(), Json(PaginatedResponse { items, total_pages })))
 }
@@ -436,9 +430,8 @@ pub struct GetAdminProductsQuery {
     acidity: Option<AcidityType>,
     tannins: Option<TanninsType>,
     body: Option<BodyType>,
-    page: Option<u32>,
-    per_page: Option<u32>,
-    limit: Option<u32>,
+    #[serde(flatten)]
+    page: PageQuery,
 }
 
 async fn list_products_admin(
@@ -447,13 +440,7 @@ async fn list_products_admin(
 ) -> Result<Json<PaginatedResponse<product_crud::ProductWithImage>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
-    let per_page = query.per_page.unwrap_or(20).min(100) as i64;
-    let page = query.page.unwrap_or(1).max(1) as i64;
-    let offset = (page - 1) * per_page;
-    let limit = query
-        .limit
-        .map(|l| (l as i64).min(per_page + 1))
-        .unwrap_or(per_page);
+    let page = query.page.resolve(20, 100);
 
     let include_deleted = query.include_deleted.unwrap_or_default();
 
@@ -483,11 +470,11 @@ async fn list_products_admin(
         query.acidity,
         query.tannins,
         query.body,
-        limit,
-        offset,
+        page.limit,
+        page.offset,
     )?;
 
-    let total_pages = (total_count as u64).div_ceil(per_page as u64);
+    let total_pages = pagination::total_pages(total_count, page.per_page);
 
     Ok(Json(PaginatedResponse { items, total_pages }))
 }
@@ -570,19 +557,14 @@ async fn get_all_blog_posts(
     lang: Language,
 ) -> Result<(VaryLang, Json<PaginatedResponse<LocalizedBlogPost>>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    let per_page = query.per_page.unwrap_or(10).min(50) as i64;
-    let page = query.page.unwrap_or(1).max(1) as i64;
-    let offset = (page - 1) * per_page;
-    let limit = query.limit
-        .map(|l| (l as i64).min(per_page + 1))
-        .unwrap_or(per_page);
+    let page = query.page.resolve(10, 50);
     let total_count = blog_crud::count_all_blog_posts(&mut conn)?;
-    let posts = blog_crud::get_all_blog_posts(&mut conn, limit, offset)?;
+    let posts = blog_crud::get_all_blog_posts(&mut conn, page.limit, page.offset)?;
     let items: Vec<_> = posts
         .into_iter()
         .map(|p| LocalizedBlogPost::from_blog_post(p, lang))
         .collect();
-    let total_pages = (total_count as u64).div_ceil(per_page as u64);
+    let total_pages = pagination::total_pages(total_count, page.per_page);
     Ok((vary_accept_language(), Json(PaginatedResponse { items, total_pages })))
 }
 
@@ -591,15 +573,10 @@ async fn get_all_blog_posts_admin(
     query: Query<GetBlogPostsQuery>,
 ) -> Result<Json<PaginatedResponse<models::BlogPost>>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    let per_page = query.per_page.unwrap_or(10).min(50) as i64;
-    let page = query.page.unwrap_or(1).max(1) as i64;
-    let offset = (page - 1) * per_page;
-    let limit = query.limit
-        .map(|l| (l as i64).min(per_page + 1))
-        .unwrap_or(per_page);
+    let page = query.page.resolve(10, 50);
     let total_count = blog_crud::count_all_blog_posts_admin(&mut conn)?;
-    let items = blog_crud::get_all_blog_posts_admin(&mut conn, limit, offset)?;
-    let total_pages = (total_count as u64).div_ceil(per_page as u64);
+    let items = blog_crud::get_all_blog_posts_admin(&mut conn, page.limit, page.offset)?;
+    let total_pages = pagination::total_pages(total_count, page.per_page);
     Ok(Json(PaginatedResponse { items, total_pages }))
 }
 
