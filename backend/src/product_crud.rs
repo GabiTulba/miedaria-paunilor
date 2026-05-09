@@ -79,47 +79,37 @@ struct ProductValidationInput<'a> {
     lot_number: i32,
 }
 
-impl<'a> From<&'a NewProduct> for ProductValidationInput<'a> {
-    fn from(p: &'a NewProduct) -> Self {
-        Self {
-            product_id: &p.product_id,
-            product_name: &p.product_name,
-            product_name_ro: &p.product_name_ro,
-            product_description: &p.product_description,
-            product_description_ro: &p.product_description_ro,
-            ingredients: &p.ingredients,
-            ingredients_ro: &p.ingredients_ro,
-            abv: p.abv,
-            bottle_count: p.bottle_count,
-            bottle_size: p.bottle_size,
-            price: p.price,
-            price_ron: p.price_ron,
-            bottling_date: p.bottling_date,
-            lot_number: p.lot_number,
+/// `Product` and `NewProduct` share the validated field set (Diesel generates
+/// both from the same schema). The macro emits a `From` impl that copies the
+/// same 14 fields from either source — adding a new validated field is a
+/// single edit to the macro body.
+macro_rules! impl_validation_input_from {
+    ($source:ty) => {
+        impl<'a> From<&'a $source> for ProductValidationInput<'a> {
+            fn from(p: &'a $source) -> Self {
+                Self {
+                    product_id: &p.product_id,
+                    product_name: &p.product_name,
+                    product_name_ro: &p.product_name_ro,
+                    product_description: &p.product_description,
+                    product_description_ro: &p.product_description_ro,
+                    ingredients: &p.ingredients,
+                    ingredients_ro: &p.ingredients_ro,
+                    abv: p.abv,
+                    bottle_count: p.bottle_count,
+                    bottle_size: p.bottle_size,
+                    price: p.price,
+                    price_ron: p.price_ron,
+                    bottling_date: p.bottling_date,
+                    lot_number: p.lot_number,
+                }
+            }
         }
-    }
+    };
 }
 
-impl<'a> From<&'a Product> for ProductValidationInput<'a> {
-    fn from(p: &'a Product) -> Self {
-        Self {
-            product_id: &p.product_id,
-            product_name: &p.product_name,
-            product_name_ro: &p.product_name_ro,
-            product_description: &p.product_description,
-            product_description_ro: &p.product_description_ro,
-            ingredients: &p.ingredients,
-            ingredients_ro: &p.ingredients_ro,
-            abv: p.abv,
-            bottle_count: p.bottle_count,
-            bottle_size: p.bottle_size,
-            price: p.price,
-            price_ron: p.price_ron,
-            bottling_date: p.bottling_date,
-            lot_number: p.lot_number,
-        }
-    }
-}
+impl_validation_input_from!(NewProduct);
+impl_validation_input_from!(Product);
 
 const MAX_BOTTLE_COUNT: i32 = 1_000_000;
 
