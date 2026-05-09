@@ -246,40 +246,49 @@ pub fn update_blog_post(
         return Err(RepositoryError::BlogValidation(validation_errors));
     }
 
-    // Pre-check slug uniqueness so we can return a clean 409 before we hit
-    // the DB constraint. Skips the check if the slug isn't being changed
-    // (i.e., the new slug equals the existing one).
+    // Snapshot the current row in one round-trip so we can:
+    // (1) compute the desired `published_at` in Rust and write it in the same
+    //     UPDATE as the caller's changeset (avoids a second UPDATE on first
+    //     publish), and (2) skip the slug-uniqueness check entirely when the
+    //     slug isn't actually being changed.
+    let current = blog_posts::table
+        .filter(blog_posts::id.eq(id))
+        .first::<BlogPost>(conn)
+        .optional()?
+        .ok_or_else(|| RepositoryError::NotFound("Blog post not found".to_string()))?;
+
     if let Some(new_slug) = update_post.slug.as_deref() {
-        let existing = blog_posts::table
-            .filter(blog_posts::slug.eq(new_slug))
-            .filter(blog_posts::id.ne(id))
-            .select(blog_posts::id)
-            .first::<uuid::Uuid>(conn)
-            .optional()?;
-        if existing.is_some() {
-            return Err(RepositoryError::Conflict(
-                "Blog post with this slug already exists.".to_string(),
-            ));
+        if new_slug != current.slug {
+            let existing = blog_posts::table
+                .filter(blog_posts::slug.eq(new_slug))
+                .filter(blog_posts::id.ne(id))
+                .select(blog_posts::id)
+                .first::<uuid::Uuid>(conn)
+                .optional()?;
+            if existing.is_some() {
+                return Err(RepositoryError::Conflict(
+                    "Blog post with this slug already exists.".to_string(),
+                ));
+            }
         }
     }
 
-    let post: BlogPost = diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
-        .set(&update_post)
-        .get_result(conn)
-        .map_err(|e| match e {
-            DieselError::NotFound => RepositoryError::NotFound("Blog post not found".to_string()),
-            other => map_slug_conflict(other),
-        })?;
-
-    // Set published_at on first publish
-    if post.is_published && post.published_at.is_none() {
-        diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
-            .set(blog_posts::published_at.eq(Some(chrono::Utc::now().naive_utc())))
-            .get_result(conn)
-            .map_err(RepositoryError::from)
+    // First publish: stamp published_at if the row is becoming (or already is)
+    // published and has never been stamped. Otherwise keep the existing value.
+    let will_be_published = update_post.is_published.unwrap_or(current.is_published);
+    let new_published_at = if will_be_published && current.published_at.is_none() {
+        Some(chrono::Utc::now().naive_utc())
     } else {
-        Ok(post)
-    }
+        current.published_at
+    };
+
+    diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
+        .set((
+            &update_post,
+            blog_posts::published_at.eq(new_published_at),
+        ))
+        .get_result(conn)
+        .map_err(map_slug_conflict)
 }
 
 pub fn delete_blog_post(conn: &mut PgConnection, id: uuid::Uuid) -> Result<usize, DieselError> {

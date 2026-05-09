@@ -87,12 +87,92 @@ fn detect_image_format(data: &[u8]) -> Option<&'static str> {
     None
 }
 
+/// One validated image extracted from a multipart upload — bytes have passed
+/// magic-byte detection and full decode (size/alloc limited).
+struct ParsedUpload {
+    original_filename: String,
+    data: axum::body::Bytes,
+    extension: &'static str,
+    decoded: image::DynamicImage,
+}
+
+/// Pull the first file field out of `multipart`, validate size and content via
+/// magic bytes, and fully decode the image with bounded limits. Returns
+/// `Ok(Some(_))` for a valid file, `Ok(None)` if the request had no file
+/// field, or `Err(AppError)` for anything between (oversize, decode failure,
+/// transport error).
+async fn parse_uploaded_image(
+    mut multipart: Multipart,
+) -> Result<Option<ParsedUpload>, AppError> {
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        tracing::error!("Error reading multipart field: {:?}", e);
+        AppError::BadRequest("Invalid multipart request".to_string())
+    })? {
+        let Some(original_filename) = field.file_name().map(|s| s.to_string()) else {
+            continue;
+        };
+
+        let data = field.bytes().await.map_err(|e| {
+            tracing::error!("Error reading file bytes: {:?}", e);
+            AppError::InternalServerError("Failed to read file data".to_string())
+        })?;
+
+        if data.len() > MAX_IMAGE_SIZE {
+            return Err(AppError::BadRequest(
+                "File too large. Maximum image size is 50MB.".to_string(),
+            ));
+        }
+
+        // Client-supplied content-type and extension are untrusted; validate by
+        // magic bytes, then fully decode (with size/alloc limits) so polyglot
+        // files and decompression bombs can't slip past.
+        let extension = detect_image_format(&data).ok_or_else(|| {
+            AppError::BadRequest(
+                "Invalid file. Only JPEG, PNG, GIF, WebP, BMP, and TIFF images are allowed."
+                    .to_string(),
+            )
+        })?;
+
+        let decoded = decode_with_limits(&data).map_err(|e| {
+            tracing::warn!("Image decode rejected: {:?}", e);
+            AppError::BadRequest("Invalid or oversized image file.".to_string())
+        })?;
+
+        return Ok(Some(ParsedUpload {
+            original_filename,
+            data,
+            extension,
+            decoded,
+        }));
+    }
+    Ok(None)
+}
+
+/// Persist the original bytes to `{upload_dir}/{uuid}.{ext}` and emit width
+/// variants alongside it. Returns the storage path of the original.
+async fn persist_image_to_disk(
+    upload_dir: &str,
+    extension: &str,
+    data: &[u8],
+    decoded: &image::DynamicImage,
+) -> Result<String, AppError> {
+    let image_uuid = Uuid::new_v4();
+    let storage_path = format!("{}/{}.{}", upload_dir, image_uuid, extension);
+
+    fs::write(&storage_path, data).await.map_err(|e| {
+        tracing::error!("Error writing file to disk: {:?}", e);
+        AppError::InternalServerError("Failed to write image file to disk".to_string())
+    })?;
+
+    generate_variants(decoded, &storage_path);
+    Ok(storage_path)
+}
+
 pub async fn upload_image(
     conn: &mut PgConnection,
-    mut multipart: Multipart,
+    multipart: Multipart,
     upload_dir: &str,
 ) -> Result<Json<Image>, AppError> {
-
     if let Err(e) = fs::create_dir_all(&upload_dir).await {
         tracing::error!("Error creating upload directory: {:?}", e);
         return Err(AppError::InternalServerError(
@@ -100,76 +180,31 @@ pub async fn upload_image(
         ));
     }
 
-    while let Some(field) = multipart.next_field().await.map_err(|e| {
-        tracing::error!("Error reading multipart field: {:?}", e);
-        AppError::BadRequest("Invalid multipart request".to_string())
-    })? {
-        let file_name = field.file_name().map(|s| s.to_string());
+    let parsed = parse_uploaded_image(multipart).await?.ok_or_else(|| {
+        AppError::BadRequest("No file found in multipart upload".to_string())
+    })?;
 
-        if let Some(original_filename) = file_name {
-            let data = field.bytes().await.map_err(|e| {
-                tracing::error!("Error reading file bytes: {:?}", e);
-                AppError::InternalServerError("Failed to read file data".to_string())
-            })?;
+    let file_size = parsed.data.len() as i64;
+    let storage_path =
+        persist_image_to_disk(upload_dir, parsed.extension, &parsed.data, &parsed.decoded).await?;
 
-            if data.len() > MAX_IMAGE_SIZE {
-                return Err(AppError::BadRequest(
-                    "File too large. Maximum image size is 50MB.".to_string(),
-                ));
-            }
+    let new_image = NewImage {
+        file_name: parsed.original_filename,
+        storage_path,
+        file_size,
+    };
 
-            // Validate by magic bytes — client-supplied content-type and extension are untrusted
-            let extension = detect_image_format(&data).ok_or_else(|| {
-                AppError::BadRequest(
-                    "Invalid file. Only JPEG, PNG, GIF, WebP, BMP, and TIFF images are allowed."
-                        .to_string(),
-                )
-            })?;
+    let inserted_image: Image = diesel::insert_into(images::table)
+        .values(&new_image)
+        .get_result(conn)
+        .map_err(|e| {
+            tracing::error!("Error inserting image into DB: {:?}", e);
+            AppError::InternalServerError(
+                "Failed to save image metadata to database".to_string(),
+            )
+        })?;
 
-            // Magic bytes only confirm the header; fully decode (with size/alloc
-            // limits) so polyglot files and decompression bombs can't slip past.
-            let decoded = decode_with_limits(&data).map_err(|e| {
-                tracing::warn!("Image decode rejected: {:?}", e);
-                AppError::BadRequest("Invalid or oversized image file.".to_string())
-            })?;
-
-            let file_size = data.len() as i64;
-            let image_uuid = Uuid::new_v4();
-            let storage_filename = format!("{}.{}", image_uuid, extension);
-            let storage_path = format!("{}/{}", upload_dir, storage_filename);
-
-            if let Err(e) = fs::write(&storage_path, &data).await {
-                tracing::error!("Error writing file to disk: {:?}", e);
-                return Err(AppError::InternalServerError(
-                    "Failed to write image file to disk".to_string(),
-                ));
-            }
-
-            generate_variants(&decoded, &storage_path);
-
-            let new_image = NewImage {
-                file_name: original_filename.clone(),
-                storage_path: storage_path.clone(),
-                file_size,
-            };
-
-            let inserted_image: Image = diesel::insert_into(images::table)
-                .values(&new_image)
-                .get_result(conn)
-                .map_err(|e| {
-                    tracing::error!("Error inserting image into DB: {:?}", e);
-                    AppError::InternalServerError(
-                        "Failed to save image metadata to database".to_string(),
-                    )
-                })?;
-
-            return Ok(Json(inserted_image));
-        }
-    }
-
-    Err(AppError::BadRequest(
-        "No file found in multipart upload".to_string(),
-    ))
+    Ok(Json(inserted_image))
 }
 
 pub async fn get_all_images(conn: &mut PgConnection) -> Result<Json<Vec<Image>>, AppError> {

@@ -6,6 +6,7 @@ use serde::Serialize;
 
 const LANGS: [&str; 2] = ["ro", "en"];
 const X_DEFAULT_LANG: &str = "ro";
+const ISO_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%:z";
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SitemapAlternate {
@@ -29,11 +30,11 @@ pub struct SitemapData {
 }
 
 fn iso_lastmod_now() -> String {
-    Utc::now().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
+    Utc::now().format(ISO_FORMAT).to_string()
 }
 
 fn iso_lastmod(ts: NaiveDateTime) -> String {
-    ts.and_utc().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
+    ts.and_utc().format(ISO_FORMAT).to_string()
 }
 
 /// Build the absolute URL for a given language and path suffix.

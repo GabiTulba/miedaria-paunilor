@@ -117,7 +117,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
 
         if (!formData.slug?.trim()) {
             errors.slug = t('common.required');
-        } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+        } else if (!/^[a-z0-9_-]+$/.test(formData.slug)) {
             errors.slug = t('admin.blog.form.slugInvalid');
         }
 

@@ -22,25 +22,26 @@ struct Config {
     image_upload_dir: String,
 }
 
+/// Read `name` from the env, recording it in `missing` (and returning an
+/// empty string) if absent. The caller checks `missing` after reading every
+/// required var so a single error message can list every missing key.
+fn required(name: &'static str, missing: &mut Vec<&'static str>) -> String {
+    env::var(name).unwrap_or_else(|_| {
+        missing.push(name);
+        String::new()
+    })
+}
+
 impl Config {
     fn from_env() -> Result<Self, String> {
         let mut missing = Vec::<&str>::new();
 
-        macro_rules! require {
-            ($name:literal) => {
-                env::var($name).unwrap_or_else(|_| {
-                    missing.push($name);
-                    String::new()
-                })
-            };
-        }
-
-        let database_url = require!("DATABASE_URL");
-        let allowed_origin = require!("ALLOWED_ORIGIN");
-        let backend_port_str = require!("BACKEND_PORT");
-        let jwt_secret = require!("JWT_SECRET");
-        let jwt_expiration_hours_str = require!("JWT_EXPIRATION_HOURS");
-        let image_upload_dir = require!("IMAGE_UPLOAD_DIR");
+        let database_url = required("DATABASE_URL", &mut missing);
+        let allowed_origin = required("ALLOWED_ORIGIN", &mut missing);
+        let backend_port_str = required("BACKEND_PORT", &mut missing);
+        let jwt_secret = required("JWT_SECRET", &mut missing);
+        let jwt_expiration_hours_str = required("JWT_EXPIRATION_HOURS", &mut missing);
+        let image_upload_dir = required("IMAGE_UPLOAD_DIR", &mut missing);
 
         if !missing.is_empty() {
             return Err(format!(
@@ -140,22 +141,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pool = db::establish_pooled_connection(&config.database_url)
         .expect("Failed to create database pool");
 
-    let allowed_origin = config
-        .allowed_origin
-        .parse::<HeaderValue>()
-        .expect("ALLOWED_ORIGIN is not a valid header value");
-
+    // `AppState.site_url` is the canonical string form; CORS parses from it
+    // so the two stay in lock-step (no chance of a trailing-slash drift).
     let app_state = Arc::new(AppState {
         pool,
         login_limiter: build_login_limiter(),
         image_serve_limiter: build_image_serve_limiter(),
         admin_limiter: build_admin_limiter(),
         public_api_limiter: build_public_api_limiter(),
-        site_url: config.allowed_origin.clone(),
+        site_url: config.allowed_origin,
         jwt_secret: config.jwt_secret,
         jwt_expiration_hours: config.jwt_expiration_hours,
         image_upload_dir: config.image_upload_dir,
     });
+
+    let allowed_origin = app_state
+        .site_url
+        .parse::<HeaderValue>()
+        .expect("ALLOWED_ORIGIN is not a valid header value");
 
     let cors = CorsLayer::new()
         .allow_origin(allowed_origin)

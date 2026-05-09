@@ -49,29 +49,26 @@ pub struct LocalizedBlogPost {
     pub is_published: bool,
 }
 
+/// Pick the language-specific value for a field that has both an English and
+/// a Romanian variant. Caller passes EN first, RO second.
+fn pick<T>(lang: Language, en: T, ro: T) -> T {
+    match lang {
+        Language::En => en,
+        Language::Ro => ro,
+    }
+}
+
 impl LocalizedProduct {
     pub fn from_product(product: Product, lang: Language) -> Self {
-        let (name, desc, ingr, price, currency) = match lang {
-            Language::Ro => (
-                product.product_name_ro,
-                product.product_description_ro,
-                product.ingredients_ro,
-                product.price_ron,
-                "RON".to_string(),
-            ),
-            Language::En => (
-                product.product_name,
-                product.product_description,
-                product.ingredients,
-                product.price,
-                "EUR".to_string(),
-            ),
-        };
         LocalizedProduct {
             product_id: product.product_id,
-            product_name: name,
-            product_description: desc,
-            ingredients: ingr,
+            product_name: pick(lang, product.product_name, product.product_name_ro),
+            product_description: pick(
+                lang,
+                product.product_description,
+                product.product_description_ro,
+            ),
+            ingredients: pick(lang, product.ingredients, product.ingredients_ro),
             product_type: product.product_type,
             sweetness: product.sweetness,
             turbidity: product.turbidity,
@@ -82,8 +79,8 @@ impl LocalizedProduct {
             abv: product.abv,
             bottle_count: product.bottle_count,
             bottle_size: product.bottle_size,
-            price,
-            currency,
+            price: pick(lang, product.price, product.price_ron),
+            currency: pick(lang, "EUR", "RON").to_string(),
             image_id: product.image_id,
             bottling_date: product.bottling_date,
             lot_number: product.lot_number,
@@ -102,24 +99,12 @@ impl LocalizedProductWithImage {
 
 impl LocalizedBlogPost {
     pub fn from_blog_post(post: BlogPost, lang: Language) -> Self {
-        let (title, content, excerpt) = match lang {
-            Language::Ro => (
-                post.title_ro,
-                post.content_markdown_ro,
-                post.excerpt_ro,
-            ),
-            Language::En => (
-                post.title,
-                post.content_markdown,
-                post.excerpt,
-            ),
-        };
         LocalizedBlogPost {
             id: post.id,
-            title,
+            title: pick(lang, post.title, post.title_ro),
             slug: post.slug,
-            content_markdown: content,
-            excerpt,
+            content_markdown: pick(lang, post.content_markdown, post.content_markdown_ro),
+            excerpt: pick(lang, post.excerpt, post.excerpt_ro),
             author: post.author,
             published_at: post.published_at,
             updated_at: post.updated_at,
