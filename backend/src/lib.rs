@@ -10,13 +10,15 @@ pub mod localized;
 pub mod models;
 pub mod pagination;
 pub mod product_crud;
+pub mod routes;
 pub mod rss_crud;
 pub mod schema;
 pub mod sitemap_crud;
 pub mod user_crud;
 pub mod utils;
 
-pub use crate::db::get_db_connection;
+// Re-exported at the crate root because submodules import `crate::AppError`
+// throughout. `ErrorResponse` is part of the public response shape.
 pub use crate::error::{AppError, ErrorResponse};
 
 use governor::{Quota, RateLimiter, clock::DefaultClock, state::keyed::DefaultKeyedStateStore};
@@ -62,19 +64,8 @@ pub struct AppState {
     pub image_upload_dir: String,
 }
 
-// Export modules and their contents
-pub use crate::auth::{Claims, LoginPayload, LoginResponse};
-pub use crate::blog_crud::{
-    count_all_blog_posts, count_all_blog_posts_admin, create_blog_post, delete_blog_post,
-    get_all_blog_posts, get_all_blog_posts_admin, get_blog_post_by_slug, get_blog_post_by_id,
-    update_blog_post,
-};
-pub use crate::models::{AdminUser, NewAdminUser, NewProduct, PaginatedResponse, Product};
-pub use crate::product_crud::{
-    count_products, create_product, delete_product, get_product, get_product_admin,
-    hard_delete_product, list_products, restore_product, update_product, IncludeDeleted,
-    ListProductsOptions, ProductFilters,
-};
-pub use crate::schema::*;
-pub use crate::user_crud::{create_admin, delete_admin, get_admin, update_admin_password};
-pub use crate::utils::{hash_password, verify_password};
+// Crate-root re-exports — only the symbols genuinely shared across
+// submodules (`crate::AppError`) or required by the `add_admin_user` bin.
+// Everything else is namespaced (`backend::<module>::Symbol`).
+pub use crate::user_crud::{create_admin, get_admin};
+pub use crate::utils::verify_password;

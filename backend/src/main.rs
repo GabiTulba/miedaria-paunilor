@@ -1,31 +1,16 @@
-use axum::{
-    Json, Router,
-    extract::{DefaultBodyLimit, Path, Query, State},
-    http::StatusCode,
-    response::{AppendHeaders, IntoResponse},
-    routing::{delete, get, post, put},
-};
-use dotenvy::dotenv;
 use std::{env, net::SocketAddr, sync::Arc};
 
-use axum::extract::Extension;
-use axum::extract::Multipart;
-use backend::AppError;
-use backend::blog_crud;
-use backend::enum_crud;
-use backend::image_crud;
-use backend::language::Language;
-use backend::localized::{LocalizedBlogPost, LocalizedProductWithImage};
-use backend::models::PaginatedResponse;
-use backend::pagination::{self, PageQuery};
-use backend::product_crud::{ListProductsOptions, ProductFilters, ProductWithImage};
-use backend::rss_crud;
-use backend::sitemap_crud;
-use backend::enums::*;
-use backend::product_crud::IncludeDeleted;
+use axum::{
+    Router,
+    extract::DefaultBodyLimit,
+    routing::post,
+};
+use dotenvy::dotenv;
+
+use backend::routes;
 use backend::{
     AppState, auth, build_admin_limiter, build_image_serve_limiter, build_login_limiter,
-    build_public_api_limiter, db, models, product_crud,
+    build_public_api_limiter, db,
 };
 
 struct Config {
@@ -189,22 +174,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expose_headers([header::VARY]);
 
     let admin_routes = Router::new()
-        .route("/protected", get(protected_route))
-        .route("/products", get(list_products_admin).post(create_product))
-        .route("/products/{product_id}", get(get_product_by_id_admin).put(update_product).delete(delete_product))
-        .route("/products/{product_id}/restore", post(restore_product_handler))
-        .route("/products/{product_id}/hard", delete(hard_delete_product_handler))
-        .route("/blog", post(create_blog_post))
-        .route("/blog/{id}", put(update_blog_post))
-        .route("/blog/{id}", delete(delete_blog_post))
-        .route("/blog/admin", get(get_all_blog_posts_admin))
-        .route("/images", get(list_images))
-        .route(
-            "/images",
-            post(upload_image_handler).layer(DefaultBodyLimit::max(52_428_800)), // 50MB only for image upload
-        )
-        .route("/images/{image_id}", put(update_image_meta_handler)) // Updated to use wrapper
-        .route("/images/{image_id}", delete(delete_image_wrapper)) // Updated to use wrapper
+        .merge(routes::product::admin_router())
+        .merge(routes::blog::admin_router())
+        .merge(routes::image::admin_router())
+        .merge(routes::misc::admin_router())
         .route_layer(axum::middleware::from_fn_with_state(
             app_state.clone(),
             auth::auth_middleware,
@@ -214,18 +187,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             auth::admin_rate_limit,
         ));
 
-    let public_image_route = Router::new()
-        .route("/images/{image_id}", get(serve_image_handler))
-        .route_layer(axum::middleware::from_fn_with_state(
-            app_state.clone(),
-            auth::image_serve_rate_limit,
-        ));
+    let public_image_route = routes::image::public_serve_router().route_layer(
+        axum::middleware::from_fn_with_state(app_state.clone(), auth::image_serve_rate_limit),
+    );
 
     let public_api_routes = Router::new()
-        .route("/api/products", get(get_all_products))
-        .route("/api/products/{product_id}", get(get_product_by_id))
-        .route("/api/blog", get(get_all_blog_posts))
-        .route("/api/blog/{slug}", get(get_blog_post_by_slug))
+        .merge(routes::product::public_router())
+        .merge(routes::blog::public_router())
         .route_layer(axum::middleware::from_fn_with_state(
             app_state.clone(),
             auth::public_api_rate_limit,
@@ -234,10 +202,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         .merge(public_image_route)
         .merge(public_api_routes)
-        .route("/health", get(health_check))
-        .route("/api/enums", get(get_enum_values))
-        .route("/api/sitemap-data", get(get_sitemap_data))
-        .route("/blog/rss.xml", get(get_blog_rss))
+        .merge(routes::misc::unscoped_router())
         .route("/api/admin/login", post(auth::login))
         .nest("/api/admin", admin_routes)
         .with_state(app_state)
@@ -250,402 +215,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("listening on {}", addr);
     axum::serve(listener, app.into_make_service()).await?;
     Ok(())
-}
-
-async fn health_check() -> impl IntoResponse {
-    (StatusCode::OK, "OK")
-}
-
-async fn get_enum_values() -> Result<Json<enum_crud::EnumValues>, AppError> {
-    let enum_values = enum_crud::get_all_enum_values();
-    Ok(Json(enum_values))
-}
-
-async fn upload_image_handler(
-    State(app_state): State<Arc<AppState>>,
-    multipart: Multipart,
-) -> Result<Json<models::Image>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    image_crud::upload_image(&mut conn, multipart, &app_state.image_upload_dir).await
-}
-
-#[derive(Debug, serde::Deserialize)]
-pub struct ServeImageQuery {
-    w: Option<u32>,
-}
-
-async fn serve_image_handler(
-    State(app_state): State<Arc<AppState>>,
-    Path(image_id): Path<uuid::Uuid>,
-    Query(params): Query<ServeImageQuery>,
-) -> Result<impl IntoResponse, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    let (headers, content) = image_crud::serve_image(&mut conn, image_id, params.w).await?;
-    Ok((headers, content))
-}
-
-async fn update_image_meta_handler(
-    State(app_state): State<Arc<AppState>>,
-    Path(image_id): Path<uuid::Uuid>,
-    Json(updated_image): Json<models::UpdateImage>,
-) -> Result<Json<models::Image>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    image_crud::update_image(&mut conn, image_id, updated_image, &app_state.image_upload_dir).await
-}
-
-async fn delete_image_wrapper(
-    State(app_state): State<Arc<AppState>>,
-    Path(image_id): Path<uuid::Uuid>,
-) -> Result<StatusCode, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    image_crud::delete_image(&mut conn, image_id).await
-}
-
-#[derive(Debug, serde::Deserialize)]
-pub struct GetProductsQuery {
-    order_by: Option<String>,
-    order_direction: Option<String>,
-    search: Option<String>,
-    in_stock: Option<bool>,
-    product_type: Option<MeadType>,
-    sweetness: Option<SweetnessType>,
-    turbidity: Option<TurbidityType>,
-    effervescence: Option<EffervescenceType>,
-    acidity: Option<AcidityType>,
-    tannins: Option<TanninsType>,
-    body: Option<BodyType>,
-    page: Option<u32>,
-    per_page: Option<u32>,
-}
-
-impl GetProductsQuery {
-    fn filters(&self) -> ProductFilters {
-        ProductFilters {
-            in_stock: self.in_stock,
-            product_type: self.product_type,
-            sweetness: self.sweetness,
-            turbidity: self.turbidity,
-            effervescence: self.effervescence,
-            acidity: self.acidity,
-            tannins: self.tannins,
-            body: self.body,
-        }
-    }
-    fn page_query(&self) -> PageQuery {
-        PageQuery { page: self.page, per_page: self.per_page }
-    }
-}
-
-#[derive(Debug, serde::Deserialize)]
-pub struct GetBlogPostsQuery {
-    page: Option<u32>,
-    per_page: Option<u32>,
-}
-
-impl GetBlogPostsQuery {
-    fn page_query(&self) -> PageQuery {
-        PageQuery { page: self.page, per_page: self.per_page }
-    }
-}
-
-type VaryLang = AppendHeaders<[(axum::http::HeaderName, &'static str); 1]>;
-
-fn vary_accept_language() -> VaryLang {
-    AppendHeaders([(axum::http::header::VARY, "Accept-Language")])
-}
-
-async fn get_all_products(
-    State(app_state): State<Arc<AppState>>,
-    query: Query<GetProductsQuery>,
-    lang: Language,
-) -> Result<(VaryLang, Json<PaginatedResponse<LocalizedProductWithImage>>), AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-
-    if let Some(s) = query.search.as_deref() {
-        product_crud::validate_search_term(s)?;
-    }
-
-    let page = query.page_query().resolve(20, 100);
-
-    let opts = ListProductsOptions {
-        include_deleted: IncludeDeleted::Active,
-        filters: query.filters(),
-        search: query.search.as_deref(),
-        order_by: query.order_by.as_deref(),
-        order_direction: query.order_direction.as_deref(),
-    };
-
-    let total_count = product_crud::count_products(&mut conn, &opts)?;
-    let products = product_crud::list_products(&mut conn, &opts, page.limit, page.offset)?;
-
-    let items: Vec<_> = products
-        .into_iter()
-        .map(|p| LocalizedProductWithImage::from_product_with_image(p, lang))
-        .collect();
-
-    let total_pages = pagination::total_pages(total_count, page.per_page);
-
-    Ok((vary_accept_language(), Json(PaginatedResponse { items, total_pages })))
-}
-
-async fn get_product_by_id(
-    State(app_state): State<Arc<AppState>>,
-    Path(product_id): Path<String>,
-    lang: Language,
-) -> Result<(VaryLang, Json<LocalizedProductWithImage>), AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-
-    let product = product_crud::get_product(&mut conn, &product_id)?.ok_or(AppError::NotFound(
-        format!("Product with id {} not found", product_id),
-    ))?;
-
-    Ok((
-        vary_accept_language(),
-        Json(LocalizedProductWithImage::from_product_with_image(product, lang)),
-    ))
-}
-
-async fn get_product_by_id_admin(
-    State(app_state): State<Arc<AppState>>,
-    Path(product_id): Path<String>,
-) -> Result<Json<ProductWithImage>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-
-    let product = product_crud::get_product_admin(&mut conn, &product_id)?.ok_or(
-        AppError::NotFound(format!("Product with id {} not found", product_id)),
-    )?;
-
-    Ok(Json(product))
-}
-
-async fn protected_route(Extension(claims): Extension<auth::Claims>) -> Result<String, StatusCode> {
-    Ok(format!("Welcome to the protected area, {}!", claims.sub))
-}
-
-#[derive(Debug, serde::Deserialize)]
-pub struct GetAdminProductsQuery {
-    include_deleted: Option<IncludeDeleted>,
-    order_by: Option<String>,
-    order_direction: Option<String>,
-    in_stock: Option<bool>,
-    product_type: Option<MeadType>,
-    sweetness: Option<SweetnessType>,
-    turbidity: Option<TurbidityType>,
-    effervescence: Option<EffervescenceType>,
-    acidity: Option<AcidityType>,
-    tannins: Option<TanninsType>,
-    body: Option<BodyType>,
-    page: Option<u32>,
-    per_page: Option<u32>,
-}
-
-impl GetAdminProductsQuery {
-    fn filters(&self) -> ProductFilters {
-        ProductFilters {
-            in_stock: self.in_stock,
-            product_type: self.product_type,
-            sweetness: self.sweetness,
-            turbidity: self.turbidity,
-            effervescence: self.effervescence,
-            acidity: self.acidity,
-            tannins: self.tannins,
-            body: self.body,
-        }
-    }
-    fn page_query(&self) -> PageQuery {
-        PageQuery { page: self.page, per_page: self.per_page }
-    }
-}
-
-async fn list_products_admin(
-    State(app_state): State<Arc<AppState>>,
-    query: Query<GetAdminProductsQuery>,
-) -> Result<Json<PaginatedResponse<product_crud::ProductWithImage>>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-
-    let page = query.page_query().resolve(20, 100);
-
-    let opts = ListProductsOptions {
-        include_deleted: query.include_deleted.unwrap_or_default(),
-        filters: query.filters(),
-        search: None,
-        order_by: query.order_by.as_deref(),
-        order_direction: query.order_direction.as_deref(),
-    };
-
-    let total_count = product_crud::count_products(&mut conn, &opts)?;
-    let items = product_crud::list_products(&mut conn, &opts, page.limit, page.offset)?;
-
-    let total_pages = pagination::total_pages(total_count, page.per_page);
-
-    Ok(Json(PaginatedResponse { items, total_pages }))
-}
-
-async fn restore_product_handler(
-    State(app_state): State<Arc<AppState>>,
-    Path(product_id): Path<String>,
-) -> Result<Json<models::Product>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    let product = product_crud::restore_product(&mut conn, &product_id)?;
-    Ok(Json(product))
-}
-
-async fn hard_delete_product_handler(
-    State(app_state): State<Arc<AppState>>,
-    Path(product_id): Path<String>,
-) -> Result<StatusCode, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    product_crud::hard_delete_product(&mut conn, &product_id)?;
-    Ok(StatusCode::NO_CONTENT)
-}
-
-async fn create_product(
-    State(app_state): State<Arc<AppState>>,
-    Json(new_product): Json<models::NewProduct>,
-) -> Result<Json<models::Product>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-
-    let product = product_crud::create_product(&mut conn, &new_product)?;
-
-    Ok(Json(product))
-}
-
-async fn update_product(
-    State(app_state): State<Arc<AppState>>,
-    Path(product_id): Path<String>,
-    Json(mut product): Json<models::Product>,
-) -> Result<Json<models::Product>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-
-    product.product_id = product_id;
-
-    let updated_product = product_crud::update_product(&mut conn, &product)?;
-
-    Ok(Json(updated_product))
-}
-
-async fn delete_product(
-    State(app_state): State<Arc<AppState>>,
-    Path(product_id): Path<String>,
-) -> Result<StatusCode, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-
-    // Snapshot the image path while the product still exists so we can clean
-    // up its variant files after the soft-delete succeeds. Original is kept on
-    // disk to allow restore.
-    let storage_path = product_crud::get_product_admin(&mut conn, &product_id)?
-        .and_then(|p| p.image)
-        .map(|img| img.storage_path);
-
-    product_crud::delete_product(&mut conn, &product_id)?;
-
-    if let Some(path) = storage_path {
-        image_crud::delete_image_variants(&path).await;
-    }
-
-    Ok(StatusCode::NO_CONTENT)
-}
-
-async fn list_images(
-    State(app_state): State<Arc<AppState>>,
-) -> Result<Json<Vec<models::Image>>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    image_crud::get_all_images(&mut conn).await
-}
-
-async fn get_all_blog_posts(
-    State(app_state): State<Arc<AppState>>,
-    query: Query<GetBlogPostsQuery>,
-    lang: Language,
-) -> Result<(VaryLang, Json<PaginatedResponse<LocalizedBlogPost>>), AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    let page = query.page_query().resolve(10, 50);
-    let total_count = blog_crud::count_all_blog_posts(&mut conn)?;
-    let posts = blog_crud::get_all_blog_posts(&mut conn, page.limit, page.offset)?;
-    let items: Vec<_> = posts
-        .into_iter()
-        .map(|p| LocalizedBlogPost::from_blog_post(p, lang))
-        .collect();
-    let total_pages = pagination::total_pages(total_count, page.per_page);
-    Ok((vary_accept_language(), Json(PaginatedResponse { items, total_pages })))
-}
-
-async fn get_all_blog_posts_admin(
-    State(app_state): State<Arc<AppState>>,
-    query: Query<GetBlogPostsQuery>,
-) -> Result<Json<PaginatedResponse<models::BlogPost>>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    let page = query.page_query().resolve(10, 50);
-    let total_count = blog_crud::count_all_blog_posts_admin(&mut conn)?;
-    let items = blog_crud::get_all_blog_posts_admin(&mut conn, page.limit, page.offset)?;
-    let total_pages = pagination::total_pages(total_count, page.per_page);
-    Ok(Json(PaginatedResponse { items, total_pages }))
-}
-
-async fn get_blog_post_by_slug(
-    State(app_state): State<Arc<AppState>>,
-    Path(slug): Path<String>,
-    lang: Language,
-) -> Result<(VaryLang, Json<LocalizedBlogPost>), AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    let post = blog_crud::get_blog_post_by_slug(&mut conn, &slug)?;
-    Ok((
-        vary_accept_language(),
-        Json(LocalizedBlogPost::from_blog_post(post, lang)),
-    ))
-}
-
-async fn get_sitemap_data(
-    State(app_state): State<Arc<AppState>>,
-) -> Result<Json<sitemap_crud::SitemapData>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    let sitemap_data = sitemap_crud::get_sitemap_data(&mut conn, &app_state.site_url)?;
-    Ok(Json(sitemap_data))
-}
-
-async fn get_blog_rss(
-    State(app_state): State<Arc<AppState>>,
-) -> Result<impl IntoResponse, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    let body = rss_crud::generate_rss_xml(&mut conn, &app_state.site_url)?;
-    Ok((
-        StatusCode::OK,
-        [
-            (
-                axum::http::header::CONTENT_TYPE,
-                "application/rss+xml; charset=utf-8",
-            ),
-            (axum::http::header::CACHE_CONTROL, "public, max-age=600"),
-        ],
-        body,
-    ))
-}
-
-async fn create_blog_post(
-    State(app_state): State<Arc<AppState>>,
-    Json(new_post): Json<models::NewBlogPost>,
-) -> Result<Json<models::BlogPost>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    let post = blog_crud::create_blog_post(&mut conn, new_post)?;
-    Ok(Json(post))
-}
-
-async fn update_blog_post(
-    State(app_state): State<Arc<AppState>>,
-    Path(blog_id): Path<uuid::Uuid>,
-    Json(update_post): Json<models::UpdateBlogPost>,
-) -> Result<Json<models::BlogPost>, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    let post = blog_crud::update_blog_post(&mut conn, blog_id, update_post)?;
-    Ok(Json(post))
-}
-
-async fn delete_blog_post(
-    State(app_state): State<Arc<AppState>>,
-    Path(blog_id): Path<uuid::Uuid>,
-) -> Result<StatusCode, AppError> {
-    let mut conn = db::get_db_connection(&app_state)?;
-    blog_crud::delete_blog_post(&mut conn, blog_id)
-        .map(|_| StatusCode::NO_CONTENT)
-        .map_err(AppError::from)
 }
