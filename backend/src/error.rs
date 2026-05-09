@@ -3,25 +3,8 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde::Serialize;
 
-use crate::blog_crud::{BlogCreationError, BlogUpdateError};
-use crate::product_crud::{
-    HardDeleteError, ProductCreationError, ProductUpdateError, RestoreError, SoftDeleteError,
-};
-
-/// Builds a generic 500 response for database failures. Logs the actual error
-/// server-side so it stays diagnosable, but the client sees only a stable
-/// message — avoids leaking schema details (constraint/table/column names) to
-/// callers, which could otherwise accelerate reconnaissance.
-fn db_error_response(context: &str, detail: impl std::fmt::Display) -> Response {
-    tracing::error!(context = context, error = %detail, "db error");
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(ErrorResponse {
-            message: "Internal server error".to_string(),
-        }),
-    )
-        .into_response()
-}
+use crate::blog_crud::BlogValidationError;
+use crate::product_crud::ProductValidationError;
 
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
@@ -29,311 +12,121 @@ pub struct ErrorResponse {
 }
 
 #[derive(Debug, Serialize)]
-struct ValidationErrorResponse<E: Serialize> {
-    message: String,
-    errors: Vec<E>,
+pub struct ValidationErrorResponse<E: Serialize> {
+    pub message: String,
+    pub errors: Vec<E>,
+}
+
+/// Internal repository-layer error returned by CRUD functions. Translated to
+/// `AppError` at the handler boundary via `From`. Diesel errors are wrapped
+/// (not stringified) so the `IntoResponse` layer logs them once with full
+/// context while the client only sees a generic 500.
+#[derive(Debug)]
+pub enum RepositoryError {
+    /// 404 with the given message
+    NotFound(String),
+    /// 409 with the given message (duplicate slug, already-deleted, too-recent, …)
+    Conflict(String),
+    /// 400 with the given message (not-deleted, not-soft-deleted, …)
+    BadRequest(String),
+    /// 400 with `{message: "Validation failed", errors: [...]}` envelope
+    ProductValidation(Vec<ProductValidationError>),
+    BlogValidation(Vec<BlogValidationError>),
+    /// Wraps a Diesel error; surfaces as a generic 500 with server-side log.
+    Database(diesel::result::Error),
 }
 
 #[derive(Debug)]
 pub enum AppError {
-    BlogCreation(BlogCreationError),
-    BlogUpdate(BlogUpdateError),
-    ProductCreation(ProductCreationError),
-    ProductUpdate(ProductUpdateError),
-    DatabaseConnectionError,
-    InternalServerError(String),
     NotFound(String),
-    BadRequest(String),
     Conflict(String),
+    BadRequest(String),
     Unauthorized(String),
+    InternalServerError(String),
+    DatabaseConnectionError,
     TooManyRequests,
+    ProductValidation(Vec<ProductValidationError>),
+    BlogValidation(Vec<BlogValidationError>),
+    Database(diesel::result::Error),
+}
+
+fn json_error(status: StatusCode, message: impl Into<String>) -> Response {
+    (
+        status,
+        Json(ErrorResponse {
+            message: message.into(),
+        }),
+    )
+        .into_response()
+}
+
+fn json_validation_error<E: Serialize>(errors: Vec<E>) -> Response {
+    (
+        StatusCode::BAD_REQUEST,
+        Json(ValidationErrorResponse {
+            message: "Validation failed".to_string(),
+            errors,
+        }),
+    )
+        .into_response()
 }
 
 impl IntoResponse for AppError {
-    fn into_response(self) -> axum::response::Response {
+    fn into_response(self) -> Response {
         match self {
-            AppError::BlogCreation(err) => match err {
-                BlogCreationError::ValidationErrors(validation_errors) => (
-                    StatusCode::BAD_REQUEST,
-                    Json(ValidationErrorResponse {
-                        message: "Validation failed".to_string(),
-                        errors: validation_errors,
-                    }),
-                )
-                    .into_response(),
-                BlogCreationError::DuplicateSlug => (
-                    StatusCode::CONFLICT,
-                    Json(ErrorResponse {
-                        message: "Blog post with this slug already exists.".to_string(),
-                    }),
-                )
-                    .into_response(),
-                BlogCreationError::DatabaseError(msg) => {
-                    db_error_response("blog_creation", msg)
-                }
-                BlogCreationError::UnknownError => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse {
-                        message: "An unknown error occurred during blog post creation.".to_string(),
-                    }),
-                )
-                    .into_response(),
-            },
-            AppError::BlogUpdate(err) => match err {
-                BlogUpdateError::ValidationErrors(validation_errors) => (
-                    StatusCode::BAD_REQUEST,
-                    Json(ValidationErrorResponse {
-                        message: "Validation failed".to_string(),
-                        errors: validation_errors,
-                    }),
-                )
-                    .into_response(),
-                BlogUpdateError::NotFound => (
-                    StatusCode::NOT_FOUND,
-                    Json(ErrorResponse {
-                        message: "Blog post not found".to_string(),
-                    }),
-                )
-                    .into_response(),
-                BlogUpdateError::DuplicateSlug => (
-                    StatusCode::CONFLICT,
-                    Json(ErrorResponse {
-                        message: "Blog post with this slug already exists.".to_string(),
-                    }),
-                )
-                    .into_response(),
-                BlogUpdateError::DatabaseError(msg) => {
-                    db_error_response("blog_update", msg)
-                }
-                BlogUpdateError::UnknownError => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse {
-                        message: "An unknown error occurred during blog post update.".to_string(),
-                    }),
-                )
-                    .into_response(),
-            },
-            AppError::ProductCreation(err) => match err {
-                ProductCreationError::ValidationErrors(validation_errors) => (
-                    StatusCode::BAD_REQUEST,
-                    Json(ValidationErrorResponse {
-                        message: "Validation failed".to_string(),
-                        errors: validation_errors,
-                    }),
-                )
-                    .into_response(),
-                ProductCreationError::DuplicateProductId => (
-                    StatusCode::CONFLICT,
-                    Json(ErrorResponse {
-                        message: "Product with this ID already exists.".to_string(),
-                    }),
-                )
-                    .into_response(),
-                ProductCreationError::DatabaseError(msg) => {
-                    db_error_response("product_creation", msg)
-                }
-                ProductCreationError::UnknownError => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse {
-                        message: "An unknown error occurred during product creation.".to_string(),
-                    }),
-                )
-                    .into_response(),
-            },
-            AppError::ProductUpdate(err) => match err {
-                ProductUpdateError::ValidationErrors(validation_errors) => (
-                    StatusCode::BAD_REQUEST,
-                    Json(ValidationErrorResponse {
-                        message: "Validation failed".to_string(),
-                        errors: validation_errors,
-                    }),
-                )
-                    .into_response(),
-                ProductUpdateError::NotFound => (
-                    StatusCode::NOT_FOUND,
-                    Json(ErrorResponse {
-                        message: "Product not found".to_string(),
-                    }),
-                )
-                    .into_response(),
-                ProductUpdateError::DatabaseError(msg) => {
-                    db_error_response("product_update", msg)
-                }
-                ProductUpdateError::UnknownError => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse {
-                        message: "An unknown error occurred during product update.".to_string(),
-                    }),
-                )
-                    .into_response(),
-            },
-            AppError::DatabaseConnectionError => (
+            AppError::NotFound(m) => json_error(StatusCode::NOT_FOUND, m),
+            AppError::Conflict(m) => json_error(StatusCode::CONFLICT, m),
+            AppError::BadRequest(m) => json_error(StatusCode::BAD_REQUEST, m),
+            AppError::Unauthorized(m) => json_error(StatusCode::UNAUTHORIZED, m),
+            AppError::InternalServerError(m) => json_error(StatusCode::INTERNAL_SERVER_ERROR, m),
+            AppError::DatabaseConnectionError => json_error(
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse {
-                    message: "Could not connect to database".to_string(),
-                }),
-            )
-                .into_response(),
-            AppError::InternalServerError(msg) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse { message: msg }),
-            )
-                .into_response(),
-            AppError::NotFound(msg) => {
-                (StatusCode::NOT_FOUND, Json(ErrorResponse { message: msg })).into_response()
-            }
-            AppError::BadRequest(msg) => (
-                StatusCode::BAD_REQUEST,
-                Json(ErrorResponse { message: msg }),
-            )
-                .into_response(),
-            AppError::Conflict(msg) => (
-                StatusCode::CONFLICT,
-                Json(ErrorResponse { message: msg }),
-            )
-                .into_response(),
-            AppError::Unauthorized(msg) => (
-                StatusCode::UNAUTHORIZED,
-                Json(ErrorResponse { message: msg }),
-            )
-                .into_response(),
-            AppError::TooManyRequests => (
+                "Could not connect to database",
+            ),
+            AppError::TooManyRequests => json_error(
                 StatusCode::TOO_MANY_REQUESTS,
-                Json(ErrorResponse {
-                    message: "Too many requests. Try again later.".to_string(),
-                }),
-            )
-                .into_response(),
+                "Too many requests. Try again later.",
+            ),
+            AppError::ProductValidation(errors) => json_validation_error(errors),
+            AppError::BlogValidation(errors) => json_validation_error(errors),
+            AppError::Database(e) => {
+                tracing::error!(error = %e, "db error");
+                json_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
+            }
         }
     }
 }
 
-impl From<BlogCreationError> for AppError {
-    fn from(error: BlogCreationError) -> Self {
-        AppError::BlogCreation(error)
+impl From<RepositoryError> for AppError {
+    fn from(e: RepositoryError) -> Self {
+        match e {
+            RepositoryError::NotFound(m) => AppError::NotFound(m),
+            RepositoryError::Conflict(m) => AppError::Conflict(m),
+            RepositoryError::BadRequest(m) => AppError::BadRequest(m),
+            RepositoryError::ProductValidation(v) => AppError::ProductValidation(v),
+            RepositoryError::BlogValidation(v) => AppError::BlogValidation(v),
+            RepositoryError::Database(e) => AppError::Database(e),
+        }
     }
 }
 
-impl From<BlogUpdateError> for AppError {
-    fn from(error: BlogUpdateError) -> Self {
-        AppError::BlogUpdate(error)
-    }
-}
-
-impl From<ProductCreationError> for AppError {
-    fn from(error: ProductCreationError) -> Self {
-        AppError::ProductCreation(error)
-    }
-}
-
-impl From<ProductUpdateError> for AppError {
-    fn from(error: ProductUpdateError) -> Self {
-        AppError::ProductUpdate(error)
+impl From<diesel::result::Error> for RepositoryError {
+    fn from(e: diesel::result::Error) -> Self {
+        // Default mapping: any unmapped Diesel error becomes a generic Database
+        // failure. Call sites that need finer mapping (DuplicateSlug,
+        // DuplicateProductId, …) inspect the error themselves before letting
+        // it reach this conversion.
+        match e {
+            diesel::result::Error::NotFound => {
+                RepositoryError::NotFound("Resource not found".to_string())
+            }
+            other => RepositoryError::Database(other),
+        }
     }
 }
 
 impl From<diesel::result::Error> for AppError {
-    fn from(error: diesel::result::Error) -> Self {
-        use diesel::result::{DatabaseErrorKind, Error as DieselError};
-        match error {
-            DieselError::NotFound => AppError::NotFound("Resource not found".to_string()),
-            DieselError::DatabaseError(kind, info) => match kind {
-                DatabaseErrorKind::UniqueViolation => {
-                    tracing::warn!(
-                        constraint = info.constraint_name().unwrap_or("unknown"),
-                        "unique violation"
-                    );
-                    AppError::BadRequest("Duplicate value".to_string())
-                }
-                DatabaseErrorKind::ForeignKeyViolation => {
-                    tracing::warn!(
-                        constraint = info.constraint_name().unwrap_or("unknown"),
-                        "foreign-key violation"
-                    );
-                    AppError::BadRequest("Foreign key constraint violated".to_string())
-                }
-                DatabaseErrorKind::NotNullViolation => {
-                    tracing::warn!(
-                        column = info.column_name().unwrap_or("unknown"),
-                        "not-null violation"
-                    );
-                    AppError::BadRequest("Required field missing".to_string())
-                }
-                DatabaseErrorKind::CheckViolation => {
-                    tracing::warn!(
-                        constraint = info.constraint_name().unwrap_or("unknown"),
-                        "check violation"
-                    );
-                    AppError::BadRequest("Value failed check constraint".to_string())
-                }
-                _ => {
-                    tracing::error!(kind = ?kind, message = info.message(), "db error");
-                    AppError::InternalServerError("Internal server error".to_string())
-                }
-            },
-            other => {
-                tracing::error!(error = %other, "db error");
-                AppError::InternalServerError("Internal server error".to_string())
-            }
-        }
-    }
-}
-
-impl From<SoftDeleteError> for AppError {
-    fn from(err: SoftDeleteError) -> Self {
-        match err {
-            SoftDeleteError::NotFound => AppError::NotFound("Product not found".to_string()),
-            SoftDeleteError::AlreadyDeleted => {
-                AppError::Conflict("Product is already deleted".to_string())
-            }
-            SoftDeleteError::DatabaseError(msg) => {
-                tracing::error!(error = %msg, "soft-delete db error");
-                AppError::InternalServerError("Internal server error".to_string())
-            }
-        }
-    }
-}
-
-impl From<RestoreError> for AppError {
-    fn from(err: RestoreError) -> Self {
-        match err {
-            RestoreError::NotFound => AppError::NotFound("Product not found".to_string()),
-            RestoreError::NotDeleted => {
-                AppError::BadRequest("Product is not deleted".to_string())
-            }
-            RestoreError::DatabaseError(msg) => {
-                tracing::error!(error = %msg, "restore db error");
-                AppError::InternalServerError("Internal server error".to_string())
-            }
-        }
-    }
-}
-
-impl From<HardDeleteError> for AppError {
-    fn from(err: HardDeleteError) -> Self {
-        match err {
-            HardDeleteError::NotFound => AppError::NotFound("Product not found".to_string()),
-            HardDeleteError::NotSoftDeleted => {
-                AppError::BadRequest("Product has not been soft-deleted".to_string())
-            }
-            HardDeleteError::TooRecent(eligible_at) => AppError::Conflict(format!(
-                "Product cannot be permanently deleted until {}",
-                eligible_at.format("%Y-%m-%dT%H:%M:%SZ")
-            )),
-            HardDeleteError::DatabaseError(msg) => {
-                tracing::error!(error = %msg, "hard-delete db error");
-                AppError::InternalServerError("Internal server error".to_string())
-            }
-        }
-    }
-}
-
-impl From<StatusCode> for AppError {
-    fn from(status: StatusCode) -> Self {
-        if status == StatusCode::INTERNAL_SERVER_ERROR {
-            AppError::InternalServerError("An internal server error occurred".to_string())
-        } else {
-            AppError::BadRequest(format!("Request failed with status: {}", status))
-        }
+    fn from(e: diesel::result::Error) -> Self {
+        AppError::from(RepositoryError::from(e))
     }
 }

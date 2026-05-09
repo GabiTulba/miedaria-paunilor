@@ -1,3 +1,4 @@
+use crate::error::RepositoryError;
 use crate::models::{BlogPost, NewBlogPost, UpdateBlogPost};
 use crate::schema::*;
 use diesel::prelude::*;
@@ -27,58 +28,17 @@ pub enum BlogValidationError {
     AuthorTooLong,
 }
 
-#[derive(Debug)]
-pub enum BlogCreationError {
-    DuplicateSlug,
-    DatabaseError(String),
-    ValidationErrors(Vec<BlogValidationError>),
-    UnknownError,
-}
-
-impl From<DieselError> for BlogCreationError {
-    fn from(error: DieselError) -> Self {
-        match error {
-            DieselError::DatabaseError(kind, info) => {
-                if let DatabaseErrorKind::UniqueViolation = kind {
-                    if let Some(constraint_name) = info.constraint_name() {
-                        if constraint_name.contains("slug") {
-                            return BlogCreationError::DuplicateSlug;
-                        }
-                    }
-                }
-                BlogCreationError::DatabaseError(format!("{:?} - {:?}", kind, info))
-            }
-            _ => BlogCreationError::UnknownError,
+/// Map a Diesel `UniqueViolation` on a `slug` constraint to a typed
+/// `Conflict`; pass everything else through to `Database`.
+fn map_slug_conflict(e: DieselError) -> RepositoryError {
+    if let DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, ref info) = e {
+        if info.constraint_name().is_some_and(|c| c.contains("slug")) {
+            return RepositoryError::Conflict(
+                "Blog post with this slug already exists.".to_string(),
+            );
         }
     }
-}
-
-#[derive(Debug)]
-pub enum BlogUpdateError {
-    NotFound,
-    DuplicateSlug,
-    DatabaseError(String),
-    ValidationErrors(Vec<BlogValidationError>),
-    UnknownError,
-}
-
-impl From<DieselError> for BlogUpdateError {
-    fn from(error: DieselError) -> Self {
-        match error {
-            DieselError::NotFound => BlogUpdateError::NotFound,
-            DieselError::DatabaseError(kind, info) => {
-                if let DatabaseErrorKind::UniqueViolation = kind {
-                    if let Some(constraint_name) = info.constraint_name() {
-                        if constraint_name.contains("slug") {
-                            return BlogUpdateError::DuplicateSlug;
-                        }
-                    }
-                }
-                BlogUpdateError::DatabaseError(format!("{:?} - {:?}", kind, info))
-            }
-            _ => BlogUpdateError::UnknownError,
-        }
-    }
+    RepositoryError::Database(e)
 }
 
 fn validate_blog_post(new_post: &NewBlogPost) -> Vec<BlogValidationError> {
@@ -140,20 +100,20 @@ fn validate_blog_post(new_post: &NewBlogPost) -> Vec<BlogValidationError> {
 pub fn create_blog_post(
     conn: &mut PgConnection,
     mut new_post: NewBlogPost,
-) -> Result<BlogPost, BlogCreationError> {
+) -> Result<BlogPost, RepositoryError> {
     if new_post.is_published {
         new_post.published_at = Some(chrono::Utc::now().naive_utc());
     }
 
     let validation_errors = validate_blog_post(&new_post);
     if !validation_errors.is_empty() {
-        return Err(BlogCreationError::ValidationErrors(validation_errors));
+        return Err(RepositoryError::BlogValidation(validation_errors));
     }
 
     diesel::insert_into(blog_posts::table)
         .values(&new_post)
         .get_result(conn)
-        .map_err(BlogCreationError::from)
+        .map_err(map_slug_conflict)
 }
 
 pub fn count_all_blog_posts(conn: &mut PgConnection) -> QueryResult<i64> {
@@ -280,10 +240,10 @@ pub fn update_blog_post(
     conn: &mut PgConnection,
     id: uuid::Uuid,
     update_post: UpdateBlogPost,
-) -> Result<BlogPost, BlogUpdateError> {
+) -> Result<BlogPost, RepositoryError> {
     let validation_errors = validate_update_blog_post(&update_post);
     if !validation_errors.is_empty() {
-        return Err(BlogUpdateError::ValidationErrors(validation_errors));
+        return Err(RepositoryError::BlogValidation(validation_errors));
     }
 
     // Pre-check slug uniqueness so we can return a clean 409 before we hit
@@ -295,24 +255,28 @@ pub fn update_blog_post(
             .filter(blog_posts::id.ne(id))
             .select(blog_posts::id)
             .first::<uuid::Uuid>(conn)
-            .optional()
-            .map_err(BlogUpdateError::from)?;
+            .optional()?;
         if existing.is_some() {
-            return Err(BlogUpdateError::DuplicateSlug);
+            return Err(RepositoryError::Conflict(
+                "Blog post with this slug already exists.".to_string(),
+            ));
         }
     }
 
     let post: BlogPost = diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
         .set(&update_post)
         .get_result(conn)
-        .map_err(BlogUpdateError::from)?;
+        .map_err(|e| match e {
+            DieselError::NotFound => RepositoryError::NotFound("Blog post not found".to_string()),
+            other => map_slug_conflict(other),
+        })?;
 
     // Set published_at on first publish
     if post.is_published && post.published_at.is_none() {
         diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
             .set(blog_posts::published_at.eq(Some(chrono::Utc::now().naive_utc())))
             .get_result(conn)
-            .map_err(BlogUpdateError::from)
+            .map_err(RepositoryError::from)
     } else {
         Ok(post)
     }

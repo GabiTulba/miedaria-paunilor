@@ -1,5 +1,5 @@
+use crate::error::AppError;
 use crate::AppState;
-use axum::http::StatusCode;
 use diesel::Connection;
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
@@ -31,9 +31,9 @@ pub fn establish_pooled_connection(database_url: &str) -> Result<PgPool, r2d2::E
 
 pub fn get_db_connection(
     app_state: &Arc<AppState>,
-) -> Result<PooledConnection<ConnectionManager<PgConnection>>, StatusCode> {
-    app_state
-        .pool
-        .get()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+) -> Result<PooledConnection<ConnectionManager<PgConnection>>, AppError> {
+    app_state.pool.get().map_err(|e| {
+        tracing::error!(error = %e, "db pool exhausted");
+        AppError::DatabaseConnectionError
+    })
 }

@@ -1,8 +1,9 @@
 use crate::AppError;
 use crate::enums::*;
+use crate::error::RepositoryError;
 use crate::models::{Image, NewProduct, Product};
 use crate::schema::*;
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
 use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use rust_decimal::Decimal;
@@ -232,30 +233,20 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
     errors
 }
 
-#[derive(Debug)]
-pub enum ProductCreationError {
-    DuplicateProductId,
-    DatabaseError(String),
-    ValidationErrors(Vec<ProductValidationError>),
-    UnknownError,
-}
-
-impl From<DieselError> for ProductCreationError {
-    fn from(error: DieselError) -> Self {
-        match error {
-            DieselError::DatabaseError(kind, info) => {
-                if let DatabaseErrorKind::UniqueViolation = kind {
-                    if let Some(constraint_name) = info.constraint_name() {
-                        if constraint_name == "products_pkey" {
-                            return ProductCreationError::DuplicateProductId;
-                        }
-                    }
-                }
-                ProductCreationError::DatabaseError(format!("{:?} - {:?}", kind, info))
-            }
-            _ => ProductCreationError::UnknownError,
+/// Map a Diesel error to a `RepositoryError`, surfacing UniqueViolation on a
+/// matching constraint as a typed `Conflict` (with the supplied message) and
+/// passing everything else through to `Database`.
+fn map_unique_violation(
+    e: DieselError,
+    constraint_match: impl Fn(&str) -> bool,
+    conflict_message: &str,
+) -> RepositoryError {
+    if let DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, ref info) = e {
+        if info.constraint_name().is_some_and(constraint_match) {
+            return RepositoryError::Conflict(conflict_message.to_string());
         }
     }
+    RepositoryError::Database(e)
 }
 
 #[derive(Debug, Serialize, Queryable, Selectable)]
@@ -271,17 +262,23 @@ pub struct ProductWithImage {
 pub fn create_product(
     conn: &mut PgConnection,
     new_product: &NewProduct,
-) -> Result<Product, ProductCreationError> {
+) -> Result<Product, RepositoryError> {
     let validation_errors = validate_product(&ProductValidationInput::from(new_product));
     if !validation_errors.is_empty() {
-        return Err(ProductCreationError::ValidationErrors(validation_errors));
+        return Err(RepositoryError::ProductValidation(validation_errors));
     }
 
     diesel::insert_into(products::table)
         .values(new_product)
         .returning(Product::as_returning())
         .get_result(conn)
-        .map_err(ProductCreationError::from)
+        .map_err(|e| {
+            map_unique_violation(
+                e,
+                |c| c == "products_pkey",
+                "Product with this ID already exists.",
+            )
+        })
 }
 
 pub fn get_product(conn: &mut PgConnection, id: &str) -> QueryResult<Option<ProductWithImage>> {
@@ -309,33 +306,13 @@ pub fn get_product_admin(conn: &mut PgConnection, id: &str) -> QueryResult<Optio
         .optional()
 }
 
-#[derive(Debug, Serialize)]
-pub enum ProductUpdateError {
-    DatabaseError(String),
-    ValidationErrors(Vec<ProductValidationError>),
-    NotFound,
-    UnknownError,
-}
-
-impl From<DieselError> for ProductUpdateError {
-    fn from(err: DieselError) -> Self {
-        match err {
-            DieselError::NotFound => ProductUpdateError::NotFound,
-            DieselError::DatabaseError(_, info) => {
-                ProductUpdateError::DatabaseError(info.message().to_string())
-            }
-            _ => ProductUpdateError::UnknownError,
-        }
-    }
-}
-
 pub fn update_product(
     conn: &mut PgConnection,
     product: &Product,
-) -> Result<Product, ProductUpdateError> {
+) -> Result<Product, RepositoryError> {
     let validation_errors = validate_product(&ProductValidationInput::from(product));
     if !validation_errors.is_empty() {
-        return Err(ProductUpdateError::ValidationErrors(validation_errors));
+        return Err(RepositoryError::ProductValidation(validation_errors));
     }
 
     diesel::update(products::table)
@@ -343,17 +320,13 @@ pub fn update_product(
         .set(product)
         .returning(Product::as_returning())
         .get_result(conn)
-        .map_err(ProductUpdateError::from)
+        .map_err(|e| match e {
+            DieselError::NotFound => RepositoryError::NotFound("Product not found".to_string()),
+            other => RepositoryError::Database(other),
+        })
 }
 
-#[derive(Debug, Serialize)]
-pub enum SoftDeleteError {
-    NotFound,
-    AlreadyDeleted,
-    DatabaseError(String),
-}
-
-pub fn delete_product(conn: &mut PgConnection, id: &str) -> Result<(), SoftDeleteError> {
+pub fn delete_product(conn: &mut PgConnection, id: &str) -> Result<(), RepositoryError> {
     use crate::schema::products::dsl::*;
 
     let target = products
@@ -361,8 +334,7 @@ pub fn delete_product(conn: &mut PgConnection, id: &str) -> Result<(), SoftDelet
         .filter(deleted_at.is_null())
         .select(product_id)
         .first::<String>(conn)
-        .optional()
-        .map_err(|e| SoftDeleteError::DatabaseError(e.to_string()))?;
+        .optional()?;
 
     if target.is_none() {
         // Check if it exists but is already deleted
@@ -370,14 +342,13 @@ pub fn delete_product(conn: &mut PgConnection, id: &str) -> Result<(), SoftDelet
             .filter(product_id.eq(id))
             .select(product_id)
             .first::<String>(conn)
-            .optional()
-            .map_err(|e| SoftDeleteError::DatabaseError(e.to_string()))?
+            .optional()?
             .is_some();
 
         return Err(if exists {
-            SoftDeleteError::AlreadyDeleted
+            RepositoryError::Conflict("Product is already deleted".to_string())
         } else {
-            SoftDeleteError::NotFound
+            RepositoryError::NotFound("Product not found".to_string())
         });
     }
 
@@ -386,65 +357,63 @@ pub fn delete_product(conn: &mut PgConnection, id: &str) -> Result<(), SoftDelet
         .set(deleted_at.eq(Utc::now()))
         .execute(conn)
         .map(|_| ())
-        .map_err(|e| SoftDeleteError::DatabaseError(e.to_string()))
+        .map_err(RepositoryError::from)
 }
 
-#[derive(Debug, Serialize)]
-pub enum RestoreError {
-    NotFound,
-    NotDeleted,
-    DatabaseError(String),
-}
-
-pub fn restore_product(conn: &mut PgConnection, id: &str) -> Result<Product, RestoreError> {
+/// Returns `None` if no product with `id` exists, `Some(None)` if the product
+/// exists and is active, `Some(Some(ts))` if the product exists and was
+/// soft-deleted at `ts`.
+fn load_deleted_at(
+    conn: &mut PgConnection,
+    id: &str,
+) -> QueryResult<Option<Option<DateTime<Utc>>>> {
     use crate::schema::products::dsl::*;
 
-    let existing_deleted_at = products
+    products
         .filter(product_id.eq(id))
         .select(deleted_at)
-        .first::<Option<chrono::DateTime<Utc>>>(conn)
+        .first::<Option<DateTime<Utc>>>(conn)
         .optional()
-        .map_err(|e| RestoreError::DatabaseError(e.to_string()))?;
+}
 
-    match existing_deleted_at {
-        None => return Err(RestoreError::NotFound),
-        Some(None) => return Err(RestoreError::NotDeleted),
+pub fn restore_product(conn: &mut PgConnection, id: &str) -> Result<Product, RepositoryError> {
+    use crate::schema::products::dsl::*;
+
+    match load_deleted_at(conn, id)? {
+        None => return Err(RepositoryError::NotFound("Product not found".to_string())),
+        Some(None) => {
+            return Err(RepositoryError::BadRequest(
+                "Product is not deleted".to_string(),
+            ));
+        }
         Some(Some(_)) => {}
     }
 
     diesel::update(products)
         .filter(product_id.eq(id))
-        .set(deleted_at.eq(None::<chrono::DateTime<Utc>>))
+        .set(deleted_at.eq(None::<DateTime<Utc>>))
         .returning(Product::as_returning())
         .get_result(conn)
-        .map_err(|e| RestoreError::DatabaseError(e.to_string()))
+        .map_err(RepositoryError::from)
 }
 
-#[derive(Debug, Serialize)]
-pub enum HardDeleteError {
-    NotFound,
-    NotSoftDeleted,
-    TooRecent(chrono::DateTime<Utc>),
-    DatabaseError(String),
-}
-
-pub fn hard_delete_product(conn: &mut PgConnection, id: &str) -> Result<(), HardDeleteError> {
+pub fn hard_delete_product(conn: &mut PgConnection, id: &str) -> Result<(), RepositoryError> {
     use crate::schema::products::dsl::*;
 
-    let existing_deleted_at = products
-        .filter(product_id.eq(id))
-        .select(deleted_at)
-        .first::<Option<chrono::DateTime<Utc>>>(conn)
-        .optional()
-        .map_err(|e| HardDeleteError::DatabaseError(e.to_string()))?;
-
-    match existing_deleted_at {
-        None => return Err(HardDeleteError::NotFound),
-        Some(None) => return Err(HardDeleteError::NotSoftDeleted),
+    match load_deleted_at(conn, id)? {
+        None => return Err(RepositoryError::NotFound("Product not found".to_string())),
+        Some(None) => {
+            return Err(RepositoryError::BadRequest(
+                "Product has not been soft-deleted".to_string(),
+            ));
+        }
         Some(Some(ts)) => {
             let eligible_at = ts + Duration::days(7);
             if Utc::now() < eligible_at {
-                return Err(HardDeleteError::TooRecent(eligible_at));
+                return Err(RepositoryError::Conflict(format!(
+                    "Product cannot be permanently deleted until {}",
+                    eligible_at.format("%Y-%m-%dT%H:%M:%SZ")
+                )));
             }
         }
     }
@@ -453,7 +422,7 @@ pub fn hard_delete_product(conn: &mut PgConnection, id: &str) -> Result<(), Hard
         .filter(product_id.eq(id))
         .execute(conn)
         .map(|_| ())
-        .map_err(|e| HardDeleteError::DatabaseError(e.to_string()))
+        .map_err(RepositoryError::from)
 }
 
 #[derive(Debug, Clone, Copy, serde::Deserialize, Default)]
