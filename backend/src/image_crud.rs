@@ -17,6 +17,7 @@ const MAX_IMAGE_SIZE: usize = 50 * 1024 * 1024; // 50MB
 const MAX_DECODED_PIXELS: u32 = 8000;
 const MAX_DECODE_ALLOC: u64 = 256 * 1024 * 1024;
 
+// Mirror of `IMAGE_VARIANT_WIDTHS` in frontend/src/lib/api.ts.
 pub const VARIANT_WIDTHS: [u32; 4] = [320, 640, 1024, 1600];
 const WEBP_QUALITY: f32 = 80.0;
 

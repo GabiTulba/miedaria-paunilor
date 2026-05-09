@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LocalizedProductWithImage, LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
 import { useFormattedDate } from '../hooks/useFormattedDate';
+import { useFetch } from '../hooks/useFetch';
 import ProductCard from '../components/ProductCard';
 import SEO from '../components/SEO';
 import { LocalizedLink } from '../components/LocalizedLink';
@@ -11,36 +10,24 @@ import { buildOrganizationLd, buildLocalBusinessLd } from '../lib/structuredData
 import './Home.css';
 
 function Home() {
-    const [featuredProducts, setFeaturedProducts] = useState<LocalizedProductWithImage[]>([]);
-    const [latestBlogPosts, setLatestBlogPosts] = useState<LocalizedBlogPost[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const { t, i18n } = useTranslation();
     const formatDate = useFormattedDate();
 
-    useEffect(() => {
-        const controller = new AbortController();
-        const fetchData = async () => {
-            try {
-                setIsLoading(true);
-                const productsData = await api.getProducts({
-                    order_by: 'bottling_date',
-                    order_direction: 'desc',
-                    in_stock: true,
-                }, controller.signal);
-                setFeaturedProducts((productsData.items ?? []).slice(0, 3));
-
-                const blogData = await api.getBlogPosts(undefined, undefined, controller.signal);
-                setLatestBlogPosts((blogData.items ?? []).slice(0, 3));
-            } catch (error) {
-                if (error instanceof DOMException && error.name === 'AbortError') return;
-                console.error("Failed to fetch data:", error);
-            } finally {
-                if (!controller.signal.aborted) setIsLoading(false);
-            }
-        };
-        fetchData();
-        return () => { controller.abort(); };
-    }, [i18n.language]);
+    const { data, loading: isLoading } = useFetch(
+        async signal => {
+            const [productsData, blogData] = await Promise.all([
+                api.getProducts({ order_by: 'bottling_date', order_direction: 'desc', in_stock: true }, signal),
+                api.getBlogPosts(undefined, undefined, signal),
+            ]);
+            return {
+                featured: (productsData.items ?? []).slice(0, 3),
+                blog: (blogData.items ?? []).slice(0, 3),
+            };
+        },
+        [i18n.language],
+    );
+    const featuredProducts = data?.featured ?? [];
+    const latestBlogPosts = data?.blog ?? [];
 
     const origin = getOrigin();
 

@@ -1,30 +1,25 @@
-import { useEffect, useState, useContext, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState, useContext, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BlogPost } from '../../types';
 import { api } from '../../lib/api';
 import { useFormattedDate } from '../../hooks/useFormattedDate';
 import { useLanguage } from '../../hooks/useLanguage';
+import { useFetch } from '../../hooks/useFetch';
+import { usePageParam } from '../../hooks/usePageParam';
+import { afterDeleteAction } from '../../hooks/useAfterDelete';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import Pagination from '../../components/Pagination';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import ConfirmModal from '../../components/ConfirmModal';
+import { BlogPost } from '../../types';
 import './Admin.css';
 
 const ADMIN_BLOG_PER_PAGE = 20;
 
 function AdminBlog() {
-    const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(false);
-    const [totalPages, setTotalPages] = useState(1);
-    const [fetchTrigger, setFetchTrigger] = useState(0);
-    const [searchParams, setSearchParams] = useSearchParams();
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
+    const [page, setPage] = usePageParam();
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const { t } = useTranslation();
     const { showToast } = useToast();
@@ -37,29 +32,13 @@ function AdminBlog() {
     const formatDate = useFormattedDate(formatDateOptions);
     const { token } = useContext(AuthContext);
 
-    useEffect(() => {
-        const controller = new AbortController();
-        const fetchBlogPosts = async () => {
-            if (!token) return;
-
-            try {
-                setLoading(true);
-                const data = await api.getBlogPostsAdmin(token, page, ADMIN_BLOG_PER_PAGE, controller.signal);
-                setTotalPages(data.total_pages ?? 1);
-                setHasMore(page < (data.total_pages ?? 1));
-                setBlogPosts(data.items ?? []);
-                setError(null);
-            } catch (err) {
-                if (err instanceof DOMException && err.name === 'AbortError') return;
-                console.error("Failed to fetch blog posts:", err);
-                setError(t('admin.products.error'));
-            } finally {
-                if (!controller.signal.aborted) setLoading(false);
-            }
-        };
-        fetchBlogPosts();
-        return () => { controller.abort(); };
-    }, [token, t, page, fetchTrigger]);
+    const { data, loading, error, refetch } = useFetch(
+        signal => token ? api.getBlogPostsAdmin(token, page, ADMIN_BLOG_PER_PAGE, signal) : Promise.resolve(null as never),
+        [token, page],
+    );
+    const blogPosts = data?.items ?? [];
+    const totalPages = data?.total_pages ?? 1;
+    const hasMore = page < totalPages;
 
     const getLocalizedTitle = (post: BlogPost) => {
         return language === 'ro' ? post.title_ro : post.title;
@@ -78,10 +57,10 @@ function AdminBlog() {
             setActionError(null);
             await api.deleteBlogPost(id, token);
             showToast(t('admin.blog.deleteSuccess'), 'success');
-            if (blogPosts.length === 1 && page > 1) {
+            if (afterDeleteAction(blogPosts.length, page) === 'prev-page') {
                 setPage(page - 1);
             } else {
-                setFetchTrigger(n => n + 1);
+                refetch();
             }
         } catch (err) {
             console.error("Failed to delete blog post:", err);
@@ -93,8 +72,8 @@ function AdminBlog() {
         return (
             <div className="admin-content">
                 <ErrorDisplay
-                    error={error}
-                    onRetry={() => setFetchTrigger(n => n + 1)}
+                    error={t('admin.products.error')}
+                    onRetry={refetch}
                     retryLabel={t('admin.products.retry')}
                 />
             </div>

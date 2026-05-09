@@ -1,11 +1,11 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useContext } from 'react';
 import { Image, ProductFormData } from '../../types';
 import { useTranslation } from 'react-i18next';
 import TextInput from '../../components/forms/TextInput';
 import TextAreaInput from '../../components/forms/TextAreaInput';
 import NumberInput from '../../components/forms/NumberInput';
 import SelectInput from '../../components/forms/SelectInput';
-import { useFetchEnums } from '../../hooks/useFetchEnums';
+import { EnumContext } from '../../context/EnumContext';
 import { getEnumLabel } from '../../enums';
 import { useLanguage } from '../../hooks/useLanguage';
 import DatePicker from 'react-datepicker';
@@ -60,7 +60,7 @@ interface ProductFormProps {
 }
 
 function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false, errors = {}, availableImages, submitting = false }: ProductFormProps) {
-    const { enums, loading, error } = useFetchEnums();
+    const { enums, loading, error } = useContext(EnumContext);
     const { t } = useTranslation();
     const language = useLanguage();
     const formRef = useRef<HTMLFormElement>(null);

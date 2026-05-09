@@ -1,34 +1,16 @@
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { LocalizedProductWithImage } from '../../types';
 import { api } from '../../lib/api';
+import { useFetch } from '../../hooks/useFetch';
 import { getStockStatus } from '../../utils/stockAvailability';
 import { getImageUrl } from '../../lib/api';
 import { toFixed } from '../../utils/numberUtils';
 import './Admin.css';
 
 function AdminDashboard() {
-    const [products, setProducts] = useState<LocalizedProductWithImage[]>([]);
-    const [loading, setLoading] = useState(true);
     const { t } = useTranslation();
-
-    useEffect(() => {
-        const controller = new AbortController();
-        const fetchProducts = async () => {
-            try {
-                const productsData = await api.getProducts(undefined, controller.signal);
-                setProducts(productsData.items ?? []);
-            } catch (error) {
-                if (error instanceof DOMException && error.name === 'AbortError') return;
-                console.error("Failed to fetch products:", error);
-            } finally {
-                if (!controller.signal.aborted) setLoading(false);
-            }
-        };
-        fetchProducts();
-        return () => { controller.abort(); };
-    }, []);
+    const { data, loading } = useFetch(signal => api.getProducts(undefined, signal), []);
+    const products = data?.items ?? [];
 
     const totalProducts = products.length;
     const totalStock = products.reduce((sum, pwi) => sum + pwi.product.bottle_count, 0);

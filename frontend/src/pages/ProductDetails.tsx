@@ -1,7 +1,6 @@
-import { useEffect, useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LocalizedProductWithImage } from '../types';
 import { api } from '../lib/api';
 import { CartContext } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
@@ -10,6 +9,7 @@ import { getStockStatus, isInStock } from '../utils/stockAvailability';
 import { getImageUrl, getImageSrcSet } from '../lib/api';
 import { toFixed } from '../utils/numberUtils';
 import { useFormattedDate } from '../hooks/useFormattedDate';
+import { useFetch } from '../hooks/useFetch';
 import CollapsibleSection from '../components/CollapsibleSection';
 import ErrorDisplay from '../components/ErrorDisplay';
 import Breadcrumb from '../components/Breadcrumb';
@@ -24,11 +24,7 @@ import './ProductDetails.css';
 function ProductDetails() {
     const { productId } = useParams<{ productId: string }>();
     const navigate = useNavigate();
-    const [productWithImage, setProductWithImage] = useState<LocalizedProductWithImage | null>(null);
     const [quantity, setQuantity] = useState(1);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [fetchTrigger, setFetchTrigger] = useState(0);
     const [imgError, setImgError] = useState(false);
     const [imgLoaded, setImgLoaded] = useState(false);
     const [addToCartPulsing, setAddToCartPulsing] = useState(false);
@@ -38,27 +34,10 @@ function ProductDetails() {
     const lang = useLanguage();
     const formatDate = useFormattedDate();
 
-    useEffect(() => {
-        const controller = new AbortController();
-        const fetchProduct = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                if (!productId) return;
-                const data = await api.getProductById(productId, controller.signal);
-                setProductWithImage(data);
-            } catch (err) {
-                if (err instanceof DOMException && err.name === 'AbortError') return;
-                setError(t('errors.serverError'));
-                console.error(err);
-            } finally {
-                if (!controller.signal.aborted) setIsLoading(false);
-            }
-        };
-
-        fetchProduct();
-        return () => { controller.abort(); };
-    }, [productId, i18n.language, fetchTrigger]);
+    const { data: productWithImage, loading: isLoading, error, refetch } = useFetch(
+        signal => productId ? api.getProductById(productId, signal) : Promise.resolve(null as never),
+        [productId, i18n.language],
+    );
 
     const handleAddToCart = () => {
         if (productWithImage?.product) {
@@ -106,8 +85,8 @@ function ProductDetails() {
             <div className="product-details-page">
                 <div className="back-to-shop">{backLink}</div>
                 <ErrorDisplay
-                    error={error || t('errors.notFound')}
-                    onRetry={error ? () => setFetchTrigger(n => n + 1) : undefined}
+                    error={error ? t('errors.serverError') : t('errors.notFound')}
+                    onRetry={error ? refetch : undefined}
                     retryLabel={t('common.retry')}
                 />
             </div>

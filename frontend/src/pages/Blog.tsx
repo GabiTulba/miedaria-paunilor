@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
 import { useFormattedDate } from '../hooks/useFormattedDate';
+import { useFetch } from '../hooks/useFetch';
+import { usePageParam } from '../hooks/usePageParam';
 import Pagination from '../components/Pagination';
 import ErrorDisplay from '../components/ErrorDisplay';
 import SEO from '../components/SEO';
@@ -16,46 +15,24 @@ import './Blog.css';
 const BLOG_PER_PAGE = 10;
 
 function Blog() {
-    const [blogPosts, setBlogPosts] = useState<LocalizedBlogPost[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(false);
-    const [totalPages, setTotalPages] = useState(1);
-    const [fetchTrigger, setFetchTrigger] = useState(0);
-    const [searchParams, setSearchParams] = useSearchParams();
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
+    const [page, setPage] = usePageParam();
     const { t, i18n } = useTranslation();
     const formatDate = useFormattedDate();
 
-    useEffect(() => {
-        const controller = new AbortController();
-        const fetchBlogPosts = async () => {
-            try {
-                setLoading(true);
-                const data = await api.getBlogPosts(page, BLOG_PER_PAGE, controller.signal);
-                setTotalPages(data.total_pages ?? 1);
-                setHasMore(page < (data.total_pages ?? 1));
-                setBlogPosts(data.items ?? []);
-                setError(null);
-            } catch (err) {
-                if (err instanceof DOMException && err.name === 'AbortError') return;
-                console.error("Failed to fetch blog posts:", err);
-                setError(t('blog.fetchError'));
-            } finally {
-                if (!controller.signal.aborted) setLoading(false);
-            }
-        };
-        fetchBlogPosts();
-        return () => { controller.abort(); };
-    }, [i18n.language, page, fetchTrigger]);
+    const { data, loading, error, refetch } = useFetch(
+        signal => api.getBlogPosts(page, BLOG_PER_PAGE, signal),
+        [i18n.language, page],
+    );
+    const blogPosts = data?.items ?? [];
+    const totalPages = data?.total_pages ?? 1;
+    const hasMore = page < totalPages;
 
     if (error) {
         return (
             <div className="blog-page">
                 <ErrorDisplay
-                    error={error}
-                    onRetry={() => setFetchTrigger(n => n + 1)}
+                    error={t('blog.fetchError')}
+                    onRetry={refetch}
                     retryLabel={t('common.retry')}
                 />
             </div>

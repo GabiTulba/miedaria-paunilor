@@ -1,16 +1,19 @@
-import { useEffect, useState, useContext } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState, useContext, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ProductWithImage } from '../../types';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
+import { useFetch } from '../../hooks/useFetch';
+import { usePageParam } from '../../hooks/usePageParam';
+import { afterDeleteAction } from '../../hooks/useAfterDelete';
 import { getStockStatus } from '../../utils/stockAvailability';
 import { getImageUrl } from '../../lib/api';
 import { toFixed } from '../../utils/numberUtils';
 import Pagination from '../../components/Pagination';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import ConfirmModal from '../../components/ConfirmModal';
+import { addGraceDays } from '../../lib/constants';
 import './Admin.css';
 
 const ADMIN_PRODUCTS_PER_PAGE = 20;
@@ -18,62 +21,36 @@ const ADMIN_PRODUCTS_PER_PAGE = 20;
 type DeletedFilter = 'active' | 'deleted' | 'all';
 
 function canHardDelete(deletedAt: string): boolean {
-    const deletedDate = new Date(deletedAt);
-    const eligibleDate = new Date(deletedDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return new Date() >= eligibleDate;
+    return new Date() >= addGraceDays(new Date(deletedAt));
 }
 
 function hardDeleteEligibleDate(deletedAt: string): string {
-    const deletedDate = new Date(deletedAt);
-    const eligibleDate = new Date(deletedDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return eligibleDate.toLocaleDateString();
+    return addGraceDays(new Date(deletedAt)).toLocaleDateString();
 }
 
 function AdminProducts() {
-    const [products, setProducts] = useState<ProductWithImage[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [actionId, setActionId] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(false);
-    const [totalPages, setTotalPages] = useState(1);
-    const [fetchTrigger, setFetchTrigger] = useState(0);
     const [deletedFilter, setDeletedFilter] = useState<DeletedFilter>('active');
-    const [searchParams, setSearchParams] = useSearchParams();
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
+    const [page, setPage] = usePageParam();
     const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'hardDelete'; id: string } | null>(null);
     const { token } = useContext(AuthContext);
     const { t } = useTranslation();
     const { showToast } = useToast();
 
-    useEffect(() => {
-        if (!token) return;
-        const controller = new AbortController();
-        const getProducts = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                setActionId(null);
-                const data = await api.getAdminProducts(token, {
-                    include_deleted: deletedFilter,
-                    page,
-                    per_page: ADMIN_PRODUCTS_PER_PAGE,
-                }, controller.signal);
-                setTotalPages(data.total_pages ?? 1);
-                setHasMore(page < (data.total_pages ?? 1));
-                setProducts(data.items ?? []);
-            } catch (err) {
-                if (err instanceof DOMException && err.name === 'AbortError') return;
-                console.error('Failed to fetch products:', err);
-                setError(t('admin.products.error'));
-            } finally {
-                if (!controller.signal.aborted) setLoading(false);
-            }
-        };
-        getProducts();
-        return () => { controller.abort(); };
-    }, [token, t, page, fetchTrigger, deletedFilter]);
+    const { data, loading, error, refetch } = useFetch(
+        signal => token ? api.getAdminProducts(token, {
+            include_deleted: deletedFilter,
+            page,
+            per_page: ADMIN_PRODUCTS_PER_PAGE,
+        }, signal) : Promise.resolve(null as never),
+        [token, page, deletedFilter],
+    );
+    // Reset transient action state on each refetch.
+    useEffect(() => { if (loading) setActionId(null); }, [loading]);
+    const products = data?.items ?? [];
+    const totalPages = data?.total_pages ?? 1;
+    const hasMore = page < totalPages;
 
     const handleTabChange = (filter: DeletedFilter) => {
         setDeletedFilter(filter);
@@ -104,10 +81,10 @@ function AdminProducts() {
                 await api.hardDeleteProduct(id, token);
                 showToast(t('admin.products.hardDeleteSuccess'), 'success');
             }
-            if (products.length === 1 && page > 1) {
+            if (afterDeleteAction(products.length, page) === 'prev-page') {
                 setPage(page - 1);
             } else {
-                setFetchTrigger(n => n + 1);
+                refetch();
             }
         } catch (err) {
             console.error(`Failed to ${type} product:`, err);
@@ -123,7 +100,7 @@ function AdminProducts() {
             setActionError(null);
             await api.restoreProduct(productId, token);
             showToast(t('admin.products.restoreSuccess'), 'success');
-            setFetchTrigger(n => n + 1);
+            refetch();
         } catch (err) {
             console.error('Failed to restore product:', err);
             setActionError(t('admin.products.error'));
@@ -168,8 +145,8 @@ function AdminProducts() {
 
             {error ? (
                 <ErrorDisplay
-                    error={error}
-                    onRetry={() => setFetchTrigger(n => n + 1)}
+                    error={t('admin.products.error')}
+                    onRetry={refetch}
                     retryLabel={t('admin.products.retry')}
                 />
             ) : products.length === 0 && page === 1 && !loading ? (

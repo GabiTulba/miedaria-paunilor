@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFetchProducts } from '../hooks/useFetchProducts';
-import { useFetchEnums } from '../hooks/useFetchEnums';
+import { usePageParam } from '../hooks/usePageParam';
+import { EnumContext } from '../context/EnumContext';
 import { getEnumLabel } from '../enums';
 import ProductCard from '../components/ProductCard';
 import ErrorDisplay from '../components/ErrorDisplay';
@@ -24,9 +24,7 @@ function Shop() {
     const [body, setBody] = useState<string>('');
     const [search, setSearch] = useState<string>('');
     const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
-    const [searchParams, setSearchParams] = useSearchParams();
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const setPage = (p: number) => setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('page', String(p)); return n; });
+    const [page, setPage] = usePageParam();
     const filtersInitialized = useRef(false);
     const filtersTriggerRef = useRef<HTMLButtonElement>(null);
     const filtersAsideRef = useRef<HTMLElement>(null);
@@ -44,7 +42,7 @@ function Shop() {
         (body !== '' ? 1 : 0) +
         (search !== '' ? 1 : 0);
 
-    const { enums } = useFetchEnums();
+    const { enums } = useContext(EnumContext);
     const { products, isLoading, error, hasMore, totalPages, refetch } = useFetchProducts(
         orderBy,
         inStock,

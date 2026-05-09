@@ -398,6 +398,7 @@ pub fn hard_delete_product(conn: &mut PgConnection, id: &str) -> Result<(), Repo
             ));
         }
         Some(Some(ts)) => {
+            // Mirror of `HARD_DELETE_GRACE_DAYS` in frontend/src/lib/constants.ts.
             let eligible_at = ts + Duration::days(7);
             if Utc::now() < eligible_at {
                 return Err(RepositoryError::Conflict(format!(

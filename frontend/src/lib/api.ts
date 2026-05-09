@@ -1,6 +1,7 @@
 import { ApiError, ApiErrorResponse, BlogPost, LocalizedBlogPost, LocalizedProductWithImage, LoginCredentials, NewBlogPost, PaginatedResponse, Product, ProductFormData, ProductWithImage, UpdateBlogPost } from '../types';
 import i18n from '../i18n/config';
 
+// Mirror of `VARIANT_WIDTHS` in backend/src/image_crud.rs.
 export const IMAGE_VARIANT_WIDTHS = [320, 640, 1024, 1600] as const;
 
 export function getImageUrl(id: string, width?: number): string {
@@ -11,22 +12,41 @@ export function getImageSrcSet(id: string): string {
     return IMAGE_VARIANT_WIDTHS.map(w => `/images/${id}?w=${w} ${w}w`).join(', ');
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
+function getApiBaseUrl(): string | undefined {
+    return import.meta.env.VITE_API_BASE_URL as string | undefined;
+}
+
+// Build a `?k=v&...` string from a record. Skips undefined/null/empty-string entries
+// so callers can pass the entire param object without per-field guards.
+function buildQuery(params: Record<string, unknown> | undefined): string {
+    if (!params) return '';
+    const qp = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+        if (value === undefined || value === null || value === '') continue;
+        qp.append(key, typeof value === 'string' ? value : String(value));
+    }
+    const qs = qp.toString();
+    return qs ? `?${qs}` : '';
+}
+
+function normalizeProductPayload(productData: ProductFormData | Product) {
+    return { ...productData, image_id: productData.image_id || null };
+}
 
 async function request(endpoint: string, options: RequestInit = {}) {
-    if (!API_BASE_URL) {
+    const baseUrl = getApiBaseUrl();
+    if (!baseUrl) {
         const error = new Error("VITE_API_BASE_URL is not defined in the environment.") as ApiError;
         error.response = { status: 0, data: { message: 'API not configured' } };
         throw error;
     }
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = `${baseUrl}${endpoint}`;
     const headers = new Headers(options.headers);
     if (!headers.has('Accept-Language')) {
         headers.set('Accept-Language', i18n.language);
     }
     const response = await fetch(url, { ...options, headers });
     if (!response.ok) {
-        // Try to parse as JSON first, fall back to text if it fails
         const contentType = response.headers.get('content-type');
         let errorBody: ApiErrorResponse;
         if (contentType && contentType.includes('application/json')) {
@@ -48,41 +68,35 @@ async function request(endpoint: string, options: RequestInit = {}) {
     return response.json();
 }
 
+export interface GetProductsParams {
+    order_by?: string;
+    order_direction?: string;
+    in_stock?: boolean;
+    product_type?: string;
+    sweetness?: string;
+    turbidity?: string;
+    effervescence?: string;
+    acidity?: string;
+    tannins?: string;
+    body?: string;
+    search?: string;
+    page?: number;
+    per_page?: number;
+}
+
+export interface GetAdminProductsParams {
+    include_deleted?: 'active' | 'deleted' | 'all';
+    page?: number;
+    per_page?: number;
+}
+
 export const api = {
     get: (endpoint: string, options?: RequestInit) => request(endpoint, options),
-    getProducts: (params?: {
-        order_by?: string;
-        order_direction?: string;
-        in_stock?: boolean;
-        product_type?: string;
-        sweetness?: string;
-        turbidity?: string;
-        effervescence?: string;
-        acidity?: string;
-        tannins?: string;
-        body?: string;
-        search?: string;
-        page?: number;
-        per_page?: number;
-    }, signal?: AbortSignal): Promise<PaginatedResponse<LocalizedProductWithImage>> => {
-        const queryParams = new URLSearchParams();
-        if (params) {
-            if (params.order_by) queryParams.append('order_by', params.order_by);
-            if (params.order_by && params.order_direction) queryParams.append('order_direction', params.order_direction);
-            if (params.in_stock !== undefined) queryParams.append('in_stock', params.in_stock.toString());
-            if (params.product_type) queryParams.append('product_type', params.product_type);
-            if (params.sweetness) queryParams.append('sweetness', params.sweetness);
-            if (params.turbidity) queryParams.append('turbidity', params.turbidity);
-            if (params.effervescence) queryParams.append('effervescence', params.effervescence);
-            if (params.acidity) queryParams.append('acidity', params.acidity);
-            if (params.tannins) queryParams.append('tannins', params.tannins);
-            if (params.body) queryParams.append('body', params.body);
-            if (params.search) queryParams.append('search', params.search);
-            if (params.page !== undefined) queryParams.append('page', String(params.page));
-            if (params.per_page !== undefined) queryParams.append('per_page', String(params.per_page));
-        }
-        const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-        return request(`/products${queryString}`, { signal });
+    getProducts: (params?: GetProductsParams, signal?: AbortSignal): Promise<PaginatedResponse<LocalizedProductWithImage>> => {
+        // order_direction only meaningful when order_by is set; drop the orphan.
+        const cleaned: Record<string, unknown> = { ...params };
+        if (!cleaned.order_by) delete cleaned.order_direction;
+        return request(`/products${buildQuery(cleaned)}`, { signal });
     },
     getProductById: (id: string, signal?: AbortSignal): Promise<LocalizedProductWithImage> => request(`/products/${id}`, { signal }),
 
@@ -95,26 +109,24 @@ export const api = {
     },
 
     createProduct: async (productData: ProductFormData, token: string) => {
-        const payload = { ...productData, image_id: productData.image_id || null };
         return request('/admin/products', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(normalizeProductPayload(productData)),
         });
     },
 
     updateProduct: async (id: string, productData: Product, token: string) => {
-        const payload = { ...productData, image_id: productData.image_id || null };
         return request(`/admin/products/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(normalizeProductPayload(productData)),
         });
     },
 
@@ -132,17 +144,8 @@ export const api = {
         });
     },
 
-    getAdminProducts: async (token: string, params?: {
-        include_deleted?: 'active' | 'deleted' | 'all';
-        page?: number;
-        per_page?: number;
-    }, signal?: AbortSignal): Promise<PaginatedResponse<ProductWithImage>> => {
-        const queryParams = new URLSearchParams();
-        if (params?.include_deleted) queryParams.append('include_deleted', params.include_deleted);
-        if (params?.page !== undefined) queryParams.append('page', String(params.page));
-        if (params?.per_page !== undefined) queryParams.append('per_page', String(params.per_page));
-        const qs = queryParams.toString() ? `?${queryParams.toString()}` : '';
-        return request(`/admin/products${qs}`, {
+    getAdminProducts: async (token: string, params?: GetAdminProductsParams, signal?: AbortSignal): Promise<PaginatedResponse<ProductWithImage>> => {
+        return request(`/admin/products${buildQuery(params as Record<string, unknown> | undefined)}`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` },
             signal,
@@ -179,13 +182,6 @@ export const api = {
         });
     },
 
-    getImageById: async (id: string, token: string) => {
-        return request(`/admin/images/${id}`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
-    },
-
     updateImage: async (id: string, newFileName: string, token: string) => {
         return request(`/admin/images/${id}`, {
             method: 'PUT',
@@ -206,21 +202,21 @@ export const api = {
 
     // Blog CRUD Operations
     getBlogPosts: (page?: number, per_page?: number, signal?: AbortSignal): Promise<PaginatedResponse<LocalizedBlogPost>> => {
-        const params = new URLSearchParams();
-        if (page !== undefined) params.append('page', String(page));
-        if (per_page !== undefined) params.append('per_page', String(per_page));
-        const qs = params.toString() ? `?${params.toString()}` : '';
-        return request(`/blog${qs}`, { signal });
+        return request(`/blog${buildQuery({ page, per_page })}`, { signal });
     },
     getBlogPostBySlug: (slug: string, signal?: AbortSignal): Promise<LocalizedBlogPost> => request(`/blog/${slug}`, { signal }),
-    
+
     // Admin blog operations
     getBlogPostsAdmin: async (token: string, page?: number, per_page?: number, signal?: AbortSignal): Promise<PaginatedResponse<BlogPost>> => {
-        const params = new URLSearchParams();
-        if (page !== undefined) params.append('page', String(page));
-        if (per_page !== undefined) params.append('per_page', String(per_page));
-        const qs = params.toString() ? `?${params.toString()}` : '';
-        return request(`/admin/blog/admin${qs}`, {
+        return request(`/admin/blog/admin${buildQuery({ page, per_page })}`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal,
+        });
+    },
+
+    getBlogPostByIdAdmin: async (id: string, token: string, signal?: AbortSignal): Promise<BlogPost> => {
+        return request(`/admin/blog/${id}`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` },
             signal,

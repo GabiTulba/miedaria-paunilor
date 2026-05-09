@@ -1,9 +1,10 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LocalizedBlogPost } from '../types';
 import { api } from '../lib/api';
+import { ApiError } from '../types';
 import { useFormattedDate } from '../hooks/useFormattedDate';
+import { useFetch } from '../hooks/useFetch';
 import ErrorDisplay from '../components/ErrorDisplay';
 import Breadcrumb from '../components/Breadcrumb';
 import SEO from '../components/SEO';
@@ -19,11 +20,6 @@ import './Blog.css';
 function BlogPostDetail() {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
-    const [blogPost, setBlogPost] = useState<LocalizedBlogPost | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [is404, setIs404] = useState(false);
-    const [fetchTrigger, setFetchTrigger] = useState(0);
     const { t, i18n } = useTranslation();
     const lang = useLanguage();
     const formatDateOptions = useMemo(() => ({
@@ -35,39 +31,16 @@ function BlogPostDetail() {
     }), []);
     const formatDate = useFormattedDate(formatDateOptions);
 
-    useEffect(() => {
-        const controller = new AbortController();
-        const fetchBlogPost = async () => {
-            if (!slug) {
-                setError(t('blog.invalidSlug'));
-                setLoading(false);
-                return;
-            }
-
-            try {
-                setLoading(true);
-                setError(null);
-                setIs404(false);
-                const post = await api.getBlogPostBySlug(slug, controller.signal);
-                if (controller.signal.aborted) return;
-                setBlogPost(post);
-            } catch (err: any) {
-                if (controller.signal.aborted) return;
-                if (err instanceof DOMException && err.name === 'AbortError') return;
-                console.error("Failed to fetch blog post:", err);
-                if (err.response?.status === 404) {
-                    setError(t('blog.notFound'));
-                    setIs404(true);
-                } else {
-                    setError(t('blog.fetchError'));
-                }
-            } finally {
-                if (!controller.signal.aborted) setLoading(false);
-            }
-        };
-        fetchBlogPost();
-        return () => { controller.abort(); };
-    }, [slug, i18n.language, fetchTrigger]);
+    const { data: blogPost, loading, error, refetch } = useFetch(
+        signal => slug ? api.getBlogPostBySlug(slug, signal) : Promise.reject(new Error(t('blog.invalidSlug'))),
+        [slug, i18n.language],
+    );
+    const is404 = (error as ApiError | null)?.response?.status === 404;
+    const errorMessage = !slug
+        ? t('blog.invalidSlug')
+        : error
+            ? (is404 ? t('blog.notFound') : t('blog.fetchError'))
+            : null;
 
     const backLink = (
         <button onClick={() => navigate(-1)} className="back-link">&larr; {t('blog.backToBlog')}</button>
@@ -109,8 +82,8 @@ function BlogPostDetail() {
                 <div className="blog-back-link">{backLink}</div>
                 <main className="blog-post-detail">
                     <ErrorDisplay
-                        error={error || t('blog.notFound')}
-                        onRetry={!is404 && error ? () => setFetchTrigger(n => n + 1) : undefined}
+                        error={errorMessage || t('blog.notFound')}
+                        onRetry={!is404 && error ? refetch : undefined}
                         retryLabel={t('common.retry')}
                     />
                     <div style={{ textAlign: 'center', marginTop: '1rem' }}>{backLink}</div>

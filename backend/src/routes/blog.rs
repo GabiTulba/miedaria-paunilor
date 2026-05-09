@@ -4,7 +4,7 @@ use axum::{
     Json, Router,
     extract::{Path, Query, State},
     http::StatusCode,
-    routing::{delete, get, post, put},
+    routing::{get, post},
 };
 
 use crate::AppError;
@@ -87,6 +87,15 @@ async fn create_blog_post(
     Ok(Json(post))
 }
 
+async fn get_blog_post_by_id_admin(
+    State(app_state): State<Arc<AppState>>,
+    Path(blog_id): Path<uuid::Uuid>,
+) -> Result<Json<models::BlogPost>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    let post = blog_crud::get_blog_post_by_id(&mut conn, blog_id)?;
+    Ok(Json(post))
+}
+
 async fn update_blog_post(
     State(app_state): State<Arc<AppState>>,
     Path(blog_id): Path<uuid::Uuid>,
@@ -118,7 +127,11 @@ pub fn public_router() -> Router<Arc<AppState>> {
 pub fn admin_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/blog", post(create_blog_post))
-        .route("/blog/{id}", put(update_blog_post))
-        .route("/blog/{id}", delete(delete_blog_post))
+        .route(
+            "/blog/{id}",
+            get(get_blog_post_by_id_admin)
+                .put(update_blog_post)
+                .delete(delete_blog_post),
+        )
         .route("/blog/admin", get(get_all_blog_posts_admin))
 }
