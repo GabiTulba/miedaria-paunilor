@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useFetch } from '../../hooks/useFetch';
+import { useLanguage } from '../../hooks/useLanguage';
 import { getStockStatus } from '../../utils/stockAvailability';
 import { getImageUrl } from '../../lib/api';
 import { toFixed } from '../../utils/numberUtils';
@@ -10,7 +11,8 @@ import './Admin.css';
 
 function AdminDashboard() {
     const { t } = useTranslation();
-    const { data, loading } = useFetch(signal => api.getProducts(undefined, signal), []);
+    const language = useLanguage();
+    const { data, loading } = useFetch(signal => api.getProducts(undefined, signal), [language]);
     const products = data?.items ?? [];
 
     const totalProducts = products.length;

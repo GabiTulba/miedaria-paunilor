@@ -5,6 +5,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { useFetch } from '../../hooks/useFetch';
+import { useLanguage } from '../../hooks/useLanguage';
 import { usePageParam } from '../../hooks/usePageParam';
 import { afterDeleteAction } from '../../hooks/useAfterDelete';
 import { getStockStatus } from '../../utils/stockAvailability';
@@ -38,6 +39,9 @@ function AdminProducts() {
     const { token } = useContext(AuthContext);
     const { t } = useTranslation();
     const { showToast } = useToast();
+    const language = useLanguage();
+    const getLocalizedName = (product: { product_name: string; product_name_ro: string }) =>
+        language === 'ro' ? product.product_name_ro : product.product_name;
 
     const { data, loading, error, refetch } = useFetch(
         signal => token ? api.getAdminProducts(token, {
@@ -218,12 +222,12 @@ function AdminProducts() {
                                                     {image && (
                                                         <img
                                                             src={getImageUrl(image.id)}
-                                                            alt={product.product_name}
+                                                            alt={getLocalizedName(product)}
                                                             className="product-image"
                                                         />
                                                     )}
                                                     <div className="product-details">
-                                                        <div className="product-name">{product.product_name}</div>
+                                                        <div className="product-name">{getLocalizedName(product)}</div>
                                                         <div className="product-id">ID: {product.product_id}</div>
                                                         {isDeleted && (
                                                             <div className="deleted-badge">
