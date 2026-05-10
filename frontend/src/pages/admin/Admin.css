@@ -322,11 +322,12 @@
 
 .password-input-wrapper {
     position: relative;
-    display: flex;
-    align-items: center;
+    margin-top: 8px;
+    margin-bottom: 16px;
 }
 
 .password-input-wrapper .login-input {
+    margin: 0;
     padding-right: var(--touch-target-min);
 }
 
@@ -962,6 +963,7 @@
 .admin-page [role="button"],
 .admin-page .button {
     min-width: var(--touch-target-min);
+    align-content: center;
 }
 .admin-page .theme-slider-option,
 .admin-page .language-btn {

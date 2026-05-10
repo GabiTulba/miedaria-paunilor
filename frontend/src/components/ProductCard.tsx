@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState } from 'react';
 import { LocalizedLink } from './LocalizedLink';
 import { useTranslation } from 'react-i18next';
 import { LocalizedProductWithImage } from '../types';
@@ -6,6 +6,7 @@ import { getEnumLabel } from '../enums';
 import { getStockStatus } from '../utils/stockAvailability';
 import { toFixed } from '../utils/numberUtils';
 import { getImageUrl, getImageSrcSet } from '../lib/api';
+import { Skeleton } from './Skeleton';
 
 import './ProductCard.css';
 
@@ -16,51 +17,47 @@ interface ProductCardProps {
 
 function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
   const { t } = useTranslation();
+  // The img is keyed on image.id below, so React unmounts/remounts on a new
+  // image; that resets the state and avoids the previous "two parallel effects
+  // re-checking `complete` every render" pattern.
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
 
-  const imageId = productWithImage?.image?.id;
-  useEffect(() => {
-    setImgError(false);
-    setImgLoaded(false);
-  }, [imageId]);
-
-  // Cached images can become `complete` before React attaches the onLoad
-  // listener, so the event never fires. Re-check after each render.
-  useEffect(() => {
-    const img = imgRef.current;
-    if (!img || imgLoaded || imgError) return;
+  // Cached images can be `complete` before onLoad attaches. Compute the initial
+  // state from the element via a ref callback that runs as soon as the <img>
+  // mounts; from then on, onLoad/onError carry it.
+  const imgRefCallback = useCallback((img: HTMLImageElement | null) => {
+    if (!img) return;
     if (img.complete) {
       if (img.naturalWidth > 0) setImgLoaded(true);
       else setImgError(true);
     }
-  });
+  }, []);
 
   if (renderSkeleton) {
     return (
       <div className="product-card">
         <div className="product-card-main">
           <div className="product-card-image">
-            <div className="skeleton" style={{ width: '100%', height: '100%' }} />
+            <Skeleton w="100%" h="100%" />
           </div>
           <div className="product-card-content">
-            <div className="skeleton" style={{ height: '1.2em', marginBottom: '10px', width: '90%' }} />
+            <Skeleton h="1.2em" w="90%" style={{ marginBottom: '10px' }} />
             <div className="product-details">
               <div className="product-details-line">
-                <span className="skeleton" style={{ height: '0.75em', width: '45%', marginRight: '8px' }} />
-                <span className="skeleton" style={{ height: '0.75em', width: '35%' }} />
+                <Skeleton inline h="0.75em" w="45%" style={{ marginRight: '8px' }} />
+                <Skeleton inline h="0.75em" w="35%" />
               </div>
               <div className="product-details-line">
-                <span className="skeleton" style={{ height: '0.75em', width: '40%', marginRight: '8px' }} />
-                <span className="skeleton" style={{ height: '0.75em', width: '25%' }} />
+                <Skeleton inline h="0.75em" w="40%" style={{ marginRight: '8px' }} />
+                <Skeleton inline h="0.75em" w="25%" />
               </div>
             </div>
             <p className="price">
-              <span className="skeleton" style={{ display: 'inline-block', height: '1.1em', width: '35%' }} />
+              <Skeleton inline h="1.1em" w="35%" />
             </p>
             <p className="availability">
-              <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '55%' }} />
+              <Skeleton inline h="0.85em" w="55%" />
             </p>
           </div>
         </div>
@@ -81,7 +78,8 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
             {image && !imgError ? (
               <>
                 <img
-                  ref={imgRef}
+                  key={image.id}
+                  ref={imgRefCallback}
                   src={getImageUrl(image.id, 640)}
                   srcSet={getImageSrcSet(image.id)}
                   sizes="(min-width: 768px) 350px, 100vw"
@@ -94,7 +92,7 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
                   onLoad={() => setImgLoaded(true)}
                   onError={() => setImgError(true)}
                 />
-                {!imgLoaded && <div className="skeleton product-image-skeleton" />}
+                {!imgLoaded && <Skeleton className="product-image-skeleton" />}
               </>
             ) : (
               <div className="placeholder-image">{t('admin.productForm.noImage')}</div>

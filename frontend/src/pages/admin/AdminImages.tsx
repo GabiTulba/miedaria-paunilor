@@ -1,38 +1,33 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getImageUrl } from '../../lib/api';
-import { Image } from '../../types';
+import { api } from '../../lib/api';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useAdminImages } from '../../hooks/useAdminImages';
-import { useFormattedDate } from '../../hooks/useFormattedDate';
+import { useImageUpload } from '../../hooks/useImageUpload';
+import { Skeleton } from '../../components/Skeleton';
+import ImageCard from '../../components/admin/ImageCard';
 import './Admin.css';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const AdminImages: React.FC = () => {
   const { token } = useAuth();
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const formatDate = useFormattedDate();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const { images, setImages, loading: imagesLoading, error: imagesError, refetch: fetchImages } = useAdminImages(token);
   const [renamingImageId, setRenamingImageId] = useState<string | null>(null);
-  const [newFileName, setNewFileName] = useState<string>('');
-  const [renameLoading, setRenameLoading] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
+  const onUploadError = useCallback((message: string) => {
+    showToast(`${t('common.error')}: ${message}`, 'error');
+  }, [showToast, t]);
+  const { progress: uploadProgress, uploading, upload } = useImageUpload({ token, onError: onUploadError });
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
-    } else {
-      setSelectedFile(null);
-    }
+    setSelectedFile(event.target.files?.[0] ?? null);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -52,87 +47,27 @@ const AdminImages: React.FC = () => {
     if (file) setSelectedFile(file);
   };
 
-  const handleFileUpload = () => {
-    if (!selectedFile || !token) return;
-
-    setLoading(true);
-    setUploadProgress(0);
-
-    const formData = new FormData();
-    formData.append('image', selectedFile);
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${API_BASE_URL}/admin/images`);
-    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        setUploadProgress(Math.round((e.loaded / e.total) * 100));
-      }
-    };
-
-    xhr.onload = () => {
-      setLoading(false);
-      setUploadProgress(null);
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const newImage: Image = JSON.parse(xhr.responseText);
-          setImages((prevImages) => [...prevImages, newImage]);
-          showToast(`${t('common.success')}: ${newImage.file_name}`, 'success');
-          setSelectedFile(null);
-        } catch {
-          showToast(t('common.error'), 'error');
-        }
-      } else {
-        try {
-          const body = JSON.parse(xhr.responseText);
-          showToast(`${t('common.error')}: ${body?.message || xhr.statusText}`, 'error');
-        } catch {
-          showToast(`${t('common.error')}: ${xhr.statusText}`, 'error');
-        }
-      }
-    };
-
-    xhr.onerror = () => {
-      setLoading(false);
-      setUploadProgress(null);
-      showToast(t('common.error'), 'error');
-    };
-
-    xhr.send(formData);
-  };
-
-  const handleRenameClick = (image: Image) => {
-    setRenamingImageId(image.id);
-    setNewFileName(image.file_name);
-  };
-
-  const handleCancelRename = () => {
-    setRenamingImageId(null);
-    setNewFileName('');
-  };
-
-  const handleSaveRename = async (imageId: string) => {
-    if (!newFileName.trim() || !token) return;
-    setRenameLoading(true);
-    try {
-      const { api } = await import('../../lib/api');
-      const updatedImage = await api.updateImage(imageId, newFileName, token);
-      setImages((prevImages) =>
-        prevImages.map((img) => (img.id === imageId ? updatedImage : img))
-      );
-      showToast(`${t('common.success')}: ${updatedImage.file_name}`, 'success');
-      handleCancelRename();
-    } catch (error) {
-      const err = error as { response?: { data?: { message?: string } }; message?: string };
-      showToast(`${t('common.error')}: ${err.response?.data?.message || err.message}`, 'error');
-    } finally {
-      setRenameLoading(false);
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+    const newImage = await upload(selectedFile);
+    if (newImage) {
+      setImages((prev) => [...prev, newImage]);
+      showToast(`${t('common.success')}: ${newImage.file_name}`, 'success');
+      setSelectedFile(null);
     }
   };
 
-  const handleDeleteClick = (imageId: string) => {
-    setConfirmDeleteId(imageId);
+  const handleSaveRename = async (imageId: string, newFileName: string) => {
+    if (!token) return;
+    try {
+      const updatedImage = await api.updateImage(imageId, newFileName, token);
+      setImages((prev) => prev.map((img) => (img.id === imageId ? updatedImage : img)));
+      showToast(`${t('common.success')}: ${updatedImage.file_name}`, 'success');
+      setRenamingImageId(null);
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      showToast(`${t('common.error')}: ${err.response?.data?.message || err.message}`, 'error');
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -141,13 +76,12 @@ const AdminImages: React.FC = () => {
     setConfirmDeleteId(null);
     setDeleteLoading(imageId);
     try {
-      const { api } = await import('../../lib/api');
       await api.deleteImage(imageId, token);
-      setImages((prevImages) => prevImages.filter((img) => img.id !== imageId));
+      setImages((prev) => prev.filter((img) => img.id !== imageId));
       showToast(t('admin.images.deleteSuccess'), 'success');
     } catch (error) {
       const err = error as { response?: { status?: number; data?: { message?: string } }; message?: string };
-      if (err.response && err.response.status === 409) {
+      if (err.response?.status === 409) {
         showToast(t('admin.images.deleteError'), 'error');
       } else {
         showToast(`${t('common.error')}: ${err.response?.data?.message || err.message}`, 'error');
@@ -208,10 +142,10 @@ const AdminImages: React.FC = () => {
           )}
           <button
             onClick={handleFileUpload}
-            disabled={!selectedFile || loading}
+            disabled={!selectedFile || uploading}
             className="button button-primary upload-button"
           >
-            {loading ? t('admin.images.uploading') : t('admin.images.upload')}
+            {uploading ? t('admin.images.uploading') : t('admin.images.upload')}
           </button>
         </div>
 
@@ -239,18 +173,18 @@ const AdminImages: React.FC = () => {
               {[1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} className="image-card">
                   <div className="image-preview">
-                    <div className="skeleton" style={{ width: '100%', height: '100%', minHeight: '200px' }} />
+                    <Skeleton w="100%" h="100%" style={{ minHeight: '200px' }} />
                   </div>
                   <div className="image-info">
                     <div className="image-name">
-                      <span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '70%' }} />
+                      <Skeleton inline h="1em" w="70%" />
                     </div>
                     <div className="image-meta">
-                      <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '50%' }} />
+                      <Skeleton inline h="0.85em" w="50%" />
                     </div>
                   </div>
                   <div className="image-actions">
-                    <span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '100%' }} />
+                    <Skeleton inline h="1em" w="100%" />
                   </div>
                 </div>
               ))}
@@ -264,81 +198,16 @@ const AdminImages: React.FC = () => {
           ) : (
             <div className="images-grid-view">
               {images.map((image) => (
-                <div key={image.id} className="image-card">
-                  <div className="image-preview">
-                    <img
-                      src={getImageUrl(image.id)}
-                      alt={image.file_name}
-                      className="image-thumbnail"
-                    />
-                    {renamingImageId === image.id ? (
-                      <div className="rename-overlay" role="dialog" aria-modal="true">
-                        <div className="rename-dialog">
-                          <input
-                            type="text"
-                            value={newFileName}
-                            onChange={(e) => setNewFileName(e.target.value)}
-                            disabled={renameLoading}
-                            className="rename-input"
-                            autoFocus
-                          />
-                          <div className="rename-actions">
-                            <button
-                              onClick={() => handleSaveRename(image.id)}
-                              disabled={renameLoading}
-                              className="button button-small button-success"
-                            >
-                              {t('common.save')}
-                            </button>
-                            <button
-                              onClick={handleCancelRename}
-                              disabled={renameLoading}
-                              className="button button-small button-secondary"
-                            >
-                              {t('common.cancel')}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="image-info">
-                    <div className="image-name">
-                      {renamingImageId === image.id ? (
-                        <div className="renaming-indicator">{t('admin.images.rename')}</div>
-                      ) : (
-                        <>
-                          <span className="file-name">{image.file_name}</span>
-                          <span className="file-size">({(image.file_size / 1024).toFixed(1)} KB)</span>
-                        </>
-                      )}
-                    </div>
-                    <div className="image-meta">
-                      <span className="image-id">ID: {image.id.substring(0, 8)}...</span>
-                      <span className="image-date">{formatDate(image.created_at)}</span>
-                    </div>
-                  </div>
-                  <div className="image-actions">
-                    {renamingImageId === image.id ? null : (
-                      <>
-                        <button
-                          onClick={() => handleRenameClick(image)}
-                          className="button button-small button-secondary"
-                          disabled={deleteLoading === image.id}
-                        >
-                          {t('admin.images.rename')}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(image.id)}
-                          disabled={deleteLoading === image.id}
-                          className="button button-small button-danger"
-                        >
-                          {deleteLoading === image.id ? t('common.deleting') : t('admin.images.delete')}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
+                <ImageCard
+                  key={image.id}
+                  image={image}
+                  isRenaming={renamingImageId === image.id}
+                  deleteLoading={deleteLoading === image.id}
+                  onStartRename={() => setRenamingImageId(image.id)}
+                  onCancelRename={() => setRenamingImageId(null)}
+                  onSaveRename={(newName) => handleSaveRename(image.id, newName)}
+                  onDelete={() => setConfirmDeleteId(image.id)}
+                />
               ))}
             </div>
           )}

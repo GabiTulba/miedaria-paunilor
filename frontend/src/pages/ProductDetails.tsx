@@ -18,6 +18,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { getOrigin } from '../lib/origin';
 import { buildProductLd, buildBreadcrumbLd } from '../lib/structuredData';
 import { clamp } from '../lib/text';
+import { Skeleton } from '../components/Skeleton';
 
 import './ProductDetails.css';
 
@@ -58,22 +59,22 @@ function ProductDetails() {
                 <div className="back-to-shop">{backLink}</div>
                 <div className="product-details-content">
                     <div className="product-image-column">
-                        <div className="skeleton" style={{ width: '100%', aspectRatio: '1/1', borderRadius: 'var(--radius-md)' }} />
+                        <Skeleton w="100%" style={{ aspectRatio: '1/1', borderRadius: 'var(--radius-md)' }} />
                     </div>
                     <div className="product-info-section">
-                        <div className="skeleton" style={{ height: '2em', width: '80%', marginBottom: '0.75rem' }} />
-                        <div className="skeleton" style={{ height: '1.5em', width: '25%', marginBottom: '1.5rem' }} />
+                        <Skeleton h="2em" w="80%" style={{ marginBottom: '0.75rem' }} />
+                        <Skeleton h="1.5em" w="25%" style={{ marginBottom: '1.5rem' }} />
                         <div style={{ marginBottom: '1.5rem' }}>
                             {[1, 2, 3, 4, 5].map(i => (
                                 <div key={i} style={{ display: 'flex', marginBottom: '0.5rem' }}>
-                                    <span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '100px' }} />
+                                    <Skeleton inline h="1em" w="100px" />
                                 </div>
                             ))}
                         </div>
-                        <div className="skeleton" style={{ height: '1em', marginBottom: '0.5rem' }} />
-                        <div className="skeleton" style={{ height: '1em', width: '85%', marginBottom: '2rem' }} />
-                        <div className="skeleton" style={{ height: '3em', marginBottom: '1.5rem' }} />
-                        <div className="skeleton" style={{ height: '3em' }} />
+                        <Skeleton h="1em" style={{ marginBottom: '0.5rem' }} />
+                        <Skeleton h="1em" w="85%" style={{ marginBottom: '2rem' }} />
+                        <Skeleton h="3em" style={{ marginBottom: '1.5rem' }} />
+                        <Skeleton h="3em" />
                     </div>
                 </div>
             </div>
@@ -147,7 +148,7 @@ function ProductDetails() {
                                 onLoad={() => setImgLoaded(true)}
                                 onError={() => setImgError(true)}
                             />
-                            {!imgLoaded && <div className="skeleton product-detail-image-skeleton" />}
+                            {!imgLoaded && <Skeleton className="product-detail-image-skeleton" />}
                         </div>
                     ) : (
                         <div className="placeholder-image product-detail-image">{t('admin.productForm.noImage')}</div>

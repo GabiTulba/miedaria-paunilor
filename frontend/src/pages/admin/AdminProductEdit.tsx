@@ -6,7 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { Product, ProductFormData, ProductWithImage } from '../../types';
 import ProductForm from './ProductForm';
-import { errorMapping, errorMessageMapping } from './errorMappings';
+import { errorMapping, errorMessageMapping, mapBackendValidationErrors } from './errorMappings';
 import { useAdminImages } from '../../hooks/useAdminImages';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -95,16 +95,10 @@ function AdminProductEdit() {
                 navigate('/admin/dashboard/products');
             } catch (error: any) {
                 console.error("Failed to update product:", error);
-                if (error.response && error.response.data && error.response.data.errors) {
-                    const backendErrors: Record<string, string> = {};
-                    error.response.data.errors.forEach((err: any) => {
-                        const fieldName = errorMapping[err];
-                        if (fieldName) {
-                            backendErrors[fieldName] = errorMessageMapping[err];
-                        }
-                    });
+                const backendErrors = mapBackendValidationErrors(error, errorMapping, errorMessageMapping);
+                if (backendErrors) {
                     setErrors(backendErrors);
-                } else if (error.response && error.response.data && error.response.data.message) {
+                } else if (error.response?.data?.message) {
                     setErrors({ form: error.response.data.message });
                 } else {
                     showToast(t('admin.products.error'), 'error');

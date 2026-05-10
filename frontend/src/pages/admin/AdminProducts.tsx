@@ -14,6 +14,7 @@ import Pagination from '../../components/Pagination';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import ConfirmModal from '../../components/ConfirmModal';
 import { addGraceDays } from '../../lib/constants';
+import { Skeleton } from '../../components/Skeleton';
 import './Admin.css';
 
 const ADMIN_PRODUCTS_PER_PAGE = 20;
@@ -174,12 +175,12 @@ function AdminProducts() {
                         <tbody>
                             {[1, 2, 3, 4, 5].map(i => (
                                 <tr key={i}>
-                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '120px' }} /></td>
-                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '80px' }} /></td>
-                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '60px' }} /></td>
-                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '40px' }} /></td>
-                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '70px' }} /></td>
-                                    <td><span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '100px' }} /></td>
+                                    <td><Skeleton inline h="1em" w="120px" /></td>
+                                    <td><Skeleton inline h="1em" w="80px" /></td>
+                                    <td><Skeleton inline h="1em" w="60px" /></td>
+                                    <td><Skeleton inline h="1em" w="40px" /></td>
+                                    <td><Skeleton inline h="1em" w="70px" /></td>
+                                    <td><Skeleton inline h="1em" w="100px" /></td>
                                 </tr>
                             ))}
                         </tbody>

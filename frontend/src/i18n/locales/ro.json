@@ -121,7 +121,7 @@
     "min": "Minim",
     "characters": "caractere",
     "items": "articole",
-    "products": "produse",
+    "products": "Produse",
     "bottles": "sticle",
     "liters": "litri",
     "milliliters": "ml",
@@ -358,6 +358,7 @@
     },
     "images": {
       "title": "Gestionează Imagini",
+      "images": "Imagini",
       "subtitle": "Încarcă și gestionează imaginile produselor",
       "upload": "Încarcă Imagine",
       "uploading": "Se încarcă...",

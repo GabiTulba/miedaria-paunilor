@@ -121,7 +121,7 @@
     "min": "Min",
     "characters": "characters",
     "items": "items",
-    "products": "products",
+    "products": "Products",
     "bottles": "bottles",
     "liters": "liters",
     "milliliters": "ml",
@@ -358,6 +358,7 @@
     },
     "images": {
       "title": "Manage Images",
+      "images": "Images",
       "subtitle": "Upload and manage product images",
       "upload": "Upload Image",
       "uploading": "Uploading...",

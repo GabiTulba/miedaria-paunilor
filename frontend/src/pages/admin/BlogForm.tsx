@@ -1,195 +1,48 @@
-import { useState, useContext, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NewBlogPost, UpdateBlogPost } from '../../types';
-import { api } from '../../lib/api';
-import { AuthContext } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
 import TextInput from '../../components/forms/TextInput';
 import TextAreaInput from '../../components/forms/TextAreaInput';
-import SelectInput from '../../components/forms/SelectInput';
+import BooleanSelect from '../../components/forms/BooleanSelect';
+import { validateRequired, validateSlug } from '../../lib/validators';
+import { BLOG_AUTHOR_MAX, BLOG_EXCERPT_MAX, BLOG_SLUG_MAX, BLOG_TITLE_MAX } from '../../lib/blogConstants';
+import { useShakeOnError } from '../../hooks/useShakeOnError';
 import './Admin.css';
 
-function validateRequired(value: string, fieldName: string): string | undefined {
-    if (!value.trim()) return `${fieldName} is required`;
-    return undefined;
-}
-
-function validateSlug(value: string): string | undefined {
-    if (!value.trim()) return 'Slug is required';
-    if (!/^[a-z0-9-]+$/.test(value)) return 'Only lowercase letters, numbers, hyphens';
-    if (value.length > 256) return 'Max 256 characters';
-    return undefined;
-}
+export type BlogFormData = NewBlogPost | UpdateBlogPost;
 
 interface BlogFormProps {
+    formData: BlogFormData;
+    setFormData: (data: BlogFormData) => void;
+    onSubmit: (e: React.FormEvent) => void;
     isEdit?: boolean;
+    errors?: Record<string, string>;
+    submitting?: boolean;
+    onCancel: () => void;
+    formError?: string | null;
 }
 
-function BlogForm({ isEdit = false }: BlogFormProps) {
-    const { id } = useParams<{ id: string }>();
-    const [formData, setFormData] = useState<NewBlogPost | UpdateBlogPost>({
-        title: '',
-        title_ro: '',
-        slug: '',
-        content_markdown: '',
-        content_markdown_ro: '',
-        excerpt: '',
-        excerpt_ro: '',
-        author: '',
-        is_published: true,
-    });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+function BlogForm({
+    formData,
+    setFormData,
+    onSubmit,
+    isEdit = false,
+    errors = {},
+    submitting = false,
+    onCancel,
+    formError,
+}: BlogFormProps) {
     const { t } = useTranslation();
-    const { token } = useContext(AuthContext);
-    const { showToast } = useToast();
-    const navigate = useNavigate();
     const formRef = useRef<HTMLFormElement>(null);
-
-    useEffect(() => {
-        if (isEdit && id && token) {
-            const fetchBlogPost = async () => {
-                try {
-                    setLoading(true);
-                    const posts = await api.getBlogPostsAdmin(token);
-                    const post = posts.items.find(p => p.id === id);
-                    if (post) {
-                        setFormData({
-                            title: post.title,
-                            title_ro: post.title_ro,
-                            slug: post.slug,
-                            content_markdown: post.content_markdown,
-                            content_markdown_ro: post.content_markdown_ro,
-                            excerpt: post.excerpt,
-                            excerpt_ro: post.excerpt_ro,
-                            author: post.author,
-                            is_published: post.is_published,
-                        });
-                    }
-                } catch (err) {
-                    console.error("Failed to fetch blog post:", err);
-                    setError(t('common.error'));
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchBlogPost();
-        }
-    }, [isEdit, id, token, t]);
+    useShakeOnError(formRef, Object.keys(errors).length);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value, type } = e.target;
-        let newValue: any = value;
-        
-        if (type === 'checkbox') {
-            newValue = (e.target as HTMLInputElement).checked;
-        } else if (name === 'is_published') {
-            // Convert string 'true'/'false' to boolean
-            newValue = value === 'true';
-        }
-        
-        setFormData(prev => ({
-            ...prev,
-            [name]: newValue
-        }));
-
-        // Clear error for this field
-        if (formErrors[name]) {
-            setFormErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
-        }
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
     };
 
-    const validateForm = (): boolean => {
-        const errors: Record<string, string> = {};
-
-        if (!formData.title?.trim()) {
-            errors.title = t('common.required');
-        }
-
-        if (!formData.title_ro?.trim()) {
-            errors.title_ro = t('common.required');
-        }
-
-        if (!formData.slug?.trim()) {
-            errors.slug = t('common.required');
-        } else if (!/^[a-z0-9_-]+$/.test(formData.slug)) {
-            errors.slug = t('admin.blog.form.slugInvalid');
-        }
-
-        if (!formData.content_markdown?.trim()) {
-            errors.content_markdown = t('common.required');
-        }
-
-        if (!formData.content_markdown_ro?.trim()) {
-            errors.content_markdown_ro = t('common.required');
-        }
-
-        if (!formData.excerpt?.trim()) {
-            errors.excerpt = t('common.required');
-        }
-
-        if (!formData.excerpt_ro?.trim()) {
-            errors.excerpt_ro = t('common.required');
-        }
-
-        if (!formData.author?.trim()) {
-            errors.author = t('common.required');
-        }
-
-        setFormErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        if (!token || !validateForm()) {
-            return;
-        }
-
-        try {
-            setLoading(true);
-            setError(null);
-
-            if (isEdit && id) {
-                await api.updateBlogPost(id, formData as UpdateBlogPost, token);
-            } else {
-                await api.createBlogPost(formData as NewBlogPost, token);
-            }
-
-            showToast(t(isEdit ? 'admin.blog.updated' : 'admin.blog.created'), 'success');
-            navigate('/admin/dashboard/blog');
-        } catch (err: any) {
-            console.error("Failed to save blog post:", err);
-            
-            if (err.response?.data?.errors) {
-                const validationErrors: Record<string, string> = {};
-                err.response.data.errors.forEach((error: any) => {
-                    if (error === 'EmptyTitle') validationErrors.title = t('common.required');
-                    else if (error === 'EmptyTitleRo') validationErrors.title_ro = t('common.required');
-                    else if (error === 'EmptySlug' || error === 'InvalidSlug') validationErrors.slug = 'Invalid slug format';
-                    else if (error === 'EmptyContent') validationErrors.content_markdown = t('common.required');
-                    else if (error === 'EmptyContentRo') validationErrors.content_markdown_ro = t('common.required');
-                    else if (error === 'EmptyExcerpt') validationErrors.excerpt = t('common.required');
-                    else if (error === 'EmptyExcerptRo') validationErrors.excerpt_ro = t('common.required');
-                    else if (error === 'EmptyAuthor') validationErrors.author = t('common.required');
-                });
-                setFormErrors(validationErrors);
-            } else {
-                setError(err.response?.data?.message || t('common.error'));
-            }
-            formRef.current?.classList.add('shake');
-            formRef.current?.addEventListener('animationend', () => {
-                formRef.current?.classList.remove('shake');
-            }, { once: true });
-        } finally {
-            setLoading(false);
-        }
+    const setIsPublished = (next: boolean) => {
+        setFormData({ ...formData, is_published: next });
     };
 
     return (
@@ -201,18 +54,18 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                 </div>
             </div>
 
-            {error && (
+            {formError && (
                 <div className="error-message">
-                    {error}
+                    {formError}
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="admin-form" ref={formRef}>
-                {Object.keys(formErrors).length > 0 && (
+            <form onSubmit={onSubmit} className="admin-form" ref={formRef}>
+                {Object.keys(errors).length > 0 && (
                     <div className="validation-summary" role="alert">
                         <h4>{t('admin.blog.form.validationErrors')}</h4>
                         <ul>
-                            {Object.values(formErrors).filter(Boolean).map((err, i) => (
+                            {Object.values(errors).filter(Boolean).map((err, i) => (
                                 <li key={i}>{err}</li>
                             ))}
                         </ul>
@@ -221,7 +74,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
 
                 <div className="form-section">
                     <h3>{t('admin.blog.form.basicInfo')}</h3>
-                    
+
                     <div className="form-row">
                         <TextInput
                             id="title"
@@ -229,8 +82,9 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             name="title"
                             value={formData.title || ''}
                             onChange={handleChange}
-                            error={formErrors.title}
+                            error={errors.title}
                             required
+                            maxLength={BLOG_TITLE_MAX}
                             validate={(v) => validateRequired(v, 'Title')}
                         />
                         <TextInput
@@ -239,8 +93,9 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             name="title_ro"
                             value={formData.title_ro || ''}
                             onChange={handleChange}
-                            error={formErrors.title_ro}
+                            error={errors.title_ro}
                             required
+                            maxLength={BLOG_TITLE_MAX}
                             validate={(v) => validateRequired(v, 'Romanian title')}
                         />
                     </div>
@@ -252,8 +107,9 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             name="slug"
                             value={formData.slug || ''}
                             onChange={handleChange}
-                            error={formErrors.slug}
+                            error={errors.slug}
                             required
+                            maxLength={BLOG_SLUG_MAX}
                             helpText={t('admin.blog.form.slugHelp')}
                             validate={(v) => validateSlug(v)}
                         />
@@ -263,30 +119,28 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             name="author"
                             value={formData.author || ''}
                             onChange={handleChange}
-                            error={formErrors.author}
+                            error={errors.author}
                             required
+                            maxLength={BLOG_AUTHOR_MAX}
                             validate={(v) => validateRequired(v, 'Author')}
                         />
                     </div>
 
                     <div className="form-row">
-                        <SelectInput
+                        <BooleanSelect
                             id="is_published"
                             label={t('admin.blog.form.status')}
-                            name="is_published"
-                            value={formData.is_published ? 'true' : 'false'}
-                            onChange={handleChange}
-                            options={[
-                                { value: 'true', label: t('admin.blog.status.published') },
-                                { value: 'false', label: t('admin.blog.status.draft') }
-                            ]}
+                            value={formData.is_published ?? true}
+                            onChange={setIsPublished}
+                            trueLabel={t('admin.blog.status.published')}
+                            falseLabel={t('admin.blog.status.draft')}
                         />
                     </div>
                 </div>
 
                 <div className="form-section">
                     <h3>{t('admin.blog.form.content')}</h3>
-                    
+
                     <div className="form-row">
                         <TextAreaInput
                             id="excerpt"
@@ -294,9 +148,10 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             name="excerpt"
                             value={formData.excerpt || ''}
                             onChange={handleChange}
-                            error={formErrors.excerpt}
+                            error={errors.excerpt}
                             required
                             rows={3}
+                            maxLength={BLOG_EXCERPT_MAX}
                             helpText={t('admin.blog.form.excerptHelp')}
                             validate={(v) => validateRequired(v, 'Excerpt')}
                         />
@@ -306,9 +161,10 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             name="excerpt_ro"
                             value={formData.excerpt_ro || ''}
                             onChange={handleChange}
-                            error={formErrors.excerpt_ro}
+                            error={errors.excerpt_ro}
                             required
                             rows={3}
+                            maxLength={BLOG_EXCERPT_MAX}
                             validate={(v) => validateRequired(v, 'Romanian excerpt')}
                         />
                     </div>
@@ -320,7 +176,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             name="content_markdown"
                             value={formData.content_markdown || ''}
                             onChange={handleChange}
-                            error={formErrors.content_markdown}
+                            error={errors.content_markdown}
                             required
                             rows={10}
                             helpText={t('admin.blog.form.contentHelp')}
@@ -332,7 +188,7 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                             name="content_markdown_ro"
                             value={formData.content_markdown_ro || ''}
                             onChange={handleChange}
-                            error={formErrors.content_markdown_ro}
+                            error={errors.content_markdown_ro}
                             required
                             rows={10}
                             validate={(v) => validateRequired(v, 'Romanian content')}
@@ -343,19 +199,19 @@ function BlogForm({ isEdit = false }: BlogFormProps) {
                 <div className="form-actions">
                     <button
                         type="button"
-                        onClick={() => navigate('/admin/dashboard/blog')}
+                        onClick={onCancel}
                         className="secondary-button"
-                        disabled={loading}
+                        disabled={submitting}
                     >
                         {t('common.cancel')}
                     </button>
                     <button
                         type="submit"
                         className="primary-button"
-                        disabled={loading}
+                        disabled={submitting}
                     >
-                        {loading && <span className="button-spinner" aria-hidden="true" />}
-                        {loading ? t('common.loading') : (isEdit ? t('common.update') : t('common.create'))}
+                        {submitting && <span className="button-spinner" aria-hidden="true" />}
+                        {submitting ? t('common.loading') : (isEdit ? t('common.update') : t('common.create'))}
                     </button>
                 </div>
             </form>

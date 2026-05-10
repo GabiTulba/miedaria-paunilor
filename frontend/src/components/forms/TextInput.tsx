@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import FormField from './FormField';
 
 interface TextInputProps {
   id: string;
@@ -13,6 +14,7 @@ interface TextInputProps {
   placeholder?: string;
   helpText?: string;
   autoComplete?: string;
+  maxLength?: number;
   validate?: (value: string) => string | undefined;
 }
 
@@ -29,6 +31,7 @@ const TextInput: React.FC<TextInputProps> = ({
   placeholder,
   helpText,
   autoComplete,
+  maxLength,
   validate,
 }) => {
   const [blurError, setBlurError] = useState<string>();
@@ -38,35 +41,31 @@ const TextInput: React.FC<TextInputProps> = ({
     if (validate) setBlurError(validate(value));
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (blurError) setBlurError(undefined);
     onChange(e);
   };
 
-  const helpTextId = helpText ? `${id}-help` : undefined;
-  const errorId = displayError ? `${id}-error` : undefined;
-  const describedBy = [helpTextId, errorId].filter(Boolean).join(' ') || undefined;
-
   return (
-    <div className="form-group">
-      <label htmlFor={id}>{label}{required && <span className="required-indicator">*</span>}</label>
-      <input
-        type={type}
-        id={id}
-        name={name}
-        value={value}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        required={required}
-        disabled={disabled}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        aria-invalid={displayError ? true : undefined}
-        aria-describedby={describedBy}
-      />
-      {helpText && <p className="help-text" id={helpTextId}>{helpText}</p>}
-      {displayError && <p className="error-message" id={errorId}>{displayError}</p>}
-    </div>
+    <FormField id={id} label={label} required={required} helpText={helpText} error={displayError}>
+      {({ describedBy }) => (
+        <input
+          type={type}
+          id={id}
+          name={name}
+          value={value}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          required={required}
+          disabled={disabled}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          maxLength={maxLength}
+          aria-invalid={displayError ? true : undefined}
+          aria-describedby={describedBy}
+        />
+      )}
+    </FormField>
   );
 };
 

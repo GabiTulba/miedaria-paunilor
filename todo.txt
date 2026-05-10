@@ -1,6 +1,6 @@
 ================================================================================
-MIEDARIA PAUNILOR — FULL CODEBASE AUDIT (security / logic / UX)
-Generated: 2026-05-05
+MIEDARIA PAUNILOR — OUTSTANDING WORK
+Last updated: 2026-05-10
 ================================================================================
 
 Severity legend: [C]ritical  [H]igh  [M]edium  [L]ow
@@ -8,117 +8,99 @@ Severity legend: [C]ritical  [H]igh  [M]edium  [L]ow
 Each item: [Sev] FILE:LINE — Issue. Fix.
 
 ================================================================================
-PRIORITY (remaining — Sections A + B + C + D done)
+PRIORITY
 ================================================================================
 1. [H] backend + frontend — JWT to httpOnly cookie (requires backend cookie set on
    /api/admin/login; FE side now decodes exp + auto-logs out on expiry. Migration to
    cookie still pending and needs FE+BE in lockstep).
 2. [M] frontend/main.tsx + nginx — mirror root `/` lang redirect at nginx level
    (FE-side redirect is intentionally kept as fallback).
-================================================================================
 
 ================================================================================
-ADDENDUM — REFACTORING / TECH DEBT / DUPLICATION AUDIT
-Generated: 2026-05-05
+D. BACKEND — DEFERRED FOLLOW-UPS
+================================================================================
+* `db::establish_connection` / `establish_pooled_connection` — left in place;
+  `establish_connection` is still used by `bin/add_admin_user.rs`.
+* Test coverage — codebase has none; introducing a Postgres-test-container
+  harness would multiply the work. Recommend follow-up.
+
+================================================================================
+E. FRONTEND — DEFERRED FOLLOW-UPS
 ================================================================================
 
-Severity legend (reused): [H]igh  [M]edium  [L]ow
+Form layer (deferred — no test coverage to fall back on)
+[H] frontend/src/pages/admin/ProductForm.tsx + AdminProductCreate.tsx +
+    AdminProductEdit.tsx + BlogForm.tsx — No shared form-state primitive.
+    Each page hand-rolls handleChange/setFormData. Introduce a tiny
+    `useForm<T>()` hook (or pull in `react-hook-form`) so the boilerplate
+    disappears and the dirty-tracking that `useUnsavedChanges` already
+    supports can be driven off `formState.isDirty`.
+[H] frontend/src/pages/admin/ProductForm.tsx — once RHF lands, split into
+    sub-form components (BasicInfoSection, ImageSection, CharacteristicsSection,
+    PricingSection) using `useFormContext`. Skipped pre-RHF because without
+    a shared form context the split adds prop drilling without value.
+[M] frontend/src/pages/admin/ProductForm.tsx — `handleChange` and
+    `handleNumericChange` are two parallel handlers. With NumberInput emitting
+    a `number` via a separate `onValueChange` prop, the page only needs one
+    `handleChange`.
+[L] frontend/src/pages/admin/errorMappings.ts — `errorMessageMapping` is a
+    flat object of English strings. Translate via i18n keys at the call site
+    or move strings into the i18n resource files.
 
---------------------------------------------------------------------------------
-D. BACKEND — REFACTORING / TECH DEBT / DUPLICATION  [DONE 2026-05-09]
---------------------------------------------------------------------------------
+Hooks / data fetching
+[M] frontend/src/hooks/useAdminImages.ts — Per-component fetch with no cache.
+    `AdminImages`, `AdminProductCreate`, and `AdminProductEdit` instantiate it
+    independently → 3 GET /admin/images on a single navigation flow. Consider
+    an `ImagesContext` or a small SWR-style cache keyed on `token`.
+[M] frontend/src/pages/admin/AdminProductEdit.tsx — Edit page handles
+    `productLoading` separately from `imagesLoading` (useAdminImages); they're
+    combined ad hoc. Move both single-shot loaders to the `useFetch<T>` hook
+    so they aggregate cleanly.
+[L] frontend/src/context/EnumContext.tsx:28-34 — Validates the API response
+    shape inline. Move to a `validateEnumResponse(...)` helper next to the
+    EnumValues type definition.
 
-Out of scope (deferred, separate tasks):
-  * `db::establish_connection` / `establish_pooled_connection` — left in place; `establish_connection` is still used by `bin/add_admin_user.rs`.
-  * Test coverage — codebase has none; introducing a Postgres-test-container harness would multiply the work. Recommend follow-up.
+Components / structure
+[L] frontend/src/i18n/locales/index.d.ts and JSON files — typed-key wrapper
+    over EN/RO key trees (codegen or hand-written `Keys` union). Skipped this
+    pass — needs tooling decision.
+[L] frontend/src/pages/admin/AdminLayout.tsx + frontend/src/App.tsx — Both
+    implement a hamburger/drawer pattern. JS is now shared via
+    `useFocusTrapDrawer`; an additional `<Drawer>` component wrapping the
+    markup would also collapse the markup duplication.
+[M] frontend/src/pages/Cart.tsx + ProductDetails.tsx — three hand-rolled
+    `success-pulse`/`onanimationend` snippets. Could be unified via a
+    `<PulseButton>` or `useElementPulse(ref)` hook; left as-is because the
+    existing setTimeout-driven approach is already idiomatic React.
 
---------------------------------------------------------------------------------
-E. FRONTEND — REFACTORING / TECH DEBT / DUPLICATION  [GROUPS 0-3 DONE 2026-05-09]
---------------------------------------------------------------------------------
+================================================================================
+F. CROSS-CUTTING — FE/BE (OUTSTANDING)
+================================================================================
 
-PROGRESS NOTE — full plan: ~/.claude/plans/solve-section-e-group-concurrent-newt.md
-Done: Group 0 (admin blog-by-id endpoint), Group 1 (HARD_DELETE_GRACE_DAYS
-constant + dead-code cleanup: getImageById/categorizeError/dateUtils unused),
-Group 2 (api.ts buildQuery + normalizeProductPayload), Group 3 (useFetch +
-usePageParam + afterDeleteAction hooks; useFetchProducts simplified to call
-useFetch + api.getProducts; useFetchEnums deleted, callers use EnumContext).
-Stale items removed: BLOG_MARKDOWN_COMPONENTS (already in lib/markdownComponents.tsx),
-useUnsavedChanges (already wired), Cart.tsx Promise.allSettled (already done),
-swapLangPrefix vs withLangPrefix (intentionally different).
-Remaining groups in this section (4-12): Skeleton library, Validators &
-error-mapping, EnumSelect, useFocusTrapDrawer, react-hook-form adoption,
-Form pages restructure (incl. BlogForm via new /admin/blog/{id} endpoint),
-AdminImages split, Shop filters reducer, misc structural + [L] items.
+Backend codegen / API contract sharing — all blocked on a single tooling
+decision (typeshare vs ts-rs vs OpenAPI). Pick one and the next four items
+collapse into "regenerate".
 
-DUPLICATION
-[H] frontend/src/pages/Blog.tsx:121-176 vs frontend/src/pages/BlogPostDetail.tsx:172-224 — The entire `ReactMarkdown` `components={...}` prop (img with `{width=...}{height=...}{class=...}` parsing, table/thead/tbody/tr/th/td wrappers) is duplicated verbatim across the two files. Extract to `frontend/src/lib/markdown.tsx` exporting `BLOG_MARKDOWN_COMPONENTS` (or a `<BlogMarkdown markdown={...}/>` component) used by both. [DONE — already in lib/markdownComponents.tsx]
-[H] frontend/src/hooks/useFetchProducts.ts:46-106 vs frontend/src/lib/api.ts:51-82 — Both build URLSearchParams from the exact same product filter set (order_by, in_stock, order_direction, product_type, sweetness, turbidity, effervescence, acidity, tannins, body, page, per_page, search). The hook reimplements `api.getProducts` instead of calling it. Replace the hook body with `api.getProducts({...filters}, controller.signal)`. [DONE 2026-05-09]
-[H] frontend/src/pages/Shop.tsx:174-372 — Same SelectInput-with-`enums.X.map(...)`-pattern is repeated 7 times (productType, sweetness, turbidity, effervescence, acidity, tannins, body) — only the enum key, label translation, and "all" placeholder differ. Extract `<EnumSelect kind="sweetness" value={sweetness} onChange={setSweetness} />` driven by a config table; the JSX block shrinks ~150 lines.
-[H] frontend/src/pages/admin/ProductForm.tsx:268-391 — Mirror of the same problem inside ProductForm: 7 SelectInput blocks each with `enums.X.map(...)`. Use the same `<EnumSelect>` component proposed above.
-[H] frontend/src/pages/admin/AdminProducts.tsx:50-76 vs AdminBlog.tsx:40-62 vs Blog.tsx:30-50 vs BlogPostDetail.tsx:37-67 vs Cart.tsx:19-77 vs Home.tsx:20-45 vs ProductDetails.tsx:40-60 vs AdminDashboard.tsx:16-31 — The "useEffect with AbortController + try/catch + AbortError early-return + setLoading + signal-aborted check in finally" pattern repeats verbatim in ~8 components. Extract a `useFetch<T>(fetcher: (signal) => Promise<T>, deps)` hook returning `{ data, loading, error, refetch }`. [DONE 2026-05-09 — Cart.tsx kept manual: per-item allSettled doesn't fit single-data hook]
-[H] frontend/src/pages/admin/AdminProducts.tsx:42-44 vs AdminBlog.tsx:26-27 vs Shop.tsx:28-29 vs Blog.tsx:25-26 — `const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10)); const setPage = (p: number) => setSearchParams(...)` inlined in 4+ components. Extract `usePageParam()` hook. [DONE 2026-05-09]
-[H] frontend/src/pages/admin/AdminProductCreate.tsx:86-101 vs AdminProductEdit.tsx:86-99 — Backend-validation-error-mapping block is identical: `error.response.data.errors.forEach(err => ...errorMapping[err]...)`. Plus BlogForm.tsx:170-182 has the same shape but with hand-written if/else mappings instead of the `errorMapping` table. Unify by (1) moving BlogForm to use the same `errorMapping`/`errorMessageMapping` table approach and (2) extracting `function mapBackendValidationErrors(err, mapping): Record<string,string>` to errorMappings.ts.
-[H] frontend/src/pages/admin/ProductForm.tsx:17-46 vs frontend/src/pages/admin/BlogForm.tsx:13-23 — Both files define their own `validateRequired`, `validatePositiveNumber`, `validateNonNegative`, `validateAbv`, `validateSlug` etc. Extract to `frontend/src/lib/validators.ts`.
-[H] frontend/src/pages/admin/AdminProducts.tsx:184-210 + AdminBlog.tsx:73-91 + AdminImages.tsx:236-254 + ProductDetails.tsx:81-107 + ProductCard.tsx:40-69 + Blog.tsx:73-98 + BlogPostDetail.tsx:73-101 + Home.tsx:97-120 — Skeleton-loader markup is hand-rolled with inline `style={{ height: '...', width: '...' }}` everywhere. Centralize: `<Skeleton h="1em" w="80%" />`, `<TableSkeleton rows=5 cols=6 />`, etc. Currently 80+ near-identical `<span className="skeleton" style={{...}} />` lines.
-[M] frontend/src/pages/admin/AdminProducts.tsx:20-30 — `canHardDelete` and `hardDeleteEligibleDate` both compute `deletedDate.getTime() + 7 * 24 * 60 * 60 * 1000`. Extract `HARD_DELETE_GRACE_DAYS = 7` and `addGraceDays(date)`. The 7-day window is also business logic the backend (product_crud.rs:404) checks; the magic number lives in two places. [DONE 2026-05-09 — frontend/src/lib/constants.ts; backend cross-ref comment added]
-[M] frontend/src/pages/admin/AdminProducts.tsx:107-111 + AdminBlog.tsx:81-85 — `if (items.length === 1 && page > 1) setPage(page - 1) else setFetchTrigger(...)` — same "after-delete back-page" logic in two places. Extract. [DONE 2026-05-09 — afterDeleteAction in hooks/useAfterDelete.ts]
-[M] frontend/src/pages/admin/AdminLayout.tsx:32-68 vs frontend/src/App.tsx:29-68 vs frontend/src/pages/Shop.tsx:72-113 — The "lock body scroll, focus first link, escape closes, click-outside closes" pattern is implemented three times for hamburger/sidebar/filters. Extract `useFocusTrapDrawer({ open, onClose, drawerRef, triggerRef })`.
-[M] frontend/src/lib/api.ts:204-224 + 131-146 + 51-82 — Each function with optional pagination params reimplements `URLSearchParams` building (`if (page !== undefined) params.append('page', String(page))`). Extract `function buildQuery(params: Record<string, unknown>): string`. [DONE 2026-05-09]
-[M] frontend/src/pages/Blog.tsx:194-195 + Shop.tsx:411-412 — `setPage(...); window.scrollTo({ top: 0, behavior: 'smooth' })` repeated in `onPrevPage`/`onNextPage` callbacks. Move into `<Pagination>` itself or a `usePaginatedScroll()` helper.
-[L] frontend/src/lib/api.ts:93-103, 105-115 — `createProduct` and `updateProduct` both build the same `payload = { ...productData, image_id: productData.image_id || null }`. Extract `normalizeProductPayload`. [DONE 2026-05-09]
-[L] frontend/src/i18n/locales/index.d.ts (not read but referenced) and JSON files — likely have duplicated EN/RO key trees that would benefit from a typed wrapper.
-
-COMPONENT STRUCTURE
-[H] frontend/src/pages/admin/ProductForm.tsx (519 lines) — Mixes: validators (top of file), date formatting helpers (`getDatePickerValue`/`handleDateChange`), the form UI with 4 sections, and registers date-picker locales as a side-effect inside the component body (lines 77-78 — runs on every render). Split: validators → lib/validators.ts; date helpers → utils/dateUtils.ts (getDatePickerValue/handleDateChange already partially live there); registerLocale → top-level module side-effect or wrap in `useEffect`. The component itself should be sub-form components (BasicInfoSection, ImageSection, CharacteristicsSection, PricingSection).
-[H] frontend/src/pages/admin/BlogForm.tsx (365 lines) — Holds its own fetch-on-mount, its own form state, its own validation, its own submit, its own backend-error mapping inline. Compare to `ProductForm.tsx` which is purely presentational and lets `AdminProductCreate`/`AdminProductEdit` own state. Refactor BlogForm to mirror that pattern (BlogForm = pure form; AdminBlogCreate/Edit pages own state + submit), so list/create/edit consistency matches products.
-[H] frontend/src/pages/admin/AdminImages.tsx (361 lines) — File-upload, file-rename, file-delete, drag-drop, XHR plumbing all in one component. Extract `useImageUpload()` hook (XHR + progress) and `<ImageCard />` sub-component.
-[M] frontend/src/pages/Shop.tsx (420 lines) — Mixes filter state (10 useStates), URL-param sync, mobile-drawer focus trap (40 lines of effect), and the entire 7-select filter sidebar JSX. Reduce filter state to a single `useReducer` or a `useFilters` hook returning `{filters, setFilter, clearFilters, activeCount}` — currently each filter has its own setter and the clear-all button at line 220-237 has to enumerate every setter by hand (12 setter calls).
-[M] frontend/src/pages/admin/AdminProducts.tsx:43-44 + AdminBlog.tsx:26-27 + Shop.tsx:28-29 + Blog.tsx:25-26 — Repeated inline `useSearchParams`/setPage usage; see DUPLICATION above.
-[M] frontend/src/components/ProductCard.tsx:24-38 — Two separate `useEffect`s (one resetting load state on imageId, one re-checking `img.complete` after every render) plus a ref-based image. The "image-cached-before-listener" workaround (the unconditional second effect with no dependency array) runs on every render — it works but is a code smell. Consolidate into a single onLoad/onError + initial state computed from `imgRef.current?.complete`.
-[M] frontend/src/components/SEO.tsx:22-29 — `swapLangPrefix` is a private helper that overlaps with `withLangPrefix` in `hooks/useLocalizedNavigate.ts:5-10`. Both transform a path to a different language prefix. Move to one shared `lib/langPath.ts`.
-[L] frontend/src/types.ts (~144 lines) — Types like `ApiError`, `ApiErrorResponse`, `LoginCredentials`, `ProductFormData` live alongside DB-mirroring types. Split into `types/api.ts` (request/response shapes), `types/models.ts` (DB-mirrors), `types/forms.ts` (form-only).
-[L] frontend/src/components/ErrorBoundary.tsx:1 — `ErrorBoundary` imports `i18n` from `'../i18n/config'` directly to translate error messages. Hooks/components everywhere else use `useTranslation`. The class component can't use hooks, but a tiny functional `<ErrorFallback>` rendered as `fallback` would. Acceptable, just inconsistent.
-
-HOOKS / DATA FETCHING
-[H] frontend/src/hooks/useFetchProducts.ts (whole file) — Reimplements `api.getProducts` plumbing inline rather than calling `api.getProducts`. Currently double-defines the URLSearchParams construction and skips the `api.getProducts` typed signature in favour of `api.get`. Replace body with `api.getProducts({...filters, page, per_page: PER_PAGE}, controller.signal)`. Notes: the hook also passes `language` as an effect dep but never uses it in the body (already in §B; the right fix is to use `useLanguage()` and let i18n header drive the response language without a re-fetch dep). [DONE 2026-05-09 — hook now wraps useFetch + api.getProducts; language dep dropped]
-[H] frontend/src/context/EnumContext.tsx + frontend/src/hooks/useFetchEnums.ts — `useFetchEnums` is a 14-line wrapper over `useContext(EnumContext)`. Either delete the hook (consumers use `useContext(EnumContext)` directly) or delete the context (the hook does fetching + caching itself in a useState). Currently both exist and the hook adds zero behavior on top of the context. [DONE 2026-05-09 — hook deleted, callers use useContext(EnumContext)]
-[M] frontend/src/hooks/useAdminImages.ts — Per-component fetch with no cache. `AdminImages`, `AdminProductCreate`, and `AdminProductEdit` all instantiate it independently → 3 GET /admin/images on a single navigation flow. Consider an `ImagesContext` or a small SWR-style cache keyed on `token`.
-[M] frontend/src/pages/admin/BlogForm.tsx:51-80 — `getBlogPostsAdmin(token)` then `posts.items.find(p => p.id === id)` to populate the edit form. That fetches every blog post just to find one. Add `api.getBlogPostByIdAdmin(id, token)` (and a backend route — currently only `get_blog_post_by_slug` is exposed). Pre-existing dependency on a non-existent endpoint is a refactor blocker.
-[M] frontend/src/pages/admin/AdminProductEdit.tsx:25-42 + frontend/src/pages/admin/AdminProductCreate.tsx (no fetch) — Edit page handles `productLoading` state separately from `imagesLoading` (useAdminImages); they're combined ad hoc at line 69-71 and 106. Replace both single-shot loaders with the proposed `useFetch<T>` hook so they aggregate cleanly.
-[L] frontend/src/context/EnumContext.tsx:28-34 — Validates the API response shape inline (`expectedKeys.every(key => Array.isArray(...))`). Move this to a `validateEnumResponse(...)` helper next to the EnumValues type definition.
-
-FORMS
-[H] frontend/src/pages/admin/BlogForm.tsx:108-146 — Local `validateForm` duplicates the per-field `validate` props passed to `<TextInput>` for every field. The shared form components (TextInput etc.) already support `validate`; the form-level checker exists in parallel. Drive form-level validation off the shared `validate` props (collect errors at submit time) instead of repeating validation rules.
-[H] frontend/src/pages/admin/ProductForm.tsx + AdminProductCreate.tsx + AdminProductEdit.tsx + BlogForm.tsx — No shared form-state primitive. Each page hand-rolls handleChange/handleNumericChange/setFormData. Introduce a tiny `useForm<T>()` hook (or pull in `react-hook-form`) so the boilerplate disappears and the dirty-tracking that `useUnsavedChanges` (already authored, never wired) can actually run.
-[M] frontend/src/components/forms/TextInput.tsx + TextAreaInput.tsx + NumberInput.tsx — Three near-duplicate components: same blurError state, same handleBlur/handleChange wiring, same describedBy id construction, same JSX skeleton (label + input + helpText + errorMessage). Extract a shared `<FormField>` wrapper that owns the label/help/error chrome, and let TextInput/TextAreaInput/NumberInput be 5-line specializations.
-[M] frontend/src/pages/admin/ProductForm.tsx:108-116 — `handleChange` and `handleNumericChange` are two parallel handlers. With `<NumberInput onChange={...}>` already typed `e: ChangeEvent<HTMLInputElement>`, the numeric coercion can live inside `NumberInput` (emit a `number` via a separate `onValueChange` prop) and the page only ever has one `handleChange`.
-[M] frontend/src/pages/admin/BlogForm.tsx:82-105 — `handleChange` sniffs `name === 'is_published'` and `type === 'checkbox'` to coerce types. This logic is form-shape-specific and shouldn't live in the generic handler. Use a typed `<BooleanSelect>` (or radio) for is_published that emits a boolean directly.
-[M] frontend/src/pages/admin/ProductForm.tsx:66-74 + BlogForm.tsx:186-189 + AdminLogin.tsx:32-35 — Three separate hand-rolled "form-shake on validation error" effects; same pattern (add `shake` class, listen for `animationend` once, remove). Extract `useShakeOnError(formRef, errorCount)`.
-[L] frontend/src/pages/admin/errorMappings.ts:30-53 — `errorMessageMapping` is a flat object of English strings with no i18n wrapping; user gets English error text regardless of `i18n.language`. Either translate each via i18n keys at the call site or move strings into the i18n resource files.
-[L] frontend/src/pages/admin/ProductForm.tsx:77-78 — `registerLocale('en', enUS); registerLocale('ro', ro);` runs every render and pollutes the global react-datepicker registry. Move to module-top-level (one-time side effect) or a `useEffect(() => {...}, [])`.
-
-OTHER
-[M] frontend/src/pages/Cart.tsx:122-128 + 148-153 + ProductDetails.tsx:69-72 — Three separate hand-rolled `success-pulse`/`onanimationend` snippets manipulating classList directly. Extract a `<PulseButton>` or a `useElementPulse(ref)` hook.
-[M] frontend/src/pages/Home.tsx:25-32 — Hand-builds product query params instead of using `api.getProducts({order_by: 'bottling_date', order_direction: 'desc', in_stock: true})`. Same pattern as `useFetchProducts` (hook also bypasses `api.getProducts`). Use the typed API helper.
-[M] frontend/src/pages/Cart.tsx:25-41 — `Promise.all` with a per-item `.then/.catch` to convert errors into a `found:false` shape. Replace with `Promise.allSettled` (already noted in §B as a behavior fix; mention here as a refactor: the per-item `.catch` returning a sentinel object is a workaround for not using allSettled).
-[L] frontend/src/lib/api.ts:14-17 — Throws at module load time if `VITE_API_BASE_URL` is missing (also in §B); from a refactor angle, this should live in a small `function getApiBaseUrl()` lazy-initialized so tests can stub it without crashing on import. [DONE 2026-05-09 — already lazy (throw is inside request())]
-[L] frontend/src/utils/dateUtils.ts:8-67 — `formatDateForDisplay` and `parseDateForBackend` exist but no caller uses them (the only consumer is `getTodayIsoDate` which is used in AdminProductCreate). Either wire the DD/MM display path through these helpers (currently ProductForm.tsx:80-106 reimplements the same parsing inline) or delete. [DONE 2026-05-09 — deleted unused exports; dateUtils now only contains getTodayIsoDate]
-[L] frontend/src/utils/errorUtils.ts:11-27 — `categorizeError` is exported but never imported anywhere in the codebase. Either consume it from the API client error path (currently each page does `err.response?.status` matching by hand) or delete. [DONE 2026-05-09 — entire file deleted]
-[L] frontend/src/lib/api.ts:178-183 — `getImageById` exists but no component calls it. Dead. [DONE 2026-05-09 — deleted]
-[L] frontend/src/pages/admin/AdminLayout.tsx + frontend/src/App.tsx — Both implement a hamburger/drawer pattern. The CSS classes differ (admin-hamburger vs hamburger, admin-sidebar vs main-nav) but the JS is identical. Reusable `<Drawer>` component would apply.
-
---------------------------------------------------------------------------------
-F. CROSS-CUTTING — FE/BE
---------------------------------------------------------------------------------
-
-[H] backend/src/enums.rs (7 enums) vs frontend/src/enums.ts:18-26 + i18n resources — Each enum's variants live in three places: Rust enums (kebab-case via DbValueStyle), TS `ENUM_TYPE_TO_TRANSLATION_KEY` mapping table, and i18n JSON keys (`enums.meadType.<value>`). Adding a new mead style requires touching all three. Either generate the FE enum file from the BE (simple `cargo run` codegen → `enums.gen.ts`) or expose `/api/enums` as the source of truth and remove the FE static type — `useFetchEnums` already loads them.
-[H] backend/src/product_crud.rs (ProductValidationError variants) vs frontend/src/pages/admin/errorMappings.ts:3-27 — Backend defines `InvalidProductId`, `EmptyProductName`, etc.; frontend `errorMapping` mirrors all of them as string keys. Two truth tables, drift is silent. Backend `errorMappings.ts:17 InvalidTaninsType` (single n) vs backend `enums.rs:114 TanninsType` (double n) shows the drift has already begun. Generate or share the variant list.
-[M] backend/src/models.rs:46-55 (Image), :72-104 (Product), :136-152 (BlogPost) vs frontend/src/types.ts:1-79 — DTOs are duplicated (field names match; nullability sometimes differs — BE `deleted_at: Option<DateTime<Utc>>` vs FE `deleted_at: string | null`). Consider OpenAPI/typeshare/ts-rs codegen so models stay in sync.
-[M] backend/src/main.rs:222-236 (`GetProductsQuery`) vs frontend/src/lib/api.ts:51-64 (`getProducts` params type) — Filter parameters are typed in both places. The frontend declares them as `string | undefined`; backend strongly types `Option<MeadType>` etc. New filter requires synchronizing both. Same suggestion: generate API client.
-[M] frontend/src/types.ts:9-35 (`Product`) vs backend's `LocalizedProduct` shape (localized.rs:9-31) — Public `/api/products` returns `LocalizedProduct` (single name/description/price/currency), admin returns full `Product`. The FE `Product` and `LocalizedProduct` are both declared in types.ts and used in different code paths. Document the contract (or split into two API clients: `api.public.*` vs `api.admin.*`).
-[done 2026-05-09] backend/src/utils.rs:8-9 `is_valid_slug` vs frontend/src/pages/admin/ProductForm.tsx:24 `/^[a-z0-9_-]+$/` vs frontend/src/pages/admin/BlogForm.tsx:120 `/^[a-z0-9-]+$/` — BlogForm.tsx aligned to backend (now `/^[a-z0-9_-]+$/`). All three validators consistent.
-[M] backend/src/blog_crud.rs:75-119 (max lengths: title 512, excerpt 1024, author 256) vs frontend/src/pages/admin/BlogForm.tsx (no maxlength on inputs) — Backend caps are not surfaced as `maxLength` on `<TextInput>`. User can exceed silently and only learn after submit. Hoist the limits to a shared constants module conceptually, or at least mirror them on the FE inputs.
-[L] frontend/src/lib/api.ts:4 (`IMAGE_VARIANT_WIDTHS = [320, 640, 1024, 1600]`) vs backend/src/image_crud.rs:17 (`VARIANT_WIDTHS: [u32; 4] = [320, 640, 1024, 1600]`) — Same array hard-coded twice. Acceptable, but worth a comment cross-referencing the other side, or a single env-driven config. [DONE 2026-05-09 — cross-ref comments added on both sides]
-[L] frontend/src/pages/admin/AdminProducts.tsx:22-23 (`7 * 24 * 60 * 60 * 1000`) vs backend/src/product_crud.rs:404 (`Duration::days(7)`) — 7-day grace window for hard-delete duplicated. Move to a shared `HARD_DELETE_GRACE_DAYS` constant on each side and add a comment. [DONE 2026-05-09 — FE constant in lib/constants.ts; BE cross-ref comment]
+[H] backend/src/enums.rs (7 enums) vs frontend/src/enums.ts +
+    i18n resources — Each enum's variants live in three places (Rust enums,
+    TS mapping, i18n JSON). Adding a mead style requires touching all three.
+    Generate the FE enum file from BE, or expose `/api/enums` as the source
+    of truth and remove the FE static type.
+[H] backend/src/product_crud.rs (ProductValidationError variants) vs
+    frontend/src/pages/admin/errorMappings.ts — Two truth tables; drift has
+    already started (FE `InvalidTaninsType` single-n vs BE `TanninsType`
+    double-n). Generate or share the variant list.
+[M] backend/src/models.rs (Image, Product, BlogPost) vs
+    frontend/src/types/models.ts — DTOs are duplicated (field names match;
+    nullability sometimes differs). Use codegen (typeshare/ts-rs/OpenAPI) so
+    models stay in sync.
+[M] backend/src/main.rs (`GetProductsQuery`) vs frontend/src/lib/api.ts
+    (`getProducts` params type) — Filter parameters typed in both places.
+    Same codegen suggestion.
+[M] frontend/src/types/models.ts (`Product` vs `LocalizedProduct`) —
+    Public `/api/products` returns `LocalizedProduct`, admin returns full
+    `Product`. Both live in the same module and are used in different code
+    paths. Document the contract or split into `api.public.*` vs `api.admin.*`
+    clients.
 
 ================================================================================

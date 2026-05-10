@@ -10,6 +10,7 @@ import { LocalizedLink } from '../components/LocalizedLink';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { BLOG_MARKDOWN_COMPONENTS } from '../lib/markdownComponents';
+import { Skeleton } from '../components/Skeleton';
 import './Blog.css';
 
 const BLOG_PER_PAGE = 10;
@@ -54,22 +55,22 @@ function Blog() {
                             <article key={i} className="blog-post-card">
                                 <div className="blog-post-header">
                                     <h2 className="blog-post-title">
-                                        <span className="skeleton" style={{ display: 'block', height: '1.3em', width: '85%' }} />
+                                        <Skeleton block h="1.3em" w="85%" />
                                     </h2>
                                     <div className="blog-post-meta">
-                                        <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '25%' }} />
+                                        <Skeleton inline h="0.85em" w="25%" />
                                         <span>
-                                            <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '40%' }} />
+                                            <Skeleton inline h="0.85em" w="40%" />
                                         </span>
                                     </div>
                                 </div>
                                 <div className="blog-post-excerpt">
-                                    <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem' }} />
-                                    <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem', width: '92%' }} />
-                                    <span className="skeleton" style={{ display: 'block', height: '1em', width: '70%' }} />
+                                    <Skeleton block h="1em" style={{ marginBottom: '0.5rem' }} />
+                                    <Skeleton block h="1em" w="92%" style={{ marginBottom: '0.5rem' }} />
+                                    <Skeleton block h="1em" w="70%" />
                                 </div>
                                 <div className="blog-post-actions">
-                                    <span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '90px' }} />
+                                    <Skeleton inline h="1em" w="90px" />
                                 </div>
                             </article>
                         ))}
@@ -116,8 +117,9 @@ function Blog() {
                     page={page}
                     hasMore={hasMore}
                     totalPages={totalPages}
-                    onPrevPage={() => { setPage(page - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    onNextPage={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    onPrevPage={() => setPage(page - 1)}
+                    onNextPage={() => setPage(page + 1)}
+                    scrollOnChange
                 />
                 </div>
         </div>

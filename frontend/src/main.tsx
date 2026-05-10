@@ -27,7 +27,8 @@ const AdminProductEdit = React.lazy(() => import('./pages/admin/AdminProductEdit
 const AdminProductCreate = React.lazy(() => import('./pages/admin/AdminProductCreate'));
 const AdminImages = React.lazy(() => import('./pages/admin/AdminImages'));
 const AdminBlog = React.lazy(() => import('./pages/admin/AdminBlog'));
-const BlogForm = React.lazy(() => import('./pages/admin/BlogForm'));
+const AdminBlogCreate = React.lazy(() => import('./pages/admin/AdminBlogCreate'));
+const AdminBlogEdit = React.lazy(() => import('./pages/admin/AdminBlogEdit'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import { detectInitialLang } from './lib/detectInitialLang';
@@ -74,8 +75,8 @@ const router = createBrowserRouter([
           { path: 'dashboard/products/create', element: lazy(<AdminProductCreate />) },
           { path: 'dashboard/images', element: lazy(<AdminImages />) },
           { path: 'dashboard/blog', element: lazy(<AdminBlog />) },
-          { path: 'dashboard/blog/create', element: lazy(<BlogForm />) },
-          { path: 'dashboard/blog/:id/edit', element: lazy(<BlogForm isEdit={true} />) },
+          { path: 'dashboard/blog/create', element: lazy(<AdminBlogCreate />) },
+          { path: 'dashboard/blog/:id/edit', element: lazy(<AdminBlogEdit />) },
         ],
       },
     ],

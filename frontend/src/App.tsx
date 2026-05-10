@@ -8,6 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/ToastContainer';
 import LangGuard from './components/LangGuard';
 import { LocalizedLink, LocalizedNavLink } from './components/LocalizedLink';
+import { useFocusTrapDrawer } from './hooks/useFocusTrapDrawer';
 import './App.css';
 
 function App() {
@@ -26,46 +27,13 @@ function App() {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  useEffect(() => {
-    if (!isMobileMenuOpen) return;
-
-    const isMobile = window.matchMedia('(max-width: 1023px)').matches;
-    if (!isMobile) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const firstLink = navRef.current?.querySelector<HTMLElement>('a');
-    firstLink?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsMobileMenuOpen(false);
-        hamburgerRef.current?.focus();
-      }
-    };
-
-    const handlePointerDown = (e: PointerEvent) => {
-      const target = e.target as Node;
-      if (
-        navRef.current &&
-        !navRef.current.contains(target) &&
-        hamburgerRef.current &&
-        !hamburgerRef.current.contains(target)
-      ) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('pointerdown', handlePointerDown);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isMobileMenuOpen]);
+  useFocusTrapDrawer({
+    open: isMobileMenuOpen,
+    onClose: () => setIsMobileMenuOpen(false),
+    drawerRef: navRef,
+    triggerRef: hamburgerRef,
+    focusSelector: 'a',
+  });
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);

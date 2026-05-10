@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { api } from '../../lib/api';
+import { useShakeOnError } from '../../hooks/useShakeOnError';
 import './Admin.css';
 
 function AdminLogin() {
@@ -11,10 +12,12 @@ function AdminLogin() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [errorAttempts, setErrorAttempts] = useState(0);
     const { setToken } = useContext(AuthContext);
     const navigate = useNavigate();
     const { t } = useTranslation();
     const formRef = useRef<HTMLFormElement>(null);
+    useShakeOnError(formRef, errorAttempts);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -32,10 +35,7 @@ function AdminLogin() {
             }
         } catch (err) {
             setError(t('admin.login.invalidCredentials'));
-            formRef.current?.classList.add('shake');
-            formRef.current?.addEventListener('animationend', () => {
-                formRef.current?.classList.remove('shake');
-            }, { once: true });
+            setErrorAttempts(n => n + 1);
             console.error(err);
         } finally {
             setSubmitting(false);

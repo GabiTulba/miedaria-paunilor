@@ -6,6 +6,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 import ThemeToggle from "../../components/ThemeToggle";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { useFocusTrapDrawer } from "../../hooks/useFocusTrapDrawer";
 import './Admin.css';
 
 function AdminLayout() {
@@ -29,43 +30,14 @@ function AdminLayout() {
         setIsSidebarOpen(false);
     }, [pathname]);
 
-    useEffect(() => {
-        if (!isSidebarOpen || isDesktop) return;
-
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-
-        const firstLink = sidebarRef.current?.querySelector<HTMLElement>('a');
-        firstLink?.focus();
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                setIsSidebarOpen(false);
-                hamburgerRef.current?.focus();
-            }
-        };
-
-        const handlePointerDown = (e: PointerEvent) => {
-            const target = e.target as Node;
-            if (
-                sidebarRef.current &&
-                !sidebarRef.current.contains(target) &&
-                hamburgerRef.current &&
-                !hamburgerRef.current.contains(target)
-            ) {
-                setIsSidebarOpen(false);
-            }
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-        document.addEventListener('pointerdown', handlePointerDown);
-
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-            document.removeEventListener('pointerdown', handlePointerDown);
-            document.body.style.overflow = previousOverflow;
-        };
-    }, [isSidebarOpen, isDesktop]);
+    useFocusTrapDrawer({
+        open: isSidebarOpen && !isDesktop,
+        onClose: () => setIsSidebarOpen(false),
+        drawerRef: sidebarRef,
+        triggerRef: hamburgerRef,
+        focusSelector: 'a',
+        mobileOnly: false,
+    });
 
     const toggleSidebar = () => setIsSidebarOpen(open => !open);
 

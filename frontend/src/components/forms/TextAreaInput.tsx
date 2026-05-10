@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import FormField from './FormField';
 
 interface TextAreaInputProps {
   id: string;
@@ -12,6 +13,7 @@ interface TextAreaInputProps {
   rows?: number;
   placeholder?: string;
   helpText?: string;
+  maxLength?: number;
   validate?: (value: string) => string | undefined;
 }
 
@@ -27,6 +29,7 @@ const TextAreaInput: React.FC<TextAreaInputProps> = ({
   rows = 3,
   placeholder,
   helpText,
+  maxLength,
   validate,
 }) => {
   const [blurError, setBlurError] = useState<string>();
@@ -41,29 +44,25 @@ const TextAreaInput: React.FC<TextAreaInputProps> = ({
     onChange(e);
   };
 
-  const helpTextId = helpText ? `${id}-help` : undefined;
-  const errorId = displayError ? `${id}-error` : undefined;
-  const describedBy = [helpTextId, errorId].filter(Boolean).join(' ') || undefined;
-
   return (
-    <div className="form-group">
-      <label htmlFor={id}>{label}{required && <span className="required-indicator">*</span>}</label>
-      <textarea
-        id={id}
-        name={name}
-        value={value}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        required={required}
-        disabled={disabled}
-        rows={rows}
-        placeholder={placeholder}
-        aria-invalid={displayError ? true : undefined}
-        aria-describedby={describedBy}
-      />
-      {helpText && <p className="help-text" id={helpTextId}>{helpText}</p>}
-      {displayError && <p className="error-message" id={errorId}>{displayError}</p>}
-    </div>
+    <FormField id={id} label={label} required={required} helpText={helpText} error={displayError}>
+      {({ describedBy }) => (
+        <textarea
+          id={id}
+          name={name}
+          value={value}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          required={required}
+          disabled={disabled}
+          rows={rows}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          aria-invalid={displayError ? true : undefined}
+          aria-describedby={describedBy}
+        />
+      )}
+    </FormField>
   );
 };
 

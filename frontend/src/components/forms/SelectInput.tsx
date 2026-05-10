@@ -1,4 +1,5 @@
 import React from 'react';
+import FormField from './FormField';
 
 interface SelectOption {
   value: string | number;
@@ -30,32 +31,27 @@ const SelectInput: React.FC<SelectInputProps> = ({
   disabled = false,
   helpText,
 }) => {
-  const helpTextId = helpText ? `${id}-help` : undefined;
-  const errorId = error ? `${id}-error` : undefined;
-  const describedBy = [helpTextId, errorId].filter(Boolean).join(' ') || undefined;
-
   return (
-    <div className="form-group">
-      <label htmlFor={id}>{label}{required && <span className="required-indicator">*</span>}</label>
-      <select
-        id={id}
-        name={name}
-        value={value}
-        onChange={onChange}
-        required={required}
-        disabled={disabled}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      {helpText && <p className="help-text" id={helpTextId}>{helpText}</p>}
-      {error && <p className="error-message" id={errorId}>{error}</p>}
-    </div>
+    <FormField id={id} label={label} required={required} helpText={helpText} error={error}>
+      {({ describedBy }) => (
+        <select
+          id={id}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          disabled={disabled}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      )}
+    </FormField>
   );
 };
 

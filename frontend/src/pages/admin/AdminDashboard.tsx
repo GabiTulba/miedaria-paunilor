@@ -5,6 +5,7 @@ import { useFetch } from '../../hooks/useFetch';
 import { getStockStatus } from '../../utils/stockAvailability';
 import { getImageUrl } from '../../lib/api';
 import { toFixed } from '../../utils/numberUtils';
+import { Skeleton } from '../../components/Skeleton';
 import './Admin.css';
 
 function AdminDashboard() {
@@ -34,28 +35,28 @@ function AdminDashboard() {
                 <div className="stat-card">
                     <div className="stat-icon products-icon"></div>
                     <div className="stat-content">
-                        <h3>{loading ? <span className="skeleton" style={{ display: 'inline-block', height: '2rem', width: '60px' }} /> : totalProducts}</h3>
+                        <h3>{loading ? <Skeleton inline h="2rem" w="60px" /> : totalProducts}</h3>
                         <p>{t('admin.dashboard.totalProducts')}</p>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-icon stock-icon"></div>
                     <div className="stat-content">
-                        <h3>{loading ? <span className="skeleton" style={{ display: 'inline-block', height: '2rem', width: '60px' }} /> : totalStock}</h3>
+                        <h3>{loading ? <Skeleton inline h="2rem" w="60px" /> : totalStock}</h3>
                         <p>{t('admin.dashboard.totalStock')}</p>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-icon warning-icon"></div>
                     <div className="stat-content">
-                        <h3>{loading ? <span className="skeleton" style={{ display: 'inline-block', height: '2rem', width: '60px' }} /> : lowStockProducts}</h3>
+                        <h3>{loading ? <Skeleton inline h="2rem" w="60px" /> : lowStockProducts}</h3>
                         <p>{t('admin.dashboard.lowStock')}</p>
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-icon value-icon"></div>
                     <div className="stat-content">
-                        <h3>{loading ? <span className="skeleton" style={{ display: 'inline-block', height: '2rem', width: '120px' }} /> : `${totalValue.toFixed(2)} ${valueCurrency}`}</h3>
+                        <h3>{loading ? <Skeleton inline h="2rem" w="120px" /> : `${totalValue.toFixed(2)} ${valueCurrency}`}</h3>
                         <p>{t('admin.dashboard.totalValue')}</p>
                     </div>
                 </div>

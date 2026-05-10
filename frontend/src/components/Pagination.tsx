@@ -7,16 +7,27 @@ interface PaginationProps {
     totalPages?: number;
     onPrevPage: () => void;
     onNextPage: () => void;
+    // When true, scroll to top after the page changes (used on long lists like
+    // Shop and Blog so the user lands at the start of the new page).
+    scrollOnChange?: boolean;
 }
 
-function Pagination({ page, hasMore, totalPages, onPrevPage, onNextPage }: PaginationProps) {
+function Pagination({ page, hasMore, totalPages, onPrevPage, onNextPage, scrollOnChange }: PaginationProps) {
     const { t } = useTranslation();
+    const handlePrev = () => {
+        onPrevPage();
+        if (scrollOnChange) window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    const handleNext = () => {
+        onNextPage();
+        if (scrollOnChange) window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
     return (
         <nav className="pagination-section" aria-label={t('common.pagination')}>
             <div className="pagination">
                 <button
                     className="pagination-btn"
-                    onClick={onPrevPage}
+                    onClick={handlePrev}
                     disabled={page === 1}
                     aria-label={t('common.previousPage')}
                 >
@@ -27,7 +38,7 @@ function Pagination({ page, hasMore, totalPages, onPrevPage, onNextPage }: Pagin
                 </span>
                 <button
                     className="pagination-btn"
-                    onClick={onNextPage}
+                    onClick={handleNext}
                     disabled={!hasMore}
                     aria-label={t('common.nextPage')}
                 >

@@ -15,6 +15,7 @@ import { stripMarkdown, clamp } from '../lib/text';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { BLOG_MARKDOWN_COMPONENTS } from '../lib/markdownComponents';
+import { Skeleton } from '../components/Skeleton';
 import './Blog.css';
 
 function BlogPostDetail() {
@@ -53,23 +54,23 @@ function BlogPostDetail() {
                 <main className="blog-post-detail">
                     <header className="blog-post-header">
                         <h1 className="blog-post-title">
-                            <span className="skeleton" style={{ display: 'block', height: '1.5em', width: '80%' }} />
+                            <Skeleton block h="1.5em" w="80%" />
                         </h1>
                         <div className="blog-post-meta">
-                            <span className="skeleton" style={{ display: 'inline-block', height: '0.9em', width: '25%' }} />
+                            <Skeleton inline h="0.9em" w="25%" />
                             <span className="blog-post-author">
-                                <span className="skeleton" style={{ display: 'inline-block', height: '0.9em', width: '35%' }} />
+                                <Skeleton inline h="0.9em" w="35%" />
                             </span>
                         </div>
                     </header>
                     <div className="blog-post-content">
-                        <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem' }} />
-                        <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem', width: '95%' }} />
-                        <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem' }} />
-                        <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem', width: '80%' }} />
-                        <span className="skeleton" style={{ display: 'block', height: '1em', marginTop: '1rem', marginBottom: '0.5rem' }} />
-                        <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem', width: '85%' }} />
-                        <span className="skeleton" style={{ display: 'block', height: '1em', width: '65%' }} />
+                        <Skeleton block h="1em" style={{ marginBottom: '0.5rem' }} />
+                        <Skeleton block h="1em" w="95%" style={{ marginBottom: '0.5rem' }} />
+                        <Skeleton block h="1em" style={{ marginBottom: '0.5rem' }} />
+                        <Skeleton block h="1em" w="80%" style={{ marginBottom: '0.5rem' }} />
+                        <Skeleton block h="1em" style={{ marginTop: '1rem', marginBottom: '0.5rem' }} />
+                        <Skeleton block h="1em" w="85%" style={{ marginBottom: '0.5rem' }} />
+                        <Skeleton block h="1em" w="65%" />
                     </div>
                 </main>
             </div>

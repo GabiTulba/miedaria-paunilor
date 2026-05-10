@@ -1,5 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import i18n from '../i18n/config';
+import { useTranslation } from 'react-i18next';
 import ErrorDisplay from './ErrorDisplay';
 
 interface Props {
@@ -9,6 +9,17 @@ interface Props {
 
 interface State {
   hasError: boolean;
+}
+
+function ErrorFallback() {
+  const { t } = useTranslation();
+  return (
+    <ErrorDisplay
+      error={t('errors.generic')}
+      onRetry={() => window.location.reload()}
+      retryLabel={t('common.retry')}
+    />
+  );
 }
 
 class ErrorBoundary extends Component<Props, State> {
@@ -24,13 +35,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback ?? (
-        <ErrorDisplay
-          error={i18n.t('errors.generic')}
-          onRetry={() => window.location.reload()}
-          retryLabel={i18n.t('common.retry')}
-        />
-      );
+      return this.props.fallback ?? <ErrorFallback />;
     }
     return this.props.children;
   }

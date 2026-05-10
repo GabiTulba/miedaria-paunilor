@@ -1,52 +1,19 @@
-import { useRef, useEffect, useContext } from 'react';
+import { useRef, useContext } from 'react';
 import { Image, ProductFormData } from '../../types';
 import { useTranslation } from 'react-i18next';
 import TextInput from '../../components/forms/TextInput';
 import TextAreaInput from '../../components/forms/TextAreaInput';
 import NumberInput from '../../components/forms/NumberInput';
 import SelectInput from '../../components/forms/SelectInput';
+import EnumSelect from '../../components/forms/EnumSelect';
 import { EnumContext } from '../../context/EnumContext';
-import { getEnumLabel } from '../../enums';
 import { useLanguage } from '../../hooks/useLanguage';
 import DatePicker from 'react-datepicker';
-import { registerLocale } from 'react-datepicker';
-import { ro } from 'date-fns/locale/ro';
-import { enUS } from 'date-fns/locale/en-US';
 import 'react-datepicker/dist/react-datepicker.css';
-
-registerLocale('en', enUS);
-registerLocale('ro', ro);
-
-function validateRequired(value: string, fieldName: string): string | undefined {
-    if (!value.trim()) return `${fieldName} is required`;
-    return undefined;
-}
-
-function validateProductId(value: string): string | undefined {
-    if (!value.trim()) return 'Product ID is required';
-    if (!/^[a-z0-9_-]+$/.test(value)) return 'Only lowercase letters, numbers, dashes, underscores';
-    if (value.length > 128) return 'Max 128 characters';
-    return undefined;
-}
-
-function validateAbv(value: string): string | undefined {
-    const num = parseFloat(value);
-    if (isNaN(num)) return 'ABV is required';
-    if (num < 0 || num > 99.9) return 'ABV must be 0.0\u201399.9';
-    return undefined;
-}
-
-function validatePositiveNumber(value: string, fieldName: string): string | undefined {
-    const num = parseFloat(value);
-    if (isNaN(num) || num <= 0) return `${fieldName} must be positive`;
-    return undefined;
-}
-
-function validateNonNegative(value: string, fieldName: string): string | undefined {
-    const num = parseFloat(value);
-    if (isNaN(num) || num < 0) return `${fieldName} must be non-negative`;
-    return undefined;
-}
+import { validateRequired, validateProductId, validateAbv, validatePositiveNumber, validateNonNegative } from '../../lib/validators';
+import { useShakeOnError } from '../../hooks/useShakeOnError';
+// Side-effect import — registers en/ro locales with react-datepicker.
+import '../../utils/dateUtils';
 
 interface ProductFormProps {
     product: ProductFormData;
@@ -65,16 +32,7 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
     const language = useLanguage();
     const formRef = useRef<HTMLFormElement>(null);
 
-    const errorCount = Object.keys(errors).length;
-    useEffect(() => {
-        if (errorCount > 0 && formRef.current) {
-            formRef.current.classList.add('shake');
-            const form = formRef.current;
-            const handler = () => form.classList.remove('shake');
-            form.addEventListener('animationend', handler, { once: true });
-            return () => form.removeEventListener('animationend', handler);
-        }
-    }, [errorCount]);
+    useShakeOnError(formRef, Object.keys(errors).length);
     
     // Convert bottling_date string to Date object for date picker
     const getDatePickerValue = () => {
@@ -268,124 +226,19 @@ function ProductForm({ product, setProduct, onSubmit, submitText, isEdit = false
                 <h2 className="section-title">{t('admin.productForm.characteristics')}</h2>
                 <div className="section-content">
                     <div className="form-row">
-                        <SelectInput
-                            id="product_type"
-                            name="product_type"
-                            label={t('admin.productForm.productType')}
-                            value={product.product_type}
-                            onChange={handleChange}
-                            options={[
-                                { value: '', label: t('admin.productForm.productType') },
-                                ...enums.mead_type.map((enumValue) => ({
-                                    value: enumValue.value,
-                                    label: getEnumLabel(enumValue.value, 'mead_type', t),
-                                })),
-                            ]}
-                            required
-                            error={errors.product_type}
-                        />
-                        <SelectInput
-                            id="sweetness"
-                            name="sweetness"
-                            label={t('admin.productForm.sweetness')}
-                            value={product.sweetness}
-                            onChange={handleChange}
-                            options={[
-                                { value: '', label: t('admin.productForm.sweetness') },
-                                ...enums.sweetness.map((enumValue) => ({
-                                    value: enumValue.value,
-                                    label: getEnumLabel(enumValue.value, 'sweetness', t),
-                                })),
-                            ]}
-                            required
-                            error={errors.sweetness}
-                        />
+                        <EnumSelect id="product_type" name="product_type" label={t('admin.productForm.productType')} kind="mead_type" value={product.product_type} onChange={handleChange} placeholder={t('admin.productForm.productType')} required error={errors.product_type} />
+                        <EnumSelect id="sweetness" name="sweetness" label={t('admin.productForm.sweetness')} kind="sweetness" value={product.sweetness} onChange={handleChange} placeholder={t('admin.productForm.sweetness')} required error={errors.sweetness} />
                     </div>
                     <div className="form-row">
-                        <SelectInput
-                            id="turbidity"
-                            name="turbidity"
-                            label={t('admin.productForm.turbidity')}
-                            value={product.turbidity}
-                            onChange={handleChange}
-                            options={[
-                                { value: '', label: t('admin.productForm.turbidity') },
-                                ...enums.turbidity.map((enumValue) => ({
-                                    value: enumValue.value,
-                                    label: getEnumLabel(enumValue.value, 'turbidity', t),
-                                })),
-                            ]}
-                            required
-                            error={errors.turbidity}
-                        />
-                        <SelectInput
-                            id="effervescence"
-                            name="effervescence"
-                            label={t('admin.productForm.effervescence')}
-                            value={product.effervescence}
-                            onChange={handleChange}
-                            options={[
-                                { value: '', label: t('admin.productForm.effervescence') },
-                                ...enums.effervescence.map((enumValue) => ({
-                                    value: enumValue.value,
-                                    label: getEnumLabel(enumValue.value, 'effervescence', t),
-                                })),
-                            ]}
-                            required
-                            error={errors.effervescence}
-                        />
+                        <EnumSelect id="turbidity" name="turbidity" label={t('admin.productForm.turbidity')} kind="turbidity" value={product.turbidity} onChange={handleChange} placeholder={t('admin.productForm.turbidity')} required error={errors.turbidity} />
+                        <EnumSelect id="effervescence" name="effervescence" label={t('admin.productForm.effervescence')} kind="effervescence" value={product.effervescence} onChange={handleChange} placeholder={t('admin.productForm.effervescence')} required error={errors.effervescence} />
                     </div>
                     <div className="form-row">
-                        <SelectInput
-                            id="acidity"
-                            name="acidity"
-                            label={t('admin.productForm.acidity')}
-                            value={product.acidity}
-                            onChange={handleChange}
-                            options={[
-                                { value: '', label: t('admin.productForm.acidity') },
-                                ...enums.acidity.map((enumValue) => ({
-                                    value: enumValue.value,
-                                    label: getEnumLabel(enumValue.value, 'acidity', t),
-                                })),
-                            ]}
-                            required
-                            error={errors.acidity}
-                        />
-                        <SelectInput
-                            id="tannins"
-                            name="tannins"
-                            label={t('admin.productForm.tannins')}
-                            value={product.tannins}
-                            onChange={handleChange}
-                            options={[
-                                { value: '', label: t('admin.productForm.tannins') },
-                                ...enums.tannins.map((enumValue) => ({
-                                    value: enumValue.value,
-                                    label: getEnumLabel(enumValue.value, 'tannins', t),
-                                })),
-                            ]}
-                            required
-                            error={errors.tannins}
-                        />
+                        <EnumSelect id="acidity" name="acidity" label={t('admin.productForm.acidity')} kind="acidity" value={product.acidity} onChange={handleChange} placeholder={t('admin.productForm.acidity')} required error={errors.acidity} />
+                        <EnumSelect id="tannins" name="tannins" label={t('admin.productForm.tannins')} kind="tannins" value={product.tannins} onChange={handleChange} placeholder={t('admin.productForm.tannins')} required error={errors.tannins} />
                     </div>
                     <div className="form-row">
-                        <SelectInput
-                            id="body"
-                            name="body"
-                            label={t('admin.productForm.body')}
-                            value={product.body}
-                            onChange={handleChange}
-                            options={[
-                                { value: '', label: t('admin.productForm.body') },
-                                ...enums.body.map((enumValue) => ({
-                                    value: enumValue.value,
-                                    label: getEnumLabel(enumValue.value, 'body', t),
-                                })),
-                            ]}
-                            required
-                            error={errors.body}
-                        />
+                        <EnumSelect id="body" name="body" label={t('admin.productForm.body')} kind="body" value={product.body} onChange={handleChange} placeholder={t('admin.productForm.body')} required error={errors.body} />
                     </div>
                 </div>
             </div>

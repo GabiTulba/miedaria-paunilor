@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../lib/api';
 import { LocalizedProductWithImage } from '../types';
 import { useFetch } from './useFetch';
@@ -32,6 +33,7 @@ export const useFetchProducts = (
     page: number,
 ): UseFetchProductsResult => {
     const [debouncedSearch, setDebouncedSearch] = useState(search);
+    const { i18n } = useTranslation();
 
     useEffect(() => {
         const t = window.setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
@@ -54,7 +56,7 @@ export const useFetchProducts = (
             page,
             per_page: PER_PAGE,
         }, signal),
-        [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, debouncedSearch, page],
+        [orderBy, inStock, orderDirection, productType, sweetness, turbidity, effervescence, acidity, tannins, body, debouncedSearch, page, i18n.language],
     );
 
     const totalPages = data?.total_pages ?? 1;

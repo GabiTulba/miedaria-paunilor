@@ -7,6 +7,7 @@ import SEO from '../components/SEO';
 import { LocalizedLink } from '../components/LocalizedLink';
 import { getOrigin } from '../lib/origin';
 import { buildOrganizationLd, buildLocalBusinessLd } from '../lib/structuredData';
+import { Skeleton } from '../components/Skeleton';
 import './Home.css';
 
 function Home() {
@@ -84,22 +85,22 @@ function Home() {
                                         <article key={i} className="blog-post-card">
                                             <div className="blog-post-header">
                                                 <h3 className="blog-post-title">
-                                                    <span className="skeleton" style={{ display: 'block', height: '1.2em', width: '85%' }} />
+                                                    <Skeleton block h="1.2em" w="85%" />
                                                 </h3>
                                                 <div className="blog-post-meta">
-                                                    <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '25%' }} />
+                                                    <Skeleton inline h="0.85em" w="25%" />
                                                     <span>
-                                                        <span className="skeleton" style={{ display: 'inline-block', height: '0.85em', width: '40%' }} />
+                                                        <Skeleton inline h="0.85em" w="40%" />
                                                     </span>
                                                 </div>
                                             </div>
                                             <div className="blog-post-excerpt">
-                                                <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem' }} />
-                                                <span className="skeleton" style={{ display: 'block', height: '1em', marginBottom: '0.5rem', width: '92%' }} />
-                                                <span className="skeleton" style={{ display: 'block', height: '1em', width: '70%' }} />
+                                                <Skeleton block h="1em" style={{ marginBottom: '0.5rem' }} />
+                                                <Skeleton block h="1em" w="92%" style={{ marginBottom: '0.5rem' }} />
+                                                <Skeleton block h="1em" w="70%" />
                                             </div>
                                             <div className="blog-post-actions">
-                                                <span className="skeleton" style={{ display: 'inline-block', height: '1em', width: '90px' }} />
+                                                <Skeleton inline h="1em" w="90px" />
                                             </div>
                                         </article>
                                     ))

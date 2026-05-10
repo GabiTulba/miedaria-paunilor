@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import FormField from './FormField';
 
 interface NumberInputProps {
   id: string;
@@ -43,31 +44,26 @@ const NumberInput: React.FC<NumberInputProps> = ({
     onChange(e);
   };
 
-  const helpTextId = helpText ? `${id}-help` : undefined;
-  const errorId = displayError ? `${id}-error` : undefined;
-  const describedBy = [helpTextId, errorId].filter(Boolean).join(' ') || undefined;
-
   return (
-    <div className="form-group">
-      <label htmlFor={id}>{label}{required && <span className="required-indicator">*</span>}</label>
-      <input
-        type="number"
-        id={id}
-        name={name}
-        value={value}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        required={required}
-        disabled={disabled}
-        step={step}
-        min={min}
-        max={max}
-        aria-invalid={displayError ? true : undefined}
-        aria-describedby={describedBy}
-      />
-      {helpText && <p className="help-text" id={helpTextId}>{helpText}</p>}
-      {displayError && <p className="error-message" id={errorId}>{displayError}</p>}
-    </div>
+    <FormField id={id} label={label} required={required} helpText={helpText} error={displayError}>
+      {({ describedBy }) => (
+        <input
+          type="number"
+          id={id}
+          name={name}
+          value={value}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          required={required}
+          disabled={disabled}
+          step={step}
+          min={min}
+          max={max}
+          aria-invalid={displayError ? true : undefined}
+          aria-describedby={describedBy}
+        />
+      )}
+    </FormField>
   );
 };
 
