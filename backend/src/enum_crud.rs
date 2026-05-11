@@ -1,14 +1,17 @@
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
+use ts_rs::TS;
 
 use crate::enums::*;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct EnumValue {
     pub value: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct EnumValues {
     pub mead_type: Vec<EnumValue>,
     pub sweetness: Vec<EnumValue>,

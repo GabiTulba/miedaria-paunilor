@@ -22,21 +22,22 @@ use crate::product_crud::{
 
 use super::{VaryLang, vary_accept_language};
 
-#[derive(Debug, serde::Deserialize)]
-struct GetProductsQuery {
-    order_by: Option<String>,
-    order_direction: Option<String>,
-    search: Option<String>,
-    in_stock: Option<bool>,
-    product_type: Option<MeadType>,
-    sweetness: Option<SweetnessType>,
-    turbidity: Option<TurbidityType>,
-    effervescence: Option<EffervescenceType>,
-    acidity: Option<AcidityType>,
-    tannins: Option<TanninsType>,
-    body: Option<BodyType>,
-    page: Option<u32>,
-    per_page: Option<u32>,
+#[derive(Debug, serde::Deserialize, ts_rs::TS)]
+#[ts(export)]
+pub struct GetProductsQuery {
+    #[ts(optional)] order_by: Option<String>,
+    #[ts(optional)] order_direction: Option<String>,
+    #[ts(optional)] search: Option<String>,
+    #[ts(optional)] in_stock: Option<bool>,
+    #[ts(optional)] product_type: Option<MeadType>,
+    #[ts(optional)] sweetness: Option<SweetnessType>,
+    #[ts(optional)] turbidity: Option<TurbidityType>,
+    #[ts(optional)] effervescence: Option<EffervescenceType>,
+    #[ts(optional)] acidity: Option<AcidityType>,
+    #[ts(optional)] tannins: Option<TanninsType>,
+    #[ts(optional)] body: Option<BodyType>,
+    #[ts(optional)] page: Option<u32>,
+    #[ts(optional)] per_page: Option<u32>,
 }
 
 impl GetProductsQuery {
@@ -60,21 +61,22 @@ impl GetProductsQuery {
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
-struct GetAdminProductsQuery {
-    include_deleted: Option<IncludeDeleted>,
-    order_by: Option<String>,
-    order_direction: Option<String>,
-    in_stock: Option<bool>,
-    product_type: Option<MeadType>,
-    sweetness: Option<SweetnessType>,
-    turbidity: Option<TurbidityType>,
-    effervescence: Option<EffervescenceType>,
-    acidity: Option<AcidityType>,
-    tannins: Option<TanninsType>,
-    body: Option<BodyType>,
-    page: Option<u32>,
-    per_page: Option<u32>,
+#[derive(Debug, serde::Deserialize, ts_rs::TS)]
+#[ts(export)]
+pub struct GetAdminProductsQuery {
+    #[ts(optional)] include_deleted: Option<IncludeDeleted>,
+    #[ts(optional)] order_by: Option<String>,
+    #[ts(optional)] order_direction: Option<String>,
+    #[ts(optional)] in_stock: Option<bool>,
+    #[ts(optional)] product_type: Option<MeadType>,
+    #[ts(optional)] sweetness: Option<SweetnessType>,
+    #[ts(optional)] turbidity: Option<TurbidityType>,
+    #[ts(optional)] effervescence: Option<EffervescenceType>,
+    #[ts(optional)] acidity: Option<AcidityType>,
+    #[ts(optional)] tannins: Option<TanninsType>,
+    #[ts(optional)] body: Option<BodyType>,
+    #[ts(optional)] page: Option<u32>,
+    #[ts(optional)] per_page: Option<u32>,
 }
 
 impl GetAdminProductsQuery {

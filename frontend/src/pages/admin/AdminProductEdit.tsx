@@ -6,7 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { Product, ProductFormData, ProductWithImage } from '../../types';
 import ProductForm from './ProductForm';
-import { errorMapping, errorMessageMapping, mapBackendValidationErrors } from './errorMappings';
+import { errorMapping, mapBackendValidationErrors } from './errorMappings';
 import { useAdminImages } from '../../hooks/useAdminImages';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -95,7 +95,7 @@ function AdminProductEdit() {
                 navigate('/admin/dashboard/products');
             } catch (error: any) {
                 console.error("Failed to update product:", error);
-                const backendErrors = mapBackendValidationErrors(error, errorMapping, errorMessageMapping);
+                const backendErrors = mapBackendValidationErrors(error, errorMapping, t, 'product');
                 if (backendErrors) {
                     setErrors(backendErrors);
                 } else if (error.response?.data?.message) {
@@ -126,7 +126,7 @@ function AdminProductEdit() {
                 product={productToPassToForm}
                 setProduct={(updatedProduct: ProductFormData) => {
                     setProductWithImage((prev) =>
-                        prev ? { ...prev, product: { ...prev.product, ...updatedProduct } } : null
+                        prev ? { ...prev, product: { ...prev.product, ...updatedProduct } as typeof prev.product } : null
                     );
                 }}
                 onSubmit={handleSubmit}

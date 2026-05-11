@@ -7,7 +7,7 @@ import { api } from '../../lib/api';
 import { useFetch } from '../../hooks/useFetch';
 import { UpdateBlogPost } from '../../types';
 import BlogForm, { BlogFormData } from './BlogForm';
-import { blogErrorMapping, blogErrorMessageMapping, mapBackendValidationErrors } from './errorMappings';
+import { blogErrorMapping, mapBackendValidationErrors } from './errorMappings';
 import ErrorDisplay from '../../components/ErrorDisplay';
 
 function AdminBlogEdit() {
@@ -55,7 +55,7 @@ function AdminBlogEdit() {
             navigate('/admin/dashboard/blog');
         } catch (err: any) {
             console.error('Failed to update blog post:', err);
-            const validationErrors = mapBackendValidationErrors(err, blogErrorMapping, blogErrorMessageMapping);
+            const validationErrors = mapBackendValidationErrors(err, blogErrorMapping, t, 'blog');
             if (validationErrors) {
                 setErrors(validationErrors);
             } else {

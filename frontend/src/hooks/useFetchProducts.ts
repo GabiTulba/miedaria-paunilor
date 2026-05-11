@@ -2,6 +2,13 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../lib/api';
 import { LocalizedProductWithImage } from '../types';
+import type { AcidityType } from '../types/generated/AcidityType';
+import type { BodyType } from '../types/generated/BodyType';
+import type { EffervescenceType } from '../types/generated/EffervescenceType';
+import type { MeadType } from '../types/generated/MeadType';
+import type { SweetnessType } from '../types/generated/SweetnessType';
+import type { TanninsType } from '../types/generated/TanninsType';
+import type { TurbidityType } from '../types/generated/TurbidityType';
 import { useFetch } from './useFetch';
 
 interface UseFetchProductsResult {
@@ -45,13 +52,13 @@ export const useFetchProducts = (
             order_by: orderBy || undefined,
             order_direction: orderBy ? orderDirection : undefined,
             in_stock: inStock,
-            product_type: productType || undefined,
-            sweetness: sweetness || undefined,
-            turbidity: turbidity || undefined,
-            effervescence: effervescence || undefined,
-            acidity: acidity || undefined,
-            tannins: tannins || undefined,
-            body: body || undefined,
+            product_type: (productType || undefined) as MeadType | undefined,
+            sweetness: (sweetness || undefined) as SweetnessType | undefined,
+            turbidity: (turbidity || undefined) as TurbidityType | undefined,
+            effervescence: (effervescence || undefined) as EffervescenceType | undefined,
+            acidity: (acidity || undefined) as AcidityType | undefined,
+            tannins: (tannins || undefined) as TanninsType | undefined,
+            body: (body || undefined) as BodyType | undefined,
             search: debouncedSearch || undefined,
             page,
             per_page: PER_PAGE,

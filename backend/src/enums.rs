@@ -1,9 +1,11 @@
 use diesel_derive_enum::DbEnum;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
+use ts_rs::TS;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
 #[serde(rename_all = "kebab-case")]
+#[ts(export)]
 #[ExistingTypePath = "crate::schema::sql_types::MeadTypeEnum"]
 #[DbValueStyle = "kebab-case"]
 pub enum MeadType {
@@ -19,8 +21,9 @@ pub enum MeadType {
     Acerglyn,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
 #[serde(rename_all = "kebab-case")]
+#[ts(export)]
 #[ExistingTypePath = "crate::schema::sql_types::SweetnessTypeEnum"]
 #[DbValueStyle = "kebab-case"]
 pub enum SweetnessType {
@@ -32,8 +35,9 @@ pub enum SweetnessType {
     Dessert,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
 #[serde(rename_all = "kebab-case")]
+#[ts(export)]
 #[ExistingTypePath = "crate::schema::sql_types::TurbidityTypeEnum"]
 #[DbValueStyle = "kebab-case"]
 pub enum TurbidityType {
@@ -42,8 +46,9 @@ pub enum TurbidityType {
     Cloudy,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
 #[serde(rename_all = "kebab-case")]
+#[ts(export)]
 #[ExistingTypePath = "crate::schema::sql_types::EffervescenceTypeEnum"]
 #[DbValueStyle = "kebab-case"]
 pub enum EffervescenceType {
@@ -52,8 +57,9 @@ pub enum EffervescenceType {
     Sparkling,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
 #[serde(rename_all = "kebab-case")]
+#[ts(export)]
 #[ExistingTypePath = "crate::schema::sql_types::AcidityTypeEnum"]
 #[DbValueStyle = "kebab-case"]
 pub enum AcidityType {
@@ -62,8 +68,9 @@ pub enum AcidityType {
     Strong,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
 #[serde(rename_all = "kebab-case")]
+#[ts(export)]
 #[ExistingTypePath = "crate::schema::sql_types::TanninsTypeEnum"]
 #[DbValueStyle = "kebab-case"]
 pub enum TanninsType {
@@ -72,8 +79,9 @@ pub enum TanninsType {
     Strong,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
 #[serde(rename_all = "kebab-case")]
+#[ts(export)]
 #[ExistingTypePath = "crate::schema::sql_types::BodyTypeEnum"]
 #[DbValueStyle = "kebab-case"]
 pub enum BodyType {

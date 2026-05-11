@@ -4,12 +4,15 @@ use crate::schema::*;
 use chrono;
 use diesel::prelude::*;
 use rust_decimal::Decimal;
+use ts_rs::TS;
 
 use uuid;
 
-#[derive(Serialize)]
-pub struct PaginatedResponse<T: Serialize> {
+#[derive(Serialize, TS)]
+#[ts(export)]
+pub struct PaginatedResponse<T> {
     pub items: Vec<T>,
+    #[ts(type = "number")]
     pub total_pages: u64,
 }
 
@@ -28,14 +31,16 @@ pub struct NewAdminUser<'a> {
     pub hashed_password: &'a str,
 }
 
-#[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug)]
+#[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug, TS)]
 #[diesel(table_name = crate::schema::images)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
 pub struct Image {
     pub id: uuid::Uuid,
     pub file_name: String,
     pub storage_path: String,
     pub created_at: chrono::NaiveDateTime,
+    #[ts(type = "number")]
     pub file_size: i64,
 }
 
@@ -63,9 +68,10 @@ pub struct UpdateImageInternal {
     pub storage_path: Option<String>,
 }
 
-#[derive(Queryable, Selectable, AsChangeset, serde::Serialize, serde::Deserialize, Debug)]
+#[derive(Queryable, Selectable, AsChangeset, serde::Serialize, serde::Deserialize, Debug, TS)]
 #[diesel(table_name = crate::schema::products)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
 pub struct Product {
     pub product_id: String,
     pub product_name: String,
@@ -82,12 +88,15 @@ pub struct Product {
     pub tannins: TanninsType,
     pub body: BodyType,
     #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
     pub abv: Decimal,
     pub bottle_count: i32,
     pub bottle_size: i32,
     #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
     pub price: Decimal,
     #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
     pub price_ron: Decimal,
     pub image_id: Option<uuid::Uuid>,
     pub bottling_date: chrono::NaiveDate,
@@ -97,8 +106,9 @@ pub struct Product {
     pub deleted_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-#[derive(Insertable, serde::Deserialize)]
+#[derive(Insertable, serde::Deserialize, TS)]
 #[diesel(table_name = products)]
+#[ts(export)]
 pub struct NewProduct {
     pub product_id: String,
     pub product_name: String,
@@ -115,21 +125,25 @@ pub struct NewProduct {
     pub tannins: TanninsType,
     pub body: BodyType,
     #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
     pub abv: Decimal,
     pub bottle_count: i32,
     pub bottle_size: i32,
     #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
     pub price: Decimal,
     #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
     pub price_ron: Decimal,
     pub image_id: Option<uuid::Uuid>,
     pub bottling_date: chrono::NaiveDate,
     pub lot_number: i32,
 }
 
-#[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug)]
+#[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug, TS)]
 #[diesel(table_name = crate::schema::blog_posts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
 pub struct BlogPost {
     pub id: uuid::Uuid,
     pub title: String,
@@ -145,8 +159,9 @@ pub struct BlogPost {
     pub is_published: bool,
 }
 
-#[derive(Insertable, serde::Deserialize)]
+#[derive(Insertable, serde::Deserialize, TS)]
 #[diesel(table_name = blog_posts)]
+#[ts(export)]
 pub struct NewBlogPost {
     pub title: String,
     pub title_ro: String,
@@ -158,19 +173,21 @@ pub struct NewBlogPost {
     pub author: String,
     pub is_published: bool,
     #[serde(skip_deserializing)]
+    #[ts(skip)]
     pub published_at: Option<chrono::NaiveDateTime>,
 }
 
-#[derive(serde::Deserialize, AsChangeset, Debug)]
+#[derive(serde::Deserialize, AsChangeset, Debug, TS)]
 #[diesel(table_name = blog_posts)]
+#[ts(export)]
 pub struct UpdateBlogPost {
-    pub title: Option<String>,
-    pub title_ro: Option<String>,
-    pub slug: Option<String>,
-    pub content_markdown: Option<String>,
-    pub content_markdown_ro: Option<String>,
-    pub excerpt: Option<String>,
-    pub excerpt_ro: Option<String>,
-    pub author: Option<String>,
-    pub is_published: Option<bool>,
+    #[ts(optional)] pub title: Option<String>,
+    #[ts(optional)] pub title_ro: Option<String>,
+    #[ts(optional)] pub slug: Option<String>,
+    #[ts(optional)] pub content_markdown: Option<String>,
+    #[ts(optional)] pub content_markdown_ro: Option<String>,
+    #[ts(optional)] pub excerpt: Option<String>,
+    #[ts(optional)] pub excerpt_ro: Option<String>,
+    #[ts(optional)] pub author: Option<String>,
+    #[ts(optional)] pub is_published: Option<bool>,
 }

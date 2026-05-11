@@ -1,19 +1,7 @@
-// Type definitions for enum values fetched from backend API
-// These types match the backend's EnumValue and EnumValues structures
+import type { EnumValues } from './types/generated/EnumValues';
 
-export interface EnumValue {
-    value: string;
-}
-
-export interface EnumValues {
-    mead_type: EnumValue[];
-    sweetness: EnumValue[];
-    turbidity: EnumValue[];
-    effervescence: EnumValue[];
-    acidity: EnumValue[];
-    tannins: EnumValue[];
-    body: EnumValue[];
-}
+export type { EnumValue } from './types/generated/EnumValue';
+export type { EnumValues } from './types/generated/EnumValues';
 
 const ENUM_TYPE_TO_TRANSLATION_KEY: Record<keyof EnumValues, string> = {
     mead_type: 'meadType',
@@ -37,7 +25,6 @@ export function getEnumLabel(value: string, enumType: keyof EnumValues, t: (key:
     return translated;
 }
 
-// Fallback formatting for enum labels when enum values are not available
 export function formatEnumLabel(value: string): string {
     return value
         .replace(/-/g, ' ')

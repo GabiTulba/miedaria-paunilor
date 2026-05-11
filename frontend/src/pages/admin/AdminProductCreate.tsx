@@ -6,7 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import ProductForm from './ProductForm';
 import { ProductFormData } from '../../types';
-import { errorMapping, errorMessageMapping, mapBackendValidationErrors } from './errorMappings';
+import { errorMapping, mapBackendValidationErrors } from './errorMappings';
 import { getTodayIsoDate } from '../../utils/dateUtils';
 import { useAdminImages } from '../../hooks/useAdminImages';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
@@ -94,7 +94,7 @@ function AdminProductCreate() {
             navigate('/admin/dashboard/products');
         } catch (error: any) {
             console.error("Failed to create product:", error);
-            const backendErrors = mapBackendValidationErrors(error, errorMapping, errorMessageMapping);
+            const backendErrors = mapBackendValidationErrors(error, errorMapping, t, 'product');
             if (backendErrors) {
                 setErrors(backendErrors);
             } else if (error.response?.data?.message) {

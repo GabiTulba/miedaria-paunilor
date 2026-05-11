@@ -1,6 +1,6 @@
 ================================================================================
 MIEDARIA PAUNILOR — OUTSTANDING WORK
-Last updated: 2026-05-10
+Last updated: 2026-05-10 (F resolved: ts-rs codegen wired in)
 ================================================================================
 
 Severity legend: [C]ritical  [H]igh  [M]edium  [L]ow
@@ -43,9 +43,6 @@ Form layer (deferred — no test coverage to fall back on)
     `handleNumericChange` are two parallel handlers. With NumberInput emitting
     a `number` via a separate `onValueChange` prop, the page only needs one
     `handleChange`.
-[L] frontend/src/pages/admin/errorMappings.ts — `errorMessageMapping` is a
-    flat object of English strings. Translate via i18n keys at the call site
-    or move strings into the i18n resource files.
 
 Hooks / data fetching
 [M] frontend/src/hooks/useAdminImages.ts — Per-component fetch with no cache.
@@ -72,35 +69,5 @@ Components / structure
     `success-pulse`/`onanimationend` snippets. Could be unified via a
     `<PulseButton>` or `useElementPulse(ref)` hook; left as-is because the
     existing setTimeout-driven approach is already idiomatic React.
-
-================================================================================
-F. CROSS-CUTTING — FE/BE (OUTSTANDING)
-================================================================================
-
-Backend codegen / API contract sharing — all blocked on a single tooling
-decision (typeshare vs ts-rs vs OpenAPI). Pick one and the next four items
-collapse into "regenerate".
-
-[H] backend/src/enums.rs (7 enums) vs frontend/src/enums.ts +
-    i18n resources — Each enum's variants live in three places (Rust enums,
-    TS mapping, i18n JSON). Adding a mead style requires touching all three.
-    Generate the FE enum file from BE, or expose `/api/enums` as the source
-    of truth and remove the FE static type.
-[H] backend/src/product_crud.rs (ProductValidationError variants) vs
-    frontend/src/pages/admin/errorMappings.ts — Two truth tables; drift has
-    already started (FE `InvalidTaninsType` single-n vs BE `TanninsType`
-    double-n). Generate or share the variant list.
-[M] backend/src/models.rs (Image, Product, BlogPost) vs
-    frontend/src/types/models.ts — DTOs are duplicated (field names match;
-    nullability sometimes differs). Use codegen (typeshare/ts-rs/OpenAPI) so
-    models stay in sync.
-[M] backend/src/main.rs (`GetProductsQuery`) vs frontend/src/lib/api.ts
-    (`getProducts` params type) — Filter parameters typed in both places.
-    Same codegen suggestion.
-[M] frontend/src/types/models.ts (`Product` vs `LocalizedProduct`) —
-    Public `/api/products` returns `LocalizedProduct`, admin returns full
-    `Product`. Both live in the same module and are used in different code
-    paths. Document the contract or split into `api.public.*` vs `api.admin.*`
-    clients.
 
 ================================================================================

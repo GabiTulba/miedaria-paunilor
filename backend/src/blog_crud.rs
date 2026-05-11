@@ -4,10 +4,12 @@ use crate::schema::*;
 use diesel::prelude::*;
 use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use serde::Serialize;
+use ts_rs::TS;
 
 const MAX_MARKDOWN_BYTES: usize = 200_000;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
 pub enum BlogValidationError {
     EmptyTitle,
     TitleTooLong,

@@ -4,8 +4,10 @@ use crate::models::{BlogPost, Image, Product};
 use crate::product_crud::ProductWithImage;
 use rust_decimal::Decimal;
 use serde::Serialize;
+use ts_rs::TS;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
 pub struct LocalizedProduct {
     pub product_id: String,
     pub product_name: String,
@@ -19,10 +21,12 @@ pub struct LocalizedProduct {
     pub tannins: TanninsType,
     pub body: BodyType,
     #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
     pub abv: Decimal,
     pub bottle_count: i32,
     pub bottle_size: i32,
     #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
     pub price: Decimal,
     pub currency: String,
     pub image_id: Option<uuid::Uuid>,
@@ -30,13 +34,15 @@ pub struct LocalizedProduct {
     pub lot_number: i32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
 pub struct LocalizedProductWithImage {
     pub product: LocalizedProduct,
     pub image: Option<Image>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
 pub struct LocalizedBlogPost {
     pub id: uuid::Uuid,
     pub title: String,

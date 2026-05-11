@@ -6,7 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { NewBlogPost } from '../../types';
 import BlogForm, { BlogFormData } from './BlogForm';
-import { blogErrorMapping, blogErrorMessageMapping, mapBackendValidationErrors } from './errorMappings';
+import { blogErrorMapping, mapBackendValidationErrors } from './errorMappings';
 
 const INITIAL_POST: NewBlogPost = {
     title: '',
@@ -42,7 +42,7 @@ function AdminBlogCreate() {
             navigate('/admin/dashboard/blog');
         } catch (err: any) {
             console.error('Failed to create blog post:', err);
-            const validationErrors = mapBackendValidationErrors(err, blogErrorMapping, blogErrorMessageMapping);
+            const validationErrors = mapBackendValidationErrors(err, blogErrorMapping, t, 'blog');
             if (validationErrors) {
                 setErrors(validationErrors);
             } else {

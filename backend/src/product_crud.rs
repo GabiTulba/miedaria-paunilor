@@ -8,6 +8,7 @@ use diesel::prelude::*;
 use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use rust_decimal::Decimal;
 use serde::Serialize;
+use ts_rs::TS;
 
 const MAX_SEARCH_TERM_LEN: usize = 100;
 
@@ -35,7 +36,8 @@ pub fn validate_search_term(s: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
 pub enum ProductValidationError {
     InvalidProductId,
     ProductIdTooLong,
@@ -239,9 +241,10 @@ fn map_unique_violation(
     RepositoryError::Database(e)
 }
 
-#[derive(Debug, Serialize, Queryable, Selectable)]
+#[derive(Debug, Serialize, Queryable, Selectable, TS)]
 #[diesel(table_name = products)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
 pub struct ProductWithImage {
     #[diesel(embed)]
     pub product: Product,
@@ -416,8 +419,9 @@ pub fn hard_delete_product(conn: &mut PgConnection, id: &str) -> Result<(), Repo
         .map_err(RepositoryError::from)
 }
 
-#[derive(Debug, Clone, Copy, serde::Deserialize, Default)]
+#[derive(Debug, Clone, Copy, serde::Deserialize, Default, TS)]
 #[serde(rename_all = "snake_case")]
+#[ts(export)]
 pub enum IncludeDeleted {
     #[default]
     Active,
@@ -425,7 +429,8 @@ pub enum IncludeDeleted {
     All,
 }
 
-#[derive(Debug, Default, Clone, Copy, serde::Deserialize)]
+#[derive(Debug, Default, Clone, Copy, serde::Deserialize, TS)]
+#[ts(export)]
 pub struct ProductFilters {
     pub in_stock: Option<bool>,
     pub product_type: Option<MeadType>,

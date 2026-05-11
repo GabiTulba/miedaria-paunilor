@@ -1,4 +1,9 @@
-import { ApiError, ApiErrorResponse, BlogPost, LocalizedBlogPost, LocalizedProductWithImage, LoginCredentials, NewBlogPost, PaginatedResponse, Product, ProductFormData, ProductWithImage, UpdateBlogPost } from '../types';
+import type { ApiError, ApiErrorResponse, LoginCredentials, PaginatedResponse } from '../types/api';
+import type { BlogPost, Product, ProductWithImage } from '../types/models';
+import type { LocalizedBlogPost, LocalizedProductWithImage } from '../types/api.public';
+import type { NewBlogPost, ProductFormData, UpdateBlogPost } from '../types/forms';
+import type { GetProductsQuery } from '../types/generated/GetProductsQuery';
+import type { GetAdminProductsQuery } from '../types/generated/GetAdminProductsQuery';
 import i18n from '../i18n/config';
 
 // Mirror of `VARIANT_WIDTHS` in backend/src/image_crud.rs.
@@ -68,27 +73,9 @@ async function request(endpoint: string, options: RequestInit = {}) {
     return response.json();
 }
 
-export interface GetProductsParams {
-    order_by?: string;
-    order_direction?: string;
-    in_stock?: boolean;
-    product_type?: string;
-    sweetness?: string;
-    turbidity?: string;
-    effervescence?: string;
-    acidity?: string;
-    tannins?: string;
-    body?: string;
-    search?: string;
-    page?: number;
-    per_page?: number;
-}
-
-export interface GetAdminProductsParams {
-    include_deleted?: 'active' | 'deleted' | 'all';
-    page?: number;
-    per_page?: number;
-}
+// Re-export the generated types under their old FE-local names for backward compat.
+export type GetProductsParams = GetProductsQuery;
+export type GetAdminProductsParams = GetAdminProductsQuery;
 
 export const api = {
     get: (endpoint: string, options?: RequestInit) => request(endpoint, options),
