@@ -10,7 +10,7 @@ import { useFocusTrapDrawer } from "../../hooks/useFocusTrapDrawer";
 import './Admin.css';
 
 function AdminLayout() {
-    const { setToken } = useContext(AuthContext);
+    const { logout } = useContext(AuthContext);
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { pathname } = useLocation();
@@ -20,9 +20,9 @@ function AdminLayout() {
     const hamburgerRef = useRef<HTMLButtonElement>(null);
     const sidebarRef = useRef<HTMLElement>(null);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         setShowLogoutConfirm(false);
-        setToken(null);
+        await logout();
         navigate('/admin');
     };
 

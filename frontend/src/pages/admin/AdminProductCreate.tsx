@@ -1,7 +1,7 @@
-import { useState, useContext, useRef } from 'react';
+import { useState, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import ProductForm from './ProductForm';
@@ -43,12 +43,11 @@ function AdminProductCreate() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
     const [savedRef, setSavedRef] = useState(false);
-    const { token } = useContext(AuthContext);
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { showToast } = useToast();
 
-    const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages(token);
+    const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages();
 
     const isDirty = !savedRef && JSON.stringify(product) !== JSON.stringify(initialRef.current);
     const blocker = useUnsavedChanges(isDirty);
@@ -74,10 +73,6 @@ function AdminProductCreate() {
             return;
         }
 
-        if (!token) {
-            showToast(t('errors.unauthorized'), 'error');
-            return;
-        }
         if (imagesLoading) {
             showToast(t('common.loading'), 'error');
             return;
@@ -88,9 +83,12 @@ function AdminProductCreate() {
         }
         try {
             setSubmitting(true);
-            await api.createProduct(product, token);
+            await api.createProduct(product);
             showToast(t('admin.products.created'), 'success');
-            setSavedRef(true);
+            // flushSync so the blocker sees isDirty=false before navigate()
+            // fires the router transition (otherwise the unsaved-changes
+            // modal pops on the post-save redirect).
+            flushSync(() => setSavedRef(true));
             navigate('/admin/dashboard/products');
         } catch (error: any) {
             console.error("Failed to create product:", error);
@@ -119,7 +117,7 @@ function AdminProductCreate() {
                     product={product}
                     setProduct={setProduct}
                     onSubmit={handleSubmit}
-                    submitText="Create Product"
+                    submitText={t('admin.productForm.save')}
                     errors={errors}
                     availableImages={availableImages}
                     submitting={submitting}

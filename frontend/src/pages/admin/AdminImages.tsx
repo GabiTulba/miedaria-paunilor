@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -11,20 +10,19 @@ import ImageCard from '../../components/admin/ImageCard';
 import './Admin.css';
 
 const AdminImages: React.FC = () => {
-  const { token } = useAuth();
   const { t } = useTranslation();
   const { showToast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const { images, setImages, loading: imagesLoading, error: imagesError, refetch: fetchImages } = useAdminImages(token);
+  const { images, setImages, loading: imagesLoading, error: imagesError, refetch: fetchImages } = useAdminImages();
   const [renamingImageId, setRenamingImageId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   const onUploadError = useCallback((message: string) => {
     showToast(`${t('common.error')}: ${message}`, 'error');
   }, [showToast, t]);
-  const { progress: uploadProgress, uploading, upload } = useImageUpload({ token, onError: onUploadError });
+  const { progress: uploadProgress, uploading, upload } = useImageUpload({ onError: onUploadError });
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFile(event.target.files?.[0] ?? null);
@@ -58,9 +56,8 @@ const AdminImages: React.FC = () => {
   };
 
   const handleSaveRename = async (imageId: string, newFileName: string) => {
-    if (!token) return;
     try {
-      const updatedImage = await api.updateImage(imageId, newFileName, token);
+      const updatedImage = await api.updateImage(imageId, newFileName);
       setImages((prev) => prev.map((img) => (img.id === imageId ? updatedImage : img)));
       showToast(`${t('common.success')}: ${updatedImage.file_name}`, 'success');
       setRenamingImageId(null);
@@ -71,12 +68,12 @@ const AdminImages: React.FC = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (!confirmDeleteId || !token) return;
+    if (!confirmDeleteId) return;
     const imageId = confirmDeleteId;
     setConfirmDeleteId(null);
     setDeleteLoading(imageId);
     try {
-      await api.deleteImage(imageId, token);
+      await api.deleteImage(imageId);
       setImages((prev) => prev.filter((img) => img.id !== imageId));
       showToast(t('admin.images.deleteSuccess'), 'success');
     } catch (error) {

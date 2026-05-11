@@ -12,29 +12,24 @@ interface UseAdminImagesResult {
     refetch: () => Promise<void>;
 }
 
-export function useAdminImages(token: string | null): UseAdminImagesResult {
+export function useAdminImages(): UseAdminImagesResult {
     const [images, setImages] = useState<Image[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const { t } = useTranslation();
 
     const refetch = useCallback(async () => {
-        if (!token) {
-            setError(t('errors.unauthorized'));
-            setLoading(false);
-            return;
-        }
         setLoading(true);
         setError('');
         try {
-            const fetched = await api.getImages(token);
+            const fetched = await api.getImages();
             setImages(fetched);
         } catch {
             setError(t('admin.images.error'));
         } finally {
             setLoading(false);
         }
-    }, [token, t]);
+    }, [t]);
 
     useEffect(() => { refetch(); }, [refetch]);
 

@@ -50,10 +50,13 @@ async fn get_blog_rss(
     ))
 }
 
-async fn protected_route(
+async fn me_route(
     Extension(claims): Extension<auth::Claims>,
-) -> Result<String, StatusCode> {
-    Ok(format!("Welcome to the protected area, {}!", claims.sub))
+) -> Result<Json<auth::MeResponse>, StatusCode> {
+    Ok(Json(auth::MeResponse {
+        username: claims.sub,
+        exp: claims.exp as i64,
+    }))
 }
 
 /// Top-level unscoped routes (no auth, no rate limit).
@@ -65,7 +68,9 @@ pub fn unscoped_router() -> Router<Arc<AppState>> {
         .route("/blog/rss.xml", get(get_blog_rss))
 }
 
-/// Admin-only smoke-test route.
+/// Admin session-probe route. Returns the signed-in admin's username + the
+/// JWT expiry timestamp so the FE can schedule a client-side auto-logout
+/// without ever reading the httpOnly cookie.
 pub fn admin_router() -> Router<Arc<AppState>> {
-    Router::new().route("/protected", get(protected_route))
+    Router::new().route("/me", get(me_route))
 }

@@ -1,7 +1,6 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { useFetch } from '../../hooks/useFetch';
@@ -36,7 +35,6 @@ function AdminProducts() {
     const [deletedFilter, setDeletedFilter] = useState<DeletedFilter>('active');
     const [page, setPage] = usePageParam();
     const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'hardDelete'; id: string } | null>(null);
-    const { token } = useContext(AuthContext);
     const { t } = useTranslation();
     const { showToast } = useToast();
     const language = useLanguage();
@@ -44,12 +42,12 @@ function AdminProducts() {
         language === 'ro' ? product.product_name_ro : product.product_name;
 
     const { data, loading, error, refetch } = useFetch(
-        signal => token ? api.getAdminProducts(token, {
+        signal => api.getAdminProducts({
             include_deleted: deletedFilter,
             page,
             per_page: ADMIN_PRODUCTS_PER_PAGE,
-        }, signal) : Promise.resolve(null as never),
-        [token, page, deletedFilter],
+        }, signal),
+        [page, deletedFilter],
     );
     // Reset transient action state on each refetch.
     useEffect(() => { if (loading) setActionId(null); }, [loading]);
@@ -63,27 +61,27 @@ function AdminProducts() {
     };
 
     const handleDeleteClick = (productId: string) => {
-        if (!token || actionId) return;
+        if (actionId) return;
         setConfirmAction({ type: 'delete', id: productId });
     };
 
     const handleHardDeleteClick = (productId: string) => {
-        if (!token || actionId) return;
+        if (actionId) return;
         setConfirmAction({ type: 'hardDelete', id: productId });
     };
 
     const handleConfirm = async () => {
-        if (!confirmAction || !token) return;
+        if (!confirmAction) return;
         const { type, id } = confirmAction;
         setConfirmAction(null);
         try {
             setActionId(id);
             setActionError(null);
             if (type === 'delete') {
-                await api.deleteProduct(id, token);
+                await api.deleteProduct(id);
                 showToast(t('admin.products.deleteSuccess'), 'success');
             } else {
-                await api.hardDeleteProduct(id, token);
+                await api.hardDeleteProduct(id);
                 showToast(t('admin.products.hardDeleteSuccess'), 'success');
             }
             if (afterDeleteAction(products.length, page) === 'prev-page') {
@@ -99,11 +97,11 @@ function AdminProducts() {
     };
 
     const handleRestore = async (productId: string) => {
-        if (!token || actionId) return;
+        if (actionId) return;
         try {
             setActionId(productId);
             setActionError(null);
-            await api.restoreProduct(productId, token);
+            await api.restoreProduct(productId);
             showToast(t('admin.products.restoreSuccess'), 'success');
             refetch();
         } catch (err) {

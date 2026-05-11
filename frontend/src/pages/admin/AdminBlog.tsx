@@ -1,4 +1,4 @@
-import { useState, useContext, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../lib/api';
@@ -7,7 +7,6 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { useFetch } from '../../hooks/useFetch';
 import { usePageParam } from '../../hooks/usePageParam';
 import { afterDeleteAction } from '../../hooks/useAfterDelete';
-import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import Pagination from '../../components/Pagination';
 import ErrorDisplay from '../../components/ErrorDisplay';
@@ -30,11 +29,10 @@ function AdminBlog() {
         day: 'numeric' as const,
     }), []);
     const formatDate = useFormattedDate(formatDateOptions);
-    const { token } = useContext(AuthContext);
 
     const { data, loading, error, refetch } = useFetch(
-        signal => token ? api.getBlogPostsAdmin(token, page, ADMIN_BLOG_PER_PAGE, signal) : Promise.resolve(null as never),
-        [token, page],
+        signal => api.getBlogPostsAdmin(page, ADMIN_BLOG_PER_PAGE, signal),
+        [page],
     );
     const blogPosts = data?.items ?? [];
     const totalPages = data?.total_pages ?? 1;
@@ -45,17 +43,16 @@ function AdminBlog() {
     };
 
     const handleDeleteClick = (id: string) => {
-        if (!token) return;
         setConfirmDeleteId(id);
     };
 
     const handleConfirmDelete = async () => {
-        if (!confirmDeleteId || !token) return;
+        if (!confirmDeleteId) return;
         const id = confirmDeleteId;
         setConfirmDeleteId(null);
         try {
             setActionError(null);
-            await api.deleteBlogPost(id, token);
+            await api.deleteBlogPost(id);
             showToast(t('admin.blog.deleteSuccess'), 'success');
             if (afterDeleteAction(blogPosts.length, page) === 'prev-page') {
                 setPage(page - 1);

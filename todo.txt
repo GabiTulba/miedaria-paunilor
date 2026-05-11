@@ -1,6 +1,6 @@
 ================================================================================
 MIEDARIA PAUNILOR — OUTSTANDING WORK
-Last updated: 2026-05-10 (F resolved: ts-rs codegen wired in)
+Last updated: 2026-05-11 (priority 1 + 2 resolved: JWT in httpOnly cookie, nginx lang redirect)
 ================================================================================
 
 Severity legend: [C]ritical  [H]igh  [M]edium  [L]ow
@@ -10,11 +10,7 @@ Each item: [Sev] FILE:LINE — Issue. Fix.
 ================================================================================
 PRIORITY
 ================================================================================
-1. [H] backend + frontend — JWT to httpOnly cookie (requires backend cookie set on
-   /api/admin/login; FE side now decodes exp + auto-logs out on expiry. Migration to
-   cookie still pending and needs FE+BE in lockstep).
-2. [M] frontend/main.tsx + nginx — mirror root `/` lang redirect at nginx level
-   (FE-side redirect is intentionally kept as fallback).
+(empty — promote items from D / E as they're picked up)
 
 ================================================================================
 D. BACKEND — DEFERRED FOLLOW-UPS
@@ -48,7 +44,8 @@ Hooks / data fetching
 [M] frontend/src/hooks/useAdminImages.ts — Per-component fetch with no cache.
     `AdminImages`, `AdminProductCreate`, and `AdminProductEdit` instantiate it
     independently → 3 GET /admin/images on a single navigation flow. Consider
-    an `ImagesContext` or a small SWR-style cache keyed on `token`.
+    an `ImagesContext` or a small SWR-style cache (the hook no longer takes a
+    token now that auth rides on the cookie).
 [M] frontend/src/pages/admin/AdminProductEdit.tsx — Edit page handles
     `productLoading` separately from `imagesLoading` (useAdminImages); they're
     combined ad hoc. Move both single-shot loaders to the `useFetch<T>` hook

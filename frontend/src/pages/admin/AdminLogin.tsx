@@ -13,7 +13,7 @@ function AdminLogin() {
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [errorAttempts, setErrorAttempts] = useState(0);
-    const { setToken } = useContext(AuthContext);
+    const { setAuth } = useContext(AuthContext);
     const navigate = useNavigate();
     const { t } = useTranslation();
     const formRef = useRef<HTMLFormElement>(null);
@@ -27,12 +27,8 @@ function AdminLogin() {
 
         try {
             const data = await api.adminLogin({ username, password });
-            if (data && data.token) {
-                setToken(data.token);
-                navigate('/admin/dashboard');
-            } else {
-                throw new Error('Login failed');
-            }
+            setAuth(data);
+            navigate('/admin/dashboard');
         } catch (err) {
             setError(t('admin.login.invalidCredentials'));
             setErrorAttempts(n => n + 1);

@@ -1,7 +1,7 @@
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { Product, ProductFormData, ProductWithImage } from '../../types';
@@ -15,12 +15,11 @@ function AdminProductEdit() {
     const { productId } = useParams<{ productId: string }>();
     const [productWithImage, setProductWithImage] = useState<ProductWithImage | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const { token } = useContext(AuthContext);
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { showToast } = useToast();
 
-    const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages(token);
+    const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages();
     const [productLoading, setProductLoading] = useState<boolean>(true);
     const [submitting, setSubmitting] = useState(false);
     const [savedRef, setSavedRef] = useState(false);
@@ -28,13 +27,13 @@ function AdminProductEdit() {
 
     useEffect(() => {
         const fetchProduct = async () => {
-            if (!token || !productId) {
+            if (!productId) {
                 setProductLoading(false);
                 return;
             }
             setProductLoading(true);
             try {
-                const fetchedProductWithImage = await api.getProductByIdAdmin(productId, token);
+                const fetchedProductWithImage = await api.getProductByIdAdmin(productId);
                 setProductWithImage(fetchedProductWithImage);
                 initialSnapshotRef.current = JSON.stringify(fetchedProductWithImage.product);
             } catch (error: any) {
@@ -44,7 +43,7 @@ function AdminProductEdit() {
             }
         };
         fetchProduct();
-    }, [productId, token]);
+    }, [productId]);
 
     const isDirty = !savedRef
         && !!productWithImage
@@ -73,10 +72,6 @@ function AdminProductEdit() {
             return;
         }
 
-        if (!token) {
-            showToast(t('errors.unauthorized'), 'error');
-            return;
-        }
         if (productLoading || imagesLoading) {
             showToast(t('common.loading'), 'error');
             return;
@@ -89,9 +84,12 @@ function AdminProductEdit() {
             try {
                 setSubmitting(true);
                 const productToUpdate: Product = productWithImage.product;
-                await api.updateProduct(productId, productToUpdate, token);
+                await api.updateProduct(productId, productToUpdate);
                 showToast(t('admin.products.updated'), 'success');
-                setSavedRef(true);
+                // flushSync so the blocker sees isDirty=false before navigate()
+                // fires the router transition (otherwise the unsaved-changes
+                // modal pops on the post-save redirect).
+                flushSync(() => setSavedRef(true));
                 navigate('/admin/dashboard/products');
             } catch (error: any) {
                 console.error("Failed to update product:", error);
@@ -130,7 +128,7 @@ function AdminProductEdit() {
                     );
                 }}
                 onSubmit={handleSubmit}
-                submitText="Update Product"
+                submitText={t('admin.productForm.update')}
                 isEdit={true}
                 errors={errors}
                 availableImages={availableImages}

@@ -1,7 +1,6 @@
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { NewBlogPost } from '../../types';
@@ -25,19 +24,18 @@ function AdminBlogCreate() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
-    const { token } = useContext(AuthContext);
     const { showToast } = useToast();
     const { t } = useTranslation();
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!token || submitting) return;
+        if (submitting) return;
         setErrors({});
         setFormError(null);
         try {
             setSubmitting(true);
-            await api.createBlogPost(formData as NewBlogPost, token);
+            await api.createBlogPost(formData as NewBlogPost);
             showToast(t('admin.blog.created'), 'success');
             navigate('/admin/dashboard/blog');
         } catch (err: any) {

@@ -1,7 +1,6 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { useFetch } from '../../hooks/useFetch';
@@ -12,14 +11,13 @@ import ErrorDisplay from '../../components/ErrorDisplay';
 
 function AdminBlogEdit() {
     const { id } = useParams<{ id: string }>();
-    const { token } = useContext(AuthContext);
     const { showToast } = useToast();
     const { t } = useTranslation();
     const navigate = useNavigate();
 
     const { data: post, loading, error, refetch } = useFetch(
-        signal => (token && id ? api.getBlogPostByIdAdmin(id, token, signal) : Promise.resolve(null as never)),
-        [token, id],
+        signal => (id ? api.getBlogPostByIdAdmin(id, signal) : Promise.resolve(null as never)),
+        [id],
     );
 
     const [formData, setFormData] = useState<BlogFormData | null>(null);
@@ -45,12 +43,12 @@ function AdminBlogEdit() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!token || !id || !formData || submitting) return;
+        if (!id || !formData || submitting) return;
         setErrors({});
         setFormError(null);
         try {
             setSubmitting(true);
-            await api.updateBlogPost(id, formData as UpdateBlogPost, token);
+            await api.updateBlogPost(id, formData as UpdateBlogPost);
             showToast(t('admin.blog.updated'), 'success');
             navigate('/admin/dashboard/blog');
         } catch (err: any) {

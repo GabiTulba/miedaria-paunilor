@@ -8,24 +8,18 @@ interface UseImageUploadResult {
 }
 
 interface UseImageUploadOptions {
-    token: string | null;
     onError: (message: string) => void;
 }
 
 // Wraps the XMLHttpRequest plumbing needed to track upload progress (fetch can't
 // stream upload progress in browsers). Resolves to the parsed Image on success
 // and `null` on failure (the caller has already been notified via onError).
-export function useImageUpload({ token, onError }: UseImageUploadOptions): UseImageUploadResult {
+export function useImageUpload({ onError }: UseImageUploadOptions): UseImageUploadResult {
     const [progress, setProgress] = useState<number | null>(null);
     const [uploading, setUploading] = useState(false);
 
     const upload = useCallback((file: File) => {
         return new Promise<Image | null>((resolve) => {
-            if (!token) {
-                onError('Not authenticated');
-                resolve(null);
-                return;
-            }
             const baseUrl = import.meta.env.VITE_API_BASE_URL;
             if (!baseUrl) {
                 onError('API not configured');
@@ -41,7 +35,8 @@ export function useImageUpload({ token, onError }: UseImageUploadOptions): UseIm
 
             const xhr = new XMLHttpRequest();
             xhr.open('POST', `${baseUrl}/admin/images`);
-            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+            // Ship the httpOnly admin_session cookie alongside the upload.
+            xhr.withCredentials = true;
 
             xhr.upload.onprogress = (e) => {
                 if (e.lengthComputable) {
@@ -79,7 +74,7 @@ export function useImageUpload({ token, onError }: UseImageUploadOptions): UseIm
 
             xhr.send(formData);
         });
-    }, [token, onError]);
+    }, [onError]);
 
     return { progress, uploading, upload };
 }

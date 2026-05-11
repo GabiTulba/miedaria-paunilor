@@ -1,9 +1,10 @@
-import type { ApiError, ApiErrorResponse, LoginCredentials, PaginatedResponse } from '../types/api';
+import type { ApiError, ApiErrorResponse, LoginCredentials, LoginResponse, PaginatedResponse } from '../types/api';
 import type { BlogPost, Product, ProductWithImage } from '../types/models';
 import type { LocalizedBlogPost, LocalizedProductWithImage } from '../types/api.public';
 import type { NewBlogPost, ProductFormData, UpdateBlogPost } from '../types/forms';
 import type { GetProductsQuery } from '../types/generated/GetProductsQuery';
 import type { GetAdminProductsQuery } from '../types/generated/GetAdminProductsQuery';
+import type { MeResponse } from '../types/generated/MeResponse';
 import i18n from '../i18n/config';
 
 // Mirror of `VARIANT_WIDTHS` in backend/src/image_crud.rs.
@@ -50,7 +51,12 @@ async function request(endpoint: string, options: RequestInit = {}) {
     if (!headers.has('Accept-Language')) {
         headers.set('Accept-Language', i18n.language);
     }
-    const response = await fetch(url, { ...options, headers });
+    // The httpOnly admin_session cookie is scoped to /api/admin. Send it
+    // automatically on every admin call so individual callers don't need to
+    // know about the session.
+    const credentials: RequestCredentials | undefined =
+        options.credentials ?? (endpoint.startsWith('/admin') ? 'include' : undefined);
+    const response = await fetch(url, { ...options, headers, credentials });
     if (!response.ok) {
         const contentType = response.headers.get('content-type');
         let errorBody: ApiErrorResponse;
@@ -77,6 +83,8 @@ async function request(endpoint: string, options: RequestInit = {}) {
 export type GetProductsParams = GetProductsQuery;
 export type GetAdminProductsParams = GetAdminProductsQuery;
 
+const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
+
 export const api = {
     get: (endpoint: string, options?: RequestInit) => request(endpoint, options),
     getProducts: (params?: GetProductsParams, signal?: AbortSignal): Promise<PaginatedResponse<LocalizedProductWithImage>> => {
@@ -87,104 +95,83 @@ export const api = {
     },
     getProductById: (id: string, signal?: AbortSignal): Promise<LocalizedProductWithImage> => request(`/products/${id}`, { signal }),
 
-    adminLogin: async (credentials: LoginCredentials) => {
+    adminLogin: async (credentials: LoginCredentials): Promise<LoginResponse> => {
         return request('/admin/login', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: JSON_HEADERS,
             body: JSON.stringify(credentials),
         });
     },
 
-    createProduct: async (productData: ProductFormData, token: string) => {
+    adminLogout: async (): Promise<void> => {
+        await request('/admin/logout', { method: 'POST' });
+    },
+
+    adminMe: async (signal?: AbortSignal): Promise<MeResponse> => {
+        return request('/admin/me', { signal });
+    },
+
+    createProduct: async (productData: ProductFormData) => {
         return request('/admin/products', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: JSON_HEADERS,
             body: JSON.stringify(normalizeProductPayload(productData)),
         });
     },
 
-    updateProduct: async (id: string, productData: Product, token: string) => {
+    updateProduct: async (id: string, productData: Product) => {
         return request(`/admin/products/${id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: JSON_HEADERS,
             body: JSON.stringify(normalizeProductPayload(productData)),
         });
     },
 
-    getProductByIdAdmin: async (id: string, token: string): Promise<ProductWithImage> => {
-        return request(`/admin/products/${id}`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
+    getProductByIdAdmin: async (id: string): Promise<ProductWithImage> => {
+        return request(`/admin/products/${id}`, { method: 'GET' });
     },
 
-    deleteProduct: async (id: string, token: string) => {
-        return request(`/admin/products/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
+    deleteProduct: async (id: string) => {
+        return request(`/admin/products/${id}`, { method: 'DELETE' });
     },
 
-    getAdminProducts: async (token: string, params?: GetAdminProductsParams, signal?: AbortSignal): Promise<PaginatedResponse<ProductWithImage>> => {
+    getAdminProducts: async (params?: GetAdminProductsParams, signal?: AbortSignal): Promise<PaginatedResponse<ProductWithImage>> => {
         return request(`/admin/products${buildQuery(params as Record<string, unknown> | undefined)}`, {
             method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` },
             signal,
         });
     },
 
-    restoreProduct: async (id: string, token: string): Promise<Product> => {
-        return request(`/admin/products/${id}/restore`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
+    restoreProduct: async (id: string): Promise<Product> => {
+        return request(`/admin/products/${id}/restore`, { method: 'POST' });
     },
 
-    hardDeleteProduct: async (id: string, token: string) => {
-        return request(`/admin/products/${id}/hard`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
+    hardDeleteProduct: async (id: string) => {
+        return request(`/admin/products/${id}/hard`, { method: 'DELETE' });
     },
 
     // Image CRUD Operations
-    uploadImage: async (formData: FormData, token: string) => {
+    uploadImage: async (formData: FormData) => {
         return request('/admin/images', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
             body: formData,
         });
     },
 
-    getImages: async (token: string) => {
-        return request('/admin/images', {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
+    getImages: async () => {
+        return request('/admin/images', { method: 'GET' });
     },
 
-    updateImage: async (id: string, newFileName: string, token: string) => {
+    updateImage: async (id: string, newFileName: string) => {
         return request(`/admin/images/${id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: JSON_HEADERS,
             body: JSON.stringify({ file_name: newFileName }),
         });
     },
 
-    deleteImage: async (id: string, token: string) => {
-        return request(`/admin/images/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
+    deleteImage: async (id: string) => {
+        return request(`/admin/images/${id}`, { method: 'DELETE' });
     },
 
     // Blog CRUD Operations
@@ -194,48 +181,37 @@ export const api = {
     getBlogPostBySlug: (slug: string, signal?: AbortSignal): Promise<LocalizedBlogPost> => request(`/blog/${slug}`, { signal }),
 
     // Admin blog operations
-    getBlogPostsAdmin: async (token: string, page?: number, per_page?: number, signal?: AbortSignal): Promise<PaginatedResponse<BlogPost>> => {
+    getBlogPostsAdmin: async (page?: number, per_page?: number, signal?: AbortSignal): Promise<PaginatedResponse<BlogPost>> => {
         return request(`/admin/blog/admin${buildQuery({ page, per_page })}`, {
             method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` },
             signal,
         });
     },
 
-    getBlogPostByIdAdmin: async (id: string, token: string, signal?: AbortSignal): Promise<BlogPost> => {
+    getBlogPostByIdAdmin: async (id: string, signal?: AbortSignal): Promise<BlogPost> => {
         return request(`/admin/blog/${id}`, {
             method: 'GET',
-            headers: { 'Authorization': `Bearer ${token}` },
             signal,
         });
     },
 
-    createBlogPost: async (postData: NewBlogPost, token: string): Promise<BlogPost> => {
+    createBlogPost: async (postData: NewBlogPost): Promise<BlogPost> => {
         return request('/admin/blog', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: JSON_HEADERS,
             body: JSON.stringify(postData),
         });
     },
 
-    updateBlogPost: async (id: string, postData: UpdateBlogPost, token: string): Promise<BlogPost> => {
+    updateBlogPost: async (id: string, postData: UpdateBlogPost): Promise<BlogPost> => {
         return request(`/admin/blog/${id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: JSON_HEADERS,
             body: JSON.stringify(postData),
         });
     },
 
-    deleteBlogPost: async (id: string, token: string) => {
-        return request(`/admin/blog/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` },
-        });
+    deleteBlogPost: async (id: string) => {
+        return request(`/admin/blog/${id}`, { method: 'DELETE' });
     },
 };

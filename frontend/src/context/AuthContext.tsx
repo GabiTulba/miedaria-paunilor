@@ -1,100 +1,88 @@
-import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../lib/api';
+import type { MeResponse } from '../types/generated/MeResponse';
+
+export type AuthState = MeResponse;
 
 interface AuthContextType {
-    token: string | null;
-    setToken: (token: string | null) => void;
-    logout: () => void;
+    auth: AuthState | null;
+    loading: boolean;
+    setAuth: (auth: AuthState | null) => void;
+    logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
-    token: null,
-    setToken: () => {},
-    logout: () => {},
+    auth: null,
+    loading: true,
+    setAuth: () => {},
+    logout: async () => {},
 });
 
-function decodeJwtExp(value: string): number | null {
-    const parts = value.split('.');
-    if (parts.length !== 3 || parts.some(part => part.length === 0)) return null;
-    try {
-        const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-        const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
-        const json = JSON.parse(atob(padded));
-        return typeof json.exp === 'number' ? json.exp : null;
-    } catch {
-        return null;
-    }
-}
-
-function isTokenStillValid(value: string): boolean {
-    const exp = decodeJwtExp(value);
-    if (exp === null) return false;
-    return exp * 1000 > Date.now();
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [token, setTokenInternal] = useState<string | null>(() => {
-        const stored = localStorage.getItem('jwt_token');
-        if (!stored || !isTokenStillValid(stored)) {
-            if (stored) localStorage.removeItem('jwt_token');
-            return null;
-        }
-        return stored;
-    });
+    const [auth, setAuth] = useState<AuthState | null>(null);
+    const [loading, setLoading] = useState(true);
 
+    // Probe the session on mount. The httpOnly cookie isn't readable from JS,
+    // so /admin/me is the source of truth.
     useEffect(() => {
-        if (!token) return;
-        const exp = decodeJwtExp(token);
-        if (exp === null) return;
-        const msUntilExpiry = exp * 1000 - Date.now();
-        if (msUntilExpiry <= 0) {
-            localStorage.removeItem('jwt_token');
-            setTokenInternal(null);
-            return;
-        }
-        const timeoutId = window.setTimeout(() => {
-            localStorage.removeItem('jwt_token');
-            setTokenInternal(null);
-        }, msUntilExpiry);
-        return () => window.clearTimeout(timeoutId);
-    }, [token]);
-
-    const setToken = useCallback((newToken: string | null) => {
-        if (newToken) {
-            localStorage.setItem('jwt_token', newToken);
-        } else {
-            localStorage.removeItem('jwt_token');
-        }
-        setTokenInternal(newToken);
+        const controller = new AbortController();
+        let cancelled = false;
+        api.adminMe(controller.signal)
+            .then((me) => {
+                if (!cancelled) setAuth(me);
+            })
+            .catch(() => {
+                if (!cancelled) setAuth(null);
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+            controller.abort();
+        };
     }, []);
 
-    const logout = useCallback(() => {
-        setToken(null);
-    }, [setToken]);
+    // Server-driven auto-logout: clear local state when the cookie expires.
+    useEffect(() => {
+        if (!auth) return;
+        const msUntilExpiry = auth.exp * 1000 - Date.now();
+        if (msUntilExpiry <= 0) {
+            setAuth(null);
+            return;
+        }
+        const timeoutId = window.setTimeout(() => setAuth(null), msUntilExpiry);
+        return () => window.clearTimeout(timeoutId);
+    }, [auth]);
+
+    const logout = useCallback(async () => {
+        try {
+            await api.adminLogout();
+        } catch {
+            // Best-effort: the cookie is gone client-side either way.
+        }
+        setAuth(null);
+    }, []);
 
     return (
-        <AuthContext.Provider value={{ token, setToken, logout }}>
+        <AuthContext.Provider value={{ auth, loading, setAuth, logout }}>
             {children}
         </AuthContext.Provider>
     );
 }
 
-// AuthChecker component to handle redirection if token is missing
-import { useNavigate } from 'react-router-dom';
-import { useContext } from 'react';
-
 export function AuthChecker({ children }: { children: ReactNode }) {
-    const { token } = useContext(AuthContext);
+    const { auth, loading } = useContext(AuthContext);
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!token) {
-            navigate('/admin'); // Redirect to login page if no token
+        if (!loading && !auth) {
+            navigate('/admin');
         }
-    }, [token, navigate]);
+    }, [auth, loading, navigate]);
 
     return <>{children}</>;
 }
 
-export const useAuth = () => {
-    return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);

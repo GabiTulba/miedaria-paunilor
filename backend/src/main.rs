@@ -169,11 +169,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Method::DELETE,
             Method::OPTIONS,
         ])
-        .allow_headers([
-            header::CONTENT_TYPE,
-            header::AUTHORIZATION,
-            header::ACCEPT_LANGUAGE,
-        ])
+        .allow_headers([header::CONTENT_TYPE, header::ACCEPT_LANGUAGE])
         .expose_headers([header::VARY]);
 
     let admin_routes = Router::new()
@@ -207,6 +203,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(public_api_routes)
         .merge(routes::misc::unscoped_router())
         .route("/api/admin/login", post(auth::login))
+        .route("/api/admin/logout", post(auth::logout))
         .nest("/api/admin", admin_routes)
         .with_state(app_state)
         .layer(DefaultBodyLimit::max(256 * 1024)) // 256KB default; image upload route overrides to 50MB

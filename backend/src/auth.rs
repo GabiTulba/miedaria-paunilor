@@ -6,14 +6,20 @@ use crate::utils::{hash_password, verify_password};
 use axum::{
     Json,
     extract::{Request, State},
-    http::HeaderMap,
+    http::{HeaderMap, StatusCode},
     middleware::Next,
     response::Response,
 };
+use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 use std::sync::{Arc, OnceLock};
+
+/// Name of the httpOnly auth cookie. Scoped to /api/admin so it never leaks
+/// to public endpoints.
+pub const AUTH_COOKIE: &str = "admin_session";
+const AUTH_COOKIE_PATH: &str = "/api/admin";
 
 /// PHC-encoded Argon2 hash of an arbitrary string, computed lazily on first
 /// failed-username login. Used to equalize response time between "user does
@@ -43,7 +49,39 @@ pub struct LoginPayload {
 #[derive(Debug, Serialize, ts_rs::TS)]
 #[ts(export)]
 pub struct LoginResponse {
-    pub token: String,
+    pub username: String,
+    #[ts(type = "number")]
+    pub exp: i64,
+}
+
+#[derive(Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct MeResponse {
+    pub username: String,
+    #[ts(type = "number")]
+    pub exp: i64,
+}
+
+fn build_auth_cookie(token: String, max_age_hours: i64) -> Cookie<'static> {
+    Cookie::build((AUTH_COOKIE, token))
+        .path(AUTH_COOKIE_PATH)
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Strict)
+        .max_age(time::Duration::hours(max_age_hours))
+        .build()
+}
+
+fn clear_auth_cookie() -> Cookie<'static> {
+    // An empty value with Max-Age=0 tells the UA to drop the cookie. Path
+    // must match the one used at set-time for the removal to take effect.
+    Cookie::build((AUTH_COOKIE, ""))
+        .path(AUTH_COOKIE_PATH)
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Strict)
+        .max_age(time::Duration::ZERO)
+        .build()
 }
 
 /// SECURITY: Trusts `X-Real-IP` / `X-Forwarded-For` from any caller.
@@ -64,9 +102,10 @@ pub(crate) fn extract_client_ip(headers: &HeaderMap) -> IpAddr {
 
 pub async fn login(
     State(app_state): State<Arc<AppState>>,
+    jar: CookieJar,
     headers: HeaderMap,
     Json(payload): Json<LoginPayload>,
-) -> Result<Json<LoginResponse>, AppError> {
+) -> Result<(CookieJar, Json<LoginResponse>), AppError> {
     let client_ip = extract_client_ip(&headers);
     app_state
         .login_limiter
@@ -102,10 +141,11 @@ pub async fn login(
     let user = user_opt.expect("valid implies user exists");
 
     let now = chrono::Utc::now();
-    let exp = (now + chrono::Duration::hours(app_state.jwt_expiration_hours)).timestamp() as usize;
+    let exp_dt = now + chrono::Duration::hours(app_state.jwt_expiration_hours);
+    let exp = exp_dt.timestamp();
     let claims = Claims {
         sub: user.username.clone(),
-        exp,
+        exp: exp as usize,
     };
 
     let token = encode(
@@ -115,32 +155,31 @@ pub async fn login(
     )
     .map_err(|_| AppError::InternalServerError("Failed to encode JWT".to_string()))?;
 
-    Ok(Json(LoginResponse { token }))
+    let jar = jar.add(build_auth_cookie(token, app_state.jwt_expiration_hours));
+
+    Ok((
+        jar,
+        Json(LoginResponse {
+            username: user.username,
+            exp,
+        }),
+    ))
+}
+
+pub async fn logout(jar: CookieJar) -> (CookieJar, StatusCode) {
+    (jar.add(clear_auth_cookie()), StatusCode::NO_CONTENT)
 }
 
 pub async fn auth_middleware(
     State(app_state): State<Arc<AppState>>,
+    jar: CookieJar,
     mut req: Request,
     next: Next,
 ) -> Result<Response, AppError> {
-    let auth_header = req
-        .headers()
-        .get("Authorization")
-        .and_then(|header| header.to_str().ok());
-
-    let token = if let Some(header_value) = auth_header {
-        if header_value.starts_with("Bearer ") {
-            header_value[7..].to_string()
-        } else {
-            return Err(AppError::Unauthorized(
-                "Invalid authorization header format".to_string(),
-            ));
-        }
-    } else {
-        return Err(AppError::Unauthorized(
-            "Authorization header missing".to_string(),
-        ));
-    };
+    let token = jar
+        .get(AUTH_COOKIE)
+        .map(|c| c.value().to_string())
+        .ok_or_else(|| AppError::Unauthorized("Auth cookie missing".to_string()))?;
 
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = true;
