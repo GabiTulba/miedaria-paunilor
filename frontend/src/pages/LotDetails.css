@@ -64,8 +64,7 @@
     gap: 0.5rem;
 }
 
-.lot-info-label,
-.lot-detail-label {
+.lot-info-label {
     font-weight: 600;
 }
 
@@ -82,42 +81,46 @@
     white-space: pre-wrap;
 }
 
-.nutrition-table {
+.lot-table {
     width: 100%;
     max-width: 420px;
     border-collapse: collapse;
 }
 
-.nutrition-table th,
-.nutrition-table td {
+.lot-table th,
+.lot-table td {
     text-align: left;
     padding: 0.4rem 0.5rem;
     border-bottom: 1px solid var(--border-color);
 }
 
-.nutrition-table th:last-child,
-.nutrition-table td:last-child {
+.lot-table th:last-child,
+.lot-table td:last-child {
     text-align: right;
 }
 
-.nutrition-table thead th {
+.lot-table thead th {
     border-bottom-width: 2px;
 }
 
-.nutrition-indent {
+/* Qualified with .lot-table so the indent outweighs the `.lot-table td` padding rule */
+.lot-table td.nutrition-indent {
+    position: relative;
     padding-left: 1.5rem;
     font-weight: normal;
 }
 
-.lot-details-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 0.5rem 1.5rem;
-}
-
-.lot-detail-item {
-    display: flex;
-    gap: 0.5rem;
+/* └ connector pointing back to the parent row (fat / carbohydrates) */
+.lot-table td.nutrition-indent::before {
+    content: '';
+    position: absolute;
+    left: 0.6rem;
+    top: 0;
+    height: 50%;
+    width: 0.4rem;
+    border-left: 1.5px solid var(--color-text-light);
+    border-bottom: 1.5px solid var(--color-text-light);
+    border-bottom-left-radius: 2px;
 }
 
 .lot-shop-link {

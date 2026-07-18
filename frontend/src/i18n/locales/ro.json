@@ -212,7 +212,7 @@
     "tannins": "Taninuri",
     "body": "Corp",
     "abv": "Alcool",
-    "bottleSize": "Dimensiune Sticlă",
+    "bottleSize": "Volum",
     "bottleCount": "Număr Sticle",
     "bottlingDate": "Data de Îmbuteliere",
     "lotNumber": "Numărul Lotului",
@@ -351,15 +351,14 @@
       "abv": "Alcool",
       "abvHelp": "Concentrație de alcool (0.0 - 99.9)",
       "bottleCount": "Număr Sticle",
-      "bottleSize": "Dimensiune Sticlă",
+      "bottleSize": "Volum",
       "bottleSizeHelp": "Volum în mililitri",
       "bottlingDate": "Data de Îmbuteliere",
       "bottlingDateHelp": "Data când mierea a fost îmbuteliată",
       "lotNumber": "Număr Lot",
       "lotNumberHelp": "Numărul lotului de producție (număr întreg pozitiv, unic pentru toate produsele)",
       "nutrition": "Declarație Nutrițională (per 100 ml)",
-      "nutritionHelp": "Afișată pe pagina publică a lotului, accesată prin codul QR de pe eticheta sticlei",
-      "energyKj": "Energie (kJ)",
+      "nutritionHelp": "Afișată pe pagina publică a lotului, accesată prin codul QR de pe eticheta sticlei. Energia în kJ este calculată automat din kcal (1 kcal = 4,184 kJ).",
       "energyKcal": "Energie (kcal)",
       "fat": "Grăsimi (g)",
       "saturates": "din care Acizi Grași Saturați (g)",
@@ -384,7 +383,7 @@
         "emptyIngredients": "Ingredientele sunt obligatorii",
         "invalidAbv": "Alcoolul trebuie să fie între 0.0 și 99.9",
         "invalidBottleCount": "Numărul de sticle trebuie să fie nenegativ",
-        "invalidBottleSize": "Dimensiunea sticlei trebuie să fie pozitivă",
+        "invalidBottleSize": "Volumul trebuie să fie pozitiv",
         "invalidPrice": "Prețul trebuie să fie valid",
         "invalidBottlingDate": "Data de îmbuteliere trebuie să fie în format ZZ/LL/AAAA și validă"
       }
@@ -522,7 +521,7 @@
       "InvalidAbvPrecision": "ABV-ul poate avea cel mult o zecimală.",
       "InvalidBottleCount": "Numărul de sticle trebuie să fie un întreg nenegativ.",
       "BottleCountTooLarge": "Numărul de sticle este prea mare.",
-      "InvalidBottleSize": "Mărimea sticlei trebuie să fie un întreg pozitiv.",
+      "InvalidBottleSize": "Volumul trebuie să fie un întreg pozitiv.",
       "InvalidPrice": "Prețul EUR trebuie să fie între 0.00 și 999.99.",
       "InvalidPricePrecision": "Prețul EUR poate avea cel mult două zecimale.",
       "PriceBelowMinimum": "Prețul EUR este sub valoarea minimă permisă.",
@@ -594,11 +593,11 @@
     },
     "turbidity": {
       "crystalline": "Cristalin",
-      "hazy": "Tulbure",
-      "cloudy": "Opac"
+      "hazy": "Ușor Tulbure",
+      "cloudy": "Tulbure"
     },
     "effervescence": {
-      "flat": "Plat",
+      "flat": "Liniștit",
       "perlant": "Perlant",
       "sparkling": "Spumos"
     },

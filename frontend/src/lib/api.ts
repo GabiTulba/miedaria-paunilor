@@ -38,8 +38,17 @@ function buildQuery(params: Record<string, unknown> | undefined): string {
     return qs ? `?${qs}` : '';
 }
 
-function normalizeProductPayload(productData: ProductFormData | Product) {
-    return { ...productData, image_id: productData.image_id || null };
+// 1 kcal = 4.184 kJ (EU labelling conversion factor).
+const KCAL_TO_KJ = 4.184;
+
+function normalizeProductPayload(productData: ProductFormData | (Product & LotNutrition)) {
+    return {
+        ...productData,
+        image_id: productData.image_id || null,
+        // The form only asks for kcal; kJ is derived here, rounded to the one
+        // decimal the backend stores (DECIMAL(6,1)).
+        energy_kj: Math.round(productData.energy_kcal * KCAL_TO_KJ * 10) / 10,
+    };
 }
 
 async function request(endpoint: string, options: RequestInit = {}) {

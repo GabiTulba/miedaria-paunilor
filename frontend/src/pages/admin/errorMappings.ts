@@ -32,8 +32,10 @@ export const errorMapping: Record<ProductValidationError, keyof Product | keyof 
     InvalidBottlingDate: 'bottling_date',
     InvalidLotNumber: 'lot_number',
     LotNumberInUse: 'lot_number',
-    InvalidEnergyKj: 'energy_kj',
-    InvalidEnergyKjPrecision: 'energy_kj',
+    // kJ has no form input (it is derived from kcal in normalizeProductPayload),
+    // so kJ errors surface on the kcal field.
+    InvalidEnergyKj: 'energy_kcal',
+    InvalidEnergyKjPrecision: 'energy_kcal',
     InvalidEnergyKcal: 'energy_kcal',
     InvalidEnergyKcalPrecision: 'energy_kcal',
     InvalidFat: 'fat',

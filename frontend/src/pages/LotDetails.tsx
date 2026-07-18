@@ -140,7 +140,7 @@ function LotDetails() {
 
                     <section className="lot-section">
                         <h2>{t('lot.nutrition')}</h2>
-                        <table className="nutrition-table">
+                        <table className="lot-table">
                             <thead>
                                 <tr>
                                     <th scope="col">{t('lot.nutrition')}</th>
@@ -164,22 +164,24 @@ function LotDetails() {
 
                     <section className="lot-section">
                         <h2>{t('lot.productDetails')}</h2>
-                        <div className="lot-details-grid">
-                            {([
-                                ['productType', getEnumLabel(product.product_type, 'mead_type', t)],
-                                ['sweetness', getEnumLabel(product.sweetness, 'sweetness', t)],
-                                ['turbidity', getEnumLabel(product.turbidity, 'turbidity', t)],
-                                ['effervescence', getEnumLabel(product.effervescence, 'effervescence', t)],
-                                ['acidity', getEnumLabel(product.acidity, 'acidity', t)],
-                                ['tannins', getEnumLabel(product.tannins, 'tannins', t)],
-                                ['body', getEnumLabel(product.body, 'body', t)],
-                            ] as const).map(([key, label]) => (
-                                <div className="lot-detail-item" key={key}>
-                                    <span className="lot-detail-label">{t(`product.${key}`)}:</span>
-                                    <span className="lot-detail-value">{label}</span>
-                                </div>
-                            ))}
-                        </div>
+                        <table className="lot-table">
+                            <tbody>
+                                {([
+                                    ['productType', getEnumLabel(product.product_type, 'mead_type', t)],
+                                    ['sweetness', getEnumLabel(product.sweetness, 'sweetness', t)],
+                                    ['turbidity', getEnumLabel(product.turbidity, 'turbidity', t)],
+                                    ['effervescence', getEnumLabel(product.effervescence, 'effervescence', t)],
+                                    ['acidity', getEnumLabel(product.acidity, 'acidity', t)],
+                                    ['tannins', getEnumLabel(product.tannins, 'tannins', t)],
+                                    ['body', getEnumLabel(product.body, 'body', t)],
+                                ] as const).map(([key, label]) => (
+                                    <tr key={key}>
+                                        <td>{t(`product.${key}`)}</td>
+                                        <td>{label}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </section>
 
                     {lot.product_available ? (
