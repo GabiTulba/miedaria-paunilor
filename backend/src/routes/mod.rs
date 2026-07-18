@@ -1,5 +1,6 @@
 pub mod blog;
 pub mod image;
+pub mod lot;
 pub mod misc;
 pub mod product;
 

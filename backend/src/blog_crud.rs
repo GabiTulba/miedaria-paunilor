@@ -154,10 +154,7 @@ pub fn get_all_blog_posts_admin(
         .load::<BlogPost>(conn)
 }
 
-pub fn get_blog_post_by_slug(
-    conn: &mut PgConnection,
-    slug: &str,
-) -> Result<BlogPost, DieselError> {
+pub fn get_blog_post_by_slug(conn: &mut PgConnection, slug: &str) -> Result<BlogPost, DieselError> {
     blog_posts::table
         .filter(blog_posts::slug.eq(slug))
         .filter(blog_posts::is_published.eq(true))
@@ -285,10 +282,7 @@ pub fn update_blog_post(
     };
 
     diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
-        .set((
-            &update_post,
-            blog_posts::published_at.eq(new_published_at),
-        ))
+        .set((&update_post, blog_posts::published_at.eq(new_published_at)))
         .get_result(conn)
         .map_err(map_slug_conflict)
 }

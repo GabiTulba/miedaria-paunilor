@@ -1,5 +1,6 @@
 // Form-only shapes used by admin form pages.
 import type { Product } from './models';
+import type { LotNutrition } from './generated/LotNutrition';
 import type { AcidityType } from './generated/AcidityType';
 import type { BodyType } from './generated/BodyType';
 import type { EffervescenceType } from './generated/EffervescenceType';
@@ -24,7 +25,7 @@ export type ProductFormData = Omit<
     acidity: AcidityType | '';
     tannins: TanninsType | '';
     body: BodyType | '';
-};
+} & LotNutrition;
 
 export type { NewBlogPost } from './generated/NewBlogPost';
 export type { UpdateBlogPost } from './generated/UpdateBlogPost';

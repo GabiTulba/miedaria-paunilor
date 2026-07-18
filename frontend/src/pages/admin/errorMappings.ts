@@ -1,12 +1,13 @@
 import type { TFunction } from 'i18next';
 import type { BlogPost, Product } from '../../types';
+import type { LotNutrition } from '../../types/generated/LotNutrition';
 import type { BlogValidationError } from '../../types/generated/BlogValidationError';
 import type { ProductValidationError } from '../../types/generated/ProductValidationError';
 
 // Backend ProductValidationError variant -> form field name. Exhaustive: TS will
 // fail to compile if a new variant is added on the backend without a mapping
 // entry here.
-export const errorMapping: Record<ProductValidationError, keyof Product> = {
+export const errorMapping: Record<ProductValidationError, keyof Product | keyof LotNutrition> = {
     InvalidProductId: 'product_id',
     ProductIdTooLong: 'product_id',
     EmptyProductName: 'product_name',
@@ -30,6 +31,25 @@ export const errorMapping: Record<ProductValidationError, keyof Product> = {
     PriceRonBelowMinimum: 'price_ron',
     InvalidBottlingDate: 'bottling_date',
     InvalidLotNumber: 'lot_number',
+    LotNumberInUse: 'lot_number',
+    InvalidEnergyKj: 'energy_kj',
+    InvalidEnergyKjPrecision: 'energy_kj',
+    InvalidEnergyKcal: 'energy_kcal',
+    InvalidEnergyKcalPrecision: 'energy_kcal',
+    InvalidFat: 'fat',
+    InvalidFatPrecision: 'fat',
+    InvalidSaturates: 'saturates',
+    InvalidSaturatesPrecision: 'saturates',
+    InvalidCarbohydrates: 'carbohydrates',
+    InvalidCarbohydratesPrecision: 'carbohydrates',
+    InvalidSugars: 'sugars',
+    InvalidSugarsPrecision: 'sugars',
+    InvalidProtein: 'protein',
+    InvalidProteinPrecision: 'protein',
+    InvalidSalt: 'salt',
+    InvalidSaltPrecision: 'salt',
+    SaturatesExceedFat: 'saturates',
+    SugarsExceedCarbohydrates: 'sugars',
 };
 
 export const blogErrorMapping: Record<BlogValidationError, keyof BlogPost> = {

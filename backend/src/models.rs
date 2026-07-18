@@ -1,9 +1,9 @@
-use serde::Serialize;
 use crate::enums::*;
 use crate::schema::*;
 use chrono;
 use diesel::prelude::*;
 use rust_decimal::Decimal;
+use serde::Serialize;
 use ts_rs::TS;
 
 use uuid;
@@ -140,6 +140,98 @@ pub struct NewProduct {
     pub lot_number: i32,
 }
 
+/// EU nutrition declaration for one bottling batch, per 100 ml. Embedded in
+/// the `lots` table and flattened into the admin product payloads so the form
+/// submits one flat JSON object.
+#[derive(
+    Queryable,
+    Selectable,
+    Insertable,
+    AsChangeset,
+    serde::Serialize,
+    serde::Deserialize,
+    Debug,
+    Clone,
+    TS,
+)]
+#[diesel(table_name = lots)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
+pub struct LotNutrition {
+    #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
+    pub energy_kj: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
+    pub energy_kcal: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
+    pub fat: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
+    pub saturates: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
+    pub carbohydrates: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
+    pub sugars: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
+    pub protein: Decimal,
+    #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
+    pub salt: Decimal,
+}
+
+/// Batch snapshot row from `lots`. `bottling_date` and `abv` are frozen at
+/// bottling time so old QR codes keep showing the batch they were printed
+/// for; server-managed timestamps are not loaded.
+#[derive(Queryable, Selectable, Debug)]
+#[diesel(table_name = lots)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Lot {
+    pub lot_number: i32,
+    pub product_id: String,
+    pub bottling_date: chrono::NaiveDate,
+    pub abv: Decimal,
+    #[diesel(embed)]
+    pub nutrition: LotNutrition,
+}
+
+/// Insert/update payload for the lot upsert performed on product save.
+#[derive(Insertable, AsChangeset, Debug)]
+#[diesel(table_name = lots)]
+pub struct LotUpsert<'a> {
+    pub lot_number: i32,
+    pub product_id: &'a str,
+    pub bottling_date: chrono::NaiveDate,
+    pub abv: Decimal,
+    #[diesel(embed)]
+    pub nutrition: LotNutrition,
+}
+
+/// Admin create-product payload: product fields plus the batch's nutrition
+/// declaration, flattened into a single JSON object.
+#[derive(serde::Deserialize, TS)]
+#[ts(export)]
+pub struct CreateProductRequest {
+    #[serde(flatten)]
+    pub product: NewProduct,
+    #[serde(flatten)]
+    pub nutrition: LotNutrition,
+}
+
+/// Admin update-product payload, mirroring `CreateProductRequest`.
+#[derive(serde::Deserialize, TS)]
+#[ts(export)]
+pub struct UpdateProductRequest {
+    #[serde(flatten)]
+    pub product: Product,
+    #[serde(flatten)]
+    pub nutrition: LotNutrition,
+}
+
 #[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug, TS)]
 #[diesel(table_name = crate::schema::blog_posts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -177,17 +269,78 @@ pub struct NewBlogPost {
     pub published_at: Option<chrono::NaiveDateTime>,
 }
 
+// serde(flatten) buffers the JSON before handing fields to the two inner
+// structs; this test pins that the buffered path still routes numbers through
+// `rust_decimal::serde::float` correctly.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_product_request_flattens_product_and_nutrition() {
+        let json = serde_json::json!({
+            "product_id": "test-mead",
+            "product_name": "Test Mead",
+            "product_name_ro": "Mied de test",
+            "product_description": "desc",
+            "product_description_ro": "descriere",
+            "ingredients": "honey, water",
+            "ingredients_ro": "miere, apă",
+            "product_type": "hidromel",
+            "sweetness": "semi-sweet",
+            "turbidity": "crystalline",
+            "effervescence": "flat",
+            "acidity": "mild",
+            "tannins": "mild",
+            "body": "medium",
+            "abv": 12.5,
+            "bottle_count": 10,
+            "bottle_size": 500,
+            "price": 15.0,
+            "price_ron": 75.0,
+            "image_id": null,
+            "bottling_date": "2026-01-10",
+            "lot_number": 42,
+            "energy_kj": 280.5,
+            "energy_kcal": 67.0,
+            "fat": 0.0,
+            "saturates": 0.0,
+            "carbohydrates": 8.25,
+            "sugars": 6.5,
+            "protein": 0.3,
+            "salt": 0.01
+        });
+
+        let req: CreateProductRequest = serde_json::from_value(json).unwrap();
+        assert_eq!(req.product.product_id, "test-mead");
+        assert_eq!(req.product.lot_number, 42);
+        assert_eq!(req.product.abv, Decimal::new(125, 1));
+        assert_eq!(req.nutrition.energy_kj, Decimal::new(2805, 1));
+        assert_eq!(req.nutrition.carbohydrates, Decimal::new(825, 2));
+        assert_eq!(req.nutrition.salt, Decimal::new(1, 2));
+    }
+}
+
 #[derive(serde::Deserialize, AsChangeset, Debug, TS)]
 #[diesel(table_name = blog_posts)]
 #[ts(export)]
 pub struct UpdateBlogPost {
-    #[ts(optional)] pub title: Option<String>,
-    #[ts(optional)] pub title_ro: Option<String>,
-    #[ts(optional)] pub slug: Option<String>,
-    #[ts(optional)] pub content_markdown: Option<String>,
-    #[ts(optional)] pub content_markdown_ro: Option<String>,
-    #[ts(optional)] pub excerpt: Option<String>,
-    #[ts(optional)] pub excerpt_ro: Option<String>,
-    #[ts(optional)] pub author: Option<String>,
-    #[ts(optional)] pub is_published: Option<bool>,
+    #[ts(optional)]
+    pub title: Option<String>,
+    #[ts(optional)]
+    pub title_ro: Option<String>,
+    #[ts(optional)]
+    pub slug: Option<String>,
+    #[ts(optional)]
+    pub content_markdown: Option<String>,
+    #[ts(optional)]
+    pub content_markdown_ro: Option<String>,
+    #[ts(optional)]
+    pub excerpt: Option<String>,
+    #[ts(optional)]
+    pub excerpt_ro: Option<String>,
+    #[ts(optional)]
+    pub author: Option<String>,
+    #[ts(optional)]
+    pub is_published: Option<bool>,
 }

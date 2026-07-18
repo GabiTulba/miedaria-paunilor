@@ -7,6 +7,7 @@ pub mod error;
 pub mod image_crud;
 pub mod language;
 pub mod localized;
+pub mod lot_crud;
 pub mod models;
 pub mod pagination;
 pub mod product_crud;
@@ -29,27 +30,27 @@ use std::sync::Arc;
 pub type IpRateLimiter = RateLimiter<IpAddr, DefaultKeyedStateStore<IpAddr>, DefaultClock>;
 
 pub fn build_login_limiter() -> Arc<IpRateLimiter> {
-    Arc::new(RateLimiter::keyed(
-        Quota::per_minute(NonZeroU32::new(10).unwrap()),
-    ))
+    Arc::new(RateLimiter::keyed(Quota::per_minute(
+        NonZeroU32::new(10).unwrap(),
+    )))
 }
 
 pub fn build_image_serve_limiter() -> Arc<IpRateLimiter> {
-    Arc::new(RateLimiter::keyed(
-        Quota::per_second(NonZeroU32::new(30).unwrap()),
-    ))
+    Arc::new(RateLimiter::keyed(Quota::per_second(
+        NonZeroU32::new(30).unwrap(),
+    )))
 }
 
 pub fn build_admin_limiter() -> Arc<IpRateLimiter> {
-    Arc::new(RateLimiter::keyed(
-        Quota::per_minute(NonZeroU32::new(60).unwrap()),
-    ))
+    Arc::new(RateLimiter::keyed(Quota::per_minute(
+        NonZeroU32::new(60).unwrap(),
+    )))
 }
 
 pub fn build_public_api_limiter() -> Arc<IpRateLimiter> {
-    Arc::new(RateLimiter::keyed(
-        Quota::per_second(NonZeroU32::new(30).unwrap()),
-    ))
+    Arc::new(RateLimiter::keyed(Quota::per_second(
+        NonZeroU32::new(30).unwrap(),
+    )))
 }
 
 pub struct AppState {

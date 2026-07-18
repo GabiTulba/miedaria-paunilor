@@ -43,7 +43,13 @@ async fn update_image_meta_handler(
     Json(updated_image): Json<models::UpdateImage>,
 ) -> Result<Json<models::Image>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    image_crud::update_image(&mut conn, image_id, updated_image, &app_state.image_upload_dir).await
+    image_crud::update_image(
+        &mut conn,
+        image_id,
+        updated_image,
+        &app_state.image_upload_dir,
+    )
+    .await
 }
 
 async fn delete_image_wrapper(

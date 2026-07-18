@@ -1,6 +1,7 @@
 use crate::enums::*;
 use crate::language::Language;
-use crate::models::{BlogPost, Image, Product};
+use crate::lot_crud::LotPageRow;
+use crate::models::{BlogPost, Image, LotNutrition, Product};
 use crate::product_crud::ProductWithImage;
 use rust_decimal::Decimal;
 use serde::Serialize;
@@ -90,6 +91,38 @@ impl LocalizedProduct {
             image_id: product.image_id,
             bottling_date: product.bottling_date,
             lot_number: product.lot_number,
+        }
+    }
+}
+
+/// Public QR lot page payload: the frozen batch snapshot plus the localized
+/// live product data. `product_available` is false for soft-deleted (retired)
+/// products so the page can hide shop links while still rendering label data.
+#[derive(Serialize, Debug, TS)]
+#[ts(export)]
+pub struct LocalizedLot {
+    pub lot_number: i32,
+    pub bottling_date: chrono::NaiveDate,
+    #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
+    pub abv: Decimal,
+    pub nutrition: LotNutrition,
+    pub product: LocalizedProduct,
+    pub image: Option<Image>,
+    pub product_available: bool,
+}
+
+impl LocalizedLot {
+    pub fn from_lot_page(row: LotPageRow, lang: Language) -> Self {
+        let product_available = row.product.deleted_at.is_none();
+        LocalizedLot {
+            lot_number: row.lot.lot_number,
+            bottling_date: row.lot.bottling_date,
+            abv: row.lot.abv,
+            nutrition: row.lot.nutrition,
+            product: LocalizedProduct::from_product(row.product, lang),
+            image: row.image,
+            product_available,
         }
     }
 }

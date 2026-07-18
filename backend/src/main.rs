@@ -1,10 +1,6 @@
 use std::{env, net::SocketAddr, sync::Arc};
 
-use axum::{
-    Router,
-    extract::DefaultBodyLimit,
-    routing::post,
-};
+use axum::{Router, extract::DefaultBodyLimit, routing::post};
 use dotenvy::dotenv;
 
 use backend::routes;
@@ -88,7 +84,8 @@ impl Config {
 
         const JWT_EXP_MIN_HOURS: i64 = 1;
         const JWT_EXP_MAX_HOURS: i64 = 24;
-        let jwt_expiration_hours = parsed_jwt_expiration_hours.clamp(JWT_EXP_MIN_HOURS, JWT_EXP_MAX_HOURS);
+        let jwt_expiration_hours =
+            parsed_jwt_expiration_hours.clamp(JWT_EXP_MIN_HOURS, JWT_EXP_MAX_HOURS);
         if jwt_expiration_hours != parsed_jwt_expiration_hours {
             tracing::warn!(
                 requested = parsed_jwt_expiration_hours,
@@ -125,9 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .json()
             .init();
     } else {
-        tracing_subscriber::fmt()
-            .with_env_filter(env_filter)
-            .init();
+        tracing_subscriber::fmt().with_env_filter(env_filter).init();
     }
 
     let config = Config::from_env().unwrap_or_else(|e| {
@@ -193,6 +188,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let public_api_routes = Router::new()
         .merge(routes::product::public_router())
         .merge(routes::blog::public_router())
+        .merge(routes::lot::public_router())
         .route_layer(axum::middleware::from_fn_with_state(
             app_state.clone(),
             auth::public_api_rate_limit,

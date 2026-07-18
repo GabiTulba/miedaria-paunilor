@@ -102,9 +102,7 @@ struct ParsedUpload {
 /// `Ok(Some(_))` for a valid file, `Ok(None)` if the request had no file
 /// field, or `Err(AppError)` for anything between (oversize, decode failure,
 /// transport error).
-async fn parse_uploaded_image(
-    mut multipart: Multipart,
-) -> Result<Option<ParsedUpload>, AppError> {
+async fn parse_uploaded_image(mut multipart: Multipart) -> Result<Option<ParsedUpload>, AppError> {
     while let Some(field) = multipart.next_field().await.map_err(|e| {
         tracing::error!("Error reading multipart field: {:?}", e);
         AppError::BadRequest("Invalid multipart request".to_string())
@@ -181,9 +179,9 @@ pub async fn upload_image(
         ));
     }
 
-    let parsed = parse_uploaded_image(multipart).await?.ok_or_else(|| {
-        AppError::BadRequest("No file found in multipart upload".to_string())
-    })?;
+    let parsed = parse_uploaded_image(multipart)
+        .await?
+        .ok_or_else(|| AppError::BadRequest("No file found in multipart upload".to_string()))?;
 
     let file_size = parsed.data.len() as i64;
     let storage_path =
@@ -200,9 +198,7 @@ pub async fn upload_image(
         .get_result(conn)
         .map_err(|e| {
             tracing::error!("Error inserting image into DB: {:?}", e);
-            AppError::InternalServerError(
-                "Failed to save image metadata to database".to_string(),
-            )
+            AppError::InternalServerError("Failed to save image metadata to database".to_string())
         })?;
 
     Ok(Json(inserted_image))
@@ -279,7 +275,9 @@ pub async fn update_image(
                 if let Err(e) = tokio::fs::rename(old_storage_path, &new_storage_path).await {
                     tracing::error!(
                         "Error renaming file from {} to {}: {:?}",
-                        old_storage_path, new_storage_path, e
+                        old_storage_path,
+                        new_storage_path,
+                        e
                     );
                     return Err(AppError::InternalServerError(
                         "Failed to rename image file".to_string(),
@@ -313,7 +311,8 @@ pub async fn delete_image(
         .map_err(|e| {
             tracing::error!(
                 "Error checking product references for image {}: {:?}",
-                image_id, e
+                image_id,
+                e
             );
             AppError::InternalServerError(
                 "Failed to check product references for image".to_string(),
@@ -352,7 +351,8 @@ pub async fn delete_image(
         } else {
             tracing::error!(
                 "Error deleting file {}: {:?}",
-                image_to_delete.storage_path, e
+                image_to_delete.storage_path,
+                e
             );
             return Err(AppError::InternalServerError(
                 "Failed to delete image file from filesystem".to_string(),
@@ -452,10 +452,7 @@ pub async fn serve_image(
 
     Ok((
         axum::http::HeaderMap::from_iter(vec![
-            (
-                axum::http::header::CONTENT_TYPE,
-                mime_type.parse().unwrap(),
-            ),
+            (axum::http::header::CONTENT_TYPE, mime_type.parse().unwrap()),
             (
                 axum::http::header::CACHE_CONTROL,
                 "public, max-age=31536000, immutable".parse().unwrap(),

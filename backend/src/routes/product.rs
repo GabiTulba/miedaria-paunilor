@@ -25,19 +25,32 @@ use super::{VaryLang, vary_accept_language};
 #[derive(Debug, serde::Deserialize, ts_rs::TS)]
 #[ts(export)]
 pub struct GetProductsQuery {
-    #[ts(optional)] order_by: Option<String>,
-    #[ts(optional)] order_direction: Option<String>,
-    #[ts(optional)] search: Option<String>,
-    #[ts(optional)] in_stock: Option<bool>,
-    #[ts(optional)] product_type: Option<MeadType>,
-    #[ts(optional)] sweetness: Option<SweetnessType>,
-    #[ts(optional)] turbidity: Option<TurbidityType>,
-    #[ts(optional)] effervescence: Option<EffervescenceType>,
-    #[ts(optional)] acidity: Option<AcidityType>,
-    #[ts(optional)] tannins: Option<TanninsType>,
-    #[ts(optional)] body: Option<BodyType>,
-    #[ts(optional)] page: Option<u32>,
-    #[ts(optional)] per_page: Option<u32>,
+    #[ts(optional)]
+    order_by: Option<String>,
+    #[ts(optional)]
+    order_direction: Option<String>,
+    #[ts(optional)]
+    search: Option<String>,
+    #[ts(optional)]
+    in_stock: Option<bool>,
+    #[ts(optional)]
+    product_type: Option<MeadType>,
+    #[ts(optional)]
+    sweetness: Option<SweetnessType>,
+    #[ts(optional)]
+    turbidity: Option<TurbidityType>,
+    #[ts(optional)]
+    effervescence: Option<EffervescenceType>,
+    #[ts(optional)]
+    acidity: Option<AcidityType>,
+    #[ts(optional)]
+    tannins: Option<TanninsType>,
+    #[ts(optional)]
+    body: Option<BodyType>,
+    #[ts(optional)]
+    page: Option<u32>,
+    #[ts(optional)]
+    per_page: Option<u32>,
 }
 
 impl GetProductsQuery {
@@ -64,19 +77,32 @@ impl GetProductsQuery {
 #[derive(Debug, serde::Deserialize, ts_rs::TS)]
 #[ts(export)]
 pub struct GetAdminProductsQuery {
-    #[ts(optional)] include_deleted: Option<IncludeDeleted>,
-    #[ts(optional)] order_by: Option<String>,
-    #[ts(optional)] order_direction: Option<String>,
-    #[ts(optional)] in_stock: Option<bool>,
-    #[ts(optional)] product_type: Option<MeadType>,
-    #[ts(optional)] sweetness: Option<SweetnessType>,
-    #[ts(optional)] turbidity: Option<TurbidityType>,
-    #[ts(optional)] effervescence: Option<EffervescenceType>,
-    #[ts(optional)] acidity: Option<AcidityType>,
-    #[ts(optional)] tannins: Option<TanninsType>,
-    #[ts(optional)] body: Option<BodyType>,
-    #[ts(optional)] page: Option<u32>,
-    #[ts(optional)] per_page: Option<u32>,
+    #[ts(optional)]
+    include_deleted: Option<IncludeDeleted>,
+    #[ts(optional)]
+    order_by: Option<String>,
+    #[ts(optional)]
+    order_direction: Option<String>,
+    #[ts(optional)]
+    in_stock: Option<bool>,
+    #[ts(optional)]
+    product_type: Option<MeadType>,
+    #[ts(optional)]
+    sweetness: Option<SweetnessType>,
+    #[ts(optional)]
+    turbidity: Option<TurbidityType>,
+    #[ts(optional)]
+    effervescence: Option<EffervescenceType>,
+    #[ts(optional)]
+    acidity: Option<AcidityType>,
+    #[ts(optional)]
+    tannins: Option<TanninsType>,
+    #[ts(optional)]
+    body: Option<BodyType>,
+    #[ts(optional)]
+    page: Option<u32>,
+    #[ts(optional)]
+    per_page: Option<u32>,
 }
 
 impl GetAdminProductsQuery {
@@ -183,14 +209,14 @@ async fn list_products_admin(
 async fn get_product_by_id_admin(
     State(app_state): State<Arc<AppState>>,
     Path(product_id): Path<String>,
-) -> Result<Json<ProductWithImage>, AppError> {
+) -> Result<Json<product_crud::AdminProductDetail>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
-    let product = product_crud::get_product_admin(&mut conn, &product_id)?.ok_or(
+    let detail = product_crud::get_product_admin_detail(&mut conn, &product_id)?.ok_or(
         AppError::NotFound(format!("Product with id {} not found", product_id)),
     )?;
 
-    Ok(Json(product))
+    Ok(Json(detail))
 }
 
 async fn restore_product_handler(
@@ -213,11 +239,11 @@ async fn hard_delete_product_handler(
 
 async fn create_product(
     State(app_state): State<Arc<AppState>>,
-    Json(new_product): Json<models::NewProduct>,
+    Json(request): Json<models::CreateProductRequest>,
 ) -> Result<Json<models::Product>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
-    let product = product_crud::create_product(&mut conn, &new_product)?;
+    let product = product_crud::create_product(&mut conn, &request)?;
 
     Ok(Json(product))
 }
@@ -225,13 +251,13 @@ async fn create_product(
 async fn update_product(
     State(app_state): State<Arc<AppState>>,
     Path(product_id): Path<String>,
-    Json(mut product): Json<models::Product>,
+    Json(mut request): Json<models::UpdateProductRequest>,
 ) -> Result<Json<models::Product>, AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
-    product.product_id = product_id;
+    request.product.product_id = product_id;
 
-    let updated_product = product_crud::update_product(&mut conn, &product)?;
+    let updated_product = product_crud::update_product(&mut conn, &request)?;
 
     Ok(Json(updated_product))
 }
@@ -275,7 +301,10 @@ pub fn admin_router() -> Router<Arc<AppState>> {
                 .put(update_product)
                 .delete(delete_product),
         )
-        .route("/products/{product_id}/restore", post(restore_product_handler))
+        .route(
+            "/products/{product_id}/restore",
+            post(restore_product_handler),
+        )
         .route(
             "/products/{product_id}/hard",
             delete(hard_delete_product_handler),

@@ -1,0 +1,132 @@
+/* frontend/src/pages/LotDetails.css */
+.lot-details-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+    animation: fadeIn var(--duration-slower) ease-in-out;
+}
+
+.lot-details-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+
+@media (min-width: 992px) {
+    .lot-details-content {
+        grid-template-columns: 420px 1fr;
+        align-items: start;
+    }
+}
+
+.lot-image-wrapper {
+    position: relative;
+}
+
+.lot-product-image {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    transition: opacity var(--duration-normal) ease-in-out;
+}
+
+.lot-image-wrapper.is-loaded .lot-product-image {
+    opacity: 1;
+}
+
+.lot-product-image-skeleton {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+}
+
+.lot-info-section h1 {
+    margin-bottom: 0.25rem;
+}
+
+.lot-subtitle {
+    color: var(--color-text-light);
+    margin-bottom: 1.5rem;
+}
+
+.lot-basic-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.lot-info-item {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.lot-info-label,
+.lot-detail-label {
+    font-weight: 600;
+}
+
+.lot-section {
+    margin-bottom: 1.75rem;
+}
+
+.lot-section h2 {
+    font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+}
+
+.lot-ingredients {
+    white-space: pre-wrap;
+}
+
+.nutrition-table {
+    width: 100%;
+    max-width: 420px;
+    border-collapse: collapse;
+}
+
+.nutrition-table th,
+.nutrition-table td {
+    text-align: left;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.nutrition-table th:last-child,
+.nutrition-table td:last-child {
+    text-align: right;
+}
+
+.nutrition-table thead th {
+    border-bottom-width: 2px;
+}
+
+.nutrition-indent {
+    padding-left: 1.5rem;
+    font-weight: normal;
+}
+
+.lot-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.5rem 1.5rem;
+}
+
+.lot-detail-item {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.lot-shop-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+.lot-unavailable-note {
+    color: var(--color-text-light);
+    font-style: italic;
+    margin-top: 0.5rem;
+}

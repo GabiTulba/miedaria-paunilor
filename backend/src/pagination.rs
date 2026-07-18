@@ -4,8 +4,10 @@ use ts_rs::TS;
 #[derive(Debug, Deserialize, TS)]
 #[ts(export)]
 pub struct PageQuery {
-    #[ts(optional)] pub page: Option<u32>,
-    #[ts(optional)] pub per_page: Option<u32>,
+    #[ts(optional)]
+    pub page: Option<u32>,
+    #[ts(optional)]
+    pub per_page: Option<u32>,
 }
 
 pub struct Page {

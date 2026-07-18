@@ -1,7 +1,10 @@
 use crate::AppError;
 use crate::enums::*;
 use crate::error::RepositoryError;
-use crate::models::{Image, NewProduct, Product};
+use crate::lot_crud;
+use crate::models::{
+    CreateProductRequest, Image, LotNutrition, NewProduct, Product, UpdateProductRequest,
+};
 use crate::schema::*;
 use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
@@ -62,6 +65,25 @@ pub enum ProductValidationError {
     InvalidPriceRonPrecision,
     InvalidBottlingDate,
     InvalidLotNumber,
+    LotNumberInUse,
+    InvalidEnergyKj,
+    InvalidEnergyKjPrecision,
+    InvalidEnergyKcal,
+    InvalidEnergyKcalPrecision,
+    InvalidFat,
+    InvalidFatPrecision,
+    InvalidSaturates,
+    InvalidSaturatesPrecision,
+    InvalidCarbohydrates,
+    InvalidCarbohydratesPrecision,
+    InvalidSugars,
+    InvalidSugarsPrecision,
+    InvalidProtein,
+    InvalidProteinPrecision,
+    InvalidSalt,
+    InvalidSaltPrecision,
+    SaturatesExceedFat,
+    SugarsExceedCarbohydrates,
 }
 
 struct ProductValidationInput<'a> {
@@ -225,6 +247,60 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
     errors
 }
 
+/// EU nutrition declaration bounds. Energy columns are DECIMAL(6,1); the
+/// per-100ml gram columns are DECIMAL(5,2) and cannot physically exceed 100 g.
+fn validate_nutrition(n: &LotNutrition) -> Vec<ProductValidationError> {
+    use ProductValidationError::*;
+
+    let energy_max = Decimal::new(999_999, 1); // 99999.9
+    let grams_max = Decimal::new(10_000, 2); // 100.00
+
+    let mut errors = Vec::new();
+
+    let energy_fields = [
+        (n.energy_kj, InvalidEnergyKj, InvalidEnergyKjPrecision),
+        (n.energy_kcal, InvalidEnergyKcal, InvalidEnergyKcalPrecision),
+    ];
+    for (value, range_error, precision_error) in energy_fields {
+        if value < Decimal::ZERO || value > energy_max {
+            errors.push(range_error);
+        }
+        if value.scale() > 1 {
+            errors.push(precision_error);
+        }
+    }
+
+    let gram_fields = [
+        (n.fat, InvalidFat, InvalidFatPrecision),
+        (n.saturates, InvalidSaturates, InvalidSaturatesPrecision),
+        (
+            n.carbohydrates,
+            InvalidCarbohydrates,
+            InvalidCarbohydratesPrecision,
+        ),
+        (n.sugars, InvalidSugars, InvalidSugarsPrecision),
+        (n.protein, InvalidProtein, InvalidProteinPrecision),
+        (n.salt, InvalidSalt, InvalidSaltPrecision),
+    ];
+    for (value, range_error, precision_error) in gram_fields {
+        if value < Decimal::ZERO || value > grams_max {
+            errors.push(range_error);
+        }
+        if value.scale() > 2 {
+            errors.push(precision_error);
+        }
+    }
+
+    if n.saturates > n.fat {
+        errors.push(SaturatesExceedFat);
+    }
+    if n.sugars > n.carbohydrates {
+        errors.push(SugarsExceedCarbohydrates);
+    }
+
+    errors
+}
+
 /// Map a Diesel error to a `RepositoryError`, surfacing UniqueViolation on a
 /// matching constraint as a typed `Conflict` (with the supplied message) and
 /// passing everything else through to `Database`.
@@ -252,26 +328,44 @@ pub struct ProductWithImage {
     pub image: Option<Image>,
 }
 
+/// Admin edit-form payload: full bilingual product plus the nutrition
+/// declaration of its current lot (`None` for legacy products saved before
+/// lots existed).
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
+pub struct AdminProductDetail {
+    pub product: Product,
+    pub image: Option<Image>,
+    pub nutrition: Option<LotNutrition>,
+}
+
 pub fn create_product(
     conn: &mut PgConnection,
-    new_product: &NewProduct,
+    request: &CreateProductRequest,
 ) -> Result<Product, RepositoryError> {
-    let validation_errors = validate_product(&ProductValidationInput::from(new_product));
+    let mut validation_errors = validate_product(&ProductValidationInput::from(&request.product));
+    validation_errors.extend(validate_nutrition(&request.nutrition));
     if !validation_errors.is_empty() {
         return Err(RepositoryError::ProductValidation(validation_errors));
     }
 
-    diesel::insert_into(products::table)
-        .values(new_product)
-        .returning(Product::as_returning())
-        .get_result(conn)
-        .map_err(|e| {
-            map_unique_violation(
-                e,
-                |c| c == "products_pkey",
-                "Product with this ID already exists.",
-            )
-        })
+    conn.transaction(|conn| {
+        let product: Product = diesel::insert_into(products::table)
+            .values(&request.product)
+            .returning(Product::as_returning())
+            .get_result(conn)
+            .map_err(|e| {
+                map_unique_violation(
+                    e,
+                    |c| c == "products_pkey",
+                    "Product with this ID already exists.",
+                )
+            })?;
+
+        lot_crud::upsert_lot(conn, &product, &request.nutrition)?;
+
+        Ok(product)
+    })
 }
 
 pub fn get_product(conn: &mut PgConnection, id: &str) -> QueryResult<Option<ProductWithImage>> {
@@ -287,7 +381,10 @@ pub fn get_product(conn: &mut PgConnection, id: &str) -> QueryResult<Option<Prod
         .optional()
 }
 
-pub fn get_product_admin(conn: &mut PgConnection, id: &str) -> QueryResult<Option<ProductWithImage>> {
+pub fn get_product_admin(
+    conn: &mut PgConnection,
+    id: &str,
+) -> QueryResult<Option<ProductWithImage>> {
     use crate::schema::images::dsl::images;
     use crate::schema::products::dsl::*;
 
@@ -301,22 +398,45 @@ pub fn get_product_admin(conn: &mut PgConnection, id: &str) -> QueryResult<Optio
 
 pub fn update_product(
     conn: &mut PgConnection,
-    product: &Product,
+    request: &UpdateProductRequest,
 ) -> Result<Product, RepositoryError> {
-    let validation_errors = validate_product(&ProductValidationInput::from(product));
+    let product = &request.product;
+    let mut validation_errors = validate_product(&ProductValidationInput::from(product));
+    validation_errors.extend(validate_nutrition(&request.nutrition));
     if !validation_errors.is_empty() {
         return Err(RepositoryError::ProductValidation(validation_errors));
     }
 
-    diesel::update(products::table)
-        .filter(products::product_id.eq(&product.product_id))
-        .set(product)
-        .returning(Product::as_returning())
-        .get_result(conn)
-        .map_err(|e| match e {
-            DieselError::NotFound => RepositoryError::NotFound("Product not found".to_string()),
-            other => RepositoryError::Database(other),
-        })
+    conn.transaction(|conn| {
+        let updated: Product = diesel::update(products::table)
+            .filter(products::product_id.eq(&product.product_id))
+            .set(product)
+            .returning(Product::as_returning())
+            .get_result(conn)
+            .map_err(|e| match e {
+                DieselError::NotFound => RepositoryError::NotFound("Product not found".to_string()),
+                other => RepositoryError::Database(other),
+            })?;
+
+        lot_crud::upsert_lot(conn, &updated, &request.nutrition)?;
+
+        Ok(updated)
+    })
+}
+
+pub fn get_product_admin_detail(
+    conn: &mut PgConnection,
+    id: &str,
+) -> Result<Option<AdminProductDetail>, RepositoryError> {
+    let Some(pwi) = get_product_admin(conn, id)? else {
+        return Ok(None);
+    };
+    let nutrition = lot_crud::get_current_nutrition(conn, &pwi.product)?;
+    Ok(Some(AdminProductDetail {
+        product: pwi.product,
+        image: pwi.image,
+        nutrition,
+    }))
 }
 
 pub fn delete_product(conn: &mut PgConnection, id: &str) -> Result<(), RepositoryError> {
@@ -531,10 +651,7 @@ macro_rules! apply_product_order {
     }};
 }
 
-pub fn count_products(
-    conn: &mut PgConnection,
-    opts: &ListProductsOptions<'_>,
-) -> QueryResult<i64> {
+pub fn count_products(conn: &mut PgConnection, opts: &ListProductsOptions<'_>) -> QueryResult<i64> {
     use crate::schema::products::dsl::products;
 
     let mut query = products.into_boxed();

@@ -68,6 +68,25 @@ diesel::table! {
 }
 
 diesel::table! {
+    lots (lot_number) {
+        lot_number -> Int4,
+        product_id -> Varchar,
+        bottling_date -> Date,
+        abv -> Numeric,
+        energy_kj -> Numeric,
+        energy_kcal -> Numeric,
+        fat -> Numeric,
+        saturates -> Numeric,
+        carbohydrates -> Numeric,
+        sugars -> Numeric,
+        protein -> Numeric,
+        salt -> Numeric,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::*;
 
@@ -106,6 +125,14 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(lots -> products (product_id));
 diesel::joinable!(products -> images (image_id));
 
-diesel::allow_tables_to_appear_in_same_query!(admin_users, blog_posts, images, products, users,);
+diesel::allow_tables_to_appear_in_same_query!(
+    admin_users,
+    blog_posts,
+    images,
+    lots,
+    products,
+    users,
+);

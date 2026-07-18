@@ -5,6 +5,9 @@ import type { NewBlogPost, ProductFormData, UpdateBlogPost } from '../types/form
 import type { GetProductsQuery } from '../types/generated/GetProductsQuery';
 import type { GetAdminProductsQuery } from '../types/generated/GetAdminProductsQuery';
 import type { MeResponse } from '../types/generated/MeResponse';
+import type { AdminProductDetail } from '../types/generated/AdminProductDetail';
+import type { LocalizedLot } from '../types/generated/LocalizedLot';
+import type { LotNutrition } from '../types/generated/LotNutrition';
 import i18n from '../i18n/config';
 
 // Mirror of `VARIANT_WIDTHS` in backend/src/image_crud.rs.
@@ -94,6 +97,7 @@ export const api = {
         return request(`/products${buildQuery(cleaned)}`, { signal });
     },
     getProductById: (id: string, signal?: AbortSignal): Promise<LocalizedProductWithImage> => request(`/products/${id}`, { signal }),
+    getLot: (lotNumber: string, signal?: AbortSignal): Promise<LocalizedLot> => request(`/lots/${lotNumber}`, { signal }),
 
     adminLogin: async (credentials: LoginCredentials): Promise<LoginResponse> => {
         return request('/admin/login', {
@@ -119,7 +123,7 @@ export const api = {
         });
     },
 
-    updateProduct: async (id: string, productData: Product) => {
+    updateProduct: async (id: string, productData: Product & LotNutrition) => {
         return request(`/admin/products/${id}`, {
             method: 'PUT',
             headers: JSON_HEADERS,
@@ -127,7 +131,7 @@ export const api = {
         });
     },
 
-    getProductByIdAdmin: async (id: string): Promise<ProductWithImage> => {
+    getProductByIdAdmin: async (id: string): Promise<AdminProductDetail> => {
         return request(`/admin/products/${id}`, { method: 'GET' });
     },
 

@@ -14,6 +14,7 @@ import Cart from './pages/Cart';
 import AboutUs from './pages/AboutUs';
 import Contact from './pages/Contact';
 import Blog from './pages/Blog';
+import LotDetails from './pages/LotDetails';
 import BlogPostDetail from './pages/BlogPostDetail';
 import NotFound from './pages/NotFound';
 
@@ -40,11 +41,19 @@ function PrefixWithLangRedirect() {
   return <Navigate to={target} replace />;
 }
 
+// Bare /lot/{n} (as printed in bottle QR codes) defaults to Romanian,
+// mirroring the nginx redirect; kept here for dev-server parity.
+function LotRoRedirect() {
+  const { pathname, search, hash } = useLocation();
+  return <Navigate to={`/ro${pathname}${search}${hash}`} replace />;
+}
+
 const adminFallback = null;
 const lazy = (node: React.ReactNode) => <Suspense fallback={adminFallback}>{node}</Suspense>;
 
 const router = createBrowserRouter([
   { path: '/', element: <PrefixWithLangRedirect /> },
+  { path: '/lot/:lotNumber', element: <LotRoRedirect /> },
   {
     path: '/:lang',
     element: <App />,
@@ -53,6 +62,7 @@ const router = createBrowserRouter([
       { path: 'home', element: <Navigate to=".." replace relative="path" /> },
       { path: 'shop', element: <Shop /> },
       { path: 'shop/:productId', element: <ProductDetails /> },
+      { path: 'lot/:lotNumber', element: <LotDetails /> },
       { path: 'cart', element: <Cart /> },
       { path: 'blog', element: <Blog /> },
       { path: 'blog/:slug', element: <BlogPostDetail /> },

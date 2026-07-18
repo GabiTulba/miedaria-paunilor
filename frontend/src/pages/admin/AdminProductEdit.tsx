@@ -4,16 +4,29 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
-import { Product, ProductFormData, ProductWithImage } from '../../types';
+import { Product, ProductFormData } from '../../types';
+import type { LotNutrition } from '../../types/generated/LotNutrition';
 import ProductForm from './ProductForm';
 import { errorMapping, mapBackendValidationErrors } from './errorMappings';
 import { useAdminImages } from '../../hooks/useAdminImages';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 import ConfirmModal from '../../components/ConfirmModal';
 
+// Fallback for legacy products saved before lots existed (no nutrition row yet).
+const NUTRITION_DEFAULTS: LotNutrition = {
+    energy_kj: 0,
+    energy_kcal: 0,
+    fat: 0,
+    saturates: 0,
+    carbohydrates: 0,
+    sugars: 0,
+    protein: 0,
+    salt: 0,
+};
+
 function AdminProductEdit() {
     const { productId } = useParams<{ productId: string }>();
-    const [productWithImage, setProductWithImage] = useState<ProductWithImage | null>(null);
+    const [product, setProduct] = useState<(Product & LotNutrition) | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -33,9 +46,10 @@ function AdminProductEdit() {
             }
             setProductLoading(true);
             try {
-                const fetchedProductWithImage = await api.getProductByIdAdmin(productId);
-                setProductWithImage(fetchedProductWithImage);
-                initialSnapshotRef.current = JSON.stringify(fetchedProductWithImage.product);
+                const detail = await api.getProductByIdAdmin(productId);
+                const flatProduct = { ...detail.product, ...(detail.nutrition ?? NUTRITION_DEFAULTS) };
+                setProduct(flatProduct);
+                initialSnapshotRef.current = JSON.stringify(flatProduct);
             } catch (error: any) {
                 console.error("Failed to fetch product:", error);
             } finally {
@@ -46,9 +60,9 @@ function AdminProductEdit() {
     }, [productId]);
 
     const isDirty = !savedRef
-        && !!productWithImage
+        && !!product
         && initialSnapshotRef.current !== null
-        && JSON.stringify(productWithImage.product) !== initialSnapshotRef.current;
+        && JSON.stringify(product) !== initialSnapshotRef.current;
     const blocker = useUnsavedChanges(isDirty);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -58,8 +72,8 @@ function AdminProductEdit() {
 
         const newErrors: Record<string, string> = {};
 
-        if (productWithImage && productWithImage.product.bottling_date) {
-            const dateObj = new Date(productWithImage.product.bottling_date);
+        if (product && product.bottling_date) {
+            const dateObj = new Date(product.bottling_date);
             if (isNaN(dateObj.getTime())) {
                 newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
             }
@@ -80,11 +94,10 @@ function AdminProductEdit() {
             showToast(t('admin.images.error'), 'error');
             return;
         }
-        if (productWithImage && productId) {
+        if (product && productId) {
             try {
                 setSubmitting(true);
-                const productToUpdate: Product = productWithImage.product;
-                await api.updateProduct(productId, productToUpdate);
+                await api.updateProduct(productId, product);
                 showToast(t('admin.products.updated'), 'success');
                 // flushSync so the blocker sees isDirty=false before navigate()
                 // fires the router transition (otherwise the unsaved-changes
@@ -109,22 +122,16 @@ function AdminProductEdit() {
 	
     if (productLoading || imagesLoading) return <div className="loader">{t('common.loading')}</div>;
     if (imagesError) return <div className="error-message">{imagesError}</div>;
-    if (!productWithImage) return <div className="error-message">Product not found.</div>;
-
-    // Pass the product part of productWithImage to ProductForm
-    const productToPassToForm: ProductFormData = {
-        ...productWithImage.product,
-        product_id: productWithImage.product.product_id, // Ensure product_id is present
-    };
+    if (!product) return <div className="error-message">Product not found.</div>;
 
     return (
         <>
             {errors.form && <p className="error-message">{errors.form}</p>}
             <ProductForm
-                product={productToPassToForm}
+                product={product}
                 setProduct={(updatedProduct: ProductFormData) => {
-                    setProductWithImage((prev) =>
-                        prev ? { ...prev, product: { ...prev.product, ...updatedProduct } as typeof prev.product } : null
+                    setProduct((prev) =>
+                        prev ? ({ ...prev, ...updatedProduct } as typeof prev) : null
                     );
                 }}
                 onSubmit={handleSubmit}

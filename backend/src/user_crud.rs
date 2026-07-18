@@ -50,11 +50,7 @@ macro_rules! impl_user_crud {
                 .optional()
         }
 
-        pub fn $update(
-            conn: &mut PgConnection,
-            user: &str,
-            new_password: &str,
-        ) -> QueryResult<()> {
+        pub fn $update(conn: &mut PgConnection, user: &str, new_password: &str) -> QueryResult<()> {
             match $get(conn, user)? {
                 Some(_) => {
                     let hash = utils::hash_password(new_password).map_err(hash_to_diesel_error)?;

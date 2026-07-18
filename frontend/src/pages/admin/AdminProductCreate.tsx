@@ -35,6 +35,14 @@ const INITIAL_PRODUCT: ProductFormData = {
     image_id: '',
     bottling_date: '',
     lot_number: 1,
+    energy_kj: 0.0,
+    energy_kcal: 0.0,
+    fat: 0.0,
+    saturates: 0.0,
+    carbohydrates: 0.0,
+    sugars: 0.0,
+    protein: 0.0,
+    salt: 0.0,
 };
 
 function AdminProductCreate() {

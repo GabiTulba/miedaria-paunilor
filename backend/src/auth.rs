@@ -28,8 +28,7 @@ const AUTH_COOKIE_PATH: &str = "/api/admin";
 fn dummy_password_hash() -> &'static str {
     static DUMMY: OnceLock<String> = OnceLock::new();
     DUMMY.get_or_init(|| {
-        hash_password("not-a-real-password")
-            .expect("Argon2 must be able to hash a dummy password")
+        hash_password("not-a-real-password").expect("Argon2 must be able to hash a dummy password")
     })
 }
 
@@ -203,7 +202,9 @@ pub async fn auth_middleware(
             sub = %token_data.claims.sub,
             "rejecting JWT with no matching admin row"
         );
-        return Err(AppError::Unauthorized("Invalid or expired token".to_string()));
+        return Err(AppError::Unauthorized(
+            "Invalid or expired token".to_string(),
+        ));
     }
 
     req.extensions_mut().insert(token_data.claims);

@@ -18,12 +18,10 @@ pub fn create_admin_user_if_non_existent_or_die(
                 None
             }
         }
-        Ok(None) => {
-            match create_admin(conn, username, password) {
-                Ok(user) => Some(user),
-                Err(e) => panic!("Error creating user: {}", e),
-            }
-        }
+        Ok(None) => match create_admin(conn, username, password) {
+            Ok(user) => Some(user),
+            Err(e) => panic!("Error creating user: {}", e),
+        },
         Err(e) => panic!("Error fetching user: {}", e),
     }
 }
