@@ -1,6 +1,6 @@
 ================================================================================
 MIEDARIA PAUNILOR — OUTSTANDING WORK
-Last updated: 2026-05-11 (priority 1 + 2 resolved: JWT in httpOnly cookie, nginx lang redirect)
+Last updated: 2026-07-19 (form layer migrated to react-hook-form; ProductForm split into sections)
 ================================================================================
 
 Severity legend: [C]ritical  [H]igh  [M]edium  [L]ow
@@ -23,22 +23,6 @@ D. BACKEND — DEFERRED FOLLOW-UPS
 ================================================================================
 E. FRONTEND — DEFERRED FOLLOW-UPS
 ================================================================================
-
-Form layer (deferred — no test coverage to fall back on)
-[H] frontend/src/pages/admin/ProductForm.tsx + AdminProductCreate.tsx +
-    AdminProductEdit.tsx + BlogForm.tsx — No shared form-state primitive.
-    Each page hand-rolls handleChange/setFormData. Introduce a tiny
-    `useForm<T>()` hook (or pull in `react-hook-form`) so the boilerplate
-    disappears and the dirty-tracking that `useUnsavedChanges` already
-    supports can be driven off `formState.isDirty`.
-[H] frontend/src/pages/admin/ProductForm.tsx — once RHF lands, split into
-    sub-form components (BasicInfoSection, ImageSection, CharacteristicsSection,
-    PricingSection) using `useFormContext`. Skipped pre-RHF because without
-    a shared form context the split adds prop drilling without value.
-[M] frontend/src/pages/admin/ProductForm.tsx — `handleChange` and
-    `handleNumericChange` are two parallel handlers. With NumberInput emitting
-    a `number` via a separate `onValueChange` prop, the page only needs one
-    `handleChange`.
 
 Hooks / data fetching
 [M] frontend/src/hooks/useAdminImages.ts — Per-component fetch with no cache.

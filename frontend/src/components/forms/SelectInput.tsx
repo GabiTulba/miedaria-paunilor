@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import FormField from './FormField';
 
 interface SelectOption {
@@ -6,43 +6,28 @@ interface SelectOption {
   label: string;
 }
 
-interface SelectInputProps {
+interface SelectInputProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   id: string;
-  name: string;
   label: string;
-  value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: SelectOption[];
   error?: string;
-  required?: boolean;
-  disabled?: boolean;
   helpText?: string;
 }
 
-const SelectInput: React.FC<SelectInputProps> = ({
-  id,
-  name,
-  label,
-  value,
-  onChange,
-  options,
-  error,
-  required = false,
-  disabled = false,
-  helpText,
-}) => {
+const SelectInput = forwardRef<HTMLSelectElement, SelectInputProps>(function SelectInput(
+  { id, label, options, error, helpText, required = false, ...rest },
+  ref,
+) {
   return (
     <FormField id={id} label={label} required={required} helpText={helpText} error={error}>
       {({ describedBy }) => (
         <select
           id={id}
-          name={name}
-          value={value}
-          onChange={onChange}
+          ref={ref}
           required={required}
-          disabled={disabled}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
+          {...rest}
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>
@@ -53,6 +38,6 @@ const SelectInput: React.FC<SelectInputProps> = ({
       )}
     </FormField>
   );
-};
+});
 
 export default SelectInput;

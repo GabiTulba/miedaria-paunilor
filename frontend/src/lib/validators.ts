@@ -32,6 +32,19 @@ export function validateNonNegative(value: string, fieldName: string): string | 
     return undefined;
 }
 
+// react-hook-form register options for number inputs: store a number in form
+// state (empty input collapses to 0, matching the old handleNumericChange) and
+// adapt the string-based validators above to the numeric stored value.
+export const emptyToZero = (value: unknown): number =>
+    value === '' || value == null ? 0 : Number(value);
+
+export function numericOptions(validate?: (value: string) => string | undefined) {
+    return {
+        setValueAs: emptyToZero,
+        ...(validate ? { validate: (value: number) => validate(String(value)) } : {}),
+    };
+}
+
 // Mirror of `is_valid_slug` in backend/src/utils.rs (kebab-case + underscores allowed).
 export function validateSlug(value: string, max = 256): string | undefined {
     if (!value.trim()) return 'Slug is required';

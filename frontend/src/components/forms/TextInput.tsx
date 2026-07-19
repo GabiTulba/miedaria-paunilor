@@ -1,72 +1,32 @@
-import React, { useState } from 'react';
+import React, { forwardRef } from 'react';
 import FormField from './FormField';
 
-interface TextInputProps {
+interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   id: string;
-  name: string;
   label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   error?: string;
-  required?: boolean;
-  disabled?: boolean;
-  type?: string;
-  placeholder?: string;
   helpText?: string;
-  autoComplete?: string;
-  maxLength?: number;
-  validate?: (value: string) => string | undefined;
 }
 
-const TextInput: React.FC<TextInputProps> = ({
-  id,
-  name,
-  label,
-  value,
-  onChange,
-  error,
-  required = false,
-  disabled = false,
-  type = 'text',
-  placeholder,
-  helpText,
-  autoComplete,
-  maxLength,
-  validate,
-}) => {
-  const [blurError, setBlurError] = useState<string>();
-  const displayError = error || blurError;
-
-  const handleBlur = () => {
-    if (validate) setBlurError(validate(value));
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (blurError) setBlurError(undefined);
-    onChange(e);
-  };
-
+const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function TextInput(
+  { id, label, error, helpText, required = false, type = 'text', ...rest },
+  ref,
+) {
   return (
-    <FormField id={id} label={label} required={required} helpText={helpText} error={displayError}>
+    <FormField id={id} label={label} required={required} helpText={helpText} error={error}>
       {({ describedBy }) => (
         <input
           type={type}
           id={id}
-          name={name}
-          value={value}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          ref={ref}
           required={required}
-          disabled={disabled}
-          placeholder={placeholder}
-          autoComplete={autoComplete}
-          maxLength={maxLength}
-          aria-invalid={displayError ? true : undefined}
+          aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
+          {...rest}
         />
       )}
     </FormField>
   );
-};
+});
 
 export default TextInput;

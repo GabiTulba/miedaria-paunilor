@@ -132,7 +132,7 @@ export const api = {
         });
     },
 
-    updateProduct: async (id: string, productData: Product & LotNutrition) => {
+    updateProduct: async (id: string, productData: ProductFormData) => {
         return request(`/admin/products/${id}`, {
             method: 'PUT',
             headers: JSON_HEADERS,

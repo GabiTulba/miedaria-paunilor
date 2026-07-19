@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NewBlogPost, UpdateBlogPost } from '../../types';
+import { Controller, useFormContext, type SubmitHandler } from 'react-hook-form';
+import { NewBlogPost } from '../../types';
 import TextInput from '../../components/forms/TextInput';
 import TextAreaInput from '../../components/forms/TextAreaInput';
 import BooleanSelect from '../../components/forms/BooleanSelect';
@@ -9,41 +10,30 @@ import { BLOG_AUTHOR_MAX, BLOG_EXCERPT_MAX, BLOG_SLUG_MAX, BLOG_TITLE_MAX } from
 import { useShakeOnError } from '../../hooks/useShakeOnError';
 import './Admin.css';
 
-export type BlogFormData = NewBlogPost | UpdateBlogPost;
-
 interface BlogFormProps {
-    formData: BlogFormData;
-    setFormData: (data: BlogFormData) => void;
-    onSubmit: (e: React.FormEvent) => void;
+    onSubmit: SubmitHandler<NewBlogPost>;
     isEdit?: boolean;
-    errors?: Record<string, string>;
     submitting?: boolean;
     onCancel: () => void;
-    formError?: string | null;
 }
 
-function BlogForm({
-    formData,
-    setFormData,
-    onSubmit,
-    isEdit = false,
-    errors = {},
-    submitting = false,
-    onCancel,
-    formError,
-}: BlogFormProps) {
+function BlogForm({ onSubmit, isEdit = false, submitting = false, onCancel }: BlogFormProps) {
     const { t } = useTranslation();
     const formRef = useRef<HTMLFormElement>(null);
-    useShakeOnError(formRef, Object.keys(errors).length);
+    const {
+        register,
+        control,
+        handleSubmit,
+        formState: { errors, submitCount },
+    } = useFormContext<NewBlogPost>();
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-    };
-
-    const setIsPublished = (next: boolean) => {
-        setFormData({ ...formData, is_published: next });
-    };
+    const formError = errors.root?.server?.message;
+    const fieldErrorMessages = Object.entries(errors)
+        .filter(([field]) => field !== 'root')
+        .map(([, fieldError]) => fieldError?.message)
+        .filter((message): message is string => Boolean(message));
+    // Gate the shake on submitCount so plain blur-validation errors never trigger it.
+    useShakeOnError(formRef, fieldErrorMessages.length > 0 || formError ? submitCount : 0);
 
     return (
         <div className="admin-content">
@@ -60,12 +50,12 @@ function BlogForm({
                 </div>
             )}
 
-            <form onSubmit={onSubmit} className="admin-form" ref={formRef}>
-                {Object.keys(errors).length > 0 && (
+            <form onSubmit={handleSubmit(onSubmit)} className="admin-form" ref={formRef}>
+                {submitCount > 0 && fieldErrorMessages.length > 0 && (
                     <div className="validation-summary" role="alert">
                         <h4>{t('admin.blog.form.validationErrors')}</h4>
                         <ul>
-                            {Object.values(errors).filter(Boolean).map((err, i) => (
+                            {fieldErrorMessages.map((err, i) => (
                                 <li key={i}>{err}</li>
                             ))}
                         </ul>
@@ -79,24 +69,18 @@ function BlogForm({
                         <TextInput
                             id="title"
                             label={t('admin.blog.form.titleEn')}
-                            name="title"
-                            value={formData.title || ''}
-                            onChange={handleChange}
-                            error={errors.title}
+                            error={errors.title?.message}
                             required
                             maxLength={BLOG_TITLE_MAX}
-                            validate={(v) => validateRequired(v, 'Title')}
+                            {...register('title', { validate: (v) => validateRequired(v, 'Title') })}
                         />
                         <TextInput
                             id="title_ro"
                             label={t('admin.blog.form.titleRo')}
-                            name="title_ro"
-                            value={formData.title_ro || ''}
-                            onChange={handleChange}
-                            error={errors.title_ro}
+                            error={errors.title_ro?.message}
                             required
                             maxLength={BLOG_TITLE_MAX}
-                            validate={(v) => validateRequired(v, 'Romanian title')}
+                            {...register('title_ro', { validate: (v) => validateRequired(v, 'Romanian title') })}
                         />
                     </div>
 
@@ -104,36 +88,36 @@ function BlogForm({
                         <TextInput
                             id="slug"
                             label={t('admin.blog.form.slug')}
-                            name="slug"
-                            value={formData.slug || ''}
-                            onChange={handleChange}
-                            error={errors.slug}
+                            error={errors.slug?.message}
                             required
                             maxLength={BLOG_SLUG_MAX}
                             helpText={t('admin.blog.form.slugHelp')}
-                            validate={(v) => validateSlug(v)}
+                            {...register('slug', { validate: (v) => validateSlug(v) })}
                         />
                         <TextInput
                             id="author"
                             label={t('admin.blog.form.author')}
-                            name="author"
-                            value={formData.author || ''}
-                            onChange={handleChange}
-                            error={errors.author}
+                            error={errors.author?.message}
                             required
                             maxLength={BLOG_AUTHOR_MAX}
-                            validate={(v) => validateRequired(v, 'Author')}
+                            {...register('author', { validate: (v) => validateRequired(v, 'Author') })}
                         />
                     </div>
 
                     <div className="form-row">
-                        <BooleanSelect
-                            id="is_published"
-                            label={t('admin.blog.form.status')}
-                            value={formData.is_published ?? true}
-                            onChange={setIsPublished}
-                            trueLabel={t('admin.blog.status.published')}
-                            falseLabel={t('admin.blog.status.draft')}
+                        <Controller
+                            name="is_published"
+                            control={control}
+                            render={({ field }) => (
+                                <BooleanSelect
+                                    id="is_published"
+                                    label={t('admin.blog.form.status')}
+                                    value={field.value ?? true}
+                                    onChange={field.onChange}
+                                    trueLabel={t('admin.blog.status.published')}
+                                    falseLabel={t('admin.blog.status.draft')}
+                                />
+                            )}
                         />
                     </div>
                 </div>
@@ -145,27 +129,21 @@ function BlogForm({
                         <TextAreaInput
                             id="excerpt"
                             label={t('admin.blog.form.excerptEn')}
-                            name="excerpt"
-                            value={formData.excerpt || ''}
-                            onChange={handleChange}
-                            error={errors.excerpt}
+                            error={errors.excerpt?.message}
                             required
                             rows={3}
                             maxLength={BLOG_EXCERPT_MAX}
                             helpText={t('admin.blog.form.excerptHelp')}
-                            validate={(v) => validateRequired(v, 'Excerpt')}
+                            {...register('excerpt', { validate: (v) => validateRequired(v, 'Excerpt') })}
                         />
                         <TextAreaInput
                             id="excerpt_ro"
                             label={t('admin.blog.form.excerptRo')}
-                            name="excerpt_ro"
-                            value={formData.excerpt_ro || ''}
-                            onChange={handleChange}
-                            error={errors.excerpt_ro}
+                            error={errors.excerpt_ro?.message}
                             required
                             rows={3}
                             maxLength={BLOG_EXCERPT_MAX}
-                            validate={(v) => validateRequired(v, 'Romanian excerpt')}
+                            {...register('excerpt_ro', { validate: (v) => validateRequired(v, 'Romanian excerpt') })}
                         />
                     </div>
 
@@ -173,25 +151,19 @@ function BlogForm({
                         <TextAreaInput
                             id="content_markdown"
                             label={t('admin.blog.form.contentEn')}
-                            name="content_markdown"
-                            value={formData.content_markdown || ''}
-                            onChange={handleChange}
-                            error={errors.content_markdown}
+                            error={errors.content_markdown?.message}
                             required
                             rows={10}
                             helpText={t('admin.blog.form.contentHelp')}
-                            validate={(v) => validateRequired(v, 'Content')}
+                            {...register('content_markdown', { validate: (v) => validateRequired(v, 'Content') })}
                         />
                         <TextAreaInput
                             id="content_markdown_ro"
                             label={t('admin.blog.form.contentRo')}
-                            name="content_markdown_ro"
-                            value={formData.content_markdown_ro || ''}
-                            onChange={handleChange}
-                            error={errors.content_markdown_ro}
+                            error={errors.content_markdown_ro?.message}
                             required
                             rows={10}
-                            validate={(v) => validateRequired(v, 'Romanian content')}
+                            {...register('content_markdown_ro', { validate: (v) => validateRequired(v, 'Romanian content') })}
                         />
                     </div>
                 </div>

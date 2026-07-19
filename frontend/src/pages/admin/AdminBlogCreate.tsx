@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FormProvider, useForm, type SubmitHandler } from 'react-hook-form';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { NewBlogPost } from '../../types';
-import BlogForm, { BlogFormData } from './BlogForm';
-import { blogErrorMapping, mapBackendValidationErrors } from './errorMappings';
+import BlogForm from './BlogForm';
+import { applyServerErrors, blogErrorMapping, mapBackendValidationErrors } from './errorMappings';
 
 const INITIAL_POST: NewBlogPost = {
     title: '',
@@ -20,31 +21,28 @@ const INITIAL_POST: NewBlogPost = {
 };
 
 function AdminBlogCreate() {
-    const [formData, setFormData] = useState<BlogFormData>(INITIAL_POST);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [formError, setFormError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const { showToast } = useToast();
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const methods = useForm<NewBlogPost>({ defaultValues: INITIAL_POST, mode: 'onBlur' });
+
+    const onSubmit: SubmitHandler<NewBlogPost> = async (data) => {
         if (submitting) return;
-        setErrors({});
-        setFormError(null);
         try {
             setSubmitting(true);
-            await api.createBlogPost(formData as NewBlogPost);
+            await api.createBlogPost(data);
             showToast(t('admin.blog.created'), 'success');
             navigate('/admin/dashboard/blog');
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to create blog post:', err);
             const validationErrors = mapBackendValidationErrors(err, blogErrorMapping, t, 'blog');
             if (validationErrors) {
-                setErrors(validationErrors);
+                applyServerErrors(methods.setError, validationErrors);
             } else {
-                setFormError(err.response?.data?.message || t('common.error'));
+                const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+                methods.setError('root.server', { message: message || t('common.error') });
             }
         } finally {
             setSubmitting(false);
@@ -52,15 +50,13 @@ function AdminBlogCreate() {
     };
 
     return (
-        <BlogForm
-            formData={formData}
-            setFormData={setFormData}
-            onSubmit={handleSubmit}
-            errors={errors}
-            submitting={submitting}
-            onCancel={() => navigate('/admin/dashboard/blog')}
-            formError={formError}
-        />
+        <FormProvider {...methods}>
+            <BlogForm
+                onSubmit={onSubmit}
+                submitting={submitting}
+                onCancel={() => navigate('/admin/dashboard/blog')}
+            />
+        </FormProvider>
     );
 }
 

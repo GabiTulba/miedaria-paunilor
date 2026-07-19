@@ -1,12 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FormProvider, useForm, type SubmitHandler } from 'react-hook-form';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import ProductForm from './ProductForm';
 import { ProductFormData } from '../../types';
-import { errorMapping, mapBackendValidationErrors } from './errorMappings';
+import { applyServerErrors, errorMapping, mapBackendValidationErrors } from './errorMappings';
 import { getTodayIsoDate } from '../../utils/dateUtils';
 import { useAdminImages } from '../../hooks/useAdminImages';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
@@ -46,65 +47,40 @@ const INITIAL_PRODUCT: ProductFormData = {
 };
 
 function AdminProductCreate() {
-    const initialRef = useRef<ProductFormData>({ ...INITIAL_PRODUCT, bottling_date: getTodayIsoDate() });
-    const [product, setProduct] = useState<ProductFormData>(initialRef.current);
-    const [errors, setErrors] = useState<Record<string, string>>({});
     const [submitting, setSubmitting] = useState(false);
-    const [savedRef, setSavedRef] = useState(false);
+    const [saved, setSaved] = useState(false);
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { showToast } = useToast();
 
     const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages();
 
-    const isDirty = !savedRef && JSON.stringify(product) !== JSON.stringify(initialRef.current);
-    const blocker = useUnsavedChanges(isDirty);
+    const methods = useForm<ProductFormData>({
+        defaultValues: { ...INITIAL_PRODUCT, bottling_date: getTodayIsoDate() },
+        mode: 'onBlur',
+    });
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const blocker = useUnsavedChanges(methods.formState.isDirty && !saved);
+
+    const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
         if (submitting) return;
-        setErrors({});
-
-        const newErrors: Record<string, string> = {};
-
-        if (!product.bottling_date || product.bottling_date.trim() === '') {
-            newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
-        } else {
-            const dateObj = new Date(product.bottling_date);
-            if (isNaN(dateObj.getTime())) {
-                newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
-            }
-        }
-
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            return;
-        }
-
-        if (imagesLoading) {
-            showToast(t('common.loading'), 'error');
-            return;
-        }
-        if (imagesError) {
-            showToast(t('admin.images.error'), 'error');
-            return;
-        }
         try {
             setSubmitting(true);
-            await api.createProduct(product);
+            await api.createProduct(data);
             showToast(t('admin.products.created'), 'success');
             // flushSync so the blocker sees isDirty=false before navigate()
             // fires the router transition (otherwise the unsaved-changes
             // modal pops on the post-save redirect).
-            flushSync(() => setSavedRef(true));
+            flushSync(() => setSaved(true));
             navigate('/admin/dashboard/products');
-        } catch (error: any) {
+        } catch (error) {
             console.error("Failed to create product:", error);
             const backendErrors = mapBackendValidationErrors(error, errorMapping, t, 'product');
+            const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
             if (backendErrors) {
-                setErrors(backendErrors);
-            } else if (error.response?.data?.message) {
-                setErrors({ form: error.response.data.message });
+                applyServerErrors(methods.setError, backendErrors);
+            } else if (message) {
+                methods.setError('root.server', { message });
             } else {
                 showToast('Failed to create product. Check console for details.', 'error');
             }
@@ -115,21 +91,19 @@ function AdminProductCreate() {
 
     return (
         <>
-            {errors.form && <p className="error-message">{errors.form}</p>}
             {imagesLoading ? (
                 <p>Loading images...</p>
             ) : imagesError ? (
                 <p className="error-message">{imagesError}</p>
             ) : (
-                <ProductForm
-                    product={product}
-                    setProduct={setProduct}
-                    onSubmit={handleSubmit}
-                    submitText={t('admin.productForm.save')}
-                    errors={errors}
-                    availableImages={availableImages}
-                    submitting={submitting}
-                />
+                <FormProvider {...methods}>
+                    <ProductForm
+                        onSubmit={onSubmit}
+                        submitText={t('admin.productForm.save')}
+                        availableImages={availableImages}
+                        submitting={submitting}
+                    />
+                </FormProvider>
             )}
             {blocker.state === 'blocked' && (
                 <ConfirmModal

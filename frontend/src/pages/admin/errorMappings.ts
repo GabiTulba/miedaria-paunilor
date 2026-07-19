@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import type { FieldValues, Path, UseFormSetError } from 'react-hook-form';
 import type { BlogPost, Product } from '../../types';
 import type { LotNutrition } from '../../types/generated/LotNutrition';
 import type { BlogValidationError } from '../../types/generated/BlogValidationError';
@@ -101,4 +102,15 @@ export function mapBackendValidationErrors(
         out[field] = t(`errors.${scope}.${code}`, { defaultValue: code });
     }
     return out;
+}
+
+// Push a `{field: message}` map from mapBackendValidationErrors into
+// react-hook-form's error state so server errors render like field errors.
+export function applyServerErrors<T extends FieldValues>(
+    setError: UseFormSetError<T>,
+    errors: Record<string, string>,
+): void {
+    for (const [field, message] of Object.entries(errors)) {
+        setError(field as Path<T>, { type: 'server', message });
+    }
 }

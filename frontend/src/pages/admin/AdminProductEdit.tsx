@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { flushSync } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FormProvider, useForm, type SubmitHandler } from 'react-hook-form';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import { Product, ProductFormData } from '../../types';
 import type { LotNutrition } from '../../types/generated/LotNutrition';
 import ProductForm from './ProductForm';
-import { errorMapping, mapBackendValidationErrors } from './errorMappings';
+import { applyServerErrors, errorMapping, mapBackendValidationErrors } from './errorMappings';
 import { useAdminImages } from '../../hooks/useAdminImages';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -27,7 +28,6 @@ const NUTRITION_DEFAULTS: LotNutrition = {
 function AdminProductEdit() {
     const { productId } = useParams<{ productId: string }>();
     const [product, setProduct] = useState<(Product & LotNutrition) | null>(null);
-    const [errors, setErrors] = useState<Record<string, string>>({});
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { showToast } = useToast();
@@ -35,8 +35,7 @@ function AdminProductEdit() {
     const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages();
     const [productLoading, setProductLoading] = useState<boolean>(true);
     const [submitting, setSubmitting] = useState(false);
-    const [savedRef, setSavedRef] = useState(false);
-    const initialSnapshotRef = useRef<string | null>(null);
+    const [saved, setSaved] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -47,10 +46,8 @@ function AdminProductEdit() {
             setProductLoading(true);
             try {
                 const detail = await api.getProductByIdAdmin(productId);
-                const flatProduct = { ...detail.product, ...(detail.nutrition ?? NUTRITION_DEFAULTS) };
-                setProduct(flatProduct);
-                initialSnapshotRef.current = JSON.stringify(flatProduct);
-            } catch (error: any) {
+                setProduct({ ...detail.product, ...(detail.nutrition ?? NUTRITION_DEFAULTS) });
+            } catch (error) {
                 console.error("Failed to fetch product:", error);
             } finally {
                 setProductLoading(false);
@@ -59,88 +56,55 @@ function AdminProductEdit() {
         fetchProduct();
     }, [productId]);
 
-    const isDirty = !savedRef
-        && !!product
-        && initialSnapshotRef.current !== null
-        && JSON.stringify(product) !== initialSnapshotRef.current;
-    const blocker = useUnsavedChanges(isDirty);
+    // `values` re-initializes the form when the fetch lands; `product` is
+    // referentially stable afterwards, so the form is not reset on re-renders.
+    const methods = useForm<ProductFormData>({ mode: 'onBlur', values: product ?? undefined });
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (submitting) return;
-        setErrors({});
+    const blocker = useUnsavedChanges(methods.formState.isDirty && !saved);
 
-        const newErrors: Record<string, string> = {};
-
-        if (product && product.bottling_date) {
-            const dateObj = new Date(product.bottling_date);
-            if (isNaN(dateObj.getTime())) {
-                newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
+    const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
+        if (submitting || !productId) return;
+        try {
+            setSubmitting(true);
+            // product_id is disabled on edit, so merge it back from the route.
+            await api.updateProduct(productId, { ...data, product_id: productId });
+            showToast(t('admin.products.updated'), 'success');
+            // flushSync so the blocker sees isDirty=false before navigate()
+            // fires the router transition (otherwise the unsaved-changes
+            // modal pops on the post-save redirect).
+            flushSync(() => setSaved(true));
+            navigate('/admin/dashboard/products');
+        } catch (error) {
+            console.error("Failed to update product:", error);
+            const backendErrors = mapBackendValidationErrors(error, errorMapping, t, 'product');
+            const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+            if (backendErrors) {
+                applyServerErrors(methods.setError, backendErrors);
+            } else if (message) {
+                methods.setError('root.server', { message });
+            } else {
+                showToast(t('admin.products.error'), 'error');
             }
-        } else {
-            newErrors.bottling_date = t('admin.productForm.validation.invalidBottlingDate');
-        }
-
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            return;
-        }
-
-        if (productLoading || imagesLoading) {
-            showToast(t('common.loading'), 'error');
-            return;
-        }
-        if (imagesError) {
-            showToast(t('admin.images.error'), 'error');
-            return;
-        }
-        if (product && productId) {
-            try {
-                setSubmitting(true);
-                await api.updateProduct(productId, product);
-                showToast(t('admin.products.updated'), 'success');
-                // flushSync so the blocker sees isDirty=false before navigate()
-                // fires the router transition (otherwise the unsaved-changes
-                // modal pops on the post-save redirect).
-                flushSync(() => setSavedRef(true));
-                navigate('/admin/dashboard/products');
-            } catch (error: any) {
-                console.error("Failed to update product:", error);
-                const backendErrors = mapBackendValidationErrors(error, errorMapping, t, 'product');
-                if (backendErrors) {
-                    setErrors(backendErrors);
-                } else if (error.response?.data?.message) {
-                    setErrors({ form: error.response.data.message });
-                } else {
-                    showToast(t('admin.products.error'), 'error');
-                }
-            } finally {
-                setSubmitting(false);
-            }
+        } finally {
+            setSubmitting(false);
         }
     };
-	
+
     if (productLoading || imagesLoading) return <div className="loader">{t('common.loading')}</div>;
     if (imagesError) return <div className="error-message">{imagesError}</div>;
     if (!product) return <div className="error-message">Product not found.</div>;
 
     return (
         <>
-            {errors.form && <p className="error-message">{errors.form}</p>}
-            <ProductForm
-                product={product}
-                setProduct={(updatedProduct: ProductFormData) => {
-                    setProduct((prev) =>
-                        prev ? ({ ...prev, ...updatedProduct } as typeof prev) : null
-                    );
-                }}
-                onSubmit={handleSubmit}
-                submitText={t('admin.productForm.update')}
-                isEdit={true}
-                errors={errors}
-                availableImages={availableImages}
-                submitting={submitting}
-            />
+            <FormProvider {...methods}>
+                <ProductForm
+                    onSubmit={onSubmit}
+                    submitText={t('admin.productForm.update')}
+                    isEdit={true}
+                    availableImages={availableImages}
+                    submitting={submitting}
+                />
+            </FormProvider>
             {blocker.state === 'blocked' && (
                 <ConfirmModal
                     title={t('admin.unsavedChanges.title')}
