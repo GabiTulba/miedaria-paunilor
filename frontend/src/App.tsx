@@ -48,7 +48,8 @@ function App() {
       <header className="header">
         <div className="container">
           <LocalizedLink to="/" className="logo">
-            <img src="/logo.svg" alt="Miedăria Păunilor" className="logo-image" width={1024} height={1536} />
+            <img src="/logo_white.svg" alt="Miedăria Păunilor" className="logo-image logo-image-light" width={895} height={614} />
+            <img src="/logo_black.svg" alt="Miedăria Păunilor" className="logo-image logo-image-dark" width={895} height={614} />
             Miedăria Păunilor
           </LocalizedLink>
           <nav

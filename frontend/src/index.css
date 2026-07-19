@@ -110,7 +110,7 @@
 
   /* Gradient tokens */
   --hero-gradient-color: #e1d9ba;
-  --gradient-hero: radial-gradient(ellipse at center, var(--hero-gradient-color) 0%, var(--secondary-color) 67%);
+  --gradient-hero: radial-gradient(ellipse at 50% 35%, var(--hero-gradient-color) 0%, var(--secondary-color) 67%);
     
   --gradient-placeholder: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   --gradient-admin-sidebar: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-color-blue) 100%);
@@ -537,7 +537,7 @@ tr:hover {
 
 
         --hero-gradient-color: #354a5f;
-        --gradient-hero: radial-gradient(ellipse at center, var(--hero-gradient-color) 0%, var(--secondary-color) 67%);
+        --gradient-hero: radial-gradient(ellipse at 50% 35%, var(--hero-gradient-color) 0%, var(--secondary-color) 67%);
         --gradient-placeholder: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
         --gradient-admin-sidebar: linear-gradient(180deg, #1a202c 0%, #2a4365 100%);
 
@@ -633,7 +633,7 @@ tr:hover {
     --alert-warning-hover: rgba(252, 211, 77, 0.1);
 
     --hero-gradient-color: #4d6984;
-    --gradient-hero: radial-gradient(ellipse at center, var(--hero-gradient-color) 0%, var(--secondary-color) 67%);
+    --gradient-hero: radial-gradient(ellipse at 50% 35%, var(--hero-gradient-color) 0%, var(--secondary-color) 67%);
        
     --gradient-placeholder: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
     --gradient-admin-sidebar: linear-gradient(180deg, #1a202c 0%, #2a4365 100%);

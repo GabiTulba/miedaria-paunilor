@@ -59,18 +59,29 @@
 .logo-image {
   height: clamp(44px, 11vw, 90px);
   width: auto;
-  filter: brightness(0) invert(1);
   opacity: 1;
-  transition: opacity var(--duration-slow) ease, filter var(--duration-slow) ease;
+  transition: opacity var(--duration-slow) ease;
 }
 
-:root[data-theme="dark"] .logo-image {
-  filter: brightness(0);
+.logo-image-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .logo-image-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .logo-image-dark {
+  display: block;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .logo-image {
-    filter: brightness(0);
+  :root:not([data-theme="light"]) .logo-image-light {
+    display: none;
+  }
+
+  :root:not([data-theme="light"]) .logo-image-dark {
+    display: block;
   }
 }
 

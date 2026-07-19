@@ -1,5 +1,12 @@
 /* frontend/src/pages/Home.css */
 
+/* The home page is full-bleed: each section is a full-width band with its own
+   .section-content-container, so main's padding/max-width must not apply. */
+main:has(.home-page) {
+    padding: 0;
+    max-width: none;
+}
+
 .home-page {
     animation: fadeIn var(--duration-slower) ease-in-out;
 }
