@@ -1,6 +1,6 @@
 ================================================================================
 MIEDARIA PAUNILOR — OUTSTANDING WORK
-Last updated: 2026-07-19 (form layer migrated to react-hook-form; ProductForm split into sections)
+Last updated: 2026-07-19 (admin images moved to shared AdminImagesContext; AdminProductEdit on useFetch; validateEnumResponse extracted)
 ================================================================================
 
 Severity legend: [C]ritical  [H]igh  [M]edium  [L]ow
@@ -23,20 +23,6 @@ D. BACKEND — DEFERRED FOLLOW-UPS
 ================================================================================
 E. FRONTEND — DEFERRED FOLLOW-UPS
 ================================================================================
-
-Hooks / data fetching
-[M] frontend/src/hooks/useAdminImages.ts — Per-component fetch with no cache.
-    `AdminImages`, `AdminProductCreate`, and `AdminProductEdit` instantiate it
-    independently → 3 GET /admin/images on a single navigation flow. Consider
-    an `ImagesContext` or a small SWR-style cache (the hook no longer takes a
-    token now that auth rides on the cookie).
-[M] frontend/src/pages/admin/AdminProductEdit.tsx — Edit page handles
-    `productLoading` separately from `imagesLoading` (useAdminImages); they're
-    combined ad hoc. Move both single-shot loaders to the `useFetch<T>` hook
-    so they aggregate cleanly.
-[L] frontend/src/context/EnumContext.tsx:28-34 — Validates the API response
-    shape inline. Move to a `validateEnumResponse(...)` helper next to the
-    EnumValues type definition.
 
 Components / structure
 [L] frontend/src/i18n/locales/index.d.ts and JSON files — typed-key wrapper

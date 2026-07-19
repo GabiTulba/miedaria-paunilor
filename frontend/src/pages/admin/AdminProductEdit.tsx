@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +9,8 @@ import { Product, ProductFormData } from '../../types';
 import type { LotNutrition } from '../../types/generated/LotNutrition';
 import ProductForm from './ProductForm';
 import { applyServerErrors, errorMapping, mapBackendValidationErrors } from './errorMappings';
-import { useAdminImages } from '../../hooks/useAdminImages';
+import { useAdminImages } from '../../context/AdminImagesContext';
+import { useFetch } from '../../hooks/useFetch';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 import ConfirmModal from '../../components/ConfirmModal';
 
@@ -27,34 +28,24 @@ const NUTRITION_DEFAULTS: LotNutrition = {
 
 function AdminProductEdit() {
     const { productId } = useParams<{ productId: string }>();
-    const [product, setProduct] = useState<(Product & LotNutrition) | null>(null);
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { showToast } = useToast();
 
     const { images: availableImages, loading: imagesLoading, error: imagesError } = useAdminImages();
-    const [productLoading, setProductLoading] = useState<boolean>(true);
     const [submitting, setSubmitting] = useState(false);
     const [saved, setSaved] = useState(false);
 
-    useEffect(() => {
-        const fetchProduct = async () => {
-            if (!productId) {
-                setProductLoading(false);
-                return;
-            }
-            setProductLoading(true);
-            try {
-                const detail = await api.getProductByIdAdmin(productId);
-                setProduct({ ...detail.product, ...(detail.nutrition ?? NUTRITION_DEFAULTS) });
-            } catch (error) {
-                console.error("Failed to fetch product:", error);
-            } finally {
-                setProductLoading(false);
-            }
-        };
-        fetchProduct();
-    }, [productId]);
+    const { data: productDetail, loading: productLoading } = useFetch(
+        (signal) => productId ? api.getProductByIdAdmin(productId, signal) : Promise.resolve(null),
+        [productId],
+    );
+
+    // `values` (below) needs a referentially stable object, so derive it once per fetch.
+    const product: (Product & LotNutrition) | null = useMemo(
+        () => productDetail ? { ...productDetail.product, ...(productDetail.nutrition ?? NUTRITION_DEFAULTS) } : null,
+        [productDetail],
+    );
 
     // `values` re-initializes the form when the fetch lands; `product` is
     // referentially stable afterwards, so the form is not reset on re-renders.

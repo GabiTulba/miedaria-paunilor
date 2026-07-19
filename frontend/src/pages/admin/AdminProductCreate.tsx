@@ -9,7 +9,7 @@ import ProductForm from './ProductForm';
 import { ProductFormData } from '../../types';
 import { applyServerErrors, errorMapping, mapBackendValidationErrors } from './errorMappings';
 import { getTodayIsoDate } from '../../utils/dateUtils';
-import { useAdminImages } from '../../hooks/useAdminImages';
+import { useAdminImages } from '../../context/AdminImagesContext';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 import ConfirmModal from '../../components/ConfirmModal';
 

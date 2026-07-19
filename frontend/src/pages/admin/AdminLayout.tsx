@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useContext, useState, useEffect, useRef } from "react";
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from "../../context/AuthContext";
+import { AdminImagesProvider } from "../../context/AdminImagesContext";
 import ConfirmModal from "../../components/ConfirmModal";
 import ThemeToggle from "../../components/ThemeToggle";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
@@ -105,7 +106,9 @@ function AdminLayout() {
                 />
             )}
             <main className="admin-main-content">
-                <Outlet />
+                <AdminImagesProvider>
+                    <Outlet />
+                </AdminImagesProvider>
             </main>
             {showLogoutConfirm && (
                 <ConfirmModal

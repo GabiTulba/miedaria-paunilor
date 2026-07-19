@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '../lib/api';
-import { EnumValues } from '../enums';
+import { EnumValues, validateEnumResponse } from '../enums';
 
 interface EnumContextType {
     enums: EnumValues | null;
@@ -24,10 +24,8 @@ export function EnumProvider({ children }: { children: ReactNode }) {
         const fetchEnums = async () => {
             try {
                 setLoading(true);
-                const response = await api.get('/enums', { signal: controller.signal }) as EnumValues;
-                const expectedKeys: Array<keyof EnumValues> = ['mead_type', 'sweetness', 'turbidity', 'effervescence', 'acidity', 'tannins', 'body'];
-                const isValid = expectedKeys.every(key => Array.isArray(response[key]));
-                if (!isValid) {
+                const response = await api.get('/enums', { signal: controller.signal });
+                if (!validateEnumResponse(response)) {
                     console.error('Enum response missing expected keys or not arrays');
                     setError('Failed to fetch enum values');
                     return;

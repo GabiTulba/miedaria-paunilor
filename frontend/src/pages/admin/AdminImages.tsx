@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import ConfirmModal from '../../components/ConfirmModal';
-import { useAdminImages } from '../../hooks/useAdminImages';
+import { useAdminImages } from '../../context/AdminImagesContext';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { Skeleton } from '../../components/Skeleton';
 import ImageCard from '../../components/admin/ImageCard';

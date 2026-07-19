@@ -140,8 +140,8 @@ export const api = {
         });
     },
 
-    getProductByIdAdmin: async (id: string): Promise<AdminProductDetail> => {
-        return request(`/admin/products/${id}`, { method: 'GET' });
+    getProductByIdAdmin: async (id: string, signal?: AbortSignal): Promise<AdminProductDetail> => {
+        return request(`/admin/products/${id}`, { method: 'GET', signal });
     },
 
     deleteProduct: async (id: string) => {
