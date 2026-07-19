@@ -4,7 +4,7 @@ import { ProductFormData } from '../../../types';
 import EnumSelect, { EnumKind } from '../../../components/forms/EnumSelect';
 
 // Field name → enum kind; rendered in pairs per form-row.
-const CHARACTERISTIC_FIELDS: { name: keyof ProductFormData & string; kind: EnumKind; labelKey: string }[] = [
+const CHARACTERISTIC_FIELDS = [
     { name: 'product_type', kind: 'mead_type', labelKey: 'productType' },
     { name: 'sweetness', kind: 'sweetness', labelKey: 'sweetness' },
     { name: 'turbidity', kind: 'turbidity', labelKey: 'turbidity' },
@@ -12,7 +12,7 @@ const CHARACTERISTIC_FIELDS: { name: keyof ProductFormData & string; kind: EnumK
     { name: 'acidity', kind: 'acidity', labelKey: 'acidity' },
     { name: 'tannins', kind: 'tannins', labelKey: 'tannins' },
     { name: 'body', kind: 'body', labelKey: 'body' },
-];
+] as const satisfies readonly { name: keyof ProductFormData & string; kind: EnumKind; labelKey: string }[];
 
 function CharacteristicsSection() {
     const { t } = useTranslation();

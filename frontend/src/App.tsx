@@ -9,6 +9,7 @@ import ToastContainer from './components/ToastContainer';
 import LangGuard from './components/LangGuard';
 import { LocalizedLink, LocalizedNavLink } from './components/LocalizedLink';
 import { useFocusTrapDrawer } from './hooks/useFocusTrapDrawer';
+import { HamburgerButton } from './components/HamburgerButton';
 import './App.css';
 
 function App() {
@@ -65,19 +66,13 @@ function App() {
             <ThemeToggle />
             <LanguageSwitcher />
           </nav>
-          <button
+          <HamburgerButton
             ref={hamburgerRef}
-            type="button"
             className="hamburger"
             onClick={toggleMobileMenu}
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="main-navigation"
-            aria-label={t('navigation.toggleMenu')}
-          >
-            <span className="bar"></span>
-            <span className="bar"></span>
-            <span className="bar"></span>
-          </button>
+            open={isMobileMenuOpen}
+            controls="main-navigation"
+          />
         </div>
       </header>
       <ToastContainer />

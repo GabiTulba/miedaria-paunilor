@@ -1,3 +1,4 @@
+import type { ParseKeys, TFunction } from 'i18next';
 import type { EnumValues } from './types/generated/EnumValues';
 
 export type { EnumValue } from './types/generated/EnumValue';
@@ -27,9 +28,11 @@ const ENUM_TYPE_TO_TRANSLATION_KEY: Record<keyof EnumValues, string> = {
     body: 'body',
 };
 
-export function getEnumLabel(value: string, enumType: keyof EnumValues, t: (key: string) => string): string {
+export function getEnumLabel(value: string, enumType: keyof EnumValues, t: TFunction): string {
     const translationPrefix = ENUM_TYPE_TO_TRANSLATION_KEY[enumType];
-    const translationKey = `enums.${translationPrefix}.${value}`;
+    // Enum values come from the server, so the key can't be statically checked;
+    // an unknown key falls through to formatEnumLabel below.
+    const translationKey = `enums.${translationPrefix}.${value}` as ParseKeys;
     const translated = t(translationKey);
 
     if (translated === translationKey) {

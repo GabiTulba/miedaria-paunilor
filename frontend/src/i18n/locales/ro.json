@@ -284,7 +284,9 @@
       "username": "Nume utilizator",
       "password": "Parolă",
       "signIn": "Autentificare",
-      "invalidCredentials": "Nume utilizator sau parolă invalidă"
+      "invalidCredentials": "Nume utilizator sau parolă invalidă",
+      "showPassword": "Arată parola",
+      "hidePassword": "Ascunde parola"
     },
     "dashboard": {
       "title": "Panou de Control Admin",

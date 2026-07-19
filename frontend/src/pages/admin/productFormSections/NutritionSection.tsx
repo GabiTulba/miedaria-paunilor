@@ -9,7 +9,7 @@ import { numericOptions, validateNonNegative } from '../../../lib/validators';
 // (DECIMAL(6,1) in the DB); gram fields allow two (DECIMAL(5,2)).
 // energy_kj has no input: it is derived from kcal at submit time (see
 // normalizeProductPayload in lib/api.ts).
-const NUTRITION_FIELDS: { name: keyof LotNutrition; labelKey: string; step: string }[] = [
+const NUTRITION_FIELDS = [
     { name: 'energy_kcal', labelKey: 'energyKcal', step: '0.1' },
     { name: 'fat', labelKey: 'fat', step: '0.01' },
     { name: 'saturates', labelKey: 'saturates', step: '0.01' },
@@ -17,7 +17,7 @@ const NUTRITION_FIELDS: { name: keyof LotNutrition; labelKey: string; step: stri
     { name: 'sugars', labelKey: 'sugars', step: '0.01' },
     { name: 'protein', labelKey: 'protein', step: '0.01' },
     { name: 'salt', labelKey: 'salt', step: '0.01' },
-];
+] as const satisfies readonly { name: keyof LotNutrition; labelKey: string; step: string }[];
 
 function NutritionSection() {
     const { t } = useTranslation();

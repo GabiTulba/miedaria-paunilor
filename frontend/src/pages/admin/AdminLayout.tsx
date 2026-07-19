@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AuthContext } from "../../context/AuthContext";
 import { AdminImagesProvider } from "../../context/AdminImagesContext";
 import ConfirmModal from "../../components/ConfirmModal";
+import { HamburgerButton } from "../../components/HamburgerButton";
 import ThemeToggle from "../../components/ThemeToggle";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
@@ -45,19 +46,13 @@ function AdminLayout() {
     return (
         <div className="admin-layout admin-page">
             <header className="admin-topbar">
-                <button
+                <HamburgerButton
                     ref={hamburgerRef}
-                    type="button"
                     className="admin-hamburger"
                     onClick={toggleSidebar}
-                    aria-expanded={isSidebarOpen}
-                    aria-controls="admin-sidebar"
-                    aria-label={t('navigation.toggleMenu')}
-                >
-                    <span className="bar"></span>
-                    <span className="bar"></span>
-                    <span className="bar"></span>
-                </button>
+                    open={isSidebarOpen}
+                    controls="admin-sidebar"
+                />
                 <span className="admin-topbar-title">{t('admin.dashboard.title')}</span>
             </header>
             <aside

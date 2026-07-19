@@ -7,6 +7,8 @@
  * - In Stock: bottle_count >= 24
  */
 
+import type { ParseKeys, TFunction } from 'i18next';
+
 export interface StockStatus {
   status: 'out_of_stock' | 'low_stock' | 'in_stock';
   label: string;
@@ -22,8 +24,8 @@ const CSS_CLASSES: Record<StockVariant, Record<'out_of_stock' | 'low_stock' | 'i
   'product-details': { out_of_stock: 'out-of-stock-details', low_stock: 'low-stock-details', in_stock: 'in-stock-details' },
 };
 
-export function getStockStatus(bottleCount: number, variant: StockVariant, t?: (key: string) => string): StockStatus {
-  const translate = t || ((key: string) => key);
+export function getStockStatus(bottleCount: number, variant: StockVariant, t?: TFunction): StockStatus {
+  const translate: (key: ParseKeys) => string = t ?? (key => key);
   const classes = CSS_CLASSES[variant];
   const isAdmin = variant === 'admin';
 

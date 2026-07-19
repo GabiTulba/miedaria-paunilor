@@ -284,7 +284,9 @@
       "username": "Username",
       "password": "Password",
       "signIn": "Sign In",
-      "invalidCredentials": "Invalid username or password"
+      "invalidCredentials": "Invalid username or password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
     },
     "dashboard": {
       "title": "Admin Dashboard",

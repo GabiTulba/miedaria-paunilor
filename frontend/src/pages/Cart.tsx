@@ -4,6 +4,7 @@ import { CartContext } from '../context/CartContext';
 import { api } from '../lib/api';
 import { toFixed, toNumber } from '../utils/numberUtils';
 import { LocalizedLink } from '../components/LocalizedLink';
+import { usePulse } from '../hooks/usePulse';
 import SEO from '../components/SEO';
 import './Cart.css';
 
@@ -15,18 +16,7 @@ function Cart() {
     const [stockWarnings, setStockWarnings] = useState<Record<string, string>>({});
     const [showWarning, setShowWarning] = useState(true);
     const [checkoutMessage, setCheckoutMessage] = useState(false);
-    const [pulsingButtons, setPulsingButtons] = useState<Record<string, true>>({});
-
-    const triggerPulse = (key: string) => {
-        setPulsingButtons(prev => ({ ...prev, [key]: true }));
-        window.setTimeout(() => {
-            setPulsingButtons(prev => {
-                const next = { ...prev };
-                delete next[key];
-                return next;
-            });
-        }, 400);
-    };
+    const { isPulsing, pulse } = usePulse();
 
     useEffect(() => {
         if (cartItems.length === 0) return;
@@ -116,11 +106,11 @@ function Cart() {
                                          <p className="cart-item-price">{toFixed(item.price)} {item.currency}</p>
                                          <div className="quantity-selector-cart">
                                              <button
-                                                 className={pulsingButtons[`${item.product_id}-dec`] ? 'success-pulse' : undefined}
+                                                 className={isPulsing(`${item.product_id}-dec`) ? 'success-pulse' : undefined}
                                                  onClick={() => {
                                                      if (item.quantity <= 1) return;
                                                      updateQuantity(item.product_id, item.quantity - 1);
-                                                     triggerPulse(`${item.product_id}-dec`);
+                                                     pulse(`${item.product_id}-dec`);
                                                  }}
                                                  aria-label={t('product.decreaseQuantity')}
                                                  disabled={item.quantity <= 1}
@@ -143,10 +133,10 @@ function Cart() {
                                                  }}
                                              />
                                              <button
-                                                 className={pulsingButtons[`${item.product_id}-inc`] ? 'success-pulse' : undefined}
+                                                 className={isPulsing(`${item.product_id}-inc`) ? 'success-pulse' : undefined}
                                                  onClick={() => {
                                                      updateQuantity(item.product_id, item.quantity + 1, item.availableStock);
-                                                     triggerPulse(`${item.product_id}-inc`);
+                                                     pulse(`${item.product_id}-inc`);
                                                  }}
                                                  aria-label={t('product.increaseQuantity')}
                                                  disabled={item.quantity >= item.availableStock}

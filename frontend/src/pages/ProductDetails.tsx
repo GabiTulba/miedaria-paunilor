@@ -10,6 +10,7 @@ import { getImageUrl, getImageSrcSet } from '../lib/api';
 import { toFixed } from '../utils/numberUtils';
 import { useFormattedDate } from '../hooks/useFormattedDate';
 import { useFetch } from '../hooks/useFetch';
+import { usePulse } from '../hooks/usePulse';
 import CollapsibleSection from '../components/CollapsibleSection';
 import ErrorDisplay from '../components/ErrorDisplay';
 import Breadcrumb from '../components/Breadcrumb';
@@ -28,7 +29,7 @@ function ProductDetails() {
     const [quantity, setQuantity] = useState(1);
     const [imgError, setImgError] = useState(false);
     const [imgLoaded, setImgLoaded] = useState(false);
-    const [addToCartPulsing, setAddToCartPulsing] = useState(false);
+    const { isPulsing, pulse } = usePulse();
     const { addToCart } = useContext(CartContext);
     const { showToast } = useToast();
     const { t, i18n } = useTranslation();
@@ -44,8 +45,7 @@ function ProductDetails() {
         if (productWithImage?.product) {
             addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count);
             showToast(t('cart.addedToCart'), 'success');
-            setAddToCartPulsing(true);
-            window.setTimeout(() => setAddToCartPulsing(false), 400);
+            pulse('add-to-cart');
         }
     };
 
@@ -273,7 +273,7 @@ function ProductDetails() {
                                       >+</button>
                                   </div>
                                   <button
-                                      className={`button add-to-cart-btn${addToCartPulsing ? ' success-pulse' : ''}`}
+                                      className={`button add-to-cart-btn${isPulsing('add-to-cart') ? ' success-pulse' : ''}`}
                                       onClick={handleAddToCart}
                                       disabled={!isInStock(product.bottle_count)}
                                   >

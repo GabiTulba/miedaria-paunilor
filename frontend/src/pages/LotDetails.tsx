@@ -68,14 +68,14 @@ function LotDetails() {
     const formatNumber = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format;
     const lotLabel = t('lot.title', { number: lot.lot_number });
 
-    const gramRows: { labelKey: string; value: number; indented?: boolean }[] = [
-        { labelKey: 'fat', value: nutrition.fat },
+    const gramRows = [
+        { labelKey: 'fat', value: nutrition.fat, indented: false },
         { labelKey: 'saturates', value: nutrition.saturates, indented: true },
-        { labelKey: 'carbohydrates', value: nutrition.carbohydrates },
+        { labelKey: 'carbohydrates', value: nutrition.carbohydrates, indented: false },
         { labelKey: 'sugars', value: nutrition.sugars, indented: true },
-        { labelKey: 'protein', value: nutrition.protein },
-        { labelKey: 'salt', value: nutrition.salt },
-    ];
+        { labelKey: 'protein', value: nutrition.protein, indented: false },
+        { labelKey: 'salt', value: nutrition.salt, indented: false },
+    ] as const satisfies readonly { labelKey: string; value: number; indented: boolean }[];
 
     return (
         <div className="lot-details-page">
