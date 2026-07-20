@@ -10,11 +10,16 @@ import LangGuard from './components/LangGuard';
 import { LocalizedLink, LocalizedNavLink } from './components/LocalizedLink';
 import { useFocusTrapDrawer } from './hooks/useFocusTrapDrawer';
 import { HamburgerButton } from './components/HamburgerButton';
+import AgeGate, { AGE_VERIFIED_COOKIE } from './components/AgeGate';
+import CookieConsentBanner from './components/CookieConsentBanner';
+import { getCookie } from './lib/cookies';
 import './App.css';
 
 function App() {
   const { itemCount } = useContext(CartContext);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // Synchronous cookie read: no flash of gated content on first paint.
+  const [isAgeVerified, setIsAgeVerified] = useState(() => getCookie(AGE_VERIFIED_COOKIE) === '1');
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const hamburgerRef = useRef<HTMLButtonElement>(null);
@@ -77,6 +82,12 @@ function App() {
         </div>
       </header>
       <ToastContainer />
+      {isAgeVerified ? (
+        // One decision at a time: the consent banner waits for the age gate.
+        <CookieConsentBanner />
+      ) : (
+        <AgeGate onConfirm={() => setIsAgeVerified(true)} />
+      )}
       <main id="main-content">
         <ErrorBoundary>
           <LangGuard>

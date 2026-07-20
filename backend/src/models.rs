@@ -232,6 +232,93 @@ pub struct UpdateProductRequest {
     pub nutrition: LotNutrition,
 }
 
+#[derive(Queryable, Selectable, serde::Serialize, Debug, TS)]
+#[diesel(table_name = crate::schema::orders)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
+pub struct Order {
+    pub order_id: uuid::Uuid,
+    pub status: OrderStatus,
+    pub currency: String,
+    #[ts(type = "number")]
+    pub total_amount_cents: i64,
+    pub stripe_session_id: Option<String>,
+    pub stripe_payment_intent_id: Option<String>,
+    pub customer_email: Option<String>,
+    pub language: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = orders)]
+pub struct NewOrder {
+    pub currency: String,
+    pub total_amount_cents: i64,
+    pub language: String,
+}
+
+#[derive(Queryable, Selectable, serde::Serialize, Debug, TS)]
+#[diesel(table_name = crate::schema::order_items)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
+pub struct OrderItem {
+    pub order_item_id: uuid::Uuid,
+    pub order_id: uuid::Uuid,
+    pub product_id: String,
+    pub product_name: String,
+    #[ts(type = "number")]
+    pub unit_amount_cents: i64,
+    pub quantity: i32,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = order_items)]
+pub struct NewOrderItem {
+    pub order_id: uuid::Uuid,
+    pub product_id: String,
+    pub product_name: String,
+    pub unit_amount_cents: i64,
+    pub quantity: i32,
+}
+
+/// One cart line sent by the frontend when starting checkout. Quantities and
+/// prices are re-validated server-side; the client never sends amounts.
+#[derive(serde::Deserialize, Debug, TS)]
+#[ts(export)]
+pub struct CheckoutItem {
+    pub product_id: String,
+    pub quantity: i32,
+}
+
+#[derive(serde::Deserialize, Debug, TS)]
+#[ts(export)]
+pub struct CheckoutSessionRequest {
+    pub items: Vec<CheckoutItem>,
+}
+
+#[derive(serde::Serialize, Debug, TS)]
+#[ts(export)]
+pub struct CheckoutSessionResponse {
+    pub url: String,
+}
+
+/// Whether the store currently accepts checkouts. Also the request body for
+/// the admin toggle endpoint.
+#[derive(serde::Serialize, serde::Deserialize, Debug, TS)]
+#[ts(export)]
+pub struct CheckoutStatus {
+    pub enabled: bool,
+}
+
+/// Admin order-detail view: the order row plus its item snapshots.
+#[derive(serde::Serialize, Debug, TS)]
+#[ts(export)]
+pub struct OrderWithItems {
+    pub order: Order,
+    pub items: Vec<OrderItem>,
+}
+
 #[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug, TS)]
 #[diesel(table_name = crate::schema::blog_posts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]

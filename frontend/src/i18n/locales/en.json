@@ -260,13 +260,33 @@
     "clearCart": "Clear Cart",
     "remove": "Remove",
     "update": "Update",
-    "workInProgress": "Work in Progress",
-    "workInProgressMessage": "This cart page is currently under development. Until the checkout system is ready, please send your order via WhatsApp message with the items in your cart. Thank you for your understanding!",
-    "checkoutNotReady": "Checkout is not yet available. Please send your order via WhatsApp.",
+    "redirectingToPayment": "Redirecting to payment...",
+    "checkoutError": "Could not start checkout. Please try again.",
+    "checkoutOutOfStock": "Some items in your cart are no longer in stock. Please review your cart and try again.",
+    "checkoutDisabled": "Checkout is temporarily disabled. Please try again later.",
     "productUnavailable": "This product is no longer available",
     "outOfStock": "This product is now out of stock",
     "quantityReduced": "Quantity adjusted — only {{max}} available",
     "addedToCart": "Added to cart"
+  },
+  "ageGate": {
+    "title": "Are you over 18?",
+    "message": "This website sells alcoholic beverages. To enter, please confirm that you are at least 18 years old.",
+    "confirm": "I am 18 or older",
+    "deny": "I am under 18",
+    "deniedTitle": "We're sorry",
+    "deniedMessage": "This website sells alcoholic beverages and can only be visited by adults aged 18 or over."
+  },
+  "cookieConsent": {
+    "ariaLabel": "Cookie consent",
+    "message": "This site uses cookies to remember your cart, language preference, and age confirmation. No tracking or advertising cookies are used.",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
+  "checkout": {
+    "successTitle": "Thank you for your order!",
+    "successMessage": "Your payment was successful and your order has been confirmed.",
+    "successEmailNote": "You will receive a confirmation email from our payment provider shortly."
   },
   "admin": {
     "logout": {
@@ -295,6 +315,38 @@
       "totalStock": "Total Stock",
       "lowStock": "Low Stock",
       "totalValue": "Total Value"
+    },
+    "settings": {
+      "title": "Store Settings",
+      "checkoutToggle": "Online Checkout",
+      "checkoutEnabledHint": "Customers can pay online via Stripe.",
+      "checkoutDisabledHint": "Checkout is turned off — customers see a \"temporarily disabled\" message in their cart.",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "checkoutEnabledToast": "Checkout enabled",
+      "checkoutDisabledToast": "Checkout disabled",
+      "updateError": "Failed to update the setting. Please try again."
+    },
+    "orders": {
+      "title": "Orders",
+      "subtitle": "View and track customer orders",
+      "error": "Failed to load orders",
+      "noOrders": "No orders yet",
+      "noOrdersDescription": "Orders will appear here once customers complete checkout.",
+      "viewItems": "View Items",
+      "table": {
+        "date": "Date",
+        "status": "Status",
+        "email": "Customer Email",
+        "total": "Total",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "paid": "Paid",
+        "expired": "Expired",
+        "failed": "Failed"
+      }
     },
     "products": {
       "title": "Manage Products",
@@ -647,7 +699,8 @@
       "about": "About Us",
       "contact": "Contact",
       "notFound": "Page Not Found",
-      "cart": "Shopping Cart"
+      "cart": "Shopping Cart",
+      "checkoutSuccess": "Order Confirmed"
     },
     "pageDescriptions": {
       "home": "Home Page",

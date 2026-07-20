@@ -16,6 +16,8 @@ struct Config {
     jwt_secret: String,
     jwt_expiration_hours: i64,
     image_upload_dir: String,
+    stripe_secret_key: String,
+    stripe_webhook_secret: String,
 }
 
 /// Read `name` from the env, recording it in `missing` (and returning an
@@ -38,6 +40,8 @@ impl Config {
         let jwt_secret = required("JWT_SECRET", &mut missing);
         let jwt_expiration_hours_str = required("JWT_EXPIRATION_HOURS", &mut missing);
         let image_upload_dir = required("IMAGE_UPLOAD_DIR", &mut missing);
+        let stripe_secret_key = required("STRIPE_SECRET_KEY", &mut missing);
+        let stripe_webhook_secret = required("STRIPE_WEBHOOK_SECRET", &mut missing);
 
         if !missing.is_empty() {
             return Err(format!(
@@ -103,6 +107,8 @@ impl Config {
             jwt_secret,
             jwt_expiration_hours,
             image_upload_dir,
+            stripe_secret_key,
+            stripe_webhook_secret,
         })
     }
 }
@@ -148,6 +154,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         jwt_secret: config.jwt_secret,
         jwt_expiration_hours: config.jwt_expiration_hours,
         image_upload_dir: config.image_upload_dir,
+        stripe_client: stripe::Client::new(config.stripe_secret_key),
+        stripe_webhook_secret: config.stripe_webhook_secret,
     });
 
     let allowed_origin = app_state
@@ -169,6 +177,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let admin_routes = Router::new()
         .merge(routes::product::admin_router())
+        .merge(routes::checkout::admin_router())
         .merge(routes::blog::admin_router())
         .merge(routes::image::admin_router())
         .merge(routes::misc::admin_router())
@@ -187,6 +196,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let public_api_routes = Router::new()
         .merge(routes::product::public_router())
+        .merge(routes::checkout::public_router())
         .merge(routes::blog::public_router())
         .merge(routes::lot::public_router())
         .route_layer(axum::middleware::from_fn_with_state(
@@ -198,6 +208,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(public_image_route)
         .merge(public_api_routes)
         .merge(routes::misc::unscoped_router())
+        // Server-to-server Stripe endpoint: authenticated by signature
+        // verification over the raw body, so no auth middleware or CORS needs.
+        .merge(routes::checkout::webhook_router())
         .route("/api/admin/login", post(auth::login))
         .route("/api/admin/logout", post(auth::logout))
         .nest("/api/admin", admin_routes)

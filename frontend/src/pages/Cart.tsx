@@ -14,9 +14,20 @@ function Cart() {
     const { cartItems, removeFromCart, updateQuantity, updateStock, updateProduct, clearCart } = useContext(CartContext);
     const { t, i18n } = useTranslation();
     const [stockWarnings, setStockWarnings] = useState<Record<string, string>>({});
-    const [showWarning, setShowWarning] = useState(true);
-    const [checkoutMessage, setCheckoutMessage] = useState(false);
+    const [checkoutError, setCheckoutError] = useState<string | null>(null);
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const [isCheckoutEnabled, setIsCheckoutEnabled] = useState(true);
     const { isPulsing, pulse } = usePulse();
+
+    useEffect(() => {
+        const controller = new AbortController();
+        api.getCheckoutStatus(controller.signal)
+            .then(status => setIsCheckoutEnabled(status.enabled))
+            .catch(() => {
+                // Keep the button usable; the server guard has the final say.
+            });
+        return () => controller.abort();
+    }, []);
 
     useEffect(() => {
         if (cartItems.length === 0) return;
@@ -62,9 +73,27 @@ function Cart() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [i18n.language]);
 
-    const handleCheckout = () => {
-        setCheckoutMessage(true);
-        setTimeout(() => setCheckoutMessage(false), 5000);
+    const handleCheckout = async () => {
+        setCheckoutError(null);
+        setIsCheckingOut(true);
+        try {
+            const { url } = await api.createCheckoutSession(
+                cartItems.map(item => ({ product_id: item.product_id, quantity: item.quantity }))
+            );
+            window.location.assign(url);
+        } catch (err) {
+            console.error('Failed to start checkout:', err);
+            const status = (err as { status?: number }).status;
+            // 409 = a product went out of stock between page load and checkout;
+            // 503 = an admin disabled checkout after this page loaded.
+            if (status === 503) {
+                setIsCheckoutEnabled(false);
+                setCheckoutError(null);
+            } else {
+                setCheckoutError(status === 409 ? t('cart.checkoutOutOfStock') : t('cart.checkoutError'));
+            }
+            setIsCheckingOut(false);
+        }
     };
 
     // TODO: when checkout is implemented, totals MUST be recomputed server-side from
@@ -81,14 +110,6 @@ function Cart() {
             <header className="cart-header">
                 <h1>{t('cart.title')}</h1>
             </header>
-
-            {showWarning && (
-                <div className="cart-warning">
-                    <button className="cart-warning-dismiss" onClick={() => setShowWarning(false)} aria-label={t('common.close')}>&times;</button>
-                    <h3>{t('cart.workInProgress')}</h3>
-                    <p>{t('cart.workInProgressMessage')}</p>
-                </div>
-            )}
 
             {cartItems.length === 0 ? (
                 <div className="empty-cart">
@@ -169,9 +190,18 @@ function Cart() {
                             <span>{t('cart.total')}</span>
                             <span>{getTotalPrice()} {cartCurrency}</span>
                         </div>
-                        <button className="button checkout-btn" onClick={handleCheckout}>{t('cart.proceedToCheckout')}</button>
-                        {checkoutMessage && (
-                            <p className="checkout-message">{t('cart.checkoutNotReady')}</p>
+                        <button
+                            className="button checkout-btn"
+                            onClick={handleCheckout}
+                            disabled={isCheckingOut || !isCheckoutEnabled}
+                        >
+                            {isCheckingOut ? t('cart.redirectingToPayment') : t('cart.proceedToCheckout')}
+                        </button>
+                        {!isCheckoutEnabled && (
+                            <p className="checkout-message" role="alert">{t('cart.checkoutDisabled')}</p>
+                        )}
+                        {checkoutError && (
+                            <p className="checkout-message" role="alert">{checkoutError}</p>
                         )}
                         <button className="button-secondary clear-cart-btn" onClick={clearCart}>
                             {t('cart.clearCart')}

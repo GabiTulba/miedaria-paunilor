@@ -18,6 +18,10 @@ pub mod sql_types {
     pub struct MeadTypeEnum;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "order_status_enum"))]
+    pub struct OrderStatusEnum;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "sweetness_type_enum"))]
     pub struct SweetnessTypeEnum;
 
@@ -87,6 +91,35 @@ diesel::table! {
 }
 
 diesel::table! {
+    order_items (order_item_id) {
+        order_item_id -> Uuid,
+        order_id -> Uuid,
+        product_id -> Varchar,
+        product_name -> Varchar,
+        unit_amount_cents -> Int8,
+        quantity -> Int4,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::*;
+
+    orders (order_id) {
+        order_id -> Uuid,
+        status -> OrderStatusEnum,
+        currency -> Varchar,
+        total_amount_cents -> Int8,
+        stripe_session_id -> Nullable<Varchar>,
+        stripe_payment_intent_id -> Nullable<Varchar>,
+        customer_email -> Nullable<Varchar>,
+        language -> Varchar,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::*;
 
@@ -119,6 +152,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    site_settings (setting_key) {
+        setting_key -> Varchar,
+        setting_value -> Text,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     users (username) {
         username -> Varchar,
         hashed_password -> Varchar,
@@ -126,6 +167,8 @@ diesel::table! {
 }
 
 diesel::joinable!(lots -> products (product_id));
+diesel::joinable!(order_items -> orders (order_id));
+diesel::joinable!(order_items -> products (product_id));
 diesel::joinable!(products -> images (image_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
@@ -133,6 +176,9 @@ diesel::allow_tables_to_appear_in_same_query!(
     blog_posts,
     images,
     lots,
+    order_items,
+    orders,
     products,
+    site_settings,
     users,
 );

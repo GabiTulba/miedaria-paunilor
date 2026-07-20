@@ -43,6 +43,7 @@ pub enum AppError {
     BadRequest(String),
     Unauthorized(String),
     InternalServerError(String),
+    ServiceUnavailable(String),
     DatabaseConnectionError,
     TooManyRequests,
     ProductValidation(Vec<ProductValidationError>),
@@ -79,6 +80,7 @@ impl IntoResponse for AppError {
             AppError::BadRequest(m) => json_error(StatusCode::BAD_REQUEST, m),
             AppError::Unauthorized(m) => json_error(StatusCode::UNAUTHORIZED, m),
             AppError::InternalServerError(m) => json_error(StatusCode::INTERNAL_SERVER_ERROR, m),
+            AppError::ServiceUnavailable(m) => json_error(StatusCode::SERVICE_UNAVAILABLE, m),
             AppError::DatabaseConnectionError => json_error(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Could not connect to database",

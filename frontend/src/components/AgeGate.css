@@ -1,0 +1,38 @@
+/* Above ConfirmModal (10001) and ToastContainer (10000): nothing may cover the gate. */
+.age-gate-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.age-gate-card {
+    background: var(--color-surface);
+    color: var(--text-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    max-width: 28rem;
+    width: 100%;
+    padding: 2rem;
+    text-align: center;
+}
+
+.age-gate-card h2 {
+    margin-top: 0;
+}
+
+.age-gate-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.age-gate-deny {
+    background: var(--color-gray-500);
+}

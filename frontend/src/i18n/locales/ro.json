@@ -260,13 +260,33 @@
     "clearCart": "Golește Coșul",
     "remove": "Elimină",
     "update": "Anunț",
-    "workInProgress": "În Curs de Dezvoltare",
-    "workInProgressMessage": "Această pagină de coș este în curs de dezvoltare. Până când sistemul de finalizare a comenzii va fi gata, te rugăm să ne trimiți comanda prin mesaj WhatsApp cu produsele din coș. Vă mulțumim pentru înțelegere!",
-    "checkoutNotReady": "Finalizarea comenzii nu este încă disponibilă. Vă rugăm să trimiteți comanda prin WhatsApp.",
+    "redirectingToPayment": "Redirecționare către plată...",
+    "checkoutError": "Nu am putut porni finalizarea comenzii. Vă rugăm să încercați din nou.",
+    "checkoutOutOfStock": "Unele produse din coș nu mai sunt în stoc. Vă rugăm să verificați coșul și să încercați din nou.",
+    "checkoutDisabled": "Finalizarea comenzii este temporar dezactivată. Vă rugăm să reveniți mai târziu.",
     "productUnavailable": "Acest produs nu mai este disponibil",
     "outOfStock": "Acest produs nu mai este în stoc",
     "quantityReduced": "Cantitatea a fost ajustată — doar {{max}} disponibile",
     "addedToCart": "Adăugat în coș"
+  },
+  "ageGate": {
+    "title": "Ai peste 18 ani?",
+    "message": "Acest site comercializează băuturi alcoolice. Pentru a intra, te rugăm să confirmi că ai cel puțin 18 ani.",
+    "confirm": "Am 18 ani sau mai mult",
+    "deny": "Am sub 18 ani",
+    "deniedTitle": "Ne pare rău",
+    "deniedMessage": "Acest site comercializează băuturi alcoolice și poate fi vizitat doar de adulți cu vârsta de cel puțin 18 ani."
+  },
+  "cookieConsent": {
+    "ariaLabel": "Consimțământ cookie-uri",
+    "message": "Acest site folosește cookie-uri pentru a reține coșul de cumpărături, limba preferată și confirmarea vârstei. Nu folosim cookie-uri de urmărire sau publicitate.",
+    "accept": "Accept",
+    "decline": "Refuz"
+  },
+  "checkout": {
+    "successTitle": "Vă mulțumim pentru comandă!",
+    "successMessage": "Plata a fost efectuată cu succes și comanda dumneavoastră a fost confirmată.",
+    "successEmailNote": "Veți primi în curând un e-mail de confirmare de la procesatorul nostru de plăți."
   },
   "admin": {
     "logout": {
@@ -295,6 +315,38 @@
       "totalStock": "Total Stoc",
       "lowStock": "Stoc Redus",
       "totalValue": "Valoare Totală"
+    },
+    "settings": {
+      "title": "Setări Magazin",
+      "checkoutToggle": "Plată Online",
+      "checkoutEnabledHint": "Clienții pot plăti online prin Stripe.",
+      "checkoutDisabledHint": "Plata este oprită — clienții văd un mesaj de \"temporar dezactivat\" în coș.",
+      "enabled": "Activată",
+      "disabled": "Dezactivată",
+      "checkoutEnabledToast": "Plata online a fost activată",
+      "checkoutDisabledToast": "Plata online a fost dezactivată",
+      "updateError": "Actualizarea setării a eșuat. Vă rugăm să încercați din nou."
+    },
+    "orders": {
+      "title": "Comenzi",
+      "subtitle": "Vizualizează și urmărește comenzile clienților",
+      "error": "Nu s-au putut încărca comenzile",
+      "noOrders": "Nicio comandă încă",
+      "noOrdersDescription": "Comenzile vor apărea aici după ce clienții finalizează plata.",
+      "viewItems": "Vezi Produsele",
+      "table": {
+        "date": "Dată",
+        "status": "Status",
+        "email": "Email Client",
+        "total": "Total",
+        "actions": "Acțiuni"
+      },
+      "status": {
+        "pending": "În așteptare",
+        "paid": "Plătită",
+        "expired": "Expirată",
+        "failed": "Eșuată"
+      }
     },
     "products": {
       "title": "Gestionează Produse",
@@ -646,7 +698,8 @@
       "about": "Despre Noi",
       "contact": "Contact",
       "notFound": "Pagină Negăsită",
-      "cart": "Coș"
+      "cart": "Coș",
+      "checkoutSuccess": "Comandă Confirmată"
     },
     "pageDescriptions": {
       "home": "Pagina Principală",

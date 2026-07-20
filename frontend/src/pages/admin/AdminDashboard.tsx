@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useFetch } from '../../hooks/useFetch';
+import { useToast } from '../../context/ToastContext';
 import { useLanguage } from '../../hooks/useLanguage';
 import { getStockStatus } from '../../utils/stockAvailability';
 import { getImageUrl } from '../../lib/api';
@@ -14,6 +16,33 @@ function AdminDashboard() {
     const language = useLanguage();
     const { data, loading } = useFetch(signal => api.getProducts(undefined, signal), [language]);
     const products = data?.items ?? [];
+    const { showToast } = useToast();
+
+    const { data: checkoutStatus, loading: checkoutStatusLoading } = useFetch(
+        signal => api.getCheckoutStatus(signal),
+        []
+    );
+    // null = no local override yet; fall back to the fetched server state.
+    const [checkoutOverride, setCheckoutOverride] = useState<boolean | null>(null);
+    const [isSavingCheckout, setIsSavingCheckout] = useState(false);
+    const checkoutEnabled = checkoutOverride ?? checkoutStatus?.enabled ?? true;
+
+    const toggleCheckout = async () => {
+        setIsSavingCheckout(true);
+        try {
+            const result = await api.setCheckoutEnabled(!checkoutEnabled);
+            setCheckoutOverride(result.enabled);
+            showToast(
+                t(result.enabled ? 'admin.settings.checkoutEnabledToast' : 'admin.settings.checkoutDisabledToast'),
+                'success'
+            );
+        } catch (err) {
+            console.error('Failed to update checkout setting:', err);
+            showToast(t('admin.settings.updateError'), 'error');
+        } finally {
+            setIsSavingCheckout(false);
+        }
+    };
 
     const totalProducts = products.length;
     const totalStock = products.reduce((sum, pwi) => sum + pwi.product.bottle_count, 0);
@@ -95,6 +124,31 @@ function AdminDashboard() {
                             <p>{t('admin.blog.subtitle')}</p>
                         </div>
                     </Link>
+                </div>
+            </div>
+
+            <div className="quick-actions">
+                <h2>{t('admin.settings.title')}</h2>
+                <div className="settings-card">
+                    <div className="settings-card-text">
+                        <h3>{t('admin.settings.checkoutToggle')}</h3>
+                        <p>
+                            {checkoutEnabled
+                                ? t('admin.settings.checkoutEnabledHint')
+                                : t('admin.settings.checkoutDisabledHint')}
+                        </p>
+                    </div>
+                    <label className="settings-toggle">
+                        <input
+                            type="checkbox"
+                            checked={checkoutEnabled}
+                            disabled={checkoutStatusLoading || isSavingCheckout}
+                            onChange={toggleCheckout}
+                        />
+                        <span className={`status-badge ${checkoutEnabled ? 'status-active' : 'status-inactive'}`}>
+                            {checkoutEnabled ? t('admin.settings.enabled') : t('admin.settings.disabled')}
+                        </span>
+                    </label>
                 </div>
             </div>
 

@@ -11,6 +11,7 @@ import Home from './pages/Home';
 import Shop from './pages/Shop';
 import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
+import CheckoutSuccess from './pages/CheckoutSuccess';
 import AboutUs from './pages/AboutUs';
 import Contact from './pages/Contact';
 import Blog from './pages/Blog';
@@ -30,6 +31,7 @@ const AdminImages = React.lazy(() => import('./pages/admin/AdminImages'));
 const AdminBlog = React.lazy(() => import('./pages/admin/AdminBlog'));
 const AdminBlogCreate = React.lazy(() => import('./pages/admin/AdminBlogCreate'));
 const AdminBlogEdit = React.lazy(() => import('./pages/admin/AdminBlogEdit'));
+const AdminOrders = React.lazy(() => import('./pages/admin/AdminOrders'));
 
 import ProtectedRoute from './components/ProtectedRoute';
 import { detectInitialLang } from './lib/detectInitialLang';
@@ -64,6 +66,7 @@ const router = createBrowserRouter([
       { path: 'shop/:productId', element: <ProductDetails /> },
       { path: 'lot/:lotNumber', element: <LotDetails /> },
       { path: 'cart', element: <Cart /> },
+      { path: 'checkout/success', element: <CheckoutSuccess /> },
       { path: 'blog', element: <Blog /> },
       { path: 'blog/:slug', element: <BlogPostDetail /> },
       { path: 'about-us', element: <AboutUs /> },
@@ -87,6 +90,7 @@ const router = createBrowserRouter([
           { path: 'dashboard/blog', element: lazy(<AdminBlog />) },
           { path: 'dashboard/blog/create', element: lazy(<AdminBlogCreate />) },
           { path: 'dashboard/blog/:id/edit', element: lazy(<AdminBlogEdit />) },
+          { path: 'dashboard/orders', element: lazy(<AdminOrders />) },
         ],
       },
     ],

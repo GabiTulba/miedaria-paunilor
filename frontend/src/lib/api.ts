@@ -8,6 +8,11 @@ import type { MeResponse } from '../types/generated/MeResponse';
 import type { AdminProductDetail } from '../types/generated/AdminProductDetail';
 import type { LocalizedLot } from '../types/generated/LocalizedLot';
 import type { LotNutrition } from '../types/generated/LotNutrition';
+import type { CheckoutItem } from '../types/generated/CheckoutItem';
+import type { CheckoutStatus } from '../types/generated/CheckoutStatus';
+import type { CheckoutSessionResponse } from '../types/generated/CheckoutSessionResponse';
+import type { Order } from '../types/generated/Order';
+import type { OrderWithItems } from '../types/generated/OrderWithItems';
 import i18n from '../i18n/config';
 
 // Mirror of `VARIANT_WIDTHS` in backend/src/image_crud.rs.
@@ -107,6 +112,36 @@ export const api = {
     },
     getProductById: (id: string, signal?: AbortSignal): Promise<LocalizedProductWithImage> => request(`/products/${id}`, { signal }),
     getLot: (lotNumber: string, signal?: AbortSignal): Promise<LocalizedLot> => request(`/lots/${lotNumber}`, { signal }),
+
+    // Starts a Stripe Checkout Session; the returned url is Stripe-hosted and
+    // the browser should be redirected there. Prices are recomputed server-side.
+    createCheckoutSession: (items: CheckoutItem[]): Promise<CheckoutSessionResponse> => {
+        return request('/checkout/session', {
+            method: 'POST',
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ items }),
+        });
+    },
+
+    getCheckoutStatus: (signal?: AbortSignal): Promise<CheckoutStatus> => {
+        return request('/checkout/status', { signal });
+    },
+
+    setCheckoutEnabled: (enabled: boolean): Promise<CheckoutStatus> => {
+        return request('/admin/settings/checkout', {
+            method: 'PUT',
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ enabled }),
+        });
+    },
+
+    getAdminOrders: (page?: number, per_page?: number, signal?: AbortSignal): Promise<PaginatedResponse<Order>> => {
+        return request(`/admin/orders${buildQuery({ page, per_page })}`, { signal });
+    },
+
+    getAdminOrder: (id: string, signal?: AbortSignal): Promise<OrderWithItems> => {
+        return request(`/admin/orders/${id}`, { signal });
+    },
 
     adminLogin: async (credentials: LoginCredentials): Promise<LoginResponse> => {
         return request('/admin/login', {

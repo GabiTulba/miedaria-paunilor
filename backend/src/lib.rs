@@ -9,11 +9,13 @@ pub mod language;
 pub mod localized;
 pub mod lot_crud;
 pub mod models;
+pub mod order_crud;
 pub mod pagination;
 pub mod product_crud;
 pub mod routes;
 pub mod rss_crud;
 pub mod schema;
+pub mod settings_crud;
 pub mod sitemap_crud;
 pub mod user_crud;
 pub mod utils;
@@ -63,6 +65,8 @@ pub struct AppState {
     pub jwt_secret: String,
     pub jwt_expiration_hours: i64,
     pub image_upload_dir: String,
+    pub stripe_client: stripe::Client,
+    pub stripe_webhook_secret: String,
 }
 
 // Crate-root re-exports — only the symbols genuinely shared across

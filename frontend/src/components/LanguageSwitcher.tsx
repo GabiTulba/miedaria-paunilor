@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLanguage, Language, isLanguage, SUPPORTED_LANGUAGES } from '../hooks/useLanguage';
-import { writeLangCookie } from '../lib/detectInitialLang';
+import { persistLang } from '../lib/detectInitialLang';
 import './LanguageSwitcher.css';
 
 function LanguageSwitcher() {
@@ -12,7 +12,7 @@ function LanguageSwitcher() {
 
   const switchLanguage = (lng: Language) => {
     if (lng === language) return;
-    writeLangCookie(lng);
+    persistLang(lng);
     const segments = pathname.split('/');
     if (segments.length >= 2 && isLanguage(segments[1])) {
       segments[1] = lng;
@@ -21,11 +21,6 @@ function LanguageSwitcher() {
       return;
     }
     void i18n.changeLanguage(lng);
-    try {
-      window.localStorage?.setItem('i18nextLng', lng);
-    } catch {
-      // ignore storage failures
-    }
   };
 
   const labels: Record<Language, { flag: string; code: string; title: string; aria: string }> = {

@@ -1,4 +1,5 @@
 pub mod blog;
+pub mod checkout;
 pub mod image;
 pub mod lot;
 pub mod misc;

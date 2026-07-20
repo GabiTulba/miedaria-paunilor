@@ -1,0 +1,33 @@
+/* Below toasts (10000) and modals; above page content and header. */
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.5rem;
+    background: var(--color-surface);
+    color: var(--text-color);
+    box-shadow: var(--shadow-xl);
+    border-top: 1px solid var(--color-gray-300);
+}
+
+.cookie-banner-message {
+    margin: 0;
+    max-width: 48rem;
+}
+
+.cookie-banner-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.cookie-banner-decline {
+    background: var(--color-gray-500);
+}

@@ -6,6 +6,18 @@ use ts_rs::TS;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
 #[serde(rename_all = "kebab-case")]
 #[ts(export)]
+#[ExistingTypePath = "crate::schema::sql_types::OrderStatusEnum"]
+#[DbValueStyle = "kebab-case"]
+pub enum OrderStatus {
+    Pending,
+    Paid,
+    Expired,
+    Failed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
+#[serde(rename_all = "kebab-case")]
+#[ts(export)]
 #[ExistingTypePath = "crate::schema::sql_types::MeadTypeEnum"]
 #[DbValueStyle = "kebab-case"]
 pub enum MeadType {

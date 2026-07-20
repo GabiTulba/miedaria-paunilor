@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { isLanguage } from '../hooks/useLanguage';
-import { writeLangCookie } from '../lib/detectInitialLang';
+import { persistLang } from '../lib/detectInitialLang';
 import NotFound from '../pages/NotFound';
 
 interface LangGuardProps {
@@ -19,12 +19,7 @@ function LangGuard({ children }: LangGuardProps) {
 
   if (i18n.language !== lang) {
     void i18n.changeLanguage(lang);
-    writeLangCookie(lang);
-    try {
-      window.localStorage?.setItem('i18nextLng', lang);
-    } catch {
-      // ignore storage failures
-    }
+    persistLang(lang);
   }
 
   return <>{children}</>;

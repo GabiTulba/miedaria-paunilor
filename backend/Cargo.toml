@@ -30,4 +30,5 @@ diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp", "bmp", "tiff"] }
 webp = "0.3"
 strum = { version = "0.28.0", features = ["derive"] }
+async-stripe = { version = "0.41", default-features = false, features = ["runtime-tokio-hyper-rustls", "checkout", "webhook-events", "connect"] }
 ts-rs = { version = "12", features = ["chrono-impl", "uuid-impl", "no-serde-warnings"] }
