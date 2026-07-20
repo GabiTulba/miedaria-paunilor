@@ -57,7 +57,7 @@
 }
 
 .logo-image {
-  height: clamp(44px, 11vw, 90px);
+  height: clamp(30px, 7.5vw, 60px);
   width: auto;
   opacity: 1;
   transition: opacity var(--duration-slow) ease;

@@ -9,6 +9,7 @@ import { getStockStatus } from '../../utils/stockAvailability';
 import { getImageUrl } from '../../lib/api';
 import { toFixed } from '../../utils/numberUtils';
 import { Skeleton } from '../../components/Skeleton';
+import ConfirmModal from '../../components/ConfirmModal';
 import './Admin.css';
 
 function AdminDashboard() {
@@ -25,9 +26,11 @@ function AdminDashboard() {
     // null = no local override yet; fall back to the fetched server state.
     const [checkoutOverride, setCheckoutOverride] = useState<boolean | null>(null);
     const [isSavingCheckout, setIsSavingCheckout] = useState(false);
+    const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false);
     const checkoutEnabled = checkoutOverride ?? checkoutStatus?.enabled ?? true;
 
     const toggleCheckout = async () => {
+        setShowCheckoutConfirm(false);
         setIsSavingCheckout(true);
         try {
             const result = await api.setCheckoutEnabled(!checkoutEnabled);
@@ -143,7 +146,7 @@ function AdminDashboard() {
                             type="checkbox"
                             checked={checkoutEnabled}
                             disabled={checkoutStatusLoading || isSavingCheckout}
-                            onChange={toggleCheckout}
+                            onChange={() => setShowCheckoutConfirm(true)}
                         />
                         <span className={`status-badge ${checkoutEnabled ? 'status-active' : 'status-inactive'}`}>
                             {checkoutEnabled ? t('admin.settings.enabled') : t('admin.settings.disabled')}
@@ -151,6 +154,20 @@ function AdminDashboard() {
                     </label>
                 </div>
             </div>
+
+            {showCheckoutConfirm && (
+                <ConfirmModal
+                    title={t('admin.settings.confirmTitle')}
+                    message={t(checkoutEnabled
+                        ? 'admin.settings.confirmDisableMessage'
+                        : 'admin.settings.confirmEnableMessage')}
+                    confirmLabel={t(checkoutEnabled ? 'admin.settings.disable' : 'admin.settings.enable')}
+                    cancelLabel={t('common.cancel')}
+                    onConfirm={toggleCheckout}
+                    onCancel={() => setShowCheckoutConfirm(false)}
+                    variant={checkoutEnabled ? 'danger' : 'warning'}
+                />
+            )}
 
             {!loading && products.length > 0 && (
                 <div className="recent-products">

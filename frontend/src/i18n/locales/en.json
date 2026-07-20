@@ -325,6 +325,11 @@
       "disabled": "Disabled",
       "checkoutEnabledToast": "Checkout enabled",
       "checkoutDisabledToast": "Checkout disabled",
+      "confirmTitle": "Confirm Checkout Change",
+      "confirmEnableMessage": "Enable online checkout? Customers will be able to pay online again.",
+      "confirmDisableMessage": "Disable online checkout? Customers will not be able to place orders until it is re-enabled.",
+      "enable": "Enable",
+      "disable": "Disable",
       "updateError": "Failed to update the setting. Please try again."
     },
     "orders": {

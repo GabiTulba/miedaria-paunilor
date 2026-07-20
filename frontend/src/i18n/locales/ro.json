@@ -325,6 +325,11 @@
       "disabled": "Dezactivată",
       "checkoutEnabledToast": "Plata online a fost activată",
       "checkoutDisabledToast": "Plata online a fost dezactivată",
+      "confirmTitle": "Confirmă Modificarea Plății",
+      "confirmEnableMessage": "Activați plata online? Clienții vor putea plăti online din nou.",
+      "confirmDisableMessage": "Dezactivați plata online? Clienții nu vor putea plasa comenzi până la reactivare.",
+      "enable": "Activează",
+      "disable": "Dezactivează",
       "updateError": "Actualizarea setării a eșuat. Vă rugăm să încercați din nou."
     },
     "orders": {

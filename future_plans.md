@@ -4,30 +4,6 @@ Planned features for Miedăria Păunilor, in rough implementation order. Each se
 
 ---
 
-## 1. Navbar logo size reduction (quick win)
-
-**Goal:** The grayscale logos in the nav bar are too big; shrink them by ~33%.
-
-**Change:** In `frontend/src/App.css`, `.logo-image` currently uses `height: clamp(44px, 11vw, 90px)`. Reduce each clamp term by a third: `height: clamp(30px, 7.5vw, 60px)`. Verify the header height, the mobile breakpoints around lines 278/288 (which restyle `.logo`), and the hamburger-menu layout still align. The `width={895} height={614}` intrinsic-size attributes on the `<img>` tags in `App.tsx` stay as-is (they only prevent layout shift; CSS controls rendered size).
-
-**Effort:** Trivial — one CSS edit plus visual check at mobile/tablet/desktop widths.
-
----
-
-## 2. Confirmation popup for the checkout (selling) toggle
-
-**Goal:** Toggling "checkout enabled" in the admin dashboard takes the whole shop on/offline; it should require explicit confirmation instead of firing on a single click.
-
-**Design:** Reuse the existing `ConfirmModal` component (already used for admin logout confirmation). In `AdminDashboard.tsx`, the toggle's `onChange` no longer calls `toggleCheckout()` directly; it opens the modal with a message that states the direction of the change ("Disable checkout? Customers will not be able to place orders." / "Enable checkout? Customers will be able to place orders again."). Confirming runs the existing `toggleCheckout` logic; cancelling leaves the switch untouched.
-
-**Changes:**
-- `frontend/src/pages/admin/AdminDashboard.tsx`: add `showCheckoutConfirm` state, render `ConfirmModal`, move the API call behind the confirm handler.
-- `frontend/src/i18n/locales/en.json` + `ro.json`: add `admin.settings.confirmEnableCheckout` / `confirmDisableCheckout` (title + body + confirm/cancel labels).
-
-**Effort:** Small — frontend-only, no backend changes.
-
----
-
 ## 3. RON as the single price entry point, EUR derived from the BNR rate
 
 **Goal:** RON is the only legal trading currency in Romania, so admins should input prices **only in RON**. The English site should display a **dynamically converted EUR price** with a `*` footnote explaining that the EUR amount is indicative, derived from the official BNR exchange rate. The official rate is published by BNR at <https://curs.bnr.ro/nbrfxrates.xml>, updated at 13:00 Romania time each banking day.
