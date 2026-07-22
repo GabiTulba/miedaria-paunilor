@@ -27,7 +27,11 @@ async fn get_lot_by_number(
 
     Ok((
         vary_accept_language(),
-        Json(LocalizedLot::from_lot_page(row, lang)),
+        Json(LocalizedLot::from_lot_page(
+            row,
+            lang,
+            app_state.current_eur_rate(),
+        )),
     ))
 }
 

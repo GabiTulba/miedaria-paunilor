@@ -240,7 +240,7 @@ function AdminProducts() {
                                             </td>
                                             <td data-label={t('common.price')}>
                                                 <span className="product-price">
-                                                    {toFixed(product.price)} EUR
+                                                    {toFixed(product.price_ron)} RON
                                                 </span>
                                             </td>
                                             <td data-label={t('admin.products.stock')}>

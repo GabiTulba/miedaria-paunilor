@@ -116,7 +116,7 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
                       <span className="volume">{product.bottle_size}{t('common.milliliters')}</span>
                     </div>
                  </div>
-              <p className="price">{toFixed(product.price)} {product.currency}</p>
+              <p className="price">{toFixed(product.price)} {product.currency}{product.is_converted ? '*' : ''}</p>
              <p className={`availability ${stockStatus.cssClass}`}>{stockStatus.description}</p>
            </div>
         </div>

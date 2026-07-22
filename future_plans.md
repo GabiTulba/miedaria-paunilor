@@ -4,44 +4,6 @@ Planned features for Miedăria Păunilor, in rough implementation order. Each se
 
 ---
 
-## 3. RON as the single price entry point, EUR derived from the BNR rate
-
-**Goal:** RON is the only legal trading currency in Romania, so admins should input prices **only in RON**. The English site should display a **dynamically converted EUR price** with a `*` footnote explaining that the EUR amount is indicative, derived from the official BNR exchange rate. The official rate is published by BNR at <https://curs.bnr.ro/nbrfxrates.xml>, updated at 13:00 Romania time each banking day.
-
-### Current state
-- `products` has both `price` (EUR, `DECIMAL(7,2)`) and `price_ron`; admins enter both manually in `PricingSection.tsx`.
-- Localized public responses pick price + `currency` ("EUR" or "RON") from `Accept-Language`.
-- Stripe checkout (`routes/checkout.rs`) charges EUR for `en` sessions and RON for `ro` sessions using the stored per-currency amounts.
-
-### Design
-
-**Data model**
-- Drop the `price` (EUR) column from `products`; `price_ron` becomes the single source of truth (migration: drop column + its CHECK constraint; regenerate `schema.rs` and ts-rs types).
-- New `exchange_rates` table: `(currency VARCHAR(3), rate DECIMAL(10,4), rate_date DATE, fetched_at TIMESTAMPTZ, PRIMARY KEY (currency, rate_date))`. Keeping history (rather than one `site_settings` key) gives an audit trail of which rate priced which order, and lets us backfill reporting.
-
-**Rate fetching**
-- New backend module `exchange_rate.rs`: fetch and parse `https://curs.bnr.ro/nbrfxrates.xml` (small XML — parse with `quick-xml`; the relevant node is `<Rate currency="EUR">`), upsert into `exchange_rates`.
-- A `tokio` background task in `main.rs` runs on startup and then daily shortly after 13:00 Europe/Bucharest (e.g. 13:10 with retry/backoff every 15 min until success — BNR occasionally publishes late; weekends/holidays reuse the last published rate, which is exactly BNR semantics).
-- Fallback policy: if fetching fails, keep serving the most recent stored rate and log a warning. Seed the table via migration or first-run fetch so there is never a "no rate" state; if the DB truly has no rate yet, the English site falls back to showing RON prices (never invent a rate).
-
-**Price display**
-- `localized.rs`: for `Language::En`, compute `price_eur = price_ron / rate`, rounded **half-up to 2 decimals**, and return it with `currency: "EUR"` plus a new field `is_converted: true` (Romanian responses keep `is_converted: false`). Expose the rate date too (`rate_date`) so the frontend footnote can say which day's rate was used.
-- Frontend: everywhere a price renders on the English site (`ProductCard`, `ProductDetails`, `Cart`, home featured products), append `*` when `is_converted` is set, and render one shared footnote component: "\*Prices are charged in RON. EUR amounts are indicative, converted at the official BNR rate of {rate_date}." Add translations; on the Romanian site nothing changes.
-
-**Checkout**
-- Simplest compliant option (recommended): **charge everyone in RON.** `checkout.rs` stops branching currency by language; Stripe line items are always RON from `price_ron`, and the customer's bank does the conversion. The EUR display is purely informational. This removes the risk of the displayed EUR price and charged EUR price drifting apart.
-- Alternative (only if EUR settlement is genuinely wanted): charge EUR computed from the day's stored rate at session-creation time and snapshot the rate on the order. More moving parts and reconciliation burden — not recommended.
-
-**Admin**
-- `PricingSection.tsx`: remove the EUR input; keep a single RON price field. Optionally show a read-only "≈ X EUR at today's BNR rate" hint (needs a small `GET /api/exchange-rate` public endpoint, which the footnote could also reuse).
-- `AdminDashboard.tsx` inventory-value stat uses RON.
-
-**Order of work:** migration + schema/type regen → rate fetcher + table → localized response change → checkout change → admin form → frontend display + footnote.
-
-**Effort:** Medium. Touches DB, backend jobs, checkout, and every price render.
-
----
-
 ## 4. Mailing list (blog notifications + product news)
 
 **Goal:** Visitors can subscribe to a mailing list. When an admin publishes a blog post, they can optionally email it to the list. A non-intrusive popup on the home page invites subscription after a while.

@@ -48,8 +48,10 @@ fn amount_cents(price: Decimal) -> Result<i64, RepositoryError> {
     })
 }
 
-/// Creates a pending order, snapshotting name/price in the request language,
-/// and atomically reserves stock for every line. Fails with `Conflict` if any
+/// Creates a pending order, snapshotting the name in the request language,
+/// and atomically reserves stock for every line. All orders are charged in
+/// RON — the only currency prices are set in; EUR amounts shown on the
+/// English site are indicative conversions. Fails with `Conflict` if any
 /// product is missing, deleted, or short on stock — nothing is reserved then.
 pub fn create_pending_order(
     conn: &mut PgConnection,
@@ -66,7 +68,7 @@ pub fn create_pending_order(
             // Conditional decrement doubles as the stock check: 0 rows updated
             // means "not found, deleted, or insufficient stock", and the
             // transaction rollback releases any earlier reservations.
-            let reserved: Option<(String, String, Decimal, Decimal)> = diesel::update(
+            let reserved: Option<(String, String, Decimal)> = diesel::update(
                 products::table.filter(
                     products::product_id
                         .eq(&item.product_id)
@@ -78,24 +80,23 @@ pub fn create_pending_order(
             .returning((
                 products::product_name,
                 products::product_name_ro,
-                products::price,
                 products::price_ron,
             ))
             .get_result(conn)
             .optional()?;
 
-            let (name_en, name_ro, price_eur, price_ron) = reserved.ok_or_else(|| {
+            let (name_en, name_ro, price_ron) = reserved.ok_or_else(|| {
                 RepositoryError::Conflict(format!(
                     "Insufficient stock for product {}",
                     item.product_id
                 ))
             })?;
 
-            let (product_name, unit_price) = match language {
-                Language::En => (name_en, price_eur),
-                Language::Ro => (name_ro, price_ron),
+            let product_name = match language {
+                Language::En => name_en,
+                Language::Ro => name_ro,
             };
-            let unit_amount_cents = amount_cents(unit_price)?;
+            let unit_amount_cents = amount_cents(price_ron)?;
             total_cents += unit_amount_cents * i64::from(item.quantity);
 
             new_items.push(NewOrderItem {
@@ -107,9 +108,10 @@ pub fn create_pending_order(
             });
         }
 
-        let (currency, language_code) = match language {
-            Language::En => ("EUR", "en"),
-            Language::Ro => ("RON", "ro"),
+        let currency = "RON";
+        let language_code = match language {
+            Language::En => "en",
+            Language::Ro => "ro",
         };
 
         let order: Order = diesel::insert_into(orders::table)

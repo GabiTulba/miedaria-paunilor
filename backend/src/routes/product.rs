@@ -150,9 +150,10 @@ async fn get_all_products(
     let total_count = product_crud::count_products(&mut conn, &opts)?;
     let products = product_crud::list_products(&mut conn, &opts, page.limit, page.offset)?;
 
+    let eur_rate = app_state.current_eur_rate();
     let items: Vec<_> = products
         .into_iter()
-        .map(|p| LocalizedProductWithImage::from_product_with_image(p, lang))
+        .map(|p| LocalizedProductWithImage::from_product_with_image(p, lang, eur_rate))
         .collect();
 
     let total_pages = pagination::total_pages(total_count, page.per_page);
@@ -177,7 +178,9 @@ async fn get_product_by_id(
     Ok((
         vary_accept_language(),
         Json(LocalizedProductWithImage::from_product_with_image(
-            product, lang,
+            product,
+            lang,
+            app_state.current_eur_rate(),
         )),
     ))
 }

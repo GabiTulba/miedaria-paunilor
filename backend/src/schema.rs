@@ -62,6 +62,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    exchange_rates (currency, rate_date) {
+        currency -> Varchar,
+        rate_date -> Date,
+        rate -> Numeric,
+        fetched_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     images (id) {
         id -> Uuid,
         file_name -> Varchar,
@@ -141,7 +150,6 @@ diesel::table! {
         abv -> Numeric,
         bottle_count -> Int4,
         bottle_size -> Int4,
-        price -> Numeric,
         price_ron -> Numeric,
         image_id -> Nullable<Uuid>,
         bottling_date -> Date,
@@ -174,6 +182,7 @@ diesel::joinable!(products -> images (image_id));
 diesel::allow_tables_to_appear_in_same_query!(
     admin_users,
     blog_posts,
+    exchange_rates,
     images,
     lots,
     order_items,

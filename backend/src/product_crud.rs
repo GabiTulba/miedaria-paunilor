@@ -56,12 +56,9 @@ pub enum ProductValidationError {
     InvalidBottleCount,
     BottleCountTooLarge,
     InvalidBottleSize,
-    InvalidPrice,
     InvalidPriceRon,
-    PriceBelowMinimum,
     PriceRonBelowMinimum,
     InvalidAbvPrecision,
-    InvalidPricePrecision,
     InvalidPriceRonPrecision,
     InvalidBottlingDate,
     InvalidLotNumber,
@@ -97,7 +94,6 @@ struct ProductValidationInput<'a> {
     abv: Decimal,
     bottle_count: i32,
     bottle_size: i32,
-    price: Decimal,
     price_ron: Decimal,
     bottling_date: chrono::NaiveDate,
     lot_number: i32,
@@ -105,7 +101,7 @@ struct ProductValidationInput<'a> {
 
 /// `Product` and `NewProduct` share the validated field set (Diesel generates
 /// both from the same schema). The macro emits a `From` impl that copies the
-/// same 14 fields from either source — adding a new validated field is a
+/// same 13 fields from either source — adding a new validated field is a
 /// single edit to the macro body.
 macro_rules! impl_validation_input_from {
     ($source:ty) => {
@@ -122,7 +118,6 @@ macro_rules! impl_validation_input_from {
                     abv: p.abv,
                     bottle_count: p.bottle_count,
                     bottle_size: p.bottle_size,
-                    price: p.price,
                     price_ron: p.price_ron,
                     bottling_date: p.bottling_date,
                     lot_number: p.lot_number,
@@ -141,10 +136,8 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
     // ABV: 0.0–99.9 (DECIMAL(3,1))
     let abv_min = Decimal::new(0, 1);
     let abv_max = Decimal::new(999, 1);
-    // EUR price: 0.00–99999.99 (DECIMAL(7,2))
-    let price_min = Decimal::new(0, 2);
-    let price_max_eur = Decimal::new(9999999, 2);
     // RON price: 0.00–99999.99 (DECIMAL(7,2))
+    let price_min = Decimal::new(0, 2);
     let price_max_ron = Decimal::new(9999999, 2);
     // Business minimum: prices below 1.00 are almost certainly mis-entered.
     let price_min_business = Decimal::new(100, 2);
@@ -210,16 +203,6 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
     // bottle_size: Positive integer (mililiters of volume).
     if input.bottle_size <= 0 {
         errors.push(ProductValidationError::InvalidBottleSize);
-    }
-
-    // price: Decimal with two digits of precision.
-    if input.price < price_min || input.price > price_max_eur {
-        errors.push(ProductValidationError::InvalidPrice);
-    } else if input.price < price_min_business {
-        errors.push(ProductValidationError::PriceBelowMinimum);
-    }
-    if input.price.scale() > 2 {
-        errors.push(ProductValidationError::InvalidPricePrecision);
     }
 
     // price_ron: Decimal with two digits of precision.
@@ -626,9 +609,9 @@ macro_rules! apply_product_order {
             $q = match col {
                 "price" => {
                     if desc {
-                        $q.order(p::price.desc())
+                        $q.order(p::price_ron.desc())
                     } else {
-                        $q.order(p::price.asc())
+                        $q.order(p::price_ron.asc())
                     }
                 }
                 "volume" => {

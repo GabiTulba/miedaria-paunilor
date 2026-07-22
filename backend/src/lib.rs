@@ -4,6 +4,7 @@ pub mod db;
 pub mod enum_crud;
 pub mod enums;
 pub mod error;
+pub mod exchange_rate;
 pub mod image_crud;
 pub mod language;
 pub mod localized;
@@ -67,6 +68,19 @@ pub struct AppState {
     pub image_upload_dir: String,
     pub stripe_client: stripe::Client,
     pub stripe_webhook_secret: String,
+    /// Latest known BNR EUR reference rate, kept warm by the refresh task so
+    /// request handlers never hit the database for currency conversion.
+    pub eur_rate: std::sync::RwLock<Option<exchange_rate::EurRate>>,
+}
+
+impl AppState {
+    pub fn current_eur_rate(&self) -> Option<exchange_rate::EurRate> {
+        *self.eur_rate.read().expect("eur_rate lock poisoned")
+    }
+
+    pub fn set_eur_rate(&self, rate: exchange_rate::EurRate) {
+        *self.eur_rate.write().expect("eur_rate lock poisoned") = Some(rate);
+    }
 }
 
 // Crate-root re-exports — only the symbols genuinely shared across

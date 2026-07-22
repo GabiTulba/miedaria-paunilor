@@ -6,7 +6,7 @@ use dotenvy::dotenv;
 use backend::routes;
 use backend::{
     AppState, auth, build_admin_limiter, build_image_serve_limiter, build_login_limiter,
-    build_public_api_limiter, db,
+    build_public_api_limiter, db, exchange_rate,
 };
 
 struct Config {
@@ -156,7 +156,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         image_upload_dir: config.image_upload_dir,
         stripe_client: stripe::Client::new(config.stripe_secret_key),
         stripe_webhook_secret: config.stripe_webhook_secret,
+        eur_rate: std::sync::RwLock::new(None),
     });
+
+    // Warm the EUR rate cache from the database before serving so English
+    // responses convert from the first request; the background task then
+    // fetches fresh BNR rates daily.
+    match db::get_db_connection(&app_state)
+        .map(|mut conn| exchange_rate::latest_eur_rate(&mut conn))
+    {
+        Ok(Ok(Some(rate))) => app_state.set_eur_rate(rate),
+        Ok(Ok(None)) => tracing::info!("no stored BNR EUR rate yet; awaiting first fetch"),
+        Ok(Err(e)) => tracing::warn!(error = ?e, "failed to load stored BNR EUR rate"),
+        Err(e) => tracing::warn!(error = ?e, "failed to load stored BNR EUR rate"),
+    }
+    tokio::spawn(exchange_rate::run_refresh_task(app_state.clone()));
 
     let allowed_origin = app_state
         .site_url

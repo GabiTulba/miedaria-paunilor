@@ -1,10 +1,13 @@
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ProductFormData } from '../../../types';
 import NumberInput from '../../../components/forms/NumberInput';
 import { useLanguage } from '../../../hooks/useLanguage';
+import { useFormattedDate } from '../../../hooks/useFormattedDate';
+import { useFetch } from '../../../hooks/useFetch';
+import { api } from '../../../lib/api';
 import { numericOptions, validateAbv, validatePositiveNumber, validateNonNegative } from '../../../lib/validators';
 // Side-effect import — registers en/ro locales with react-datepicker.
 import '../../../utils/dateUtils';
@@ -28,7 +31,19 @@ function dateToIso(date: Date | null): string {
 function PricingSection() {
     const { t } = useTranslation();
     const language = useLanguage();
+    const formatDate = useFormattedDate();
     const { register, control, formState: { errors } } = useFormContext<ProductFormData>();
+
+    // Prices are entered in RON only; show the indicative EUR equivalent at
+    // the current BNR rate as a hint under the input.
+    const { data: exchangeRate } = useFetch(signal => api.getExchangeRate(signal), []);
+    const priceRon = useWatch({ control, name: 'price_ron' });
+    const eurHint = exchangeRate && Number(priceRon) > 0
+        ? t('admin.productForm.priceRonEurApprox', {
+            amount: (Number(priceRon) / exchangeRate.rate).toFixed(2),
+            date: formatDate(exchangeRate.rate_date),
+        })
+        : undefined;
 
     return (
         <div className="form-section">
@@ -47,25 +62,13 @@ function PricingSection() {
                         {...register('abv', numericOptions(validateAbv))}
                     />
                     <NumberInput
-                        id="price"
-                        label={t('admin.productForm.price') + ' (EUR)'}
-                        required
-                        step="0.01"
-                        min="0"
-                        error={errors.price?.message}
-                        helpText={t('admin.productForm.priceHelp')}
-                        {...register('price', numericOptions((v) => validatePositiveNumber(v, 'Price')))}
-                    />
-                </div>
-                <div className="form-row">
-                    <NumberInput
                         id="price_ron"
                         label={t('admin.productForm.price') + ' (RON)'}
                         required
                         step="0.01"
                         min="0"
                         error={errors.price_ron?.message}
-                        helpText={t('admin.productForm.priceRonHelp')}
+                        helpText={eurHint ?? t('admin.productForm.priceRonHelp')}
                         {...register('price_ron', numericOptions((v) => validatePositiveNumber(v, 'Price (RON)')))}
                     />
                 </div>

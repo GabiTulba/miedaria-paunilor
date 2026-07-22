@@ -42,9 +42,12 @@ async fn create_checkout_session(
         order_crud::create_pending_order(&mut conn, &request.items, lang)?
     };
 
-    let (currency, lang_code) = match lang {
-        Language::En => (stripe::Currency::EUR, "en"),
-        Language::Ro => (stripe::Currency::RON, "ro"),
+    // All orders are charged in RON regardless of site language; the EUR
+    // amounts shown on the English site are indicative BNR conversions.
+    let currency = stripe::Currency::RON;
+    let lang_code = match lang {
+        Language::En => "en",
+        Language::Ro => "ro",
     };
 
     let line_items: Vec<stripe::CreateCheckoutSessionLineItems> = items

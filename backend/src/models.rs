@@ -94,9 +94,6 @@ pub struct Product {
     pub bottle_size: i32,
     #[serde(with = "rust_decimal::serde::float")]
     #[ts(type = "number")]
-    pub price: Decimal,
-    #[serde(with = "rust_decimal::serde::float")]
-    #[ts(type = "number")]
     pub price_ron: Decimal,
     pub image_id: Option<uuid::Uuid>,
     pub bottling_date: chrono::NaiveDate,
@@ -129,9 +126,6 @@ pub struct NewProduct {
     pub abv: Decimal,
     pub bottle_count: i32,
     pub bottle_size: i32,
-    #[serde(with = "rust_decimal::serde::float")]
-    #[ts(type = "number")]
-    pub price: Decimal,
     #[serde(with = "rust_decimal::serde::float")]
     #[ts(type = "number")]
     pub price_ron: Decimal,
@@ -383,7 +377,6 @@ mod tests {
             "abv": 12.5,
             "bottle_count": 10,
             "bottle_size": 500,
-            "price": 15.0,
             "price_ron": 75.0,
             "image_id": null,
             "bottling_date": "2026-01-10",

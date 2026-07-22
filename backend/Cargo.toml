@@ -22,6 +22,9 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
 chrono = { version = "0.4.38", features = ["serde"] }
+chrono-tz = "0.10"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+quick-xml = "0.37"
 r2d2 = "0.8.10"
 async-trait = "0.1.80"
 mime_guess = "2.0"

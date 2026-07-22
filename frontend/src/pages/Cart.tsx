@@ -6,6 +6,7 @@ import { toFixed, toNumber } from '../utils/numberUtils';
 import { LocalizedLink } from '../components/LocalizedLink';
 import { usePulse } from '../hooks/usePulse';
 import SEO from '../components/SEO';
+import EurConversionNote from '../components/EurConversionNote';
 import './Cart.css';
 
 const DEFAULT_CURRENCY = 'EUR';
@@ -55,6 +56,8 @@ function Cart() {
                     product_name: data.product.product_name,
                     price: data.product.price,
                     currency: data.product.currency,
+                    is_converted: data.product.is_converted,
+                    rate_date: data.product.rate_date,
                 });
                 const stock = data.product.bottle_count;
                 if (stock !== cartItem.availableStock) {
@@ -124,7 +127,7 @@ function Cart() {
                                 <div key={item.product_id} className="cart-item">
                                     <div className="cart-item-details">
                                         <h3>{item.product_name}</h3>
-                                         <p className="cart-item-price">{toFixed(item.price)} {item.currency}</p>
+                                         <p className="cart-item-price">{toFixed(item.price)} {item.currency}{item.is_converted ? '*' : ''}</p>
                                          <div className="quantity-selector-cart">
                                              <button
                                                  className={isPulsing(`${item.product_id}-dec`) ? 'success-pulse' : undefined}
@@ -174,7 +177,7 @@ function Cart() {
                                              </div>
                                          )}
                                          <p className="cart-item-subtotal">
-                                              {t('cart.subtotal')}: {(Math.round(toNumber(item.price) * 100) * item.quantity / 100).toFixed(2)} {item.currency}
+                                              {t('cart.subtotal')}: {(Math.round(toNumber(item.price) * 100) * item.quantity / 100).toFixed(2)} {item.currency}{item.is_converted ? '*' : ''}
                                          </p>
                                     </div>
                                     <button className="remove-item-btn" onClick={() => removeFromCart(item.product_id)} aria-label={t('cart.remove')}>
@@ -188,8 +191,9 @@ function Cart() {
                         <h3>{t('cart.orderSummary')}</h3>
                         <div className="summary-total">
                             <span>{t('cart.total')}</span>
-                            <span>{getTotalPrice()} {cartCurrency}</span>
+                            <span>{getTotalPrice()} {cartCurrency}{cartItems.some(i => i.is_converted) ? '*' : ''}</span>
                         </div>
+                        <EurConversionNote products={cartItems} />
                         <button
                             className="button checkout-btn"
                             onClick={handleCheckout}

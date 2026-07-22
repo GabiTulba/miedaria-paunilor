@@ -30,7 +30,6 @@
   top: 0;
   z-index: 1000;
   width: 100%;
-  min-height: 60px;
 }
 
 .header .container {
@@ -272,7 +271,6 @@
 @media (--bp-sm) {
   .header {
     padding: 10px 0;
-    min-height: 80px;
   }
 
   .logo {
@@ -281,10 +279,6 @@
 }
 
 @media (--bp-lg) {
-  .header {
-    min-height: 100px;
-  }
-
   .logo {
     gap: 15px;
   }

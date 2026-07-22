@@ -13,6 +13,7 @@ use crate::AppState;
 use crate::auth;
 use crate::db;
 use crate::enum_crud;
+use crate::exchange_rate::ExchangeRateInfo;
 use crate::rss_crud;
 use crate::sitemap_crud;
 
@@ -22,6 +23,15 @@ async fn health_check() -> impl IntoResponse {
 
 async fn get_enum_values() -> Result<Json<enum_crud::EnumValues>, AppError> {
     Ok(Json(enum_crud::get_all_enum_values()))
+}
+
+/// Returns the BNR EUR rate used for indicative price conversion, or `null`
+/// when no rate has been fetched yet. Served from the in-memory cache — no
+/// database access.
+async fn get_exchange_rate(
+    State(app_state): State<Arc<AppState>>,
+) -> Json<Option<ExchangeRateInfo>> {
+    Json(app_state.current_eur_rate().map(ExchangeRateInfo::from))
 }
 
 async fn get_sitemap_data(
@@ -64,6 +74,7 @@ pub fn unscoped_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/health", get(health_check))
         .route("/api/enums", get(get_enum_values))
+        .route("/api/exchange-rate", get(get_exchange_rate))
         .route("/api/sitemap-data", get(get_sitemap_data))
         .route("/blog/rss.xml", get(get_blog_rss))
 }

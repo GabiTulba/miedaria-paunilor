@@ -7,6 +7,7 @@ import type { GetAdminProductsQuery } from '../types/generated/GetAdminProductsQ
 import type { MeResponse } from '../types/generated/MeResponse';
 import type { AdminProductDetail } from '../types/generated/AdminProductDetail';
 import type { LocalizedLot } from '../types/generated/LocalizedLot';
+import type { ExchangeRateInfo } from '../types/generated/ExchangeRateInfo';
 import type { LotNutrition } from '../types/generated/LotNutrition';
 import type { CheckoutItem } from '../types/generated/CheckoutItem';
 import type { CheckoutStatus } from '../types/generated/CheckoutStatus';
@@ -112,6 +113,8 @@ export const api = {
     },
     getProductById: (id: string, signal?: AbortSignal): Promise<LocalizedProductWithImage> => request(`/products/${id}`, { signal }),
     getLot: (lotNumber: string, signal?: AbortSignal): Promise<LocalizedLot> => request(`/lots/${lotNumber}`, { signal }),
+    // BNR rate used for indicative EUR display; null until the first fetch.
+    getExchangeRate: (signal?: AbortSignal): Promise<ExchangeRateInfo | null> => request('/exchange-rate', { signal }),
 
     // Starts a Stripe Checkout Session; the returned url is Stripe-hosted and
     // the browser should be redirected there. Prices are recomputed server-side.

@@ -20,6 +20,7 @@ import { getOrigin } from '../lib/origin';
 import { buildProductLd, buildBreadcrumbLd } from '../lib/structuredData';
 import { clamp } from '../lib/text';
 import { Skeleton } from '../components/Skeleton';
+import EurConversionNote from '../components/EurConversionNote';
 
 import './ProductDetails.css';
 
@@ -156,7 +157,8 @@ function ProductDetails() {
                 </div>
                 <div className="product-info-section">
                     <h1>{product.product_name}</h1>
-                     <p className="price-large">{toFixed(product.price)} {product.currency}</p>
+                     <p className="price-large">{toFixed(product.price)} {product.currency}{product.is_converted ? '*' : ''}</p>
+                    <EurConversionNote products={[product]} />
 
                     <div className="product-basic-info">
                         <div className="basic-info-item">

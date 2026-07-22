@@ -7,4 +7,15 @@ import type { SweetnessType } from "./SweetnessType";
 import type { TanninsType } from "./TanninsType";
 import type { TurbidityType } from "./TurbidityType";
 
-export type LocalizedProduct = { product_id: string, product_name: string, product_description: string, ingredients: string, product_type: MeadType, sweetness: SweetnessType, turbidity: TurbidityType, effervescence: EffervescenceType, acidity: AcidityType, tannins: TanninsType, body: BodyType, abv: number, bottle_count: number, bottle_size: number, price: number, currency: string, image_id: string | null, bottling_date: string, lot_number: number, };
+export type LocalizedProduct = { product_id: string, product_name: string, product_description: string, ingredients: string, product_type: MeadType, sweetness: SweetnessType, turbidity: TurbidityType, effervescence: EffervescenceType, acidity: AcidityType, tannins: TanninsType, body: BodyType, abv: number, bottle_count: number, bottle_size: number, price: number, currency: string, 
+/**
+ * True when `price` is an indicative EUR amount derived from the RON
+ * price via the official BNR rate (English site). The frontend renders a
+ * footnote explaining the conversion.
+ */
+is_converted: boolean, 
+/**
+ * Date of the BNR rate used for conversion; None when `is_converted` is
+ * false.
+ */
+rate_date: string | null, image_id: string | null, bottling_date: string, lot_number: number, };

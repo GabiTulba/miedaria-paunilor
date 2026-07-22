@@ -126,7 +126,7 @@ else
         STATUS=$($CURL -o /dev/null -w "%{http_code}" -X POST \
             -H "Authorization: Bearer ${TOKEN}" \
             -H "Content-Type: application/json" \
-            -d '{"product_id":"INVALID ID!","product_name":"x","product_name_ro":"x","product_description":"x","product_description_ro":"x","ingredients":"x","ingredients_ro":"x","product_type":"hidromel","sweetness":"dry","turbidity":"crystalline","effervescence":"flat","acidity":"mild","tanins":"mild","body":"light","abv":12.0,"bottle_count":10,"bottle_size":750,"price":15.00,"price_ron":75.00,"image_id":"00000000-0000-0000-0000-000000000000","bottling_date":"2024-01-01","lot_number":1}' \
+            -d '{"product_id":"INVALID ID!","product_name":"x","product_name_ro":"x","product_description":"x","product_description_ro":"x","ingredients":"x","ingredients_ro":"x","product_type":"hidromel","sweetness":"dry","turbidity":"crystalline","effervescence":"flat","acidity":"mild","tanins":"mild","body":"light","abv":12.0,"bottle_count":10,"bottle_size":750,"price_ron":75.00,"image_id":"00000000-0000-0000-0000-000000000000","bottling_date":"2024-01-01","lot_number":1}' \
             "${BASE_URL}/api/admin/products")
         if [ "$STATUS" = "400" ]; then
             green "POST /api/admin/products invalid ID → 400"
@@ -139,7 +139,7 @@ else
         STATUS=$($CURL -o /dev/null -w "%{http_code}" -X POST \
             -H "Authorization: Bearer ${TOKEN}" \
             -H "Content-Type: application/json" \
-            -d "{\"product_id\":\"valid-id\",\"product_name\":\"${LONG}\",\"product_name_ro\":\"x\",\"product_description\":\"x\",\"product_description_ro\":\"x\",\"ingredients\":\"x\",\"ingredients_ro\":\"x\",\"product_type\":\"hidromel\",\"sweetness\":\"dry\",\"turbidity\":\"crystalline\",\"effervescence\":\"flat\",\"acidity\":\"mild\",\"tanins\":\"mild\",\"body\":\"light\",\"abv\":12.0,\"bottle_count\":10,\"bottle_size\":750,\"price\":15.00,\"price_ron\":75.00,\"image_id\":\"00000000-0000-0000-0000-000000000000\",\"bottling_date\":\"2024-01-01\",\"lot_number\":1}" \
+            -d "{\"product_id\":\"valid-id\",\"product_name\":\"${LONG}\",\"product_name_ro\":\"x\",\"product_description\":\"x\",\"product_description_ro\":\"x\",\"ingredients\":\"x\",\"ingredients_ro\":\"x\",\"product_type\":\"hidromel\",\"sweetness\":\"dry\",\"turbidity\":\"crystalline\",\"effervescence\":\"flat\",\"acidity\":\"mild\",\"tanins\":\"mild\",\"body\":\"light\",\"abv\":12.0,\"bottle_count\":10,\"bottle_size\":750,\"price_ron\":75.00,\"image_id\":\"00000000-0000-0000-0000-000000000000\",\"bottling_date\":\"2024-01-01\",\"lot_number\":1}" \
             "${BASE_URL}/api/admin/products")
         if [ "$STATUS" = "400" ]; then
             green "POST /api/admin/products name too long → 400"

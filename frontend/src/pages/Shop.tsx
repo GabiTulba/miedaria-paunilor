@@ -11,6 +11,7 @@ import SelectInput from '../components/forms/SelectInput';
 import EnumSelect from '../components/forms/EnumSelect';
 import SEO from '../components/SEO';
 import { useFocusTrapDrawer } from '../hooks/useFocusTrapDrawer';
+import EurConversionNote from '../components/EurConversionNote';
 import './Shop.css';
 
 function Shop() {
@@ -229,14 +230,17 @@ function Shop() {
                             <p>{t('shop.noProductsDescription')}</p>
                         </div>
                     ) : (
-                        <div className="product-grid">
-                            {products.map(productWithImage => (
-                                <ProductCard
-                                    key={productWithImage.product.product_id}
-                                    productWithImage={productWithImage}
-                                />
-                            ))}
-                        </div>
+                        <>
+                            <div className="product-grid">
+                                {products.map(productWithImage => (
+                                    <ProductCard
+                                        key={productWithImage.product.product_id}
+                                        productWithImage={productWithImage}
+                                    />
+                                ))}
+                            </div>
+                            <EurConversionNote products={products.map(p => p.product)} />
+                        </>
                     )}
                     {!isLoading && (
                         <Pagination

@@ -8,6 +8,7 @@ import { LocalizedLink } from '../components/LocalizedLink';
 import { getOrigin } from '../lib/origin';
 import { buildOrganizationLd, buildLocalBusinessLd } from '../lib/structuredData';
 import { Skeleton } from '../components/Skeleton';
+import EurConversionNote from '../components/EurConversionNote';
 import './Home.css';
 
 function Home() {
@@ -69,6 +70,7 @@ function Home() {
                                  ))
                              )}
                          </div>
+                            <EurConversionNote products={featuredProducts.map(p => p.product)} />
                         </div>
                     </div>
                 </section>
