@@ -223,12 +223,41 @@ Sources: [Sameday PHP SDK](https://github.com/sameday-courier/php-sdk) · [sandb
 
 ---
 
+## 8. Cookie policy page
+
+**Goal:** A bilingual page that lists every cookie and browser-storage item the site uses, what each is for, how long it lasts and whether it needs consent, and explains how to change the choice. The consent banner and footer link to it. It is needed before launch, since consent is only valid when informed.
+
+### Design
+
+- Route `/:lang/cookie-policy` (page `CookiePolicy.tsx`), content in `en.json` / `ro.json` like the other static pages. Add it to the static paths in `sitemap_crud.rs`.
+- Link it from the cookie banner message ("Detalii") and from the footer next to "Setări cookie-uri". The page itself should also offer a button that calls `resetConsent()`.
+- Inventory to document (keep it in sync with the code):
+
+| Name | Where | Purpose | Lifetime | Needs consent |
+| --- | --- | --- | --- | --- |
+| `age_verified` | cookie | 18+ confirmation (legal requirement for alcohol) | 6 months | No, strictly necessary |
+| `cookie_consent` | cookie | Remembers the consent choice | 6 months | No, strictly necessary |
+| `cart` | cookie | Cart contents (product ids + quantities) | 7 days, renewed on change | No, strictly necessary |
+| `admin_session` | httpOnly cookie, `/api/admin` only | Admin login | up to 24 h | No, strictly necessary (admins only) |
+| `pending_checkout` | sessionStorage | Releases reserved stock if the customer leaves Stripe without paying | until the tab closes | No, strictly necessary |
+| `lang` | cookie | Preferred language for the root redirect | 1 year | Yes |
+| `i18nextLng` | localStorage | Preferred language | until cleared | Yes |
+| `theme` | localStorage | Light/dark theme choice | until cleared | Currently stored without consent; decide whether it counts as strictly necessary (user-requested preference) or gate it like `lang` |
+
+- Also mention that Stripe sets its own cookies on `checkout.stripe.com` during payment, under Stripe's policy (link it).
+- Have the final wording reviewed for Romanian GDPR/ePrivacy practice (Legea 506/2004, ANSPDCP guidance). The same review should cover the separate privacy policy (order data, delivery addresses, retention), which this page should link to once it exists.
+
+**Effort:** Small. One static page, two links, translations; the review of the wording is the main work.
+
+---
+
 ## Suggested implementation order
 
 1. **Logo resize** (#1) and **toggle confirmation** (#2) — small, independent, immediate.
 2. **RON/BNR pricing** (#3) — self-contained, high legal/correctness value.
-3. **Mailing list** (#4) — builds the email infrastructure.
-4. **Metrics, phase 1** (#6) — sales/inventory dashboards from existing data (can happen anytime).
-5. **User accounts** (#5) — largest; reuses the mailer; builds the address/checkout groundwork Sameday needs.
-6. **Sameday delivery** (#7) — depends on #5's checkout address step; AWB + lockers + tracking.
-7. **Metrics, phase 2** (#6) — anonymous event pipeline + traffic dashboards (now including shipping funnel events).
+3. **Cookie policy page** (#8) — small; needed before launch so cookie consent is informed.
+4. **Mailing list** (#4) — builds the email infrastructure.
+5. **Metrics, phase 1** (#6) — sales/inventory dashboards from existing data (can happen anytime).
+6. **User accounts** (#5) — largest; reuses the mailer; builds the address/checkout groundwork Sameday needs.
+7. **Sameday delivery** (#7) — depends on #5's checkout address step; AWB + lockers + tracking.
+8. **Metrics, phase 2** (#6) — anonymous event pipeline + traffic dashboards (now including shipping funnel events).
