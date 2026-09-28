@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next';
-import SEO from '../components/SEO';
+import LegalPage from '../components/LegalPage';
+import { LocalizedLink } from '../components/LocalizedLink';
 import { BUSINESS_INFO } from '../lib/businessInfo';
 import { resetConsent } from '../lib/consent';
-import './CookiePolicy.css';
 
 type StorageType = 'cookie' | 'httpOnlyCookie' | 'localStorage' | 'sessionStorage';
 type ConsentLevel = 'necessary' | 'preference' | 'optional';
 
 interface StorageItem {
-    name: 'age_verified' | 'cookie_consent' | 'cart' | 'admin_session' | 'pending_checkout' | 'lang' | 'i18nextLng' | 'theme';
+    name: 'age_verified' | 'cookie_consent' | 'cart' | 'admin_session' | 'pending_checkout' | 'lang' | 'i18nextLng' | 'theme' | 'newsletter_popup';
     type: StorageType;
     consent: ConsentLevel;
 }
@@ -24,20 +24,22 @@ const STORAGE_ITEMS: StorageItem[] = [
     { name: 'theme', type: 'localStorage', consent: 'preference' },
     { name: 'lang', type: 'cookie', consent: 'optional' },
     { name: 'i18nextLng', type: 'localStorage', consent: 'optional' },
+    { name: 'newsletter_popup', type: 'localStorage', consent: 'optional' },
 ];
 
 const STRIPE_COOKIE_POLICY_URL = 'https://stripe.com/legal/cookies-policy';
+const LAST_UPDATED = '2026-09-28';
 
 function CookiePolicy() {
     const { t } = useTranslation();
 
     return (
-        <div className="cookie-policy-page">
-            <SEO title={t('seo.pageTitles.cookiePolicy')} description={t('seo.pageDescriptions.cookiePolicy')} />
-            <header className="cookie-policy-header">
-                <h1>{t('cookiePolicy.title')}</h1>
-                <p>{t('cookiePolicy.intro')}</p>
-            </header>
+        <LegalPage
+            title={t('cookiePolicy.title')}
+            description={t('seo.pageDescriptions.cookiePolicy')}
+            intro={t('cookiePolicy.intro')}
+            lastUpdated={LAST_UPDATED}
+        >
 
             <section>
                 <h2>{t('cookiePolicy.whatTitle')}</h2>
@@ -51,9 +53,9 @@ function CookiePolicy() {
 
             <section>
                 <h2>{t('cookiePolicy.inventoryTitle')}</h2>
-                <div className="cookie-policy-table-wrapper">
-                    <table className="cookie-policy-table">
-                        <caption>{t('cookiePolicy.tableCaption')}</caption>
+                <div className="legal-table-wrapper">
+                    <table className="legal-table">
+                        <caption className="visually-hidden">{t('cookiePolicy.tableCaption')}</caption>
                         <thead>
                             <tr>
                                 <th scope="col">{t('cookiePolicy.columns.name')}</th>
@@ -102,8 +104,12 @@ function CookiePolicy() {
                     {t('cookiePolicy.contactText')}{' '}
                     <a href={`mailto:${BUSINESS_INFO.email}`}>{BUSINESS_INFO.email}</a>.
                 </p>
+                <p>
+                    {t('cookiePolicy.privacyText')}{' '}
+                    <LocalizedLink to="/privacy-policy">{t('cookiePolicy.privacyLink')}</LocalizedLink>.
+                </p>
             </section>
-        </div>
+        </LegalPage>
     );
 }
 

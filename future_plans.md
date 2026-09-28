@@ -6,6 +6,8 @@ Planned features for Miedăria Păunilor, in rough implementation order. Each se
 
 ## 4. Mailing list (blog notifications + product news)
 
+> **DONE 2026-09-28.** Implemented as designed, with these decisions: unsubscribing deletes the row outright (so no `unsubscribed_at`), and unsubscribe links carry an HMAC of the subscriber id (key derived from `JWT_SECRET`) instead of a stored token hash, so every email can include a working link without any secret at rest. The admin endpoint returns subscriber counts only, never addresses. Confirmation and unsubscribe links land on frontend pages that POST, so mail-filter link scanners cannot act on them. Local testing uses a Mailpit container (`mail-dev` compose profile). Still outstanding outside the code: revoke the old Brevo SMTP key, generate a new one, put it in the production `.env`, verify the sender domain (SPF/DKIM/DMARC), and have the privacy policy (built 2026-09-28 at `/:lang/privacy-policy`) reviewed.
+
 **Goal:** Visitors can subscribe to a mailing list. When an admin publishes a blog post, they can optionally email it to the list. A non-intrusive popup on the home page invites subscription after a while.
 
 ### Design
@@ -225,7 +227,7 @@ Sources: [Sameday PHP SDK](https://github.com/sameday-courier/php-sdk) · [sandb
 
 ## 8. Cookie policy page
 
-> **DONE 2026-09-28.** Implemented as designed at `/:lang/cookie-policy`, linked from the consent banner and the footer, and listed in the sitemap and the legacy-path nginx redirect. Decision on `theme`: treated as user-requested UI customisation (no consent needed), and it is now written only when the visitor explicitly picks light or dark; returning to the system theme deletes it. Still outstanding outside the code: legal review of the wording (Legea 506/2004, ANSPDCP), and linking the privacy policy once it exists.
+> **DONE 2026-09-28.** Implemented as designed at `/:lang/cookie-policy`, linked from the consent banner and the footer, and listed in the sitemap and the legacy-path nginx redirect. Decision on `theme`: treated as user-requested UI customisation (no consent needed), and it is now written only when the visitor explicitly picks light or dark; returning to the system theme deletes it. Still outstanding outside the code: legal review of the wording (Legea 506/2004, ANSPDCP). The privacy policy now exists at `/:lang/privacy-policy` and the two pages link to each other.
 
 **Goal:** A bilingual page that lists every cookie and browser-storage item the site uses, what each is for, how long it lasts and whether it needs consent, and explains how to change the choice. The consent banner and footer link to it. It is needed before launch, since consent is only valid when informed.
 

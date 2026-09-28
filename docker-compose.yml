@@ -1,12 +1,24 @@
 
 
+# Container logs hold IP addresses and user agents (personal data), so every
+# service keeps at most 5 files of 10 MB, the oldest overwritten first.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   frontend:
+    logging: *logging
     build:
       context: ./frontend
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
         VITE_SITE_URL: ${VITE_SITE_URL}
+        VITE_BUSINESS_LEGAL_NAME: ${VITE_BUSINESS_LEGAL_NAME}
+        VITE_BUSINESS_TAX_ID: ${VITE_BUSINESS_TAX_ID}
+        VITE_BUSINESS_TRADE_REGISTER_NO: ${VITE_BUSINESS_TRADE_REGISTER_NO}
     ports:
       - "80:8080"   # HTTP port for redirect to HTTPS
       - "443:8443"  # HTTPS port
@@ -33,6 +45,7 @@ services:
       start_period: 10s
 
   backend:
+    logging: *logging
     build: ./backend
     networks:
       - react-rust
@@ -57,6 +70,7 @@ services:
       start_period: 30s
 
   database:
+    logging: *logging
     image: postgres:16.2-alpine
     networks:
       - rust-postgres
@@ -75,6 +89,24 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  # Local mail catcher for development only; never started in production.
+  mailpit:
+    logging: *logging
+    image: axllent/mailpit:v1.31.3
+    profiles: ["mail-dev"]
+    networks:
+      - react-rust
+    ports:
+      - "127.0.0.1:8025:8025"  # Web UI with the captured mail
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
 
 networks:
   react-rust:

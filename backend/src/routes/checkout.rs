@@ -59,10 +59,7 @@ async fn create_checkout_session(
     // All orders are charged in RON regardless of site language; the EUR
     // amounts shown on the English site are indicative BNR conversions.
     let currency = stripe::Currency::RON;
-    let lang_code = match lang {
-        Language::En => "en",
-        Language::Ro => "ro",
-    };
+    let lang_code = lang.code();
 
     let line_items: Vec<stripe::CreateCheckoutSessionLineItems> = items
         .iter()

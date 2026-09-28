@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useMatch } from "react-router-dom";
 import { useContext, useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from './context/CartContext';
@@ -12,6 +12,7 @@ import { useFocusTrapDrawer } from './hooks/useFocusTrapDrawer';
 import { HamburgerButton } from './components/HamburgerButton';
 import AgeGate, { AGE_VERIFIED_COOKIE } from './components/AgeGate';
 import CookieConsentBanner from './components/CookieConsentBanner';
+import NewsletterPopup from './components/NewsletterPopup';
 import { getCookie } from './lib/cookies';
 import { resetConsent } from './lib/consent';
 import './App.css';
@@ -23,6 +24,7 @@ function App() {
   const [isAgeVerified, setIsAgeVerified] = useState(() => getCookie(AGE_VERIFIED_COOKIE) === '1');
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const isHome = useMatch('/:lang') !== null;
   const hamburgerRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
@@ -84,8 +86,12 @@ function App() {
       </header>
       <ToastContainer />
       {isAgeVerified ? (
-        // One decision at a time: the consent banner waits for the age gate.
-        <CookieConsentBanner />
+        // One decision at a time: the consent banner waits for the age gate,
+        // and the newsletter popup (home page only) waits for the banner.
+        <>
+          <CookieConsentBanner />
+          {isHome && <NewsletterPopup />}
+        </>
       ) : (
         <AgeGate onConfirm={() => setIsAgeVerified(true)} />
       )}
@@ -99,6 +105,9 @@ function App() {
       <footer className="footer">
         <div className="container">
           <p>{t('footer.copyright', { year: currentYear })}</p>
+          <LocalizedLink to="/privacy-policy" className="footer-link-button">
+            {t('footer.privacyPolicy')}
+          </LocalizedLink>
           <LocalizedLink to="/cookie-policy" className="footer-link-button">
             {t('footer.cookiePolicy')}
           </LocalizedLink>

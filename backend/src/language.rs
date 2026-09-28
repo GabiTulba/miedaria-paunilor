@@ -14,6 +14,21 @@ impl Default for Language {
 }
 
 impl Language {
+    pub fn code(self) -> &'static str {
+        match self {
+            Language::En => "en",
+            Language::Ro => "ro",
+        }
+    }
+
+    /// Inverse of `code`; unknown codes fall back to the default language.
+    pub fn from_code(code: &str) -> Self {
+        match code {
+            "ro" => Language::Ro,
+            _ => Language::En,
+        }
+    }
+
     fn from_accept_language(header: Option<&str>) -> Self {
         match header {
             Some(h) => {

@@ -79,6 +79,7 @@ The app is built on top of Docker and has the following images:
 * a frontend image -- built with React (`node:20.20.2-slim` builder, `nginx:1.30.0-alpine` runtime)
 * a backend image -- built with Rust (`rust:1.95.0` builder, `debian:trixie-slim` runtime)
 * a database image -- built with PostgreSQL
+* a `mailpit` image (development only, `mail-dev` compose profile) -- catches outgoing email locally; its web UI is bound to `127.0.0.1:8025`
 
 
 ## Networks
@@ -115,8 +116,15 @@ All Docker images utilize environment variables defined in a single `.env` file 
     *   `BACKEND_PORT`: The port on which the Rust backend server will listen (default: `8000`)
     *   `IMAGE_UPLOAD_DIR`: The directory where product images will be stored within the Docker container (default: `/app/images`)
 
+*   **Email (SMTP):**
+    *   `SMTP_HOST`, `SMTP_PORT`: Relay address (production: Brevo, `smtp-relay.brevo.com:587`; local: `mailpit:1025`)
+    *   `SMTP_SECURITY`: `starttls`, `tls` (implicit TLS) or `none` (Mailpit only)
+    *   `SMTP_USERNAME`, `SMTP_PASSWORD`: Relay credentials
+    *   `SMTP_FROM_ADDRESS`, `SMTP_FROM_NAME`: Sender mailbox
+
 *   **Frontend Configuration:**
     *   `VITE_API_BASE_URL`: The base URL for the backend API that the frontend will make requests to (default: `/api`)
+    *   `VITE_BUSINESS_LEGAL_NAME`, `VITE_BUSINESS_TAX_ID`, `VITE_BUSINESS_TRADE_REGISTER_NO`: The data controller named in the privacy policy, baked in at build time (`BUSINESS_LEGAL` in `lib/businessInfo.ts`). `vite.config.ts` reads the root `.env` (`envDir: '..'`) and fails the build if any is blank; `env.sample` ships placeholders that must be replaced before launch.
 
 **Setup Instructions:** Copy `env.sample` to `.env` and update values for your environment. The `.env` file is excluded from version control. **All default secrets (`POSTGRES_PASSWORD`, `ADMIN_PASSWORD`, `JWT_SECRET`) must be changed before any production deployment.**
 
@@ -124,6 +132,7 @@ All Docker images utilize environment variables defined in a single `.env` file 
 *   **No exposed ports for database or backend** — only the frontend exposes ports 80 and 443 to the host. The backend (port 8000) and database (port 5432) are accessible only via internal Docker networks.
 *   **Non-root containers** — the backend runs as `appuser` (via `gosu` in `entrypoint.sh`); the frontend runs as the `nginx` user.
 *   **Resource limits and healthchecks** configured on all services in `docker-compose.yml`.
+*   **Log retention:** every service uses the `json-file` driver capped at 5 × 10 MB, since the logs hold IP addresses and user agents. nginx and the backend log request paths without query strings, which carry emailed tokens.
 *   **`.dockerignore`** files in both `backend/` and `frontend/` exclude `.env`, `.git`, `target/`, `node_modules/`, and `dist/` from build contexts.
 
 ### HTTPS Configuration
@@ -198,6 +207,8 @@ The instance has a single database [miedaria_paunilor], with five tables:
 
 Passwords are hashed with Argon2id via the `argon2` crate. The PHC string format embeds the salt and parameters, so no separate salt column is needed.
 
+[newsletter_subscribers] holds the double opt-in mailing list: `id` (UUID), `email` (unique, lowercased, max 254), `language` (`en`/`ro`), `confirmed_at` (NULL until confirmed; the proof-of-consent timestamp), `confirmation_token_hash` (SHA-256 of the single-use token), `confirmation_sent_at`, `token_expires_at`, `created_at`. `blog_posts.notified_at` records when a post was last emailed to subscribers; a dedicated trigger keeps it from bumping `updated_at`, which is the post's sitemap/RSS lastmod.
+
 All timestamp columns use `TIMESTAMPTZ` (timestamp with timezone). The `updated_at` columns on `products` and `blog_posts` are auto-managed by a shared `update_updated_at()` PostgreSQL trigger function. The `products` table has indexes on `product_type`, `bottle_count`, `bottling_date` (DESC), `sweetness`, and a partial index for in-stock products (`bottle_count > 0`). The `blog_posts` table has indexes on `published_at` (DESC), `slug`, and `is_published`. All numeric product fields have CHECK constraints enforcing valid ranges.
 
 The database is initialized at container startup by the backend's `entrypoint.sh` using `diesel setup` (to create the database and run migrations) and then `add_admin_user` to create the default admin user with credentials from the root `.env` file.
@@ -261,6 +272,14 @@ RON is the only currency prices are entered and charged in. The `exchange_rates`
 `POST /api/checkout/session` (public) creates a pending order and a Stripe Checkout Session. Adding to the cart never touches the database; stock is checked and reserved atomically only here, right before the redirect to Stripe, with prices recomputed server-side. A reservation is held for 15 minutes (`order_crud::HOLD_SECS`). Stripe's minimum session lifetime is 30 minutes, so the reservation sweeper (`stripe_checkout::run_reservation_sweeper`, every minute) expires the Stripe session itself before releasing the stock of any order still `pending` past the hold. If the session turns out to be complete, it applies the completion instead. The sweeper is also the safety net for orders left pending by a crash, a failed release on an error path, or a missing webhook. Because reservations hold real stock, abuse is bounded three ways: a dedicated per-client limiter (burst of 5, then one per 2 minutes), at most 2 live pending orders per client (enforced in the order transaction under a per-client advisory lock), and at most 100 bottles per order (`MAX_ORDER_BOTTLES`, mirrored and enforced by the frontend cart). Clients are keyed by IP with IPv6 collapsed to its /64 (`auth::client_network`). Orders store only `client_key_hash`, an HMAC of that network under a random key that lives in process memory, cleared as soon as the order leaves `pending`.
 
 Order statuses: `pending` (stock held, customer on Stripe), `processing` (checkout completed with a delayed payment method that has not settled; stock stays held and is exempt from the 15-minute hold), `paid`, `expired`, `failed`. `POST /api/webhooks/stripe` verifies the Stripe signature over the raw body. `checkout.session.completed` moves the order to `paid` when `payment_status` is `paid` (or `no_payment_required`), otherwise to `processing`. `checkout.session.async_payment_succeeded` moves it to `paid`. `checkout.session.async_payment_failed` and `checkout.session.expired` release the stock (`failed` / `expired`). Orders are resolved by the attached session id, falling back to the signed `order_id` session metadata. Webhook and sweeper share the transition logic in `stripe_checkout.rs`, and every transition only applies from a stock-holding status, so retries and webhook/sweeper races are idempotent. The Stripe webhook endpoint must be subscribed to all four `checkout.session.*` events.
+
+### Newsletter
+`newsletter.rs` holds the list logic and email templates; `mailer.rs` wraps a pooled `lettre` SMTP transport (rustls) whose sends run in spawned tasks, logging failures without the recipient address. Batch sends are throttled to 4 messages per second.
+*   `POST /api/newsletter/subscribe` (`{email}`, language from `Accept-Language`): answers 204 for any valid address, whether new, pending or already confirmed, so the list cannot be probed. It has its own per-client limiter (burst of 5, then one per 2 minutes), and a pending address gets at most one confirmation email per 10 minutes. The emailed token is 256-bit random, stored only as a hash, single-use and valid for 48 hours.
+*   `POST /api/newsletter/confirm` (`{token}`) activates the subscription. The link lands on a frontend page that POSTs, so mail-filter link scanners cannot confirm on a recipient's behalf.
+*   `POST /api/newsletter/unsubscribe?id=&token=` deletes the row (right to erasure). The token is an HMAC of the subscriber id under a key derived from `JWT_SECRET` (domain-separated), so no unsubscribe secret is stored and rotating `JWT_SECRET` invalidates old links. The same URL serves RFC 8058 one-click unsubscribe (`List-Unsubscribe` / `List-Unsubscribe-Post` headers on every list email).
+*   Admin: `GET /api/admin/newsletter/stats` (confirmed and pending counts only; addresses are never exposed) and `POST /api/admin/blog/{id}/notify` (`{resend}`) which emails a published post to all confirmed subscribers in their own language. A row lock plus `notified_at` makes a post go out once unless `resend` is set.
+*   An hourly task purges sign-ups whose confirmation expired unused.
 
 Diesel is used to interact with the database, dealing with:
 *   Fetching data from the `products`, `images`, and `blog_posts` tables.
@@ -326,7 +345,7 @@ The styling is managed through a modular and organized CSS architecture:
 The frontend website is structured as follows:
 ```
 / -- redirects to home/
-    home/ -- A visually appealing landing page with a hero section, featured products (showing the 3 latest in-stock meads by bottling date), latest blog posts, and teasers for other sections. Displays images using UUID-based URLs.
+    home/ -- A visually appealing landing page with a hero section, featured products (showing the 3 latest in-stock meads by bottling date), latest blog posts, and teasers for other sections. Displays images using UUID-based URLs. After 25 s on the page and 40 % scrolled, once the age gate and cookie banner are answered, a dismissible bottom-corner `NewsletterPopup` (X or Escape) invites sign-up. Closing hides it for 60 days and subscribing hides it for good, remembered by the `newsletter_popup` key in localStorage with cookie consent or sessionStorage without it (`lib/newsletterPopup.ts`).
     shop/ -- Displays all products in a grid, with a comprehensive sidebar for filtering by product attributes (mead type, sweetness, turbidity, effervescence, acidity, tannins, body), sorting (price, volume, or bottling_date), and stock status. Displays images using UUID-based URLs.
         shop/[product_id]/ -- A detailed view of a single product with breadcrumb navigation, an "Add to Cart" button and quantity selector. Displays images using UUID-based URLs.
     blog/ -- Displays blog posts in reverse chronological order with markdown rendering and bilingual support.
@@ -334,13 +353,15 @@ The frontend website is structured as follows:
     cart/ -- A summary of the items in the shopping cart, with options to update quantities, remove items, or clear the cart. Includes a warning message indicating the checkout system is under development and instructing users to send orders via WhatsApp.
     about-us/ -- A static page with a modern design telling the story of the meadery.
     contact/ -- A static page with contact information.
+    privacy-policy/ -- Bilingual GDPR privacy policy: controller identity, one block per processing activity (`ACTIVITIES` in `PrivacyPolicy.tsx`: orders, payments, newsletter, contact, security logs) with its data, purpose, legal basis and retention, the recipients, EU transfers, data-subject rights and the ANSPDCP complaint route. `ACTIVITIES` and `RECIPIENTS` must be kept in sync with what the code collects and who it shares data with. Linked from the footer, the cookie policy and the newsletter popup, and included in the sitemap. Both policies render inside the shared `LegalPage` frame (title, intro, last-updated date).
     cookie-policy/ -- Bilingual cookie policy listing every cookie and browser-storage key (`STORAGE_ITEMS` in `CookiePolicy.tsx`, which must be kept in sync with the code), its purpose, lifetime and consent level, a note on Stripe's own cookies, and a button that reopens the consent banner. Linked from the consent banner and the footer, and included in the sitemap. The `theme` localStorage key is written only for an explicit light/dark choice.
+    newsletter/confirm, newsletter/unsubscribe -- Landing pages of the email links (noindex). Both strip the token from the address bar on load; confirmation POSTs automatically, unsubscription needs one click.
     * -- 404 Not Found page for any unmatched route.
     admin/ -- A login page for administrators.
         admin/dashboard/ -- A protected admin section with a sidebar for navigation. Logout requires confirmation.
             admin/dashboard/products -- A page to manage products (create, edit, delete) with a modern table view. Product forms include image selection from uploaded images.
             admin/dashboard/images -- A page to manage images (upload via click or drag-and-drop with progress bar, display, rename, delete). Displays a user-friendly error message if attempting to delete an image in use.
-            admin/dashboard/blog -- A page to manage blog posts (create, edit, delete) with markdown editor and bilingual support.
+            admin/dashboard/blog -- A page to manage blog posts (create, edit, delete) with markdown editor and bilingual support. Published posts have an "Email subscribers" action (with confirmation showing the recipient count; "Email again" once sent). The dashboard shows the confirmed subscriber count.
 ```
 All pages are fully implemented and fetch data from the backend where applicable.
 The frontend uses two type families: `LocalizedProduct`/`LocalizedProductWithImage`/`LocalizedBlogPost` for public-facing components (single-language fields from Accept-Language negotiation), and `Product`/`ProductWithImage`/`BlogPost`/`ProductFormData` for admin edit forms (full bilingual fields).
@@ -392,7 +413,7 @@ The application includes a fully functional shopping cart system with the follow
 The application includes SEO-friendly features:
 *   **robots.txt:** Located at `/robots.txt`, guides search engine crawlers on which pages to index and which to avoid (admin area, API endpoints)
 *   **Dynamic Sitemap:** Located at `/sitemap.xml`, provides search engines with a comprehensive list of all pages including:
-    *   Static pages (home, shop, blog, about-us, contact, cart)
+    *   Static pages (home, shop, blog, about-us, contact, cookie-policy, privacy-policy)
     *   All product pages (`/shop/{product_id}`)
     *   All published blog posts (`/blog/{slug}`)
     *   Each URL includes metadata about update frequency and priority

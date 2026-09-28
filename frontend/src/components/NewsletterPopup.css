@@ -1,0 +1,99 @@
+/* Same layer as the cookie banner, which is never shown at the same time. */
+.newsletter-popup {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    z-index: 9998;
+    padding: 1.25rem 1.25rem 1rem;
+    background: var(--color-surface);
+    color: var(--text-color);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    animation: newsletter-popup-in var(--duration-slow) ease-out;
+}
+
+@media (--bp-md) {
+    .newsletter-popup {
+        left: auto;
+        right: 24px;
+        bottom: 24px;
+        width: 22rem;
+    }
+}
+
+@keyframes newsletter-popup-in {
+    from {
+        opacity: 0;
+        transform: translateY(1rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .newsletter-popup {
+        animation: none;
+    }
+}
+
+.newsletter-popup h2 {
+    margin: 0 2rem 0.5rem 0;
+    font-size: 1.25rem;
+}
+
+.newsletter-popup p {
+    margin: 0 0 0.75rem;
+}
+
+.newsletter-popup-close {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    width: var(--touch-target-min);
+    height: var(--touch-target-min);
+    border: none;
+    background: none;
+    color: var(--color-gray-600);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.newsletter-popup-close:hover,
+.newsletter-popup-close:focus-visible {
+    color: var(--text-color);
+}
+
+.newsletter-popup-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.newsletter-popup-form input {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+}
+
+.newsletter-popup-form .button {
+    flex-shrink: 0;
+}
+
+.newsletter-popup-error {
+    color: var(--error-color);
+    font-size: 0.875rem;
+}
+
+.newsletter-popup-note {
+    font-size: 0.8125rem;
+    color: var(--color-text-light);
+}
+
+.newsletter-popup-note a {
+    text-decoration: underline;
+}
+
+.newsletter-popup .newsletter-popup-note:last-child {
+    margin-bottom: 0;
+}

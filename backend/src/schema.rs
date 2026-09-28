@@ -58,6 +58,7 @@ diesel::table! {
         published_at -> Nullable<Timestamptz>,
         updated_at -> Timestamptz,
         is_published -> Bool,
+        notified_at -> Nullable<Timestamptz>,
     }
 }
 
@@ -96,6 +97,19 @@ diesel::table! {
         salt -> Numeric,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    newsletter_subscribers (id) {
+        id -> Uuid,
+        email -> Varchar,
+        language -> Varchar,
+        confirmed_at -> Nullable<Timestamptz>,
+        confirmation_token_hash -> Nullable<Varchar>,
+        confirmation_sent_at -> Nullable<Timestamptz>,
+        token_expires_at -> Nullable<Timestamptz>,
+        created_at -> Timestamptz,
     }
 }
 
@@ -194,6 +208,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     exchange_rates,
     images,
     lots,
+    newsletter_subscribers,
     order_items,
     orders,
     products,

@@ -28,6 +28,7 @@ chrono = { version = "0.4.38", features = ["serde"] }
 chrono-tz = "0.10"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 quick-xml = "0.37"
+lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "pool", "hostname", "tokio1-rustls-tls"] }
 r2d2 = "0.8.10"
 async-trait = "0.1.80"
 mime_guess = "2.0"

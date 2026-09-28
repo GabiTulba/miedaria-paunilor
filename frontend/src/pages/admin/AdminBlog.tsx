@@ -20,6 +20,7 @@ function AdminBlog() {
     const [actionError, setActionError] = useState<string | null>(null);
     const [page, setPage] = usePageParam();
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [notifyPost, setNotifyPost] = useState<BlogPost | null>(null);
     const { t } = useTranslation();
     const { showToast } = useToast();
     const language = useLanguage();
@@ -34,6 +35,11 @@ function AdminBlog() {
         signal => api.getBlogPostsAdmin(page, ADMIN_BLOG_PER_PAGE, signal),
         [page],
     );
+    const { data: newsletterStats, refetch: refetchNewsletterStats } = useFetch(
+        signal => api.getNewsletterStats(signal),
+        [],
+    );
+    const subscriberCount = newsletterStats?.confirmed ?? 0;
     const blogPosts = data?.items ?? [];
     const totalPages = data?.total_pages ?? 1;
     const hasMore = page < totalPages;
@@ -61,6 +67,22 @@ function AdminBlog() {
             }
         } catch (err) {
             console.error("Failed to delete blog post:", err);
+            setActionError(t('common.error'));
+        }
+    };
+
+    const handleConfirmNotify = async () => {
+        if (!notifyPost) return;
+        const post = notifyPost;
+        setNotifyPost(null);
+        try {
+            setActionError(null);
+            const { recipients } = await api.notifyBlogSubscribers(post.id, post.notified_at !== null);
+            showToast(t('admin.blog.notify.success', { count: recipients }), 'success');
+            refetch();
+            refetchNewsletterStats();
+        } catch (err) {
+            console.error('Failed to email blog post to subscribers:', err);
             setActionError(t('common.error'));
         }
     };
@@ -157,6 +179,18 @@ function AdminBlog() {
                                             <Link to={`/admin/dashboard/blog/${post.id}/edit`} className="button button-small button-secondary">
                                                 {t('common.edit')}
                                             </Link>
+                                            {post.is_published && (
+                                                <button
+                                                    onClick={() => setNotifyPost(post)}
+                                                    className="button button-small"
+                                                    disabled={subscriberCount === 0}
+                                                    title={post.notified_at
+                                                        ? t('admin.blog.notify.sentOn', { date: formatDate(post.notified_at) })
+                                                        : subscriberCount === 0 ? t('admin.blog.notify.noSubscribers') : undefined}
+                                                >
+                                                    {post.notified_at ? t('admin.blog.notify.resend') : t('admin.blog.notify.send')}
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => handleDeleteClick(post.id)}
                                                 className="button button-small button-danger"
@@ -178,6 +212,22 @@ function AdminBlog() {
                     onNextPage={() => setPage(page + 1)}
                 />
                 </>
+            )}
+            {notifyPost && (
+                <ConfirmModal
+                    title={t('admin.blog.notify.confirmTitle')}
+                    message={notifyPost.notified_at
+                        ? t('admin.blog.notify.confirmResendMessage', {
+                            count: subscriberCount,
+                            date: formatDate(notifyPost.notified_at),
+                        })
+                        : t('admin.blog.notify.confirmMessage', { count: subscriberCount })}
+                    confirmLabel={t('admin.blog.notify.confirm')}
+                    cancelLabel={t('common.cancel')}
+                    onConfirm={handleConfirmNotify}
+                    onCancel={() => setNotifyPost(null)}
+                    variant="warning"
+                />
             )}
             {confirmDeleteId && (
                 <ConfirmModal

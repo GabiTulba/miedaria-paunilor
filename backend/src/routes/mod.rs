@@ -3,6 +3,7 @@ pub mod checkout;
 pub mod image;
 pub mod lot;
 pub mod misc;
+pub mod newsletter;
 pub mod product;
 
 use axum::response::AppendHeaders;

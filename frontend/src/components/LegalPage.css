@@ -1,0 +1,127 @@
+.legal-page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+.legal-page-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.legal-page-header h1 {
+    font-size: clamp(2.5rem, 2.24rem + 0.57vw, 3rem);
+}
+
+.legal-page-header p {
+    max-width: 640px;
+    margin: 1rem auto 0;
+    font-size: 1.1rem;
+}
+
+.legal-page section {
+    margin-bottom: 2rem;
+}
+
+.legal-page h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.legal-page h3 {
+    font-size: 1.2rem;
+    margin: 1.5rem 0 0.5rem;
+}
+
+.legal-page-updated {
+    color: var(--color-text-light);
+    font-size: 0.9rem;
+}
+
+.legal-page ul {
+    padding-left: 1.5rem;
+}
+
+/* Label/value pairs, e.g. purpose, legal basis and retention of one activity. */
+.legal-facts {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.25rem 1.5rem;
+    margin: 0;
+}
+
+.legal-facts dt {
+    font-weight: 600;
+}
+
+.legal-facts dd {
+    margin: 0 0 0.75rem;
+}
+
+@media (--bp-md) {
+    .legal-facts {
+        grid-template-columns: 11rem 1fr;
+    }
+
+    .legal-facts dd {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.legal-table-wrapper {
+    overflow-x: auto;
+}
+
+.legal-table {
+    margin-top: 0.5rem;
+}
+
+.legal-table th,
+.legal-table td {
+    padding: 12px 16px;
+    vertical-align: top;
+}
+
+.legal-table tbody th {
+    background: none;
+    color: inherit;
+    text-transform: none;
+    font-size: inherit;
+    white-space: nowrap;
+}
+
+/* Phones: each row becomes a labelled card instead of a wide table. */
+@media (--bp-md-down) {
+    .legal-table thead {
+        display: none;
+    }
+
+    .legal-table,
+    .legal-table tbody,
+    .legal-table tr,
+    .legal-table th,
+    .legal-table td {
+        display: block;
+    }
+
+    .legal-table tr {
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.5rem 0;
+    }
+
+    .legal-table tr:last-child {
+        border-bottom: none;
+    }
+
+    .legal-table th,
+    .legal-table td {
+        border-bottom: none;
+        padding: 0.25rem 1rem;
+    }
+
+    .legal-table td::before {
+        content: attr(data-label) ": ";
+        font-weight: 600;
+    }
+}

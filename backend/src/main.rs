@@ -6,8 +6,8 @@ use dotenvy::dotenv;
 use backend::routes;
 use backend::{
     AppState, auth, build_admin_limiter, build_checkout_limiter, build_image_serve_limiter,
-    build_login_limiter, build_public_api_limiter, db, exchange_rate, generate_client_key_secret,
-    stripe_checkout,
+    build_login_limiter, build_newsletter_limiter, build_public_api_limiter, db, exchange_rate,
+    generate_client_key_secret, mailer, newsletter, stripe_checkout,
 };
 
 struct Config {
@@ -19,6 +19,7 @@ struct Config {
     image_upload_dir: String,
     stripe_secret_key: String,
     stripe_webhook_secret: String,
+    smtp: mailer::SmtpConfig,
 }
 
 /// Read `name` from the env, recording it in `missing` (and returning an
@@ -43,6 +44,13 @@ impl Config {
         let image_upload_dir = required("IMAGE_UPLOAD_DIR", &mut missing);
         let stripe_secret_key = required("STRIPE_SECRET_KEY", &mut missing);
         let stripe_webhook_secret = required("STRIPE_WEBHOOK_SECRET", &mut missing);
+        let smtp_host = required("SMTP_HOST", &mut missing);
+        let smtp_port_str = required("SMTP_PORT", &mut missing);
+        let smtp_security_str = required("SMTP_SECURITY", &mut missing);
+        let smtp_username = required("SMTP_USERNAME", &mut missing);
+        let smtp_password = required("SMTP_PASSWORD", &mut missing);
+        let smtp_from_address = required("SMTP_FROM_ADDRESS", &mut missing);
+        let smtp_from_name = required("SMTP_FROM_NAME", &mut missing);
 
         if !missing.is_empty() {
             return Err(format!(
@@ -54,6 +62,17 @@ impl Config {
         let backend_port = backend_port_str
             .parse::<u16>()
             .map_err(|_| "BACKEND_PORT must be a valid port number (0-65535)".to_string())?;
+        let smtp = mailer::SmtpConfig {
+            host: smtp_host,
+            port: smtp_port_str
+                .parse::<u16>()
+                .map_err(|_| "SMTP_PORT must be a valid port number (0-65535)".to_string())?,
+            security: smtp_security_str.parse()?,
+            username: smtp_username,
+            password: smtp_password,
+            from_address: smtp_from_address,
+            from_name: smtp_from_name,
+        };
 
         // Create the upload dir if missing, canonicalize it, and probe writability.
         // Doing this once at startup avoids a misconfigured `IMAGE_UPLOAD_DIR=/etc`
@@ -110,6 +129,7 @@ impl Config {
             image_upload_dir,
             stripe_secret_key,
             stripe_webhook_secret,
+            smtp,
         })
     }
 }
@@ -140,6 +160,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use axum::http::{HeaderValue, Method, header};
     use tower_http::cors::CorsLayer;
 
+    let mailer = mailer::Mailer::new(config.smtp).unwrap_or_else(|e| {
+        tracing::error!("{}", e);
+        std::process::exit(1);
+    });
+
     let pool = db::establish_pooled_connection(&config.database_url)
         .expect("Failed to create database pool");
 
@@ -152,13 +177,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         admin_limiter: build_admin_limiter(),
         public_api_limiter: build_public_api_limiter(),
         checkout_limiter: build_checkout_limiter(),
+        newsletter_limiter: build_newsletter_limiter(),
         client_key_secret: generate_client_key_secret(),
         site_url: config.allowed_origin,
+        unsubscribe_key: newsletter::derive_unsubscribe_key(&config.jwt_secret),
         jwt_secret: config.jwt_secret,
         jwt_expiration_hours: config.jwt_expiration_hours,
         image_upload_dir: config.image_upload_dir,
         stripe_client: stripe::Client::new(config.stripe_secret_key),
         stripe_webhook_secret: config.stripe_webhook_secret,
+        mailer,
         eur_rate: std::sync::RwLock::new(None),
     });
 
@@ -175,6 +203,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     tokio::spawn(exchange_rate::run_refresh_task(app_state.clone()));
     tokio::spawn(stripe_checkout::run_reservation_sweeper(app_state.clone()));
+    tokio::spawn(newsletter::run_cleanup_task(app_state.clone()));
 
     let allowed_origin = app_state
         .site_url
@@ -199,6 +228,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(routes::blog::admin_router())
         .merge(routes::image::admin_router())
         .merge(routes::misc::admin_router())
+        .merge(routes::newsletter::admin_router())
         .route_layer(axum::middleware::from_fn_with_state(
             app_state.clone(),
             auth::auth_middleware,
@@ -217,6 +247,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(routes::checkout::public_router())
         .merge(routes::blog::public_router())
         .merge(routes::lot::public_router())
+        .merge(routes::newsletter::public_router())
         .route_layer(axum::middleware::from_fn_with_state(
             app_state.clone(),
             auth::public_api_rate_limit,
@@ -235,7 +266,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(app_state)
         .layer(DefaultBodyLimit::max(256 * 1024)) // 256KB default; image upload route overrides to 50MB
         .layer(cors)
-        .layer(tower_http::trace::TraceLayer::new_for_http());
+        .layer(
+            tower_http::trace::TraceLayer::new_for_http().make_span_with(
+                // Path only: query strings carry emailed tokens.
+                |request: &axum::http::Request<axum::body::Body>| {
+                    tracing::info_span!(
+                        "request",
+                        method = %request.method(),
+                        path = %request.uri().path(),
+                    )
+                },
+            ),
+        );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.backend_port));
     let listener = tokio::net::TcpListener::bind(addr).await?;

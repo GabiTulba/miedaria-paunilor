@@ -378,6 +378,7 @@ pub struct BlogPost {
     pub published_at: Option<chrono::NaiveDateTime>,
     pub updated_at: chrono::NaiveDateTime,
     pub is_published: bool,
+    pub notified_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[derive(Insertable, serde::Deserialize, TS)]

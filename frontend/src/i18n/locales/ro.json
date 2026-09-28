@@ -283,7 +283,7 @@
   },
   "cookieConsent": {
     "ariaLabel": "Consimțământ cookie-uri",
-    "message": "Folosim cookie-uri esențiale pentru coșul de cumpărături și confirmarea vârstei. Cu acordul tău, reținem și limba preferată. Nu folosim cookie-uri de urmărire sau publicitate.",
+    "message": "Folosim cookie-uri esențiale pentru coșul de cumpărături și confirmarea vârstei. Cu acordul tău, reținem și limba preferată și dacă ai văzut invitația la newsletter. Nu folosim cookie-uri de urmărire sau publicitate.",
     "accept": "Accept",
     "decline": "Refuz",
     "learnMore": "Politica de cookie-uri"
@@ -320,7 +320,8 @@
       "totalStock": "Total Stoc",
       "lowStock": "Stoc Redus",
       "totalValue": "Valoare Totală",
-      "createProductDescription": "Adaugă un hidromel nou în magazin"
+      "createProductDescription": "Adaugă un hidromel nou în magazin",
+      "newsletterSubscribers": "Abonați newsletter"
     },
     "settings": {
       "title": "Setări Magazin",
@@ -537,6 +538,17 @@
         "contentEn": "Conținut (Engleză) - Markdown",
         "contentRo": "Conținut (Română) - Markdown",
         "contentHelp": "Scrie conținutul articolului folosind Markdown"
+      },
+      "notify": {
+        "send": "Trimite abonaților",
+        "resend": "Trimite din nou",
+        "sentOn": "Trimis abonaților pe {{date}}",
+        "noSubscribers": "Nu există încă abonați confirmați",
+        "confirmTitle": "Trimiți acest articol abonaților?",
+        "confirmMessage": "Articolul va fi trimis prin email celor {{count}} abonați confirmați, fiecăruia în limba sa. Acțiunea nu poate fi anulată.",
+        "confirmResendMessage": "Acest articol a fost deja trimis pe {{date}}. Îl trimiți din nou celor {{count}} abonați confirmați? Acțiunea nu poate fi anulată.",
+        "confirm": "Trimite emailul",
+        "success": "Articolul se trimite către {{count}} abonați"
       }
     }
   },
@@ -566,7 +578,8 @@
     "contact": "Contactați-ne",
     "social": "Urmărește-ne",
     "cookieSettings": "Setări cookie-uri",
-    "cookiePolicy": "Politica de cookie-uri"
+    "cookiePolicy": "Politica de cookie-uri",
+    "privacyPolicy": "Politica de confidențialitate"
   },
   "confirm": {
     "delete": {
@@ -728,8 +741,7 @@
       "contact": "Contact",
       "notFound": "Pagină Negăsită",
       "cart": "Coș",
-      "checkoutSuccess": "Comandă Confirmată",
-      "cookiePolicy": "Politica de cookie-uri"
+      "checkoutSuccess": "Comandă Confirmată"
     },
     "pageDescriptions": {
       "home": "Pagina Principală",
@@ -739,7 +751,8 @@
       "contact": "Contactează-ne",
       "notFound": "Pagină Negăsită",
       "cart": "Coș",
-      "cookiePolicy": "Ce cookie-uri și ce date stocate în browser folosește site-ul Miedăria Păunilor, de ce, pentru cât timp și cum îți poți schimba alegerea."
+      "cookiePolicy": "Ce cookie-uri și ce date stocate în browser folosește site-ul Miedăria Păunilor, de ce, pentru cât timp și cum îți poți schimba alegerea.",
+      "privacyPolicy": "Ce date personale colectează Miedăria Păunilor, de ce, cât timp le păstrăm și cum îți exerciți drepturile conform GDPR."
     }
   },
   "cookiePolicy": {
@@ -801,15 +814,153 @@
       "theme": {
         "purpose": "Reține tema deschisă sau întunecată aleasă. Nu se stochează nimic cât timp site-ul urmează tema dispozitivului.",
         "lifetime": "Până o ștergi sau revii la tema dispozitivului"
+      },
+      "newsletter_popup": {
+        "purpose": "Reține că ai închis invitația la newsletter (timp de 60 de zile) sau că te-ai abonat, ca să nu mai fie afișată. Fără acord, este păstrată doar până închizi fila (sessionStorage).",
+        "lifetime": "60 de zile după închidere; nelimitat după abonare"
       }
     },
     "thirdPartyTitle": "Plata prin Stripe",
     "thirdPartyText": "Plățile sunt procesate pe pagina de plată proprie Stripe (checkout.stripe.com). Stripe setează acolo propriile cookie-uri, de exemplu pentru prevenirea fraudei, conform politicii sale.",
     "stripeLink": "Politica de cookie-uri Stripe",
     "manageTitle": "Schimbarea alegerii",
-    "manageText": "Îți poți schimba alegerea oricând. Butonul de mai jos afișează din nou bannerul de cookie-uri. Dacă refuzi, preferința opțională de limbă este ștearsă imediat. Poți șterge cookie-urile și datele site-ului și din setările browserului; cele strict necesare vor fi setate din nou când folosești magazinul.",
+    "manageText": "Îți poți schimba alegerea oricând. Butonul de mai jos afișează din nou bannerul de cookie-uri. Dacă refuzi, preferințele opționale (limba și invitația la newsletter) sunt șterse imediat. Poți șterge cookie-urile și datele site-ului și din setările browserului; cele strict necesare vor fi setate din nou când folosești magazinul.",
     "manageButton": "Schimbă setările cookie-urilor",
     "contactTitle": "Întrebări",
-    "contactText": "Dacă ai întrebări despre această politică, scrie-ne la"
+    "contactText": "Dacă ai întrebări despre această politică, scrie-ne la",
+    "privacyText": "Pentru modul în care prelucrăm datele personale în general, consultă",
+    "privacyLink": "politica de confidențialitate"
+  },
+  "newsletter": {
+    "popup": {
+      "title": "Noutăți de la miedărie",
+      "description": "Primește un email când îmbuteliem un mied nou sau publicăm un articol pe blog. Fără spam, doar câteva emailuri pe an.",
+      "emailLabel": "Adresa de email",
+      "emailPlaceholder": "tu@exemplu.ro",
+      "submit": "Abonează-te",
+      "note": "Îți trimitem mai întâi un link de confirmare. Te poți dezabona oricând folosind linkul din fiecare email.",
+      "success": "Aproape gata! Verifică-ți căsuța de email și apasă pe linkul de confirmare ca să primești noutățile noastre.",
+      "privacyLink": "Politica de confidențialitate"
+    },
+    "errors": {
+      "invalidEmail": "Introdu o adresă de email validă.",
+      "tooManyRequests": "Prea multe încercări. Încearcă din nou peste câteva minute.",
+      "generic": "Ceva nu a mers bine. Încearcă din nou mai târziu."
+    },
+    "confirm": {
+      "title": "Abonare la noutăți",
+      "pending": "Se confirmă abonarea…",
+      "confirmed": "Abonarea este confirmată. Te vom anunța despre miedurile noi și articolele de pe blog.",
+      "invalid": "Acest link de confirmare este invalid sau a expirat. Linkurile sunt valabile 48 de ore; te poți abona din nou de pe pagina principală.",
+      "error": "Nu am putut confirma abonarea acum. Încearcă linkul din nou mai târziu."
+    },
+    "unsubscribe": {
+      "title": "Dezabonare",
+      "prompt": "Apasă mai jos ca să nu mai primești emailurile noastre. Adresa ta va fi ștearsă din listă.",
+      "button": "Dezabonează-mă",
+      "done": "Te-ai dezabonat, iar adresa ta a fost ștearsă din lista noastră.",
+      "invalid": "Acest link de dezabonare este invalid. Folosește linkul din unul dintre emailurile noastre.",
+      "error": "Nu am putut procesa cererea acum. Încearcă din nou mai târziu."
+    }
+  },
+  "privacyPolicy": {
+    "title": "Politica de confidențialitate",
+    "intro": "Această pagină explică ce date personale colectează Miedăria Păunilor atunci când folosești acest site, de ce, pe ce temei legal, cât timp le păstrăm, cu cine le partajăm și ce drepturi ai conform Regulamentului general privind protecția datelor (GDPR).",
+    "controllerTitle": "Cine răspunde de datele tale",
+    "controllerText": "Operatorul datelor este:",
+    "controller": {
+      "name": "Societate",
+      "taxId": "CUI",
+      "tradeRegisterNo": "Nr. Reg. Com.",
+      "address": "Adresă",
+      "email": "Email"
+    },
+    "activitiesTitle": "Ce colectăm și de ce",
+    "activitiesText": "Poți răsfoi magazinul și blogul fără cont și fără să ne dai date personale. Prelucrăm date personale doar în situațiile de mai jos.",
+    "facts": {
+      "data": "Date",
+      "purpose": "Scop",
+      "legalBasis": "Temei legal",
+      "retention": "Cât timp le păstrăm"
+    },
+    "activities": {
+      "orders": {
+        "title": "Comenzi și livrare",
+        "data": "Numele, adresa de email, numărul de telefon, adresa de livrare, produsele comandate și valoarea comenzii, precum și limba site-ului din care ai comandat. Introduci aceste date pe pagina de plată Stripe, iar noi le primim după finalizarea plății.",
+        "purpose": "Livrarea comenzii, contactarea ta în legătură cu ea, gestionarea retururilor și reclamațiilor și păstrarea evidențelor contabile cerute de lege.",
+        "legalBasis": "Executarea contractului de vânzare (art. 6 alin. (1) lit. b) GDPR) și îndeplinirea obligațiilor noastre legale contabile și fiscale (art. 6 alin. (1) lit. c)).",
+        "retention": "Evidențele comenzilor sunt păstrate pe durata cerută de legislația contabilă (în prezent 5 ani de la încheierea exercițiului financiar, conform Legii contabilității nr. 82/1991), apoi sunt șterse. Comenzile neplătite nu conțin date de contact."
+      },
+      "payments": {
+        "title": "Plăți",
+        "data": "Datele cardului sau ale altei metode de plată. Acestea sunt introduse direct pe pagina de plată Stripe și nu ajung niciodată pe serverele noastre; primim doar starea plății și un număr de referință.",
+        "purpose": "Încasarea plății pentru comandă și prevenirea fraudei.",
+        "legalBasis": "Executarea contractului de vânzare (art. 6 alin. (1) lit. b)). Stripe acționează ca operator independent pentru datele de plată pe care le prelucrează.",
+        "retention": "Păstrăm referința plății împreună cu comanda. Stripe păstrează datele de plată conform propriei politici de confidențialitate."
+      },
+      "newsletter": {
+        "title": "Newsletter",
+        "data": "Adresa de email, limba site-ului din care te-ai abonat și datele abonării și confirmării.",
+        "purpose": "Trimiterea de noutăți despre miedurile noastre și articolele noi de pe blog, de câteva ori pe an.",
+        "legalBasis": "Consimțământul tău (art. 6 alin. (1) lit. a)), exprimat prin dublă confirmare: ești abonat doar după ce apeși pe linkul din emailul de confirmare, iar data confirmării este dovada consimțământului.",
+        "retention": "Până te dezabonezi, folosind linkul din oricare dintre emailurile noastre, ceea ce îți șterge imediat adresa. Abonările neconfirmate în 48 de ore sunt șterse automat."
+      },
+      "contact": {
+        "title": "Mesajele pe care ni le trimiți",
+        "data": "Numele, adresa de email sau numărul de telefon și conținutul mesajului, atunci când ne scrii pe email, telefon sau WhatsApp.",
+        "purpose": "Răspunsul la întrebările și solicitările tale.",
+        "legalBasis": "Interesul nostru legitim de a-ți răspunde (art. 6 alin. (1) lit. f)) sau demersurile pe care le soliciți înainte de încheierea unui contract (art. 6 alin. (1) lit. b)).",
+        "retention": "Cât este necesar pentru soluționarea solicitării și cel mult 2 ani de la ultima comunicare, cu excepția cazului în care mesajul face parte din evidența unei comenzi."
+      },
+      "security": {
+        "title": "Securitate și jurnale tehnice",
+        "data": "Adresa IP, tipul browserului (user agent), pagina solicitată, pagina de proveniență și ora cererii. Parametrii din adrese, unde linkurile trimise prin email își poartă codurile, nu sunt înregistrați.",
+        "purpose": "Menținerea securității și disponibilității site-ului: limitarea numărului de cereri, detectarea abuzurilor și diagnosticarea erorilor. Nu folosim aceste jurnale pentru profilare sau marketing.",
+        "legalBasis": "Interesul nostru legitim privind securitatea site-ului (art. 6 alin. (1) lit. f)).",
+        "retention": "Jurnalele sunt rotite automat și suprascrise când ating o dimensiune fixă, de regulă în câteva săptămâni. Contoarele de limitare a cererilor sunt păstrate doar în memorie și dispar în câteva minute."
+      }
+    },
+    "cookiesText": "Stocăm și câteva cookie-uri și date în browser, cum ar fi coșul de cumpărături și confirmarea că ai peste 18 ani. Acestea sunt descrise în detaliu în",
+    "cookiesLink": "politica de cookie-uri",
+    "recipientsTitle": "Cu cine partajăm datele",
+    "recipientsText": "Partajăm date personale doar cu furnizorii de servicii de care avem nevoie pentru funcționarea magazinului și doar datele de care are nevoie fiecare:",
+    "recipients": {
+      "hosting": "Furnizorul nostru de găzduire, care operează serverele acestui site în Uniunea Europeană și prelucrează datele de mai sus în numele nostru.",
+      "stripe": "Stripe Payments Europe Ltd. (Irlanda), care procesează plățile.",
+      "brevo": "Sendinblue SAS, sub numele Brevo (Franța), care livrează în numele nostru newsletterul și emailurile de confirmare.",
+      "google": "Google (Gmail), care găzduiește căsuța în care primim emailurile tale.",
+      "whatsapp": "WhatsApp Ireland Ltd. (Meta), atunci când alegi să ne scrii pe WhatsApp.",
+      "courier": "Firma de curierat care îți livrează comanda și care primește numele, numărul de telefon și adresa de livrare.",
+      "authorities": "Autoritățile publice, cum ar fi ANAF, atunci când legea ne obligă."
+    },
+    "recipientPolicyLink": "(politica de confidențialitate)",
+    "noSaleText": "Nu vindem niciodată datele tale personale și nu le partajăm în scopuri publicitare.",
+    "transfersTitle": "Transferuri în afara UE",
+    "transfersText": "Stocăm datele tale în Uniunea Europeană. Unii dintre furnizorii noștri (Stripe, Google și Meta) fac parte din grupuri cu sediul în Statele Unite și pot prelucra date acolo. Aceste transferuri sunt acoperite de Cadrul UE-SUA privind protecția datelor (Data Privacy Framework) sau de clauzele contractuale standard adoptate de Comisia Europeană.",
+    "rightsTitle": "Drepturile tale",
+    "rightsText": "Conform GDPR, ai dreptul:",
+    "rights": {
+      "access": "să afli dacă îți prelucrăm datele și să primești o copie a acestora (acces);",
+      "rectification": "să ceri corectarea datelor inexacte (rectificare);",
+      "erasure": "să ceri ștergerea datelor, când nu mai avem nevoie de ele sau nu avem un motiv legal să le păstrăm (ștergere);",
+      "restriction": "să ne ceri să restricționăm modul în care îți folosim datele (restricționare);",
+      "portability": "să primești datele pe care ni le-ai furnizat într-un format structurat, care poate fi citit automat (portabilitate);",
+      "objection": "să te opui prelucrării bazate pe interesul nostru legitim (opoziție);",
+      "withdrawConsent": "să îți retragi oricând consimțământul, de exemplu prin dezabonarea de la newsletter. Retragerea nu afectează prelucrarea efectuată înainte de aceasta."
+    },
+    "rightsHowTo": "Pentru a-ți exercita oricare dintre aceste drepturi, scrie-ne la",
+    "complaintText": "Răspundem în termen de o lună. Dacă consideri că nu am prelucrat corect datele tale, poți depune și o plângere la autoritatea de supraveghere din România, Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP),",
+    "complaintLink": "dataprotection.ro",
+    "securityTitle": "Cum îți protejăm datele",
+    "securityText": "Site-ul este servit doar prin conexiuni criptate (HTTPS). Datele de plată nu ajung niciodată pe serverele noastre. Accesul la datele comenzilor este limitat la administratorii magazinului. Codurile de confirmare pentru newsletter sunt stocate doar ca amprente criptografice ireversibile, iar baza de date nu este accesibilă de pe internet.",
+    "automatedTitle": "Decizii automatizate",
+    "automatedText": "Nu luăm decizii privind persoana ta bazate exclusiv pe prelucrare automată și nu îți creăm un profil.",
+    "minorsTitle": "Minori",
+    "minorsText": "Vindem băuturi alcoolice, așa că acest site se adresează doar persoanelor de cel puțin 18 ani. Nu colectăm cu bună știință date de la minori; dacă afli că un minor ne-a transmis date personale, contactează-ne și le vom șterge.",
+    "changesTitle": "Modificări ale acestei politici",
+    "changesText": "Actualizăm această pagină atunci când se schimbă modul în care prelucrăm datele personale. Data din partea de sus arată când a fost actualizată ultima dată."
+  },
+  "legal": {
+    "lastUpdated": "Ultima actualizare: {{date}}"
   }
 }

@@ -153,16 +153,12 @@ pub fn create_pending_order(
         }
 
         let currency = "RON";
-        let language_code = match language {
-            Language::En => "en",
-            Language::Ro => "ro",
-        };
 
         let order: Order = diesel::insert_into(orders::table)
             .values(&NewOrder {
                 currency: currency.to_string(),
                 total_amount_cents: total_cents,
-                language: language_code.to_string(),
+                language: language.code().to_string(),
                 client_key_hash: client_key_hash.to_string(),
             })
             .returning(Order::as_returning())
@@ -307,10 +303,7 @@ pub fn release_order(
 /// Stripe session of an order that still holds stock as `Pending`, or `None`
 /// when the order is unknown or already past that state. `Some(None)` means
 /// pending without a session (creation never finished).
-pub fn pending_session(
-    conn: &mut PgConnection,
-    id: Uuid,
-) -> QueryResult<Option<Option<String>>> {
+pub fn pending_session(conn: &mut PgConnection, id: Uuid) -> QueryResult<Option<Option<String>>> {
     orders::table
         .filter(
             orders::order_id

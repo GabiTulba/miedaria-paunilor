@@ -47,6 +47,11 @@ function AdminDashboard() {
         }
     };
 
+    const { data: newsletterStats, loading: newsletterStatsLoading } = useFetch(
+        signal => api.getNewsletterStats(signal),
+        [],
+    );
+
     const totalProducts = products.length;
     const totalStock = products.reduce((sum, pwi) => sum + pwi.product.bottle_count, 0);
     const lowStockProducts = products.filter(pwi => {
@@ -92,6 +97,13 @@ function AdminDashboard() {
                     <div className="stat-content">
                         <h3>{loading ? <Skeleton inline h="2rem" w="120px" /> : `${totalValue.toFixed(2)} ${valueCurrency}`}</h3>
                         <p>{t('admin.dashboard.totalValue')}</p>
+                    </div>
+                </div>
+                <div className="stat-card">
+                    <div className="stat-icon newsletter-icon"></div>
+                    <div className="stat-content">
+                        <h3>{newsletterStatsLoading ? <Skeleton inline h="2rem" w="60px" /> : newsletterStats?.confirmed ?? '—'}</h3>
+                        <p>{t('admin.dashboard.newsletterSubscribers')}</p>
                     </div>
                 </div>
             </div>

@@ -14,6 +14,8 @@ import type { CheckoutStatus } from '../types/generated/CheckoutStatus';
 import type { CheckoutSessionResponse } from '../types/generated/CheckoutSessionResponse';
 import type { Order } from '../types/generated/Order';
 import type { OrderWithItems } from '../types/generated/OrderWithItems';
+import type { NewsletterStats } from '../types/generated/NewsletterStats';
+import type { NotifySubscribersResponse } from '../types/generated/NotifySubscribersResponse';
 import type { StockLevel } from '../types/generated/StockLevel';
 import i18n from '../i18n/config';
 
@@ -290,5 +292,38 @@ export const api = {
 
     deleteBlogPost: async (id: string) => {
         return request(`/admin/blog/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    },
+
+    notifyBlogSubscribers: (id: string, resend: boolean): Promise<NotifySubscribersResponse> => {
+        return request(`/admin/blog/${encodeURIComponent(id)}/notify`, {
+            method: 'POST',
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ resend }),
+        });
+    },
+
+    // Newsletter
+    subscribeNewsletter: (email: string): Promise<null> => {
+        return request('/newsletter/subscribe', {
+            method: 'POST',
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ email }),
+        });
+    },
+
+    confirmNewsletter: (token: string): Promise<null> => {
+        return request('/newsletter/confirm', {
+            method: 'POST',
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ token }),
+        });
+    },
+
+    unsubscribeNewsletter: (id: string, token: string): Promise<null> => {
+        return request(`/newsletter/unsubscribe${buildQuery({ id, token })}`, { method: 'POST' });
+    },
+
+    getNewsletterStats: (signal?: AbortSignal): Promise<NewsletterStats> => {
+        return request('/admin/newsletter/stats', { signal });
     },
 };

@@ -9,7 +9,9 @@ pub mod image_crud;
 pub mod language;
 pub mod localized;
 pub mod lot_crud;
+pub mod mailer;
 pub mod models;
+pub mod newsletter;
 pub mod order_crud;
 pub mod pagination;
 pub mod product_crud;
@@ -54,13 +56,24 @@ pub fn build_admin_limiter() -> Arc<IpRateLimiter> {
     )))
 }
 
-/// Starting checkout reserves stock, so it gets a far tighter budget than
-/// browsing: a burst of 5 sessions, then one more every 2 minutes.
-pub fn build_checkout_limiter() -> Arc<IpRateLimiter> {
+/// A burst of 5 requests, then one more every 2 minutes.
+fn build_strict_limiter() -> Arc<IpRateLimiter> {
     let quota = Quota::with_period(Duration::from_secs(120))
         .expect("non-zero period")
         .allow_burst(NonZeroU32::new(5).unwrap());
     Arc::new(RateLimiter::keyed(quota))
+}
+
+/// Starting checkout reserves stock, so it gets a far tighter budget than
+/// browsing.
+pub fn build_checkout_limiter() -> Arc<IpRateLimiter> {
+    build_strict_limiter()
+}
+
+/// Every newsletter sign-up can send an email, so sign-ups share checkout's
+/// strict budget.
+pub fn build_newsletter_limiter() -> Arc<IpRateLimiter> {
+    build_strict_limiter()
 }
 
 /// Random HMAC key for `AppState::client_key_hash`. Never persisted, so the
@@ -85,6 +98,7 @@ pub struct AppState {
     pub admin_limiter: Arc<IpRateLimiter>,
     pub public_api_limiter: Arc<IpRateLimiter>,
     pub checkout_limiter: Arc<IpRateLimiter>,
+    pub newsletter_limiter: Arc<IpRateLimiter>,
     pub client_key_secret: [u8; 32],
     pub site_url: String,
     pub jwt_secret: String,
@@ -92,6 +106,9 @@ pub struct AppState {
     pub image_upload_dir: String,
     pub stripe_client: stripe::Client,
     pub stripe_webhook_secret: String,
+    pub mailer: mailer::Mailer,
+    /// See `newsletter::derive_unsubscribe_key`.
+    pub unsubscribe_key: [u8; 32],
     /// Latest known BNR EUR reference rate, kept warm by the refresh task so
     /// request handlers never hit the database for currency conversion.
     pub eur_rate: std::sync::RwLock<Option<exchange_rate::EurRate>>,
