@@ -5,8 +5,9 @@ use dotenvy::dotenv;
 
 use backend::routes;
 use backend::{
-    AppState, auth, build_admin_limiter, build_image_serve_limiter, build_login_limiter,
-    build_public_api_limiter, db, exchange_rate,
+    AppState, auth, build_admin_limiter, build_checkout_limiter, build_image_serve_limiter,
+    build_login_limiter, build_public_api_limiter, db, exchange_rate, generate_client_key_secret,
+    stripe_checkout,
 };
 
 struct Config {
@@ -150,6 +151,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         image_serve_limiter: build_image_serve_limiter(),
         admin_limiter: build_admin_limiter(),
         public_api_limiter: build_public_api_limiter(),
+        checkout_limiter: build_checkout_limiter(),
+        client_key_secret: generate_client_key_secret(),
         site_url: config.allowed_origin,
         jwt_secret: config.jwt_secret,
         jwt_expiration_hours: config.jwt_expiration_hours,
@@ -171,6 +174,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => tracing::warn!(error = ?e, "failed to load stored BNR EUR rate"),
     }
     tokio::spawn(exchange_rate::run_refresh_task(app_state.clone()));
+    tokio::spawn(stripe_checkout::run_reservation_sweeper(app_state.clone()));
 
     let allowed_origin = app_state
         .site_url

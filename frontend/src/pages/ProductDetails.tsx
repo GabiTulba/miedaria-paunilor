@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 import { CartContext } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { getEnumLabel } from '../enums';
-import { getStockStatus, isInStock } from '../utils/stockAvailability';
+import { getStockStatus, isInStock, MAX_ORDER_BOTTLES } from '../utils/stockAvailability';
 import { getImageUrl, getImageSrcSet } from '../lib/api';
 import { toFixed } from '../utils/numberUtils';
 import { useFormattedDate } from '../hooks/useFormattedDate';
@@ -44,9 +44,14 @@ function ProductDetails() {
 
     const handleAddToCart = () => {
         if (productWithImage?.product) {
-            addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count);
-            showToast(t('cart.addedToCart'), 'success');
-            pulse('add-to-cart');
+            const added = addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count);
+            if (added < quantity) {
+                showToast(t('cart.orderLimitReached', { max: MAX_ORDER_BOTTLES }), 'warning');
+            }
+            if (added > 0) {
+                showToast(t('cart.addedToCart'), 'success');
+                pulse('add-to-cart');
+            }
         }
     };
 

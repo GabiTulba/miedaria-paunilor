@@ -9,7 +9,11 @@ use ts_rs::TS;
 #[ExistingTypePath = "crate::schema::sql_types::OrderStatusEnum"]
 #[DbValueStyle = "kebab-case"]
 pub enum OrderStatus {
+    /// Stock reserved; the customer has not finished the Stripe page yet.
     Pending,
+    /// Stripe checkout completed with a delayed payment method that has not
+    /// settled yet; stock stays reserved until Stripe reports the outcome.
+    Processing,
     Paid,
     Expired,
     Failed,

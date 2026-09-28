@@ -264,6 +264,8 @@
     "redirectingToPayment": "Redirecting to payment...",
     "checkoutError": "Could not start checkout. Please try again.",
     "checkoutOutOfStock": "Some items in your cart are no longer in stock. Please review your cart and try again.",
+    "checkoutTooManyAttempts": "Too many checkout attempts from your network. Please wait a few minutes and try again.",
+    "orderLimitReached": "An online order is limited to {{max}} bottles. For larger orders, please contact us.",
     "checkoutDisabled": "Checkout is temporarily disabled. Please try again later.",
     "productUnavailable": "This product is no longer available",
     "outOfStock": "This product is now out of stock",
@@ -349,6 +351,7 @@
       },
       "status": {
         "pending": "Pending",
+        "processing": "Payment processing",
         "paid": "Paid",
         "expired": "Expired",
         "failed": "Failed"

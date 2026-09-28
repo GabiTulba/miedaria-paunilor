@@ -125,6 +125,7 @@ diesel::table! {
         language -> Varchar,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        client_key_hash -> Nullable<Varchar>,
     }
 }
 

@@ -3,6 +3,7 @@ import { LocalizedProduct } from '../types';
 import { api } from '../lib/api';
 import { deleteCookie, getCookie, setCookie, ONE_WEEK_SECONDS } from '../lib/cookies';
 import { useConsent } from '../hooks/useConsent';
+import { MAX_ORDER_BOTTLES } from '../utils/stockAvailability';
 
 export interface CartItem extends LocalizedProduct {
     quantity: number;
@@ -11,7 +12,8 @@ export interface CartItem extends LocalizedProduct {
 
 interface CartContextType {
     cartItems: CartItem[];
-    addToCart: (product: LocalizedProduct, quantity: number, availableStock: number) => void;
+    /** Returns how many bottles were actually added after stock and order-size limits. */
+    addToCart: (product: LocalizedProduct, quantity: number, availableStock: number) => number;
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number, availableStock?: number) => void;
     updateStock: (productId: string, newAvailableStock: number) => void;
@@ -22,7 +24,7 @@ interface CartContextType {
 
 export const CartContext = createContext<CartContextType>({
     cartItems: [],
-    addToCart: () => {},
+    addToCart: () => 0,
     removeFromCart: () => {},
     updateQuantity: () => {},
     updateStock: () => {},
@@ -38,6 +40,14 @@ const CART_COOKIE = 'cart';
 interface PersistedCartEntry {
     p: string;
     q: number;
+}
+
+/** Largest quantity `productId` may have without exceeding its stock or the order bottle cap. */
+function maxQuantityFor(items: CartItem[], productId: string, stock: number): number {
+    const otherBottles = items
+        .filter(item => item.product_id !== productId)
+        .reduce((sum, item) => sum + item.quantity, 0);
+    return Math.max(0, Math.min(stock, MAX_ORDER_BOTTLES - otherBottles));
 }
 
 function readPersistedCart(): PersistedCartEntry[] {
@@ -87,10 +97,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 if (result.status !== 'fulfilled') return;
                 const product = result.value.product;
                 const stock = product.bottle_count;
-                if (stock <= 0) return;
+                const quantity = Math.min(persisted[i].q, maxQuantityFor(restored, product.product_id, stock));
+                if (quantity <= 0) return;
                 restored.push({
                     ...product,
-                    quantity: Math.min(persisted[i].q, stock),
+                    quantity,
                     availableStock: stock,
                 });
             });
@@ -125,18 +136,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [cartItems, isHydrated, consent]);
 
     const addToCart = (product: LocalizedProduct, quantity: number, availableStock: number) => {
+        const stock = availableStock ?? product.bottle_count;
+        const current = cartItems.find(item => item.product_id === product.product_id)?.quantity ?? 0;
+        const newQuantity = Math.min(current + quantity, maxQuantityFor(cartItems, product.product_id, stock));
+        if (newQuantity <= current) return 0;
         setCartItems(prevItems => {
-            const itemExists = prevItems.find(item => item.product_id === product.product_id);
-            const stock = availableStock ?? product.bottle_count;
-            if (itemExists) {
+            if (prevItems.some(item => item.product_id === product.product_id)) {
                 return prevItems.map(item =>
                     item.product_id === product.product_id
-                        ? { ...item, quantity: Math.min(item.quantity + quantity, stock), availableStock: stock }
+                        ? { ...item, quantity: newQuantity, availableStock: stock }
                         : item
                 );
             }
-            return [...prevItems, { ...product, quantity: Math.min(quantity, stock), availableStock: stock }];
+            return [...prevItems, { ...product, quantity: newQuantity, availableStock: stock }];
         });
+        return newQuantity - current;
     };
 
     const removeFromCart = (productId: string) => {
@@ -151,8 +165,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setCartItems(prevItems =>
             prevItems.map(item => {
                 if (item.product_id === productId) {
-                    const maxQuantity = availableStock !== undefined ? availableStock : item.availableStock;
-                    return { ...item, quantity: Math.min(quantity, maxQuantity) };
+                    const stock = availableStock ?? item.availableStock;
+                    return { ...item, quantity: Math.min(quantity, maxQuantityFor(prevItems, productId, stock)) };
                 }
                 return item;
             })

@@ -7,12 +7,14 @@ import { LocalizedLink } from '../components/LocalizedLink';
 import { usePulse } from '../hooks/usePulse';
 import SEO from '../components/SEO';
 import EurConversionNote from '../components/EurConversionNote';
+import { MAX_ORDER_BOTTLES } from '../utils/stockAvailability';
+import type { ApiError } from '../types/api';
 import './Cart.css';
 
 const DEFAULT_CURRENCY = 'EUR';
 
 function Cart() {
-    const { cartItems, removeFromCart, updateQuantity, updateStock, updateProduct, clearCart } = useContext(CartContext);
+    const { cartItems, removeFromCart, updateQuantity, updateStock, updateProduct, clearCart, itemCount } = useContext(CartContext);
     const { t, i18n } = useTranslation();
     const [stockWarnings, setStockWarnings] = useState<Record<string, string>>({});
     const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -86,14 +88,19 @@ function Cart() {
             window.location.assign(url);
         } catch (err) {
             console.error('Failed to start checkout:', err);
-            const status = (err as { status?: number }).status;
+            const status = (err as Partial<ApiError>).response?.status;
             // 409 = a product went out of stock between page load and checkout;
+            // 429 = too many checkouts started from this network recently;
             // 503 = an admin disabled checkout after this page loaded.
             if (status === 503) {
                 setIsCheckoutEnabled(false);
                 setCheckoutError(null);
+            } else if (status === 409) {
+                setCheckoutError(t('cart.checkoutOutOfStock'));
+            } else if (status === 429) {
+                setCheckoutError(t('cart.checkoutTooManyAttempts'));
             } else {
-                setCheckoutError(status === 409 ? t('cart.checkoutOutOfStock') : t('cart.checkoutError'));
+                setCheckoutError(t('cart.checkoutError'));
             }
             setIsCheckingOut(false);
         }
@@ -144,7 +151,7 @@ function Cart() {
                                                  className="quantity-input"
                                                  value={item.quantity}
                                                  min={1}
-                                                 max={Math.min(99, item.availableStock)}
+                                                 max={Math.min(item.availableStock, item.quantity + MAX_ORDER_BOTTLES - itemCount)}
                                                  step={1}
                                                  aria-label={t('product.quantity')}
                                                  onChange={(e) => {
@@ -152,8 +159,7 @@ function Cart() {
                                                      if (raw === '') return;
                                                      const val = parseInt(raw, 10);
                                                      if (!Number.isInteger(val) || String(val) !== raw.replace(/^0+(?=\d)/, '')) return;
-                                                     const clamped = Math.max(1, Math.min(val, Math.min(99, item.availableStock)));
-                                                     updateQuantity(item.product_id, clamped, item.availableStock);
+                                                     updateQuantity(item.product_id, Math.max(1, val), item.availableStock);
                                                  }}
                                              />
                                              <button
@@ -163,7 +169,7 @@ function Cart() {
                                                      pulse(`${item.product_id}-inc`);
                                                  }}
                                                  aria-label={t('product.increaseQuantity')}
-                                                 disabled={item.quantity >= item.availableStock}
+                                                 disabled={item.quantity >= item.availableStock || itemCount >= MAX_ORDER_BOTTLES}
                                              >+</button>
                                          </div>
                                          {item.quantity >= item.availableStock && item.availableStock > 0 && (
@@ -194,6 +200,9 @@ function Cart() {
                             <span>{getTotalPrice()} {cartCurrency}{cartItems.some(i => i.is_converted) ? '*' : ''}</span>
                         </div>
                         <EurConversionNote products={cartItems} />
+                        {itemCount >= MAX_ORDER_BOTTLES && (
+                            <p className="checkout-message">{t('cart.orderLimitReached', { max: MAX_ORDER_BOTTLES })}</p>
+                        )}
                         <button
                             className="button checkout-btn"
                             onClick={handleCheckout}

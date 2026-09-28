@@ -32,6 +32,8 @@ pub enum RepositoryError {
     /// 400 with `{message: "Validation failed", errors: [...]}` envelope
     ProductValidation(Vec<ProductValidationError>),
     BlogValidation(Vec<BlogValidationError>),
+    /// 429 — a per-client quota enforced at the data layer was exceeded
+    TooManyRequests,
     /// Wraps a Diesel error; surfaces as a generic 500 with server-side log.
     Database(diesel::result::Error),
 }
@@ -107,6 +109,7 @@ impl From<RepositoryError> for AppError {
             RepositoryError::BadRequest(m) => AppError::BadRequest(m),
             RepositoryError::ProductValidation(v) => AppError::ProductValidation(v),
             RepositoryError::BlogValidation(v) => AppError::BlogValidation(v),
+            RepositoryError::TooManyRequests => AppError::TooManyRequests,
             RepositoryError::Database(e) => AppError::Database(e),
         }
     }

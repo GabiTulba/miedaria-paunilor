@@ -15,6 +15,7 @@ const ADMIN_ORDERS_PER_PAGE = 20;
 const STATUS_BADGE_CLASS: Record<OrderStatus, string> = {
     paid: 'status-active',
     pending: 'status-draft',
+    processing: 'status-draft',
     expired: 'status-inactive',
     failed: 'status-inactive',
 };

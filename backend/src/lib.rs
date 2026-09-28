@@ -18,6 +18,7 @@ pub mod rss_crud;
 pub mod schema;
 pub mod settings_crud;
 pub mod sitemap_crud;
+pub mod stripe_checkout;
 pub mod user_crud;
 pub mod utils;
 
@@ -26,9 +27,12 @@ pub mod utils;
 pub use crate::error::{AppError, ErrorResponse};
 
 use governor::{Quota, RateLimiter, clock::DefaultClock, state::keyed::DefaultKeyedStateStore};
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
 use std::net::IpAddr;
 use std::num::NonZeroU32;
 use std::sync::Arc;
+use std::time::Duration;
 
 pub type IpRateLimiter = RateLimiter<IpAddr, DefaultKeyedStateStore<IpAddr>, DefaultClock>;
 
@@ -50,6 +54,24 @@ pub fn build_admin_limiter() -> Arc<IpRateLimiter> {
     )))
 }
 
+/// Starting checkout reserves stock, so it gets a far tighter budget than
+/// browsing: a burst of 5 sessions, then one more every 2 minutes.
+pub fn build_checkout_limiter() -> Arc<IpRateLimiter> {
+    let quota = Quota::with_period(Duration::from_secs(120))
+        .expect("non-zero period")
+        .allow_burst(NonZeroU32::new(5).unwrap());
+    Arc::new(RateLimiter::keyed(quota))
+}
+
+/// Random HMAC key for `AppState::client_key_hash`. Never persisted, so the
+/// stored hashes become unlinkable to any IP once the process restarts.
+pub fn generate_client_key_secret() -> [u8; 32] {
+    use argon2::password_hash::rand_core::{OsRng, RngCore};
+    let mut key = [0u8; 32];
+    OsRng.fill_bytes(&mut key);
+    key
+}
+
 pub fn build_public_api_limiter() -> Arc<IpRateLimiter> {
     Arc::new(RateLimiter::keyed(Quota::per_second(
         NonZeroU32::new(30).unwrap(),
@@ -62,6 +84,8 @@ pub struct AppState {
     pub image_serve_limiter: Arc<IpRateLimiter>,
     pub admin_limiter: Arc<IpRateLimiter>,
     pub public_api_limiter: Arc<IpRateLimiter>,
+    pub checkout_limiter: Arc<IpRateLimiter>,
+    pub client_key_secret: [u8; 32],
     pub site_url: String,
     pub jwt_secret: String,
     pub jwt_expiration_hours: i64,
@@ -80,6 +104,16 @@ impl AppState {
 
     pub fn set_eur_rate(&self, rate: exchange_rate::EurRate) {
         *self.eur_rate.write().expect("eur_rate lock poisoned") = Some(rate);
+    }
+
+    /// Pseudonymous, hex-encoded HMAC of the client's network (see
+    /// `auth::client_network`), used to cap pending orders per client without
+    /// storing the IP itself.
+    pub fn client_key_hash(&self, ip: IpAddr) -> String {
+        let mut mac = Hmac::<Sha256>::new_from_slice(&self.client_key_secret)
+            .expect("HMAC accepts any key length");
+        mac.update(auth::client_network(ip).to_string().as_bytes());
+        hex::encode(mac.finalize().into_bytes())
     }
 }
 

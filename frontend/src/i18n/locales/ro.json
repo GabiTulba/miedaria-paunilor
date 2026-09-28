@@ -264,6 +264,8 @@
     "redirectingToPayment": "Redirecționare către plată...",
     "checkoutError": "Nu am putut porni finalizarea comenzii. Vă rugăm să încercați din nou.",
     "checkoutOutOfStock": "Unele produse din coș nu mai sunt în stoc. Vă rugăm să verificați coșul și să încercați din nou.",
+    "checkoutTooManyAttempts": "Prea multe încercări de finalizare a comenzii din rețeaua dumneavoastră. Vă rugăm să așteptați câteva minute și să încercați din nou.",
+    "orderLimitReached": "O comandă online este limitată la {{max}} de sticle. Pentru comenzi mai mari, vă rugăm să ne contactați.",
     "checkoutDisabled": "Finalizarea comenzii este temporar dezactivată. Vă rugăm să reveniți mai târziu.",
     "productUnavailable": "Acest produs nu mai este disponibil",
     "outOfStock": "Acest produs nu mai este în stoc",
@@ -349,6 +351,7 @@
       },
       "status": {
         "pending": "În așteptare",
+        "processing": "Plată în procesare",
         "paid": "Plătită",
         "expired": "Expirată",
         "failed": "Eșuată"

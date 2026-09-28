@@ -11,7 +11,8 @@ Planned features for Miedăria Păunilor, in rough implementation order. Each se
 ### Design
 
 **Email infrastructure (prerequisite, shared with feature 5)**
-- Add the `lettre` crate (async SMTP with rustls) and env vars: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_ADDRESS`, `SMTP_FROM_NAME`. Any transactional SMTP provider works (e.g. Scaleway TEM, Brevo, Postmark).
+- Add the `lettre` crate (async SMTP with rustls) and env vars: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_ADDRESS`, `SMTP_FROM_NAME`, documented in `env.sample`.
+- **Chosen provider: Brevo.** A Brevo account with an SMTP key already exists from an earlier, discarded implementation of this feature: relay `smtp-relay.brevo.com`, port 587 (STARTTLS), sender `newsletter@miedaria-paunilor.ro` / "Miedăria Păunilor". The credentials were removed from `.env` while the feature is shelved; when resuming, revoke the old SMTP key in the Brevo dashboard, generate a new one, and verify the sender domain (SPF/DKIM/DMARC) in Brevo before the first send.
 - New backend module `mailer.rs`: template rendering (simple HTML + plain-text pairs, bilingual by subscriber language) and a send helper. Sends run in a spawned `tokio` task with per-message error logging so a slow SMTP server never blocks request handlers; batch sends are throttled (e.g. a few messages/second) to stay within provider limits.
 
 **Data model**
@@ -170,6 +171,15 @@ Rather than adding a third-party tracker, collect events server-side into Postgr
 
 **Operational (backend logs → counters):**
 - API error rates (4xx/5xx), Stripe webhook failures, BNR rate-fetch failures (feature 3), email delivery failures (features 4–5).
+- Orders stuck in `processing`: count and age of orders whose delayed payment has not resolved.
+
+### Known limitation: unresolved `processing` orders
+
+An order paid with a delayed method (bank debit, transfer) moves to `processing` and keeps its stock reserved until Stripe sends `checkout.session.async_payment_succeeded` or `…_failed`. Unlike `pending` orders, these are exempt from the 15-minute reservation sweeper, so if that final webhook never arrives (endpoint misconfigured, not subscribed to the async events, or down beyond Stripe's 3-day retry window), the order stays `processing` and its bottles stay off sale indefinitely.
+
+**Goal:**
+- Surface it: the `processing` count/age metric above, with an admin-dashboard warning for any order in `processing` longer than a threshold (e.g. 3 days).
+- Reconcile it: extend `stripe_checkout.rs` with a daily task that retrieves the PaymentIntent of each stale `processing` order from Stripe and applies the outcome (`succeeded` → `paid`; `requires_payment_method`/`canceled` → release stock as `failed`), sharing the transition functions the webhook already uses so both paths stay idempotent.
 
 **Effort:** Medium. Start with the zero-cost sales/inventory metrics (pure queries over existing tables) — that alone makes the metrics page useful — then add the event pipeline.
 

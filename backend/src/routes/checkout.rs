@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use crate::AppError;
 use crate::AppState;
+use crate::auth;
 use crate::db;
 use crate::enums::OrderStatus;
 use crate::language::Language;
@@ -22,16 +23,24 @@ use crate::models::{
 use crate::order_crud;
 use crate::pagination::{self, PageQuery};
 use crate::settings_crud;
+use crate::stripe_checkout;
 
-/// How long a Checkout Session (and its stock reservation) stays valid.
-/// 30 minutes is Stripe's minimum for `expires_at`.
-const SESSION_EXPIRY_SECS: i64 = 30 * 60;
+/// Stripe's minimum Checkout Session lifetime. Our own hold is shorter
+/// (`order_crud::HOLD_SECS`); the reservation sweeper expires the session early.
+const STRIPE_SESSION_EXPIRY_SECS: i64 = 30 * 60;
 
 async fn create_checkout_session(
     State(app_state): State<Arc<AppState>>,
+    headers: HeaderMap,
     lang: Language,
     Json(request): Json<CheckoutSessionRequest>,
 ) -> Result<Json<CheckoutSessionResponse>, AppError> {
+    let client_ip = auth::extract_client_ip(&headers);
+    app_state
+        .checkout_limiter
+        .check_key(&auth::client_network(client_ip))
+        .map_err(|_| AppError::TooManyRequests)?;
+
     let OrderWithItems { order, items } = {
         let mut conn = db::get_db_connection(&app_state)?;
         if !settings_crud::is_checkout_enabled(&mut conn)? {
@@ -39,7 +48,12 @@ async fn create_checkout_session(
                 "Checkout is temporarily disabled".to_string(),
             ));
         }
-        order_crud::create_pending_order(&mut conn, &request.items, lang)?
+        order_crud::create_pending_order(
+            &mut conn,
+            &request.items,
+            lang,
+            &app_state.client_key_hash(client_ip),
+        )?
     };
 
     // All orders are charged in RON regardless of site language; the EUR
@@ -80,7 +94,7 @@ async fn create_checkout_session(
     params.success_url = Some(&success_url);
     params.cancel_url = Some(&cancel_url);
     params.client_reference_id = Some(&order_id_str);
-    params.expires_at = Some(chrono::Utc::now().timestamp() + SESSION_EXPIRY_SECS);
+    params.expires_at = Some(chrono::Utc::now().timestamp() + STRIPE_SESSION_EXPIRY_SECS);
     params.metadata = Some(HashMap::from([(
         "order_id".to_string(),
         order_id_str.clone(),
@@ -105,6 +119,12 @@ async fn create_checkout_session(
 
     let Some(url) = session.url else {
         tracing::error!(order_id = %order.order_id, "stripe session has no redirect url");
+        // Expire the session first so it can never be paid for an order whose
+        // stock has already been handed back.
+        if let Err(e) = stripe::CheckoutSession::expire(&app_state.stripe_client, &session.id).await
+        {
+            tracing::error!(error = %e, order_id = %order.order_id, "failed to expire orphaned stripe session");
+        }
         order_crud::release_order(&mut conn, order.order_id, OrderStatus::Failed)?;
         return Err(AppError::InternalServerError(
             "Could not start checkout. Please try again.".to_string(),
@@ -114,16 +134,17 @@ async fn create_checkout_session(
     Ok(Json(CheckoutSessionResponse { url }))
 }
 
-/// Fallback for events whose session was never attached to the order (e.g. the
-/// attach write failed): recover the order id from the session metadata.
-fn order_id_from_metadata(session: &stripe::CheckoutSession) -> Option<Uuid> {
-    session
-        .metadata
-        .as_ref()
-        .and_then(|m| m.get("order_id"))
-        .and_then(|s| Uuid::parse_str(s).ok())
+fn checkout_session(event: stripe::Event) -> Option<stripe::CheckoutSession> {
+    match event.data.object {
+        stripe::EventObject::CheckoutSession(session) => Some(session),
+        _ => None,
+    }
 }
 
+/// Handles the Checkout Session lifecycle. `completed` only means the customer
+/// finished the Stripe page: for delayed payment methods the money has not
+/// moved yet (`payment_status == unpaid`), so the order becomes `Processing`
+/// with its stock reserved until `async_payment_succeeded` / `async_payment_failed`.
 async fn stripe_webhook(
     State(app_state): State<Arc<AppState>>,
     headers: HeaderMap,
@@ -144,52 +165,51 @@ async fn stripe_webhook(
                 AppError::BadRequest("Invalid webhook signature".to_string())
             })?;
 
-    match event.type_ {
+    let event_type = event.type_;
+    let handled = matches!(
+        event_type,
+        stripe::EventType::CheckoutSessionCompleted
+            | stripe::EventType::CheckoutSessionAsyncPaymentSucceeded
+            | stripe::EventType::CheckoutSessionAsyncPaymentFailed
+            | stripe::EventType::CheckoutSessionExpired
+    );
+    // Unhandled event types are acknowledged so Stripe stops retrying them.
+    let Some(session) = checkout_session(event).filter(|_| handled) else {
+        return Ok(StatusCode::OK);
+    };
+
+    let mut conn = db::get_db_connection(&app_state)?;
+    let Some(order_id) = order_crud::find_order_id_for_session(
+        &mut conn,
+        session.id.as_str(),
+        stripe_checkout::order_id_from_metadata(&session),
+    )?
+    else {
+        tracing::warn!(session_id = %session.id, event = %event_type, "webhook for unknown order");
+        return Ok(StatusCode::OK);
+    };
+
+    let applied = match event_type {
         stripe::EventType::CheckoutSessionCompleted => {
-            if let stripe::EventObject::CheckoutSession(session) = event.data.object {
-                let payment_intent_id = session
-                    .payment_intent
-                    .as_ref()
-                    .map(|pi| pi.id().to_string());
-                let customer_email = session
-                    .customer_details
-                    .as_ref()
-                    .and_then(|d| d.email.clone());
-
-                let mut conn = db::get_db_connection(&app_state)?;
-                let updated = order_crud::mark_paid_by_session(
-                    &mut conn,
-                    session.id.as_str(),
-                    payment_intent_id.as_deref(),
-                    customer_email.as_deref(),
-                )?;
-                if updated {
-                    tracing::info!(session_id = %session.id, "order marked paid");
-                } else {
-                    tracing::warn!(session_id = %session.id, "completed event for unknown or non-pending order");
-                }
-            }
+            stripe_checkout::apply_completed_session(&mut conn, order_id, &session)?
         }
-        stripe::EventType::CheckoutSessionExpired => {
-            if let stripe::EventObject::CheckoutSession(session) = event.data.object {
-                let mut conn = db::get_db_connection(&app_state)?;
-                let released = order_crud::release_order_by_session(
-                    &mut conn,
-                    session.id.as_str(),
-                    OrderStatus::Expired,
-                )?;
-                if !released {
-                    if let Some(order_id) = order_id_from_metadata(&session) {
-                        order_crud::release_order(&mut conn, order_id, OrderStatus::Expired)?;
-                    }
-                }
-                tracing::info!(session_id = %session.id, "checkout session expired");
-            }
+        stripe::EventType::CheckoutSessionAsyncPaymentSucceeded => {
+            order_crud::mark_paid(&mut conn, order_id)?
         }
-        // Unhandled event types are acknowledged so Stripe stops retrying them.
-        _ => {}
-    }
+        stripe::EventType::CheckoutSessionAsyncPaymentFailed => {
+            order_crud::release_order(&mut conn, order_id, OrderStatus::Failed)?
+        }
+        _ => order_crud::release_order(&mut conn, order_id, OrderStatus::Expired)?,
+    };
 
+    tracing::info!(
+        session_id = %session.id,
+        %order_id,
+        event = %event_type,
+        payment_status = %session.payment_status,
+        applied,
+        "stripe checkout event processed"
+    );
     Ok(StatusCode::OK)
 }
 

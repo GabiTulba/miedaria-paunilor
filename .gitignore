@@ -5,6 +5,10 @@
 .env.test.local
 .env.production.local
 
+#todos
+future_plans.md
+cybersecurity_weaknesses.md
+
 # Editor and IDE files
 *.swp
 *.swo

@@ -250,6 +250,7 @@ pub struct NewOrder {
     pub currency: String,
     pub total_amount_cents: i64,
     pub language: String,
+    pub client_key_hash: String,
 }
 
 #[derive(Queryable, Selectable, serde::Serialize, Debug, TS)]

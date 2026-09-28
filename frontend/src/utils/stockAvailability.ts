@@ -63,6 +63,5 @@ export function isInStock(bottleCount: number): boolean {
   return bottleCount > 0;
 }
 
-export function getMaxCartQuantity(bottleCount: number): number {
-  return Math.min(bottleCount, 99);
-}
+// Mirror of `MAX_ORDER_BOTTLES` in backend/src/order_crud.rs.
+export const MAX_ORDER_BOTTLES = 100;

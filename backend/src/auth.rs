@@ -13,7 +13,7 @@ use axum::{
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv6Addr};
 use std::sync::{Arc, OnceLock};
 
 /// Name of the httpOnly auth cookie. Scoped to /api/admin so it never leaks
@@ -97,6 +97,19 @@ pub(crate) fn extract_client_ip(headers: &HeaderMap) -> IpAddr {
         .and_then(|s| s.split(',').next())
         .and_then(|s| s.trim().parse::<IpAddr>().ok())
         .unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED))
+}
+
+/// Collapses an IPv6 address to its /64 network. A single subscriber is
+/// usually delegated a whole /64, so per-address keys would let one client
+/// rotate through 2^64 identities.
+pub fn client_network(ip: IpAddr) -> IpAddr {
+    match ip {
+        IpAddr::V4(_) => ip,
+        IpAddr::V6(v6) => {
+            let bits = u128::from(v6) & !((1u128 << 64) - 1);
+            IpAddr::V6(Ipv6Addr::from(bits))
+        }
+    }
 }
 
 pub async fn login(
@@ -252,4 +265,28 @@ pub async fn public_api_rate_limit(
         .check_key(&client_ip)
         .map_err(|_| AppError::TooManyRequests)?;
     Ok(next.run(req).await)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn client_network_groups_ipv6_by_slash_64() {
+        let a: IpAddr = "2001:db8:1:2:aaaa::1".parse().unwrap();
+        let b: IpAddr = "2001:db8:1:2:ffff:ffff:ffff:ffff".parse().unwrap();
+        let other: IpAddr = "2001:db8:1:3::1".parse().unwrap();
+        assert_eq!(client_network(a), client_network(b));
+        assert_ne!(client_network(a), client_network(other));
+        assert_eq!(
+            client_network(a),
+            "2001:db8:1:2::".parse::<IpAddr>().unwrap()
+        );
+    }
+
+    #[test]
+    fn client_network_keeps_ipv4() {
+        let ip: IpAddr = "203.0.113.7".parse().unwrap();
+        assert_eq!(client_network(ip), ip);
+    }
 }
