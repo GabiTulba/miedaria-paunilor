@@ -269,6 +269,7 @@
 }
 
 .footer-link-button {
+  display: inline-block;
   background: none;
   border: none;
   padding: 0.5rem;

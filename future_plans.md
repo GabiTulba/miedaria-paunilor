@@ -225,6 +225,8 @@ Sources: [Sameday PHP SDK](https://github.com/sameday-courier/php-sdk) · [sandb
 
 ## 8. Cookie policy page
 
+> **DONE 2026-09-28.** Implemented as designed at `/:lang/cookie-policy`, linked from the consent banner and the footer, and listed in the sitemap and the legacy-path nginx redirect. Decision on `theme`: treated as user-requested UI customisation (no consent needed), and it is now written only when the visitor explicitly picks light or dark; returning to the system theme deletes it. Still outstanding outside the code: legal review of the wording (Legea 506/2004, ANSPDCP), and linking the privacy policy once it exists.
+
 **Goal:** A bilingual page that lists every cookie and browser-storage item the site uses, what each is for, how long it lasts and whether it needs consent, and explains how to change the choice. The consent banner and footer link to it. It is needed before launch, since consent is only valid when informed.
 
 ### Design

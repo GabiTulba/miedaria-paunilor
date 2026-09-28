@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
-const STORAGE_KEY = 'theme';
+const THEME_STORAGE_KEY = 'theme';
 
 function getSystemTheme(): 'light' | 'dark' {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -17,18 +17,36 @@ function applyTheme(preference: ThemePreference) {
     }
 }
 
+function readStoredPreference(): ThemePreference {
+    try {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        if (stored === 'light' || stored === 'dark') return stored;
+    } catch {
+        // localStorage may be unavailable (private mode, etc.)
+    }
+    return 'system';
+}
+
+/// The theme is user-interface customisation the visitor explicitly asks for,
+/// so it is stored without cookie consent — but only once an explicit light or
+/// dark choice is made; following the system theme leaves nothing behind.
+function storePreference(preference: ThemePreference) {
+    try {
+        if (preference === 'system') localStorage.removeItem(THEME_STORAGE_KEY);
+        else localStorage.setItem(THEME_STORAGE_KEY, preference);
+    } catch {
+        // localStorage may be unavailable (private mode, etc.)
+    }
+}
+
 export function useTheme() {
-    const [preference, setPreference] = useState<ThemePreference>(() => {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
-        return 'system';
-    });
+    const [preference, setPreference] = useState<ThemePreference>(readStoredPreference);
 
     const resolvedTheme = preference === 'system' ? getSystemTheme() : preference;
 
     useEffect(() => {
         applyTheme(preference);
-        localStorage.setItem(STORAGE_KEY, preference);
+        storePreference(preference);
     }, [preference]);
 
     useEffect(() => {

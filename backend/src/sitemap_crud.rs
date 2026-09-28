@@ -91,7 +91,7 @@ pub fn get_sitemap_data(
 
     let now = iso_lastmod_now();
 
-    let static_paths = ["", "/shop", "/blog", "/about-us", "/contact"];
+    let static_paths = ["", "/shop", "/blog", "/about-us", "/contact", "/cookie-policy"];
     let static_urls: Vec<SitemapUrl> = static_paths
         .iter()
         .flat_map(|p| lang_pair(site_url, p, now.clone()))

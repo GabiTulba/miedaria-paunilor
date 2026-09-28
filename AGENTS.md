@@ -334,6 +334,7 @@ The frontend website is structured as follows:
     cart/ -- A summary of the items in the shopping cart, with options to update quantities, remove items, or clear the cart. Includes a warning message indicating the checkout system is under development and instructing users to send orders via WhatsApp.
     about-us/ -- A static page with a modern design telling the story of the meadery.
     contact/ -- A static page with contact information.
+    cookie-policy/ -- Bilingual cookie policy listing every cookie and browser-storage key (`STORAGE_ITEMS` in `CookiePolicy.tsx`, which must be kept in sync with the code), its purpose, lifetime and consent level, a note on Stripe's own cookies, and a button that reopens the consent banner. Linked from the consent banner and the footer, and included in the sitemap. The `theme` localStorage key is written only for an explicit light/dark choice.
     * -- 404 Not Found page for any unmatched route.
     admin/ -- A login page for administrators.
         admin/dashboard/ -- A protected admin section with a sidebar for navigation. Logout requires confirmation.

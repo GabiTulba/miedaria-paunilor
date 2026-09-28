@@ -285,7 +285,8 @@
     "ariaLabel": "Consimțământ cookie-uri",
     "message": "Folosim cookie-uri esențiale pentru coșul de cumpărături și confirmarea vârstei. Cu acordul tău, reținem și limba preferată. Nu folosim cookie-uri de urmărire sau publicitate.",
     "accept": "Accept",
-    "decline": "Refuz"
+    "decline": "Refuz",
+    "learnMore": "Politica de cookie-uri"
   },
   "checkout": {
     "successTitle": "Vă mulțumim pentru comandă!",
@@ -564,7 +565,8 @@
     "links": "Link-uri Rapide",
     "contact": "Contactați-ne",
     "social": "Urmărește-ne",
-    "cookieSettings": "Setări cookie-uri"
+    "cookieSettings": "Setări cookie-uri",
+    "cookiePolicy": "Politica de cookie-uri"
   },
   "confirm": {
     "delete": {
@@ -726,7 +728,8 @@
       "contact": "Contact",
       "notFound": "Pagină Negăsită",
       "cart": "Coș",
-      "checkoutSuccess": "Comandă Confirmată"
+      "checkoutSuccess": "Comandă Confirmată",
+      "cookiePolicy": "Politica de cookie-uri"
     },
     "pageDescriptions": {
       "home": "Pagina Principală",
@@ -735,7 +738,78 @@
       "about": "Despre Noi",
       "contact": "Contactează-ne",
       "notFound": "Pagină Negăsită",
-      "cart": "Coș"
+      "cart": "Coș",
+      "cookiePolicy": "Ce cookie-uri și ce date stocate în browser folosește site-ul Miedăria Păunilor, de ce, pentru cât timp și cum îți poți schimba alegerea."
     }
+  },
+  "cookiePolicy": {
+    "title": "Politica de cookie-uri",
+    "intro": "Această pagină enumeră toate cookie-urile și datele stocate în browser pe care le folosește site-ul Miedăria Păunilor: la ce servește fiecare, cât timp este păstrat și dacă necesită acordul tău.",
+    "whatTitle": "Ce sunt cookie-urile și stocarea în browser",
+    "whatText": "Cookie-urile sunt fișiere text mici pe care un site le salvează în browserul tău. Stocarea locală (local storage) și stocarea de sesiune (session storage) funcționează asemănător, dar nu sunt trimise automat serverului nostru. Le folosim doar pentru ca magazinul să funcționeze și pentru a reține preferințele pe care le alegi.",
+    "noTrackingTitle": "Fără urmărire sau publicitate",
+    "noTrackingText": "Nu folosim cookie-uri de analiză, publicitate, rețele sociale sau alte cookie-uri de urmărire și nu partajăm datele din cookie-uri cu terți.",
+    "inventoryTitle": "Ce stocăm",
+    "tableCaption": "Cookie-uri și date stocate în browser folosite de acest site",
+    "columns": {
+      "name": "Nume",
+      "type": "Tip",
+      "purpose": "Scop",
+      "lifetime": "Durată",
+      "consent": "Necesită acord"
+    },
+    "types": {
+      "cookie": "Cookie",
+      "httpOnlyCookie": "Cookie (doar server, zona de administrare)",
+      "localStorage": "Stocare locală",
+      "sessionStorage": "Stocare de sesiune"
+    },
+    "consent": {
+      "necessary": "Nu, strict necesar",
+      "preference": "Nu, se setează doar când alegi o temă",
+      "optional": "Da"
+    },
+    "items": {
+      "age_verified": {
+        "purpose": "Reține că ai confirmat că ai vârsta legală pentru consumul de alcool (18+), ca verificarea vârstei să nu apară la fiecare vizită.",
+        "lifetime": "6 luni"
+      },
+      "cookie_consent": {
+        "purpose": "Reține dacă ai acceptat sau refuzat cookie-urile opționale.",
+        "lifetime": "6 luni"
+      },
+      "cart": {
+        "purpose": "Păstrează produsele și cantitățile adăugate în coș.",
+        "lifetime": "7 zile de la ultima modificare a coșului"
+      },
+      "admin_session": {
+        "purpose": "Menține autentificarea administratorilor magazinului. Este trimis doar zonei de administrare și nu este setat niciodată pentru clienți.",
+        "lifetime": "24 de ore sau până la deconectare"
+      },
+      "pending_checkout": {
+        "purpose": "Ne permite să eliberăm sticlele rezervate pentru comanda ta dacă părăsești pagina de plată fără să plătești.",
+        "lifetime": "Până închizi fila"
+      },
+      "lang": {
+        "purpose": "Reține limba preferată, ca pagina principală să se deschidă în ea.",
+        "lifetime": "1 an"
+      },
+      "i18nextLng": {
+        "purpose": "Reține limba preferată pentru textele site-ului.",
+        "lifetime": "Până o ștergi"
+      },
+      "theme": {
+        "purpose": "Reține tema deschisă sau întunecată aleasă. Nu se stochează nimic cât timp site-ul urmează tema dispozitivului.",
+        "lifetime": "Până o ștergi sau revii la tema dispozitivului"
+      }
+    },
+    "thirdPartyTitle": "Plata prin Stripe",
+    "thirdPartyText": "Plățile sunt procesate pe pagina de plată proprie Stripe (checkout.stripe.com). Stripe setează acolo propriile cookie-uri, de exemplu pentru prevenirea fraudei, conform politicii sale.",
+    "stripeLink": "Politica de cookie-uri Stripe",
+    "manageTitle": "Schimbarea alegerii",
+    "manageText": "Îți poți schimba alegerea oricând. Butonul de mai jos afișează din nou bannerul de cookie-uri. Dacă refuzi, preferința opțională de limbă este ștearsă imediat. Poți șterge cookie-urile și datele site-ului și din setările browserului; cele strict necesare vor fi setate din nou când folosești magazinul.",
+    "manageButton": "Schimbă setările cookie-urilor",
+    "contactTitle": "Întrebări",
+    "contactText": "Dacă ai întrebări despre această politică, scrie-ne la"
   }
 }

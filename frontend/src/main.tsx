@@ -14,6 +14,7 @@ import Cart from './pages/Cart';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import AboutUs from './pages/AboutUs';
 import Contact from './pages/Contact';
+import CookiePolicy from './pages/CookiePolicy';
 import Blog from './pages/Blog';
 import LotDetails from './pages/LotDetails';
 import BlogPostDetail from './pages/BlogPostDetail';
@@ -71,6 +72,7 @@ const router = createBrowserRouter([
       { path: 'blog/:slug', element: <BlogPostDetail /> },
       { path: 'about-us', element: <AboutUs /> },
       { path: 'contact', element: <Contact /> },
+      { path: 'cookie-policy', element: <CookiePolicy /> },
       { path: '*', element: <NotFound /> },
     ],
   },

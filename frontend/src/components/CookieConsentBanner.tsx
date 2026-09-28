@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { setConsent } from '../lib/consent';
 import { useConsent } from '../hooks/useConsent';
+import { LocalizedLink } from './LocalizedLink';
 import './CookieConsentBanner.css';
 
 /// Accept/Decline banner for the site's functional cookies (cart, language).
@@ -35,7 +36,10 @@ function CookieConsentBanner() {
 
     return (
         <div ref={bannerRef} className="cookie-banner" role="region" aria-label={t('cookieConsent.ariaLabel')}>
-            <p className="cookie-banner-message">{t('cookieConsent.message')}</p>
+            <p className="cookie-banner-message">
+                {t('cookieConsent.message')}{' '}
+                <LocalizedLink to="/cookie-policy">{t('cookieConsent.learnMore')}</LocalizedLink>
+            </p>
             <div className="cookie-banner-actions">
                 <button className="button cookie-banner-accept" onClick={() => setConsent('accepted')}>
                     {t('cookieConsent.accept')}

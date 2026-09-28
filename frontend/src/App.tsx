@@ -99,6 +99,9 @@ function App() {
       <footer className="footer">
         <div className="container">
           <p>{t('footer.copyright', { year: currentYear })}</p>
+          <LocalizedLink to="/cookie-policy" className="footer-link-button">
+            {t('footer.cookiePolicy')}
+          </LocalizedLink>
           <button type="button" className="footer-link-button" onClick={resetConsent}>
             {t('footer.cookieSettings')}
           </button>

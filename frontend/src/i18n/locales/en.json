@@ -285,7 +285,8 @@
     "ariaLabel": "Cookie consent",
     "message": "We use essential cookies for your cart and age confirmation. With your consent, we also remember your preferred language. No tracking or advertising cookies are used.",
     "accept": "Accept",
-    "decline": "Decline"
+    "decline": "Decline",
+    "learnMore": "Cookie policy"
   },
   "checkout": {
     "successTitle": "Thank you for your order!",
@@ -565,7 +566,8 @@
     "links": "Quick Links",
     "contact": "Contact Us",
     "social": "Follow Us",
-    "cookieSettings": "Cookie settings"
+    "cookieSettings": "Cookie settings",
+    "cookiePolicy": "Cookie policy"
   },
   "confirm": {
     "delete": {
@@ -727,7 +729,8 @@
       "contact": "Contact",
       "notFound": "Page Not Found",
       "cart": "Shopping Cart",
-      "checkoutSuccess": "Order Confirmed"
+      "checkoutSuccess": "Order Confirmed",
+      "cookiePolicy": "Cookie Policy"
     },
     "pageDescriptions": {
       "home": "Home Page",
@@ -736,7 +739,78 @@
       "about": "About Us Page",
       "contact": "Contact Page",
       "notFound": "Page Not Found",
-      "cart": "Cart Page"
+      "cart": "Cart Page",
+      "cookiePolicy": "Which cookies and browser storage the Miedăria Păunilor website uses, why, for how long, and how to change your choice."
     }
+  },
+  "cookiePolicy": {
+    "title": "Cookie Policy",
+    "intro": "This page lists every cookie and browser-storage item the Miedăria Păunilor website uses, what each one is for, how long it is kept and whether it needs your consent.",
+    "whatTitle": "What cookies and browser storage are",
+    "whatText": "Cookies are small text files a website stores in your browser. Local storage and session storage work similarly but are never sent to our server automatically. We use them only to make the shop work and to remember the preferences you choose.",
+    "noTrackingTitle": "No tracking or advertising",
+    "noTrackingText": "We do not use analytics, advertising, social media or any other tracking cookies, and we do not share cookie data with third parties.",
+    "inventoryTitle": "What we store",
+    "tableCaption": "Cookies and browser storage used by this website",
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "purpose": "Purpose",
+      "lifetime": "Lifetime",
+      "consent": "Needs consent"
+    },
+    "types": {
+      "cookie": "Cookie",
+      "httpOnlyCookie": "Cookie (server-only, admin area)",
+      "localStorage": "Local storage",
+      "sessionStorage": "Session storage"
+    },
+    "consent": {
+      "necessary": "No, strictly necessary",
+      "preference": "No, set only when you choose a theme",
+      "optional": "Yes"
+    },
+    "items": {
+      "age_verified": {
+        "purpose": "Remembers that you confirmed you are of legal drinking age (18+), so the age check is not shown on every visit.",
+        "lifetime": "6 months"
+      },
+      "cookie_consent": {
+        "purpose": "Remembers whether you accepted or declined optional cookies.",
+        "lifetime": "6 months"
+      },
+      "cart": {
+        "purpose": "Keeps the products and quantities you added to your cart.",
+        "lifetime": "7 days after your last cart change"
+      },
+      "admin_session": {
+        "purpose": "Keeps shop administrators signed in. It is only sent to the administration area and never set for customers.",
+        "lifetime": "24 hours, or until logout"
+      },
+      "pending_checkout": {
+        "purpose": "Lets us release the bottles reserved for your order if you leave the payment page without paying.",
+        "lifetime": "Until you close the tab"
+      },
+      "lang": {
+        "purpose": "Remembers your preferred language, so the home page opens in it.",
+        "lifetime": "1 year"
+      },
+      "i18nextLng": {
+        "purpose": "Remembers your preferred language for the site's text.",
+        "lifetime": "Until you clear it"
+      },
+      "theme": {
+        "purpose": "Remembers the light or dark theme you picked. Nothing is stored while the site follows your device's theme.",
+        "lifetime": "Until you clear it or return to the device theme"
+      }
+    },
+    "thirdPartyTitle": "Payment with Stripe",
+    "thirdPartyText": "Payments are processed on Stripe's own checkout page (checkout.stripe.com). Stripe sets its own cookies there, for example to prevent fraud, under its own policy.",
+    "stripeLink": "Stripe cookie policy",
+    "manageTitle": "Changing your choice",
+    "manageText": "You can change your choice at any time. The button below shows the cookie banner again. If you decline, the optional language preference is deleted straight away. You can also delete cookies and site data from your browser settings; the strictly necessary ones will be set again when you use the shop.",
+    "manageButton": "Change cookie settings",
+    "contactTitle": "Questions",
+    "contactText": "If you have questions about this policy, write to us at"
   }
 }
