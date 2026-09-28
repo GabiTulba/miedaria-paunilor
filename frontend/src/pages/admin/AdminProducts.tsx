@@ -91,7 +91,9 @@ function AdminProducts() {
             }
         } catch (err) {
             console.error(`Failed to ${type} product:`, err);
-            setActionError(t('admin.products.error'));
+            // A hard delete is refused (409) while orders or lot records exist.
+            const status = (err as { response?: { status?: number } }).response?.status;
+            setActionError(type === 'hardDelete' && status === 409 ? t('admin.products.hardDeleteRefused') : t('admin.products.error'));
             setActionId(null);
         }
     };

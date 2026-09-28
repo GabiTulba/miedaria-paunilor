@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import DatePicker from 'react-datepicker';
@@ -8,6 +9,8 @@ import { useLanguage } from '../../../hooks/useLanguage';
 import { useFormattedDate } from '../../../hooks/useFormattedDate';
 import { useFetch } from '../../../hooks/useFetch';
 import { api } from '../../../lib/api';
+import { useToast } from '../../../context/ToastContext';
+import type { ApiError } from '../../../types/api';
 import { numericOptions, validateAbv, validatePositiveNumber, validateNonNegative } from '../../../lib/validators';
 // Side-effect import — registers en/ro locales with react-datepicker.
 import '../../../utils/dateUtils';
@@ -28,7 +31,79 @@ function dateToIso(date: Date | null): string {
     return `${year}-${month}-${day}`;
 }
 
-function PricingSection() {
+interface PricingSectionProps {
+    /** Edit mode: stock is changed through adjustments, not the form. */
+    stock?: { productId: string; reservedBottles: number };
+}
+
+/// Edit-mode stock panel. The product update never writes `bottle_count`, so
+/// sales made while the form is open can't be overwritten; changes go through
+/// an atomic +/- adjustment instead.
+function StockPanel({ productId, initialReserved }: { productId: string; initialReserved: number }) {
+    const { t } = useTranslation();
+    const { showToast } = useToast();
+    const { control, setValue } = useFormContext<ProductFormData>();
+    const available = Number(useWatch({ control, name: 'bottle_count' })) || 0;
+    const [reserved, setReserved] = useState(initialReserved);
+    const [delta, setDelta] = useState('');
+    const [saving, setSaving] = useState(false);
+    const parsed = Number(delta);
+    const valid = delta.trim() !== '' && Number.isInteger(parsed) && parsed !== 0;
+
+    const apply = async () => {
+        if (!valid || saving) return;
+        setSaving(true);
+        try {
+            const level = await api.adjustStock(productId, parsed);
+            // Server truth, without marking the form dirty: stock is already saved.
+            setValue('bottle_count', level.bottle_count, { shouldDirty: false });
+            setReserved(level.reserved_bottles);
+            setDelta('');
+            showToast(t('admin.productForm.stock.adjusted', { count: level.bottle_count }), 'success');
+        } catch (err) {
+            const message = (err as Partial<ApiError>).response?.data?.message;
+            showToast(message || t('admin.productForm.stock.adjustError'), 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="form-group stock-panel">
+            <span className="form-label">{t('admin.productForm.bottleCount')}</span>
+            <dl className="stock-levels">
+                <div><dt>{t('admin.productForm.stock.available')}</dt><dd>{available}</dd></div>
+                <div><dt>{t('admin.productForm.stock.reserved')}</dt><dd>{reserved}</dd></div>
+                <div><dt>{t('admin.productForm.stock.onHand')}</dt><dd>{available + reserved}</dd></div>
+            </dl>
+            <div className="stock-adjust">
+                <input
+                    type="number"
+                    step="1"
+                    className="form-input"
+                    id="stock_delta"
+                    aria-label={t('admin.productForm.stock.deltaLabel')}
+                    placeholder={t('admin.productForm.stock.deltaPlaceholder')}
+                    value={delta}
+                    onChange={(e) => setDelta(e.target.value)}
+                    onKeyDown={(e) => {
+                        // Enter would submit the whole product form.
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            void apply();
+                        }
+                    }}
+                />
+                <button type="button" className="button button-secondary" onClick={apply} disabled={!valid || saving}>
+                    {t('admin.productForm.stock.apply')}
+                </button>
+            </div>
+            <div className="help-text">{t('admin.productForm.stock.help')}</div>
+        </div>
+    );
+}
+
+function PricingSection({ stock }: PricingSectionProps) {
     const { t } = useTranslation();
     const language = useLanguage();
     const formatDate = useFormattedDate();
@@ -66,22 +141,29 @@ function PricingSection() {
                         label={t('admin.productForm.price') + ' (RON)'}
                         required
                         step="0.01"
-                        min="0"
+                        min="2"
                         error={errors.price_ron?.message}
                         helpText={eurHint ?? t('admin.productForm.priceRonHelp')}
                         {...register('price_ron', numericOptions((v) => validatePositiveNumber(v, 'Price (RON)')))}
                     />
                 </div>
                 <div className="form-row">
-                    <NumberInput
-                        id="bottle_count"
-                        label={t('admin.productForm.bottleCount')}
-                        required
-                        min="0"
-                        error={errors.bottle_count?.message}
-                        helpText={t('admin.productForm.bottleCount')}
-                        {...register('bottle_count', numericOptions((v) => validateNonNegative(v, 'Bottle count')))}
-                    />
+                    {stock ? (
+                        <>
+                            <input type="hidden" {...register('bottle_count', numericOptions())} />
+                            <StockPanel productId={stock.productId} initialReserved={stock.reservedBottles} />
+                        </>
+                    ) : (
+                        <NumberInput
+                            id="bottle_count"
+                            label={t('admin.productForm.bottleCount')}
+                            required
+                            min="0"
+                            error={errors.bottle_count?.message}
+                            helpText={t('admin.productForm.bottleCount')}
+                            {...register('bottle_count', numericOptions((v) => validateNonNegative(v, 'Bottle count')))}
+                        />
+                    )}
                     <NumberInput
                         id="bottle_size"
                         label={t('admin.productForm.bottleSize')}

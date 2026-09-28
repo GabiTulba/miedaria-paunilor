@@ -14,17 +14,18 @@ import type { CheckoutStatus } from '../types/generated/CheckoutStatus';
 import type { CheckoutSessionResponse } from '../types/generated/CheckoutSessionResponse';
 import type { Order } from '../types/generated/Order';
 import type { OrderWithItems } from '../types/generated/OrderWithItems';
+import type { StockLevel } from '../types/generated/StockLevel';
 import i18n from '../i18n/config';
 
 // Mirror of `VARIANT_WIDTHS` in backend/src/image_crud.rs.
 export const IMAGE_VARIANT_WIDTHS = [320, 640, 1024, 1600] as const;
 
 export function getImageUrl(id: string, width?: number): string {
-    return width ? `/images/${id}?w=${width}` : `/images/${id}`;
+    return width ? `/images/${encodeURIComponent(id)}?w=${width}` : `/images/${encodeURIComponent(id)}`;
 }
 
 export function getImageSrcSet(id: string): string {
-    return IMAGE_VARIANT_WIDTHS.map(w => `/images/${id}?w=${w} ${w}w`).join(', ');
+    return IMAGE_VARIANT_WIDTHS.map(w => `/images/${encodeURIComponent(id)}?w=${w} ${w}w`).join(', ');
 }
 
 function getApiBaseUrl(): string | undefined {
@@ -103,6 +104,10 @@ export type GetAdminProductsParams = GetAdminProductsQuery;
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
 
+// Every id/slug interpolated into a path below goes through encodeURIComponent:
+// route params come from the address bar, and an unencoded `../` would let a
+// crafted link point the request at a different API endpoint.
+
 export const api = {
     get: (endpoint: string, options?: RequestInit) => request(endpoint, options),
     getProducts: (params?: GetProductsParams, signal?: AbortSignal): Promise<PaginatedResponse<LocalizedProductWithImage>> => {
@@ -111,8 +116,8 @@ export const api = {
         if (!cleaned.order_by) delete cleaned.order_direction;
         return request(`/products${buildQuery(cleaned)}`, { signal });
     },
-    getProductById: (id: string, signal?: AbortSignal): Promise<LocalizedProductWithImage> => request(`/products/${id}`, { signal }),
-    getLot: (lotNumber: string, signal?: AbortSignal): Promise<LocalizedLot> => request(`/lots/${lotNumber}`, { signal }),
+    getProductById: (id: string, signal?: AbortSignal): Promise<LocalizedProductWithImage> => request(`/products/${encodeURIComponent(id)}`, { signal }),
+    getLot: (lotNumber: string, signal?: AbortSignal): Promise<LocalizedLot> => request(`/lots/${encodeURIComponent(lotNumber)}`, { signal }),
     // BNR rate used for indicative EUR display; null until the first fetch.
     getExchangeRate: (signal?: AbortSignal): Promise<ExchangeRateInfo | null> => request('/exchange-rate', { signal }),
 
@@ -123,6 +128,17 @@ export const api = {
             method: 'POST',
             headers: JSON_HEADERS,
             body: JSON.stringify({ items }),
+        });
+    },
+
+    // Releases the stock held by a checkout the customer left without paying.
+    // Safe to call for any order: the server ignores orders no longer pending.
+    cancelCheckout: (orderId: string): Promise<null> => {
+        return request('/checkout/cancel', {
+            method: 'POST',
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ order_id: orderId }),
+            keepalive: true,
         });
     },
 
@@ -143,7 +159,7 @@ export const api = {
     },
 
     getAdminOrder: (id: string, signal?: AbortSignal): Promise<OrderWithItems> => {
-        return request(`/admin/orders/${id}`, { signal });
+        return request(`/admin/orders/${encodeURIComponent(id)}`, { signal });
     },
 
     adminLogin: async (credentials: LoginCredentials): Promise<LoginResponse> => {
@@ -171,7 +187,7 @@ export const api = {
     },
 
     updateProduct: async (id: string, productData: ProductFormData) => {
-        return request(`/admin/products/${id}`, {
+        return request(`/admin/products/${encodeURIComponent(id)}`, {
             method: 'PUT',
             headers: JSON_HEADERS,
             body: JSON.stringify(normalizeProductPayload(productData)),
@@ -179,11 +195,21 @@ export const api = {
     },
 
     getProductByIdAdmin: async (id: string, signal?: AbortSignal): Promise<AdminProductDetail> => {
-        return request(`/admin/products/${id}`, { method: 'GET', signal });
+        return request(`/admin/products/${encodeURIComponent(id)}`, { method: 'GET', signal });
+    },
+
+    // Signed change to sellable stock (e.g. +24 for a new case). Stock is never
+    // written by updateProduct, so a stale edit form can't overwrite sales.
+    adjustStock: async (id: string, delta: number): Promise<StockLevel> => {
+        return request(`/admin/products/${encodeURIComponent(id)}/stock`, {
+            method: 'POST',
+            headers: JSON_HEADERS,
+            body: JSON.stringify({ delta }),
+        });
     },
 
     deleteProduct: async (id: string) => {
-        return request(`/admin/products/${id}`, { method: 'DELETE' });
+        return request(`/admin/products/${encodeURIComponent(id)}`, { method: 'DELETE' });
     },
 
     getAdminProducts: async (params?: GetAdminProductsParams, signal?: AbortSignal): Promise<PaginatedResponse<ProductWithImage>> => {
@@ -194,11 +220,11 @@ export const api = {
     },
 
     restoreProduct: async (id: string): Promise<Product> => {
-        return request(`/admin/products/${id}/restore`, { method: 'POST' });
+        return request(`/admin/products/${encodeURIComponent(id)}/restore`, { method: 'POST' });
     },
 
     hardDeleteProduct: async (id: string) => {
-        return request(`/admin/products/${id}/hard`, { method: 'DELETE' });
+        return request(`/admin/products/${encodeURIComponent(id)}/hard`, { method: 'DELETE' });
     },
 
     // Image CRUD Operations
@@ -214,7 +240,7 @@ export const api = {
     },
 
     updateImage: async (id: string, newFileName: string) => {
-        return request(`/admin/images/${id}`, {
+        return request(`/admin/images/${encodeURIComponent(id)}`, {
             method: 'PUT',
             headers: JSON_HEADERS,
             body: JSON.stringify({ file_name: newFileName }),
@@ -222,14 +248,14 @@ export const api = {
     },
 
     deleteImage: async (id: string) => {
-        return request(`/admin/images/${id}`, { method: 'DELETE' });
+        return request(`/admin/images/${encodeURIComponent(id)}`, { method: 'DELETE' });
     },
 
     // Blog CRUD Operations
     getBlogPosts: (page?: number, per_page?: number, signal?: AbortSignal): Promise<PaginatedResponse<LocalizedBlogPost>> => {
         return request(`/blog${buildQuery({ page, per_page })}`, { signal });
     },
-    getBlogPostBySlug: (slug: string, signal?: AbortSignal): Promise<LocalizedBlogPost> => request(`/blog/${slug}`, { signal }),
+    getBlogPostBySlug: (slug: string, signal?: AbortSignal): Promise<LocalizedBlogPost> => request(`/blog/${encodeURIComponent(slug)}`, { signal }),
 
     // Admin blog operations
     getBlogPostsAdmin: async (page?: number, per_page?: number, signal?: AbortSignal): Promise<PaginatedResponse<BlogPost>> => {
@@ -240,7 +266,7 @@ export const api = {
     },
 
     getBlogPostByIdAdmin: async (id: string, signal?: AbortSignal): Promise<BlogPost> => {
-        return request(`/admin/blog/${id}`, {
+        return request(`/admin/blog/${encodeURIComponent(id)}`, {
             method: 'GET',
             signal,
         });
@@ -255,7 +281,7 @@ export const api = {
     },
 
     updateBlogPost: async (id: string, postData: UpdateBlogPost): Promise<BlogPost> => {
-        return request(`/admin/blog/${id}`, {
+        return request(`/admin/blog/${encodeURIComponent(id)}`, {
             method: 'PUT',
             headers: JSON_HEADERS,
             body: JSON.stringify(postData),
@@ -263,6 +289,6 @@ export const api = {
     },
 
     deleteBlogPost: async (id: string) => {
-        return request(`/admin/blog/${id}`, { method: 'DELETE' });
+        return request(`/admin/blog/${encodeURIComponent(id)}`, { method: 'DELETE' });
     },
 };

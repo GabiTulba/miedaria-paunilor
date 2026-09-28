@@ -8,4 +8,8 @@ import type { Product } from "./Product";
  * declaration of its current lot (`None` for legacy products saved before
  * lots existed).
  */
-export type AdminProductDetail = { product: Product, image: Image | null, nutrition: LotNutrition | null, };
+export type AdminProductDetail = { product: Product, image: Image | null, nutrition: LotNutrition | null, 
+/**
+ * Bottles held by pending/processing checkouts (not in `bottle_count`).
+ */
+reserved_bottles: number, };

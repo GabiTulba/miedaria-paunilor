@@ -90,6 +90,7 @@ function AdminProductEdit() {
             <FormProvider {...methods}>
                 <ProductForm
                     onSubmit={onSubmit}
+                    stock={productId ? { productId, reservedBottles: productDetail?.reserved_bottles ?? 0 } : undefined}
                     submitText={t('admin.productForm.update')}
                     isEdit={true}
                     availableImages={availableImages}

@@ -1,0 +1,9 @@
+ALTER TABLE orders
+    DROP COLUMN shipping_name,
+    DROP COLUMN shipping_phone,
+    DROP COLUMN shipping_line1,
+    DROP COLUMN shipping_line2,
+    DROP COLUMN shipping_city,
+    DROP COLUMN shipping_state,
+    DROP COLUMN shipping_postal_code,
+    DROP COLUMN shipping_country;

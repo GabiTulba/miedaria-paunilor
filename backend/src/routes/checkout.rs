@@ -17,7 +17,7 @@ use crate::db;
 use crate::enums::OrderStatus;
 use crate::language::Language;
 use crate::models::{
-    CheckoutSessionRequest, CheckoutSessionResponse, CheckoutStatus, Order, OrderWithItems,
+    CancelCheckoutRequest, CheckoutSessionRequest, CheckoutSessionResponse, CheckoutStatus, Order, OrderWithItems,
     PaginatedResponse,
 };
 use crate::order_crud;
@@ -86,7 +86,12 @@ async fn create_checkout_session(
         "{}/{}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
         app_state.site_url, lang_code
     );
-    let cancel_url = format!("{}/{}/cart", app_state.site_url, lang_code);
+    // The order id lets the cart release this checkout's stock right away
+    // instead of holding it until the sweeper's timeout.
+    let cancel_url = format!(
+        "{}/{}/cart?checkout_cancelled={}",
+        app_state.site_url, lang_code, order.order_id
+    );
 
     let mut params = stripe::CreateCheckoutSession::new();
     params.mode = Some(stripe::CheckoutSessionMode::Payment);
@@ -95,6 +100,15 @@ async fn create_checkout_session(
     params.cancel_url = Some(&cancel_url);
     params.client_reference_id = Some(&order_id_str);
     params.expires_at = Some(chrono::Utc::now().timestamp() + STRIPE_SESSION_EXPIRY_SECS);
+    // Bottles are shipped, so every order needs a delivery address and a phone
+    // number for the courier. Delivery is Romania-only for now.
+    params.shipping_address_collection = Some(stripe::CreateCheckoutSessionShippingAddressCollection {
+        allowed_countries: vec![
+            stripe::CreateCheckoutSessionShippingAddressCollectionAllowedCountries::Ro,
+        ],
+    });
+    params.phone_number_collection =
+        Some(stripe::CreateCheckoutSessionPhoneNumberCollection { enabled: true });
     params.metadata = Some(HashMap::from([(
         "order_id".to_string(),
         order_id_str.clone(),
@@ -131,7 +145,29 @@ async fn create_checkout_session(
         ));
     };
 
-    Ok(Json(CheckoutSessionResponse { url }))
+    Ok(Json(CheckoutSessionResponse {
+        url,
+        order_id: order.order_id,
+    }))
+}
+
+/// Releases the stock of a checkout the customer walked away from (Stripe's
+/// back link, or the browser's Back button). Expires the Stripe session first;
+/// if the customer actually finished paying, the payment is recorded instead.
+/// Always answers 204 so it reveals nothing about other orders.
+async fn cancel_checkout(
+    State(app_state): State<Arc<AppState>>,
+    Json(request): Json<CancelCheckoutRequest>,
+) -> Result<StatusCode, AppError> {
+    let session_id = {
+        let mut conn = db::get_db_connection(&app_state)?;
+        order_crud::pending_session(&mut conn, request.order_id)?
+    };
+    if let Some(session_id) = session_id {
+        stripe_checkout::release_hold(&app_state, request.order_id, session_id.as_deref())
+            .await?;
+    }
+    Ok(StatusCode::NO_CONTENT)
 }
 
 fn checkout_session(event: stripe::Event) -> Option<stripe::CheckoutSession> {
@@ -165,6 +201,14 @@ async fn stripe_webhook(
                 AppError::BadRequest("Invalid webhook signature".to_string())
             })?;
 
+    // Parsed separately from the typed event: the typed struct follows the
+    // library's pinned API version, which may not match the endpoint's.
+    let shipping = serde_json::from_str::<serde_json::Value>(payload)
+        .ok()
+        .and_then(|v| v.pointer("/data/object").cloned())
+        .map(|obj| stripe_checkout::shipping_from_session_json(&obj))
+        .unwrap_or_default();
+
     let event_type = event.type_;
     let handled = matches!(
         event_type,
@@ -191,7 +235,12 @@ async fn stripe_webhook(
 
     let applied = match event_type {
         stripe::EventType::CheckoutSessionCompleted => {
-            stripe_checkout::apply_completed_session(&mut conn, order_id, &session)?
+            let shipping = if shipping == Default::default() {
+                stripe_checkout::shipping_from_session(&session)
+            } else {
+                shipping
+            };
+            stripe_checkout::apply_completed_session(&mut conn, order_id, &session, &shipping)?
         }
         stripe::EventType::CheckoutSessionAsyncPaymentSucceeded => {
             order_crud::mark_paid(&mut conn, order_id)?
@@ -260,6 +309,7 @@ pub fn public_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/api/checkout/session", post(create_checkout_session))
         .route("/api/checkout/status", get(get_checkout_status))
+        .route("/api/checkout/cancel", post(cancel_checkout))
 }
 
 pub fn webhook_router() -> Router<Arc<AppState>> {

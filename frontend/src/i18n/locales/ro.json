@@ -225,7 +225,8 @@
     "unavailable": "Indisponibil",
     "maxQuantityReached": "Cantitate maximă atinsă ({{count}} disponibile)",
     "decreaseQuantity": "Scade cantitatea",
-    "increaseQuantity": "Crește cantitatea"
+    "increaseQuantity": "Crește cantitatea",
+    "noImage": "Fotografie în curând"
   },
   "lot": {
     "title": "Lot {{number}}",
@@ -282,7 +283,7 @@
   },
   "cookieConsent": {
     "ariaLabel": "Consimțământ cookie-uri",
-    "message": "Acest site folosește cookie-uri pentru a reține coșul de cumpărături, limba preferată și confirmarea vârstei. Nu folosim cookie-uri de urmărire sau publicitate.",
+    "message": "Folosim cookie-uri esențiale pentru coșul de cumpărături și confirmarea vârstei. Cu acordul tău, reținem și limba preferată. Nu folosim cookie-uri de urmărire sau publicitate.",
     "accept": "Accept",
     "decline": "Refuz"
   },
@@ -313,11 +314,12 @@
     },
     "dashboard": {
       "title": "Panou de Control Admin",
-      "subtitle": "Gestionează operațiunile meierei tale",
+      "subtitle": "Gestionează activitatea miedăriei tale",
       "totalProducts": "Total Produse",
       "totalStock": "Total Stoc",
       "lowStock": "Stoc Redus",
-      "totalValue": "Valoare Totală"
+      "totalValue": "Valoare Totală",
+      "createProductDescription": "Adaugă un hidromel nou în magazin"
     },
     "settings": {
       "title": "Setări Magazin",
@@ -355,14 +357,20 @@
         "paid": "Plătită",
         "expired": "Expirată",
         "failed": "Eșuată"
-      }
+      },
+      "shipping": {
+        "title": "Livrare",
+        "phone": "Telefon",
+        "missing": "Comanda nu are adresă de livrare (plasată înainte de colectarea adresei sau încă neplătită)."
+      },
+      "items": "Produse"
     },
     "products": {
       "title": "Gestionează Produse",
-      "subtitle": "Vizualizează, editează și șterge produsele tale de miere de albine",
+      "subtitle": "Vizualizează, editează și șterge produsele tale de hidromel",
       "createNew": "Creează Produs Nou",
       "noProducts": "Încă nu există produse",
-      "noProductsDescription": "Începe prin a crea primul tău produs de miere de albine",
+      "noProductsDescription": "Începe prin a crea primul tău produs de hidromel",
       "createFirst": "Creează Primul Produs",
       "product": "Produs",
       "type": "Tip",
@@ -391,7 +399,8 @@
       "hardDeleteSuccess": "Produsul a fost șters definitiv",
       "restoreSuccess": "Produsul a fost restaurat cu succes",
       "created": "Produsul a fost creat cu succes",
-      "updated": "Produsul a fost actualizat cu succes"
+      "updated": "Produsul a fost actualizat cu succes",
+      "hardDeleteRefused": "Acest produs are comenzi sau loturi (coduri QR de pe sticle), deci nu poate fi șters definitiv. Rămâne arhivat."
     },
     "productForm": {
       "createTitle": "Creează Produs Nou",
@@ -417,7 +426,7 @@
       "bottleSize": "Volum",
       "bottleSizeHelp": "Volum în mililitri",
       "bottlingDate": "Data de Îmbuteliere",
-      "bottlingDateHelp": "Data când mierea a fost îmbuteliată",
+      "bottlingDateHelp": "Data când hidromelul a fost îmbuteliat",
       "lotNumber": "Număr Lot",
       "lotNumberHelp": "Numărul lotului de producție (număr întreg pozitiv, unic pentru toate produsele)",
       "nutrition": "Declarație Nutrițională (per 100 ml)",
@@ -449,6 +458,17 @@
         "invalidBottleSize": "Volumul trebuie să fie pozitiv",
         "invalidPrice": "Prețul trebuie să fie valid",
         "invalidBottlingDate": "Data de îmbuteliere trebuie să fie în format ZZ/LL/AAAA și validă"
+      },
+      "stock": {
+        "available": "Disponibile la vânzare",
+        "reserved": "Rezervate în comenzi deschise",
+        "onHand": "În stoc fizic",
+        "deltaLabel": "Modificare stoc",
+        "deltaPlaceholder": "ex. 24 sau -1",
+        "apply": "Aplică",
+        "help": "Stocul se salvează imediat, separat de restul formularului. Introdu un număr pozitiv pentru sticle noi, negativ pentru sticle scoase.",
+        "adjusted": "Stoc actualizat: {{count}} disponibile",
+        "adjustError": "Stocul nu a putut fi actualizat"
       }
     },
     "images": {
@@ -543,7 +563,8 @@
     "copyright": "© {{year}} Miedăria Păunilor. Toate drepturile rezervate.",
     "links": "Link-uri Rapide",
     "contact": "Contactați-ne",
-    "social": "Urmărește-ne"
+    "social": "Urmărește-ne",
+    "cookieSettings": "Setări cookie-uri"
   },
   "confirm": {
     "delete": {
@@ -587,7 +608,7 @@
       "InvalidBottleSize": "Volumul trebuie să fie un întreg pozitiv.",
       "InvalidPriceRon": "Prețul RON trebuie să fie între 0.00 și 99999.99.",
       "InvalidPriceRonPrecision": "Prețul RON poate avea cel mult două zecimale.",
-      "PriceRonBelowMinimum": "Prețul RON este sub valoarea minimă permisă.",
+      "PriceRonBelowMinimum": "Prețul minim este 2,00 RON (suma minimă acceptată de Stripe).",
       "InvalidBottlingDate": "Data îmbutelierii este invalidă.",
       "InvalidLotNumber": "Numărul lotului trebuie să fie un întreg nenegativ.",
       "LotNumberInUse": "Acest număr de lot este deja folosit de alt produs.",

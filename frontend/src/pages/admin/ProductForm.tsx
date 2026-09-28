@@ -12,13 +12,15 @@ import NutritionSection from './productFormSections/NutritionSection';
 
 interface ProductFormProps {
     onSubmit: SubmitHandler<ProductFormData>;
+    /** Edit mode only: enables the stock-adjustment panel. */
+    stock?: { productId: string; reservedBottles: number };
     submitText: string;
     isEdit?: boolean;
     availableImages: Image[];
     submitting?: boolean;
 }
 
-function ProductForm({ onSubmit, submitText, isEdit = false, availableImages, submitting = false }: ProductFormProps) {
+function ProductForm({ onSubmit, stock, submitText, isEdit = false, availableImages, submitting = false }: ProductFormProps) {
     const { enums, loading, error } = useContext(EnumContext);
     const { t } = useTranslation();
     const formRef = useRef<HTMLFormElement>(null);
@@ -67,7 +69,7 @@ function ProductForm({ onSubmit, submitText, isEdit = false, availableImages, su
             <BasicInfoSection isEdit={isEdit} />
             <ImageSection availableImages={availableImages} />
             <CharacteristicsSection />
-            <PricingSection />
+            <PricingSection stock={stock} />
             <NutritionSection />
 
             <div className="form-actions">

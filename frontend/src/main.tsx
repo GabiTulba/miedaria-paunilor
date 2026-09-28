@@ -76,7 +76,9 @@ const router = createBrowserRouter([
   },
   {
     path: '/admin',
-    element: lazy(<AdminLayout />),
+    // The session probe (/api/admin/me) only runs on admin pages, not for
+    // every shop visitor.
+    element: lazy(<AuthProvider><AdminLayout /></AuthProvider>),
     children: [
       { index: true, element: lazy(<AdminLogin />) },
       {
@@ -107,16 +109,14 @@ import { ToastProvider } from './context/ToastContext';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <AuthProvider>
-      <EnumProvider>
-        <CartProvider>
-          <ToastProvider>
-            <HelmetProvider>
-              <RouterProvider router={router} />
-            </HelmetProvider>
-          </ToastProvider>
-        </CartProvider>
-      </EnumProvider>
-    </AuthProvider>
+    <EnumProvider>
+      <CartProvider>
+        <ToastProvider>
+          <HelmetProvider>
+            <RouterProvider router={router} />
+          </HelmetProvider>
+        </ToastProvider>
+      </CartProvider>
+    </EnumProvider>
   </React.StrictMode>
 );

@@ -138,18 +138,44 @@ function AdminOrders() {
                                     </tr>
                                     {expandedId === order.order_id && (
                                         <tr>
-                                            <td colSpan={5}>
-                                                {expandedItems[order.order_id] ? (
-                                                    <ul className="order-items-list">
-                                                        {expandedItems[order.order_id].map(item => (
-                                                            <li key={item.order_item_id}>
-                                                                {item.quantity} × {item.product_name} — {formatAmount(item.unit_amount_cents, order.currency)}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                ) : (
-                                                    <p>{t('common.loading')}</p>
-                                                )}
+                                            <td colSpan={5} className="order-detail-cell">
+                                                <div className="order-detail">
+                                                    <div className="order-detail-section">
+                                                        <h4>{t('admin.orders.items')}</h4>
+                                                        {expandedItems[order.order_id] ? (
+                                                            <ul className="order-items-list">
+                                                                {expandedItems[order.order_id].map(item => (
+                                                                    <li key={item.order_item_id}>
+                                                                        {item.quantity} × {item.product_name} — {formatAmount(item.unit_amount_cents, order.currency)}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        ) : (
+                                                            <p>{t('common.loading')}</p>
+                                                        )}
+                                                    </div>
+                                                    <div className="order-detail-section">
+                                                        <h4>{t('admin.orders.shipping.title')}</h4>
+                                                        {order.shipping_line1 ? (
+                                                            <address className="order-shipping-address">
+                                                                {order.shipping_name && <>{order.shipping_name}<br /></>}
+                                                                {order.shipping_line1}<br />
+                                                                {order.shipping_line2 && <>{order.shipping_line2}<br /></>}
+                                                                {[order.shipping_postal_code, order.shipping_city].filter(Boolean).join(' ')}<br />
+                                                                {[order.shipping_state, order.shipping_country].filter(Boolean).join(', ')}
+                                                                {order.shipping_phone && (
+                                                                    <>
+                                                                        <br />
+                                                                        {t('admin.orders.shipping.phone')}:{' '}
+                                                                        <a href={`tel:${order.shipping_phone}`}>{order.shipping_phone}</a>
+                                                                    </>
+                                                                )}
+                                                            </address>
+                                                        ) : (
+                                                            <p className="order-shipping-missing">{t('admin.orders.shipping.missing')}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                     )}

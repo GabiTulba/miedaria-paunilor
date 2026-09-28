@@ -21,6 +21,14 @@ interface UseFetchProductsResult {
 }
 
 const PER_PAGE = 20;
+// Mirror of `MAX_SEARCH_TERM_LEN` in backend/src/product_crud.rs.
+const MAX_SEARCH_LEN = 100;
+
+/** Trimmed search term, or undefined when there is nothing to search for. */
+function normalizeSearch(raw: string): string | undefined {
+    const term = raw.trim().slice(0, MAX_SEARCH_LEN).trim();
+    return term === '' ? undefined : term;
+}
 const SEARCH_DEBOUNCE_MS = 250;
 
 // `search` is debounced 250ms before triggering a fetch so typing in the search box
@@ -59,7 +67,7 @@ export const useFetchProducts = (
             acidity: (acidity || undefined) as AcidityType | undefined,
             tannins: (tannins || undefined) as TanninsType | undefined,
             body: (body || undefined) as BodyType | undefined,
-            search: debouncedSearch || undefined,
+            search: normalizeSearch(debouncedSearch),
             page,
             per_page: PER_PAGE,
         }, signal),

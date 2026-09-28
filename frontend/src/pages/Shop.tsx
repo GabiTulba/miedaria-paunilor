@@ -55,18 +55,6 @@ function Shop() {
         triggerRef: filtersTriggerRef,
     });
 
-    if (error) {
-        return (
-            <div className="shop-page">
-                <header className="shop-header">
-                    <h1>{t('shop.title')}</h1>
-                    <p>{t('shop.subtitle')}</p>
-                </header>
-                <ErrorDisplay error={error} onRetry={refetch} retryLabel={t('common.retry')} />
-            </div>
-        );
-    }
-
     return (
         <div className="shop-page">
             <SEO title={t('seo.pageTitles.shop')} description={t('seo.pageDescriptions.shop')} />
@@ -217,7 +205,11 @@ function Shop() {
                 />
 
                 <main className="product-display">
-                    {isLoading ? (
+                    {/* Errors stay inside the results area so the filters and
+                        search box remain usable to correct the query. */}
+                    {error ? (
+                        <ErrorDisplay error={t('errors.serverError')} onRetry={refetch} retryLabel={t('common.retry')} />
+                    ) : isLoading ? (
                         <div className="product-grid">
                             {[1, 2, 3, 4, 5, 6].map(i => (
                                 <ProductCard key={i} renderSkeleton />
@@ -242,7 +234,7 @@ function Shop() {
                             <EurConversionNote products={products.map(p => p.product)} />
                         </>
                     )}
-                    {!isLoading && (
+                    {!isLoading && !error && (
                         <Pagination
                             page={page}
                             hasMore={hasMore}

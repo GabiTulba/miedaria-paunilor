@@ -58,16 +58,6 @@ pub struct UpdateImage {
     pub file_name: Option<String>,
 }
 
-/// Internal changeset including server-managed `storage_path`. Never accept
-/// `storage_path` from clients — it would let an attacker point the row at any
-/// path on disk via a path-traversal payload.
-#[derive(AsChangeset, Debug)]
-#[diesel(table_name = images)]
-pub struct UpdateImageInternal {
-    pub file_name: Option<String>,
-    pub storage_path: Option<String>,
-}
-
 #[derive(Queryable, Selectable, AsChangeset, serde::Serialize, serde::Deserialize, Debug, TS)]
 #[diesel(table_name = crate::schema::products)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -90,6 +80,10 @@ pub struct Product {
     #[serde(with = "rust_decimal::serde::float")]
     #[ts(type = "number")]
     pub abv: Decimal,
+    // Never written by the product update: stock only moves through
+    // `adjust_stock` (admin) and order reservations, so a stale edit form
+    // can't overwrite sales made meanwhile.
+    #[diesel(skip_update)]
     pub bottle_count: i32,
     pub bottle_size: i32,
     #[serde(with = "rust_decimal::serde::float")]
@@ -216,6 +210,25 @@ pub struct CreateProductRequest {
     pub nutrition: LotNutrition,
 }
 
+/// Admin stock adjustment: a signed change applied atomically to the current
+/// count, e.g. +24 for a new case or -1 for a broken bottle.
+#[derive(serde::Deserialize, TS)]
+#[ts(export)]
+pub struct AdjustStockRequest {
+    pub delta: i32,
+}
+
+/// Stock of one product: `bottle_count` is what can still be sold,
+/// `reserved_bottles` is held by unfinished checkouts; together they are the
+/// bottles physically on hand.
+#[derive(serde::Serialize, TS)]
+#[ts(export)]
+pub struct StockLevel {
+    pub bottle_count: i32,
+    #[ts(type = "number")]
+    pub reserved_bottles: i64,
+}
+
 /// Admin update-product payload, mirroring `CreateProductRequest`.
 #[derive(serde::Deserialize, TS)]
 #[ts(export)]
@@ -242,6 +255,28 @@ pub struct Order {
     pub language: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub shipping_name: Option<String>,
+    pub shipping_phone: Option<String>,
+    pub shipping_line1: Option<String>,
+    pub shipping_line2: Option<String>,
+    pub shipping_city: Option<String>,
+    pub shipping_state: Option<String>,
+    pub shipping_postal_code: Option<String>,
+    pub shipping_country: Option<String>,
+}
+
+/// Delivery details captured from a completed Checkout Session.
+#[derive(AsChangeset, Debug, Default, Clone, PartialEq)]
+#[diesel(table_name = orders)]
+pub struct ShippingDetails {
+    pub shipping_name: Option<String>,
+    pub shipping_phone: Option<String>,
+    pub shipping_line1: Option<String>,
+    pub shipping_line2: Option<String>,
+    pub shipping_city: Option<String>,
+    pub shipping_state: Option<String>,
+    pub shipping_postal_code: Option<String>,
+    pub shipping_country: Option<String>,
 }
 
 #[derive(Insertable)]
@@ -296,6 +331,18 @@ pub struct CheckoutSessionRequest {
 #[ts(export)]
 pub struct CheckoutSessionResponse {
     pub url: String,
+    /// Lets the browser release this checkout's reserved stock if the
+    /// customer comes back without paying (see `/api/checkout/cancel`).
+    pub order_id: uuid::Uuid,
+}
+
+/// Body of `/api/checkout/cancel`: the order a customer abandoned by leaving
+/// the Stripe page. The id is an unguessable UUIDv4 known only to the browser
+/// that started the checkout.
+#[derive(serde::Deserialize, Debug, TS)]
+#[ts(export)]
+pub struct CancelCheckoutRequest {
+    pub order_id: uuid::Uuid,
 }
 
 /// Whether the store currently accepts checkouts. Also the request body for

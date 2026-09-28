@@ -88,12 +88,15 @@ function ProductDetails() {
     }
 
     if (error || !productWithImage) {
+        // A 404 (unknown or malformed product id) is "not found", not a
+        // server error, and retrying it is pointless.
+        const serverError = !!error && (error as { response?: { status?: number } }).response?.status !== 404;
         return (
             <div className="product-details-page">
                 <div className="back-to-shop">{backLink}</div>
                 <ErrorDisplay
-                    error={error ? t('errors.serverError') : t('errors.notFound')}
-                    onRetry={error ? refetch : undefined}
+                    error={serverError ? t('errors.serverError') : t('errors.notFound')}
+                    onRetry={serverError ? refetch : undefined}
                     retryLabel={t('common.retry')}
                 />
             </div>
@@ -157,7 +160,7 @@ function ProductDetails() {
                             {!imgLoaded && <Skeleton className="product-detail-image-skeleton" />}
                         </div>
                     ) : (
-                        <div className="placeholder-image product-detail-image">{t('admin.productForm.noImage')}</div>
+                        <div className="placeholder-image product-detail-image">{t('product.noImage')}</div>
                     )}
                 </div>
                 <div className="product-info-section">

@@ -133,16 +133,17 @@ async fn get_all_products(
 ) -> Result<(VaryLang, Json<PaginatedResponse<LocalizedProductWithImage>>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
 
-    if let Some(s) = query.search.as_deref() {
-        product_crud::validate_search_term(s)?;
-    }
+    let search = match query.search.as_deref() {
+        Some(s) => product_crud::normalize_search_term(s)?,
+        None => None,
+    };
 
     let page = query.page_query().resolve(20, 100);
 
     let opts = ListProductsOptions {
         include_deleted: IncludeDeleted::Active,
         filters: query.filters(),
-        search: query.search.as_deref(),
+        search,
         order_by: query.order_by.as_deref(),
         order_direction: query.order_direction.as_deref(),
     };
@@ -240,6 +241,16 @@ async fn hard_delete_product_handler(
     Ok(StatusCode::NO_CONTENT)
 }
 
+async fn adjust_stock_handler(
+    State(app_state): State<Arc<AppState>>,
+    Path(product_id): Path<String>,
+    Json(request): Json<models::AdjustStockRequest>,
+) -> Result<Json<models::StockLevel>, AppError> {
+    let mut conn = db::get_db_connection(&app_state)?;
+    let level = product_crud::adjust_stock(&mut conn, &product_id, request.delta)?;
+    Ok(Json(level))
+}
+
 async fn create_product(
     State(app_state): State<Arc<AppState>>,
     Json(request): Json<models::CreateProductRequest>,
@@ -308,6 +319,7 @@ pub fn admin_router() -> Router<Arc<AppState>> {
             "/products/{product_id}/restore",
             post(restore_product_handler),
         )
+        .route("/products/{product_id}/stock", post(adjust_stock_handler))
         .route(
             "/products/{product_id}/hard",
             delete(hard_delete_product_handler),

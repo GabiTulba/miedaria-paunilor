@@ -95,7 +95,7 @@ function ProductCard({ productWithImage, renderSkeleton }: ProductCardProps) {
                 {!imgLoaded && <Skeleton className="product-image-skeleton" />}
               </>
             ) : (
-              <div className="placeholder-image">{t('admin.productForm.noImage')}</div>
+              <div className="placeholder-image">{t('product.noImage')}</div>
             )}
           </div>
            <div className="product-card-content">

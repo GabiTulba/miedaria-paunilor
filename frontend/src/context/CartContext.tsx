@@ -2,8 +2,8 @@ import { createContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { LocalizedProduct } from '../types';
 import { api } from '../lib/api';
 import { deleteCookie, getCookie, setCookie, ONE_WEEK_SECONDS } from '../lib/cookies';
-import { useConsent } from '../hooks/useConsent';
 import { MAX_ORDER_BOTTLES } from '../utils/stockAvailability';
+import { releaseAbandonedCheckout } from '../lib/pendingCheckout';
 
 export interface CartItem extends LocalizedProduct {
     quantity: number;
@@ -70,13 +70,23 @@ function readPersistedCart(): PersistedCartEntry[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const consent = useConsent();
     // Persisting before hydration finishes would overwrite the cookie with the
     // initial empty cart on every page load.
     const [isHydrated, setIsHydrated] = useState(false);
     // Set by clearCart so an in-flight hydration can't resurrect a cart the
     // user just cleared (e.g. CheckoutSuccess clears on mount, mid-hydration).
     const skipHydrationRef = useRef(false);
+
+    // On load, and when the browser restores this page from the back/forward
+    // cache after the customer left Stripe with Back.
+    useEffect(() => {
+        releaseAbandonedCheckout();
+        const onPageShow = (e: PageTransitionEvent) => {
+            if (e.persisted) releaseAbandonedCheckout();
+        };
+        window.addEventListener('pageshow', onPageShow);
+        return () => window.removeEventListener('pageshow', onPageShow);
+    }, []);
 
     useEffect(() => {
         const persisted = readPersistedCart();
@@ -121,8 +131,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return () => controller.abort();
     }, []);
 
+    // The cart cookie is strictly necessary (it only holds what the customer
+    // put in the cart), so it is kept regardless of the cookie-consent choice.
     useEffect(() => {
-        if (!isHydrated || consent !== 'accepted') return;
+        if (!isHydrated) return;
         if (cartItems.length === 0) {
             deleteCookie(CART_COOKIE);
             return;
@@ -133,7 +145,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }));
         // Rewritten on every change, so the 7-day expiry slides with activity.
         setCookie(CART_COOKIE, JSON.stringify(entries), ONE_WEEK_SECONDS);
-    }, [cartItems, isHydrated, consent]);
+    }, [cartItems, isHydrated]);
 
     const addToCart = (product: LocalizedProduct, quantity: number, availableStock: number) => {
         const stock = availableStock ?? product.bottle_count;

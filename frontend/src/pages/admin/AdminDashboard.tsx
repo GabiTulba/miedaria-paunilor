@@ -103,7 +103,7 @@ function AdminDashboard() {
                         <div className="action-icon add-icon"></div>
                         <div className="action-content">
                             <h3>{t('admin.products.createNew')}</h3>
-                            <p>{t('admin.products.subtitle')}</p>
+                            <p>{t('admin.dashboard.createProductDescription')}</p>
                         </div>
                     </Link>
                     <Link to="products" className="action-card">

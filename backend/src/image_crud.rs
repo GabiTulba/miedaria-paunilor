@@ -8,7 +8,7 @@ use tokio::fs;
 use uuid::Uuid;
 
 use crate::AppError;
-use crate::models::{Image, NewImage, UpdateImage, UpdateImageInternal};
+use crate::models::{Image, NewImage, UpdateImage};
 use crate::schema::{images, products};
 use diesel::dsl::count;
 use diesel::pg::PgConnection;
@@ -237,63 +237,32 @@ pub async fn update_image(
     conn: &mut PgConnection,
     image_id: uuid::Uuid,
     updated_image_data: UpdateImage,
-    upload_dir: &str,
 ) -> Result<Json<Image>, AppError> {
-    // Check if the image exists
-    let existing_image: Image = images::table
-        .find(image_id)
-        .first::<Image>(conn)
+    // `file_name` is only a display label. The file on disk (and its WebP
+    // width variants, named after the same stem) is never renamed: moving the
+    // original alone used to orphan the variants.
+    let Some(new_file_name) = updated_image_data.file_name.as_deref().map(str::trim) else {
+        return Err(AppError::BadRequest("file_name is required".to_string()));
+    };
+    if new_file_name.is_empty() || new_file_name.chars().count() > 512 {
+        return Err(AppError::BadRequest(
+            "File name must be between 1 and 512 characters".to_string(),
+        ));
+    }
+
+    let updated_image: Image = diesel::update(images::table.find(image_id))
+        .set(images::file_name.eq(new_file_name))
+        .get_result(conn)
         .map_err(|e| match e {
             diesel::result::Error::NotFound => {
                 AppError::NotFound(format!("Image with id {} not found", image_id))
             }
             _ => {
-                tracing::error!("Error finding image for update: {:?}", e);
-                AppError::InternalServerError("Failed to find image for update".to_string())
+                tracing::error!("Error updating image in DB: {:?}", e);
+                AppError::InternalServerError(
+                    "Failed to update image metadata in database".to_string(),
+                )
             }
-        })?;
-
-    // The on-disk filename is `{image_id}.{ext}`, derived server-side from the
-    // image UUID. We never let the caller dictate `storage_path` — see
-    // `UpdateImageInternal` doc comment.
-    let mut changeset = UpdateImageInternal {
-        file_name: updated_image_data.file_name.clone(),
-        storage_path: None,
-    };
-
-    if let Some(new_file_name) = updated_image_data.file_name.as_ref() {
-        if new_file_name != &existing_image.file_name {
-            let old_storage_path = &existing_image.storage_path;
-            let extension = Path::new(old_storage_path)
-                .extension()
-                .and_then(|s| s.to_str())
-                .unwrap_or("png");
-            let new_storage_filename = format!("{}.{}", image_id, extension);
-            let new_storage_path = format!("{}/{}", upload_dir, new_storage_filename);
-
-            if old_storage_path != &new_storage_path {
-                if let Err(e) = tokio::fs::rename(old_storage_path, &new_storage_path).await {
-                    tracing::error!(
-                        "Error renaming file from {} to {}: {:?}",
-                        old_storage_path,
-                        new_storage_path,
-                        e
-                    );
-                    return Err(AppError::InternalServerError(
-                        "Failed to rename image file".to_string(),
-                    ));
-                }
-                changeset.storage_path = Some(new_storage_path);
-            }
-        }
-    }
-
-    let updated_image: Image = diesel::update(images::table.find(image_id))
-        .set(&changeset)
-        .get_result(conn)
-        .map_err(|e| {
-            tracing::error!("Error updating image in DB: {:?}", e);
-            AppError::InternalServerError("Failed to update image metadata in database".to_string())
         })?;
 
     Ok(Json(updated_image))

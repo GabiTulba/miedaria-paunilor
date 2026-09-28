@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from '../context/CartContext';
+import { rememberPendingCheckout } from '../lib/pendingCheckout';
 import { api } from '../lib/api';
 import { toFixed, toNumber } from '../utils/numberUtils';
 import { LocalizedLink } from '../components/LocalizedLink';
@@ -30,6 +31,16 @@ function Cart() {
                 // Keep the button usable; the server guard has the final say.
             });
         return () => controller.abort();
+    }, []);
+
+    // Coming back from Stripe with the browser's Back button can restore this
+    // page from the back/forward cache with the button still "redirecting".
+    useEffect(() => {
+        const onPageShow = (e: PageTransitionEvent) => {
+            if (e.persisted) setIsCheckingOut(false);
+        };
+        window.addEventListener('pageshow', onPageShow);
+        return () => window.removeEventListener('pageshow', onPageShow);
     }, []);
 
     useEffect(() => {
@@ -82,9 +93,12 @@ function Cart() {
         setCheckoutError(null);
         setIsCheckingOut(true);
         try {
-            const { url } = await api.createCheckoutSession(
+            const { url, order_id } = await api.createCheckoutSession(
                 cartItems.map(item => ({ product_id: item.product_id, quantity: item.quantity }))
             );
+            // If the customer comes back without paying, the cart releases
+            // this order's reserved stock (see CartContext).
+            rememberPendingCheckout(order_id);
             window.location.assign(url);
         } catch (err) {
             console.error('Failed to start checkout:', err);

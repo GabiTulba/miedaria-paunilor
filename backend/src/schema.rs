@@ -126,6 +126,14 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         client_key_hash -> Nullable<Varchar>,
+        shipping_name -> Nullable<Varchar>,
+        shipping_phone -> Nullable<Varchar>,
+        shipping_line1 -> Nullable<Varchar>,
+        shipping_line2 -> Nullable<Varchar>,
+        shipping_city -> Nullable<Varchar>,
+        shipping_state -> Nullable<Varchar>,
+        shipping_postal_code -> Nullable<Varchar>,
+        shipping_country -> Nullable<Varchar>,
     }
 }
 

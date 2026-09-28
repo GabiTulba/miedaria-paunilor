@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { setConsent } from '../lib/consent';
 import { useConsent } from '../hooks/useConsent';
@@ -9,11 +10,31 @@ import './CookieConsentBanner.css';
 function CookieConsentBanner() {
     const consent = useConsent();
     const { t } = useTranslation();
+    const bannerRef = useRef<HTMLDivElement>(null);
+    const visible = consent === null;
 
-    if (consent !== null) return null;
+    // Reserve room at the bottom of the page for the fixed banner so it never
+    // hides the footer or the last buttons on the page.
+    useLayoutEffect(() => {
+        const root = document.documentElement;
+        const banner = bannerRef.current;
+        if (!visible || !banner) return;
+        const update = () => root.style.setProperty('--cookie-banner-height', `${banner.offsetHeight}px`);
+        update();
+        const observer = new ResizeObserver(update);
+        observer.observe(banner);
+        root.classList.add('has-cookie-banner');
+        return () => {
+            observer.disconnect();
+            root.classList.remove('has-cookie-banner');
+            root.style.removeProperty('--cookie-banner-height');
+        };
+    }, [visible]);
+
+    if (!visible) return null;
 
     return (
-        <div className="cookie-banner" role="region" aria-label={t('cookieConsent.ariaLabel')}>
+        <div ref={bannerRef} className="cookie-banner" role="region" aria-label={t('cookieConsent.ariaLabel')}>
             <p className="cookie-banner-message">{t('cookieConsent.message')}</p>
             <div className="cookie-banner-actions">
                 <button className="button cookie-banner-accept" onClick={() => setConsent('accepted')}>

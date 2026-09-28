@@ -465,7 +465,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    /* background-color, not a gradient: the icon classes (.products-icon, …)
+       set background-image, which would replace a gradient and leave a white
+       icon on a white card. Accent (orange) reads in both themes. */
+    background-color: var(--accent-color);
     color: white;
     border-radius: var(--radius-lg);
     background-size: 28px 28px;
@@ -916,6 +919,29 @@
     padding-left: 1.5rem;
 }
 
+.order-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2.5rem;
+    padding: 0.5rem 0;
+}
+
+.order-detail-section h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.9rem;
+}
+
+.order-shipping-address {
+    font-style: normal;
+    line-height: 1.5;
+}
+
+.order-shipping-missing {
+    margin: 0;
+    color: var(--color-text-light);
+    max-width: 40ch;
+}
+
 .settings-card {
     display: flex;
     align-items: center;
@@ -1085,6 +1111,12 @@
     .admin-table td:last-child[data-label]::before {
         display: block;
         margin-bottom: 0.5rem;
+    }
+    /* Block-level first cell: keep its label on its own line so it doesn't
+       run into the value ("Dată27 sept."). */
+    .admin-table td:first-child[data-label]::before {
+        display: block;
+        margin-bottom: 0.25rem;
     }
     .product-cell {
         flex-direction: row;
@@ -2021,4 +2053,38 @@
     color: var(--badge-error-text);
     margin-top: 0.2rem;
     letter-spacing: 0.03em;
+}
+
+/* Product edit: stock is adjusted, never overwritten by the form. */
+.stock-levels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin: 0.25rem 0 0.75rem;
+}
+
+.stock-levels div {
+    display: flex;
+    flex-direction: column;
+}
+
+.stock-levels dt {
+    font-size: 0.8rem;
+    color: var(--color-text-light);
+}
+
+.stock-levels dd {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.stock-adjust {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.stock-adjust .form-input {
+    flex: 1;
+    min-width: 0;
 }

@@ -225,7 +225,8 @@
     "unavailable": "Unavailable",
     "maxQuantityReached": "Maximum quantity reached ({{count}} available)",
     "decreaseQuantity": "Decrease quantity",
-    "increaseQuantity": "Increase quantity"
+    "increaseQuantity": "Increase quantity",
+    "noImage": "Photo coming soon"
   },
   "lot": {
     "title": "Lot {{number}}",
@@ -282,7 +283,7 @@
   },
   "cookieConsent": {
     "ariaLabel": "Cookie consent",
-    "message": "This site uses cookies to remember your cart, language preference, and age confirmation. No tracking or advertising cookies are used.",
+    "message": "We use essential cookies for your cart and age confirmation. With your consent, we also remember your preferred language. No tracking or advertising cookies are used.",
     "accept": "Accept",
     "decline": "Decline"
   },
@@ -317,7 +318,8 @@
       "totalProducts": "Total Products",
       "totalStock": "Total Stock",
       "lowStock": "Low Stock",
-      "totalValue": "Total Value"
+      "totalValue": "Total Value",
+      "createProductDescription": "Add a new mead to the shop"
     },
     "settings": {
       "title": "Store Settings",
@@ -355,7 +357,13 @@
         "paid": "Paid",
         "expired": "Expired",
         "failed": "Failed"
-      }
+      },
+      "shipping": {
+        "title": "Delivery",
+        "phone": "Phone",
+        "missing": "No delivery address on this order (placed before address collection was enabled, or not yet paid)."
+      },
+      "items": "Items"
     },
     "products": {
       "title": "Manage Products",
@@ -391,7 +399,8 @@
       "hardDeleteSuccess": "Product permanently deleted",
       "restoreSuccess": "Product restored successfully",
       "created": "Product created successfully",
-      "updated": "Product updated successfully"
+      "updated": "Product updated successfully",
+      "hardDeleteRefused": "This product has orders or lot records (bottle QR codes), so it can't be permanently deleted. It stays archived."
     },
     "productForm": {
       "createTitle": "Create New Product",
@@ -449,6 +458,17 @@
         "invalidBottleSize": "Volume must be positive",
         "invalidPrice": "Price must be valid",
         "invalidBottlingDate": "Bottling date must be in DD/MM/YYYY format and valid"
+      },
+      "stock": {
+        "available": "Available to sell",
+        "reserved": "Held by open checkouts",
+        "onHand": "On hand",
+        "deltaLabel": "Stock change",
+        "deltaPlaceholder": "e.g. 24 or -1",
+        "apply": "Apply",
+        "help": "Stock is saved immediately, separately from the rest of the form. Enter a positive number for new bottles, a negative one for bottles removed.",
+        "adjusted": "Stock updated: {{count}} available",
+        "adjustError": "Could not update stock"
       }
     },
     "images": {
@@ -544,7 +564,8 @@
     "copyright": "© {{year}} Miedăria Păunilor. All rights reserved.",
     "links": "Quick Links",
     "contact": "Contact Us",
-    "social": "Follow Us"
+    "social": "Follow Us",
+    "cookieSettings": "Cookie settings"
   },
   "confirm": {
     "delete": {
@@ -588,7 +609,7 @@
       "InvalidBottleSize": "Volume must be a positive integer.",
       "InvalidPriceRon": "RON price must be between 0.00 and 99999.99.",
       "InvalidPriceRonPrecision": "RON price must have at most 2 decimal places.",
-      "PriceRonBelowMinimum": "RON price is below the minimum allowed.",
+      "PriceRonBelowMinimum": "The minimum price is 2.00 RON (Stripe's minimum charge).",
       "InvalidBottlingDate": "Bottling date is invalid.",
       "InvalidLotNumber": "Lot number must be a non-negative integer.",
       "LotNumberInUse": "This lot number is already used by another product.",

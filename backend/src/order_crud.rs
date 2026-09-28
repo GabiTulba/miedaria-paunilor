@@ -1,7 +1,9 @@
 use crate::enums::OrderStatus;
 use crate::error::RepositoryError;
 use crate::language::Language;
-use crate::models::{CheckoutItem, NewOrder, NewOrderItem, Order, OrderItem, OrderWithItems};
+use crate::models::{
+    CheckoutItem, NewOrder, NewOrderItem, Order, OrderItem, OrderWithItems, ShippingDetails,
+};
 use crate::schema::*;
 use diesel::prelude::*;
 use diesel::sql_types::Text;
@@ -216,6 +218,7 @@ pub fn record_payment(
     id: Uuid,
     payment_intent_id: Option<&str>,
     customer_email: Option<&str>,
+    shipping: &ShippingDetails,
     settled: bool,
 ) -> Result<bool, RepositoryError> {
     let new_status = if settled {
@@ -235,6 +238,7 @@ pub fn record_payment(
         orders::stripe_payment_intent_id.eq(payment_intent_id),
         orders::customer_email.eq(customer_email),
         orders::client_key_hash.eq(None::<String>),
+        shipping,
     ))
     .execute(conn)?;
     Ok(updated > 0)
@@ -298,6 +302,24 @@ pub fn release_order(
 
         Ok(true)
     })
+}
+
+/// Stripe session of an order that still holds stock as `Pending`, or `None`
+/// when the order is unknown or already past that state. `Some(None)` means
+/// pending without a session (creation never finished).
+pub fn pending_session(
+    conn: &mut PgConnection,
+    id: Uuid,
+) -> QueryResult<Option<Option<String>>> {
+    orders::table
+        .filter(
+            orders::order_id
+                .eq(id)
+                .and(orders::status.eq(OrderStatus::Pending)),
+        )
+        .select(orders::stripe_session_id)
+        .first(conn)
+        .optional()
 }
 
 /// Pending orders whose hold has run out, oldest first, with their Stripe

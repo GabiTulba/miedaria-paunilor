@@ -13,6 +13,7 @@ import { HamburgerButton } from './components/HamburgerButton';
 import AgeGate, { AGE_VERIFIED_COOKIE } from './components/AgeGate';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import { getCookie } from './lib/cookies';
+import { resetConsent } from './lib/consent';
 import './App.css';
 
 function App() {
@@ -98,6 +99,9 @@ function App() {
       <footer className="footer">
         <div className="container">
           <p>{t('footer.copyright', { year: currentYear })}</p>
+          <button type="button" className="footer-link-button" onClick={resetConsent}>
+            {t('footer.cookieSettings')}
+          </button>
         </div>
       </footer>
     </>

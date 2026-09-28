@@ -1,6 +1,7 @@
 import { useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from '../context/CartContext';
+import { forgetPendingCheckout } from '../lib/pendingCheckout';
 import { LocalizedLink } from '../components/LocalizedLink';
 import SEO from '../components/SEO';
 import './Cart.css';
@@ -12,6 +13,7 @@ function CheckoutSuccess() {
     // The in-memory cart rarely survives the Stripe redirect, but clear it
     // anyway in case the browser restored the page from the bfcache.
     useEffect(() => {
+        forgetPendingCheckout();
         clearCart();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

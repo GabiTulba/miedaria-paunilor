@@ -2,8 +2,10 @@ use crate::AppError;
 use crate::enums::*;
 use crate::error::RepositoryError;
 use crate::lot_crud;
+use crate::enums::OrderStatus;
 use crate::models::{
-    CreateProductRequest, Image, LotNutrition, NewProduct, Product, UpdateProductRequest,
+    CreateProductRequest, Image, LotNutrition, NewProduct, Product, StockLevel,
+    UpdateProductRequest,
 };
 use crate::schema::*;
 use chrono::{DateTime, Duration, Utc};
@@ -15,28 +17,31 @@ use ts_rs::TS;
 
 const MAX_SEARCH_TERM_LEN: usize = 100;
 
-/// Validates a free-text search term before it reaches Diesel's `ILIKE`.
-/// Caps length so an attacker can't force a multi-megabyte pattern scan,
-/// and rejects entirely-wildcard payloads that would match every row.
-pub fn validate_search_term(s: &str) -> Result<(), AppError> {
-    if s.len() > MAX_SEARCH_TERM_LEN {
+/// Normalizes a free-text search term before it reaches Diesel's `ILIKE`:
+/// trims it (a blank term means "no search", not an error) and caps its
+/// length so an attacker can't force a multi-megabyte pattern scan.
+pub fn normalize_search_term(s: &str) -> Result<Option<&str>, AppError> {
+    let trimmed = s.trim();
+    if trimmed.chars().count() > MAX_SEARCH_TERM_LEN {
         return Err(AppError::BadRequest(format!(
             "Search term must be at most {} characters",
             MAX_SEARCH_TERM_LEN
         )));
     }
-    let trimmed = s.trim();
-    if trimmed.is_empty() {
-        return Err(AppError::BadRequest(
-            "Search term must not be empty".to_string(),
-        ));
+    Ok(Some(trimmed).filter(|t| !t.is_empty()))
+}
+
+/// Escapes `ILIKE` metacharacters so the term matches literally (`_` and `%`
+/// in a product name are ordinary characters, not wildcards).
+fn escape_like(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        if matches!(c, '\\' | '%' | '_') {
+            out.push('\\');
+        }
+        out.push(c);
     }
-    if trimmed.chars().all(|c| c == '%' || c == '_') {
-        return Err(AppError::BadRequest(
-            "Search term must contain at least one non-wildcard character".to_string(),
-        ));
-    }
-    Ok(())
+    out
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -139,8 +144,9 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
     // RON price: 0.00–99999.99 (DECIMAL(7,2))
     let price_min = Decimal::new(0, 2);
     let price_max_ron = Decimal::new(9999999, 2);
-    // Business minimum: prices below 1.00 are almost certainly mis-entered.
-    let price_min_business = Decimal::new(100, 2);
+    // Business minimum: Stripe's minimum charge in RON is 2.00, so a cheaper
+    // product could not be bought on its own.
+    let price_min_business = Decimal::new(200, 2);
 
     let mut errors = Vec::new();
 
@@ -320,6 +326,9 @@ pub struct AdminProductDetail {
     pub product: Product,
     pub image: Option<Image>,
     pub nutrition: Option<LotNutrition>,
+    /// Bottles held by pending/processing checkouts (not in `bottle_count`).
+    #[ts(type = "number")]
+    pub reserved_bottles: i64,
 }
 
 pub fn create_product(
@@ -415,11 +424,73 @@ pub fn get_product_admin_detail(
         return Ok(None);
     };
     let nutrition = lot_crud::get_current_nutrition(conn, &pwi.product)?;
+    let reserved_bottles = reserved_bottles(conn, id)?;
     Ok(Some(AdminProductDetail {
         product: pwi.product,
         image: pwi.image,
         nutrition,
+        reserved_bottles,
     }))
+}
+
+/// Bottles of `id` currently held by checkouts that may still be paid.
+pub fn reserved_bottles(conn: &mut PgConnection, id: &str) -> QueryResult<i64> {
+    let total: Option<i64> = order_items::table
+        .inner_join(orders::table)
+        .filter(order_items::product_id.eq(id))
+        .filter(orders::status.eq_any([OrderStatus::Pending, OrderStatus::Processing]))
+        .select(diesel::dsl::sum(order_items::quantity))
+        .first(conn)?;
+    Ok(total.unwrap_or(0))
+}
+
+/// Atomically adds `delta` (may be negative) to the sellable stock of `id`.
+/// Refuses to go below zero or above `MAX_BOTTLE_COUNT` instead of clamping,
+/// so the admin always sees exactly what was applied.
+pub fn adjust_stock(
+    conn: &mut PgConnection,
+    id: &str,
+    delta: i32,
+) -> Result<StockLevel, RepositoryError> {
+    if delta == 0 {
+        return Err(RepositoryError::BadRequest(
+            "Stock change must not be zero".to_string(),
+        ));
+    }
+    let updated: Option<i32> = diesel::update(
+        products::table.filter(
+            products::product_id
+                .eq(id)
+                .and((products::bottle_count + delta).ge(0))
+                .and((products::bottle_count + delta).le(MAX_BOTTLE_COUNT)),
+        ),
+    )
+    .set(products::bottle_count.eq(products::bottle_count + delta))
+    .returning(products::bottle_count)
+    .get_result(conn)
+    .optional()?;
+
+    let Some(bottle_count) = updated else {
+        let current: Option<i32> = products::table
+            .filter(products::product_id.eq(id))
+            .select(products::bottle_count)
+            .first(conn)
+            .optional()?;
+        return Err(match current {
+            None => RepositoryError::NotFound("Product not found".to_string()),
+            Some(c) => RepositoryError::Conflict(format!(
+                "Stock would become {}; it must stay between 0 and {} (currently {} available)",
+                i64::from(c) + i64::from(delta),
+                MAX_BOTTLE_COUNT,
+                c
+            )),
+        });
+    };
+
+    Ok(StockLevel {
+        bottle_count,
+        reserved_bottles: reserved_bottles(conn, id)?,
+    })
 }
 
 pub fn delete_product(conn: &mut PgConnection, id: &str) -> Result<(), RepositoryError> {
@@ -515,6 +586,24 @@ pub fn hard_delete_product(conn: &mut PgConnection, id: &str) -> Result<(), Repo
         }
     }
 
+    // Orders reference the product (sales records must be kept), and lot rows
+    // back the QR codes printed on bottles already sold. Either one means the
+    // product stays archived instead of being erased.
+    let order_lines: i64 = order_items::table
+        .filter(order_items::product_id.eq(id))
+        .count()
+        .get_result(conn)?;
+    let lot_rows: i64 = lots::table
+        .filter(lots::product_id.eq(id))
+        .count()
+        .get_result(conn)?;
+    if order_lines > 0 || lot_rows > 0 {
+        return Err(RepositoryError::Conflict(format!(
+            "Product cannot be permanently deleted: it has {order_lines} order line(s) and \
+             {lot_rows} lot record(s) that must be kept. It stays archived."
+        )));
+    }
+
     diesel::delete(products)
         .filter(product_id.eq(id))
         .execute(conn)
@@ -589,7 +678,8 @@ macro_rules! apply_product_filters {
             $q = $q.filter(p::body.eq(v));
         }
         if let Some(s) = $opts.search {
-            let pattern = format!("%{}%", s);
+            // Default ILIKE escape character is the backslash.
+            let pattern = format!("%{}%", escape_like(s));
             $q = $q.filter(
                 p::product_name
                     .ilike(pattern.clone())
@@ -599,8 +689,9 @@ macro_rules! apply_product_filters {
     }};
 }
 
-/// Apply the order_by/order_direction pair if recognized. Unknown column names
-/// leave the query unordered (preserves prior behavior).
+/// Apply the order_by/order_direction pair if recognized, then always
+/// `product_id` as a tie-breaker: LIMIT/OFFSET pagination over an unordered
+/// (or tied) result can repeat or skip rows between pages.
 macro_rules! apply_product_order {
     ($q:ident, $opts:expr) => {{
         use crate::schema::products::dsl as p;
@@ -631,6 +722,7 @@ macro_rules! apply_product_order {
                 _ => $q,
             };
         }
+        $q = $q.then_order_by(p::product_id.asc());
     }};
 }
 
@@ -660,4 +752,23 @@ pub fn list_products(
         .limit(limit)
         .offset(offset)
         .load(conn)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn search_terms_are_trimmed_and_blank_means_none() {
+        assert_eq!(normalize_search_term("  apricot ").unwrap(), Some("apricot"));
+        assert_eq!(normalize_search_term("   ").unwrap(), None);
+        assert!(normalize_search_term(&"ă".repeat(100)).is_ok());
+        assert!(normalize_search_term(&"a".repeat(101)).is_err());
+    }
+
+    #[test]
+    fn like_metacharacters_are_escaped() {
+        assert_eq!(escape_like("50%_off\\"), "50\\%\\_off\\\\");
+        assert_eq!(escape_like("miere"), "miere");
+    }
 }
