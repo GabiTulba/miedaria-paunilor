@@ -9,6 +9,7 @@ use lettre::message::{Mailbox, MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Address, AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 
+use crate::language::Language;
 use crate::metrics::{self, Task};
 
 const SMTP_TIMEOUT: Duration = Duration::from_secs(20);
@@ -161,6 +162,58 @@ impl Mailer {
     }
 }
 
+const MAX_EMAIL_LEN: usize = 254;
+
+/// Trimmed, lowercased address if it is a syntactically valid mailbox.
+pub fn normalize_email(raw: &str) -> Option<Address> {
+    let email = raw.trim().to_lowercase();
+    if email.len() > MAX_EMAIL_LEN {
+        return None;
+    }
+    email.parse::<Address>().ok()
+}
+
+/// A styled call-to-action link, rendered as a button in HTML mail.
+pub struct Action<'a> {
+    pub label: &'a str,
+    pub url: &'a str,
+}
+
+/// Wraps pre-escaped HTML paragraphs in the shared email layout.
+pub fn html_layout(
+    lang: Language,
+    heading: &str,
+    paragraphs: &[String],
+    action: Option<&Action>,
+    footer: &str,
+) -> String {
+    let body: String = paragraphs
+        .iter()
+        .map(|p| format!(r#"<p style="margin:0 0 16px;line-height:1.5">{p}</p>"#))
+        .collect();
+    let button = action.map_or_else(String::new, |a| {
+        format!(
+            r#"<p style="margin:24px 0"><a href="{}" style="display:inline-block;padding:12px 24px;background:#1f3a5f;color:#ffffff;text-decoration:none;border-radius:4px">{}</a></p>"#,
+            escape_html(a.url),
+            escape_html(a.label)
+        )
+    });
+    format!(
+        r#"<!doctype html>
+<html lang="{lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:24px 16px;background:#f5f1e8;font-family:Georgia,serif;color:#2b2b2b">
+<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px 24px">
+<p style="margin:0 0 24px;font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:#8a6d1d">Miedăria Păunilor</p>
+<h1 style="margin:0 0 16px;font-size:24px;line-height:1.3">{heading}</h1>
+{body}
+{button}
+<p style="margin:32px 0 0;font-size:13px;line-height:1.5;color:#6b6b6b">{footer}</p>
+</div></body></html>"#,
+        lang = lang.code(),
+        heading = escape_html(heading),
+    )
+}
+
 /// Escapes text for interpolation into HTML element content or a quoted
 /// attribute value.
 pub fn escape_html(text: &str) -> String {
@@ -188,6 +241,17 @@ mod tests {
             escape_html(r#"<a href="x">Tom & 'Jerry'</a>"#),
             "&lt;a href=&quot;x&quot;&gt;Tom &amp; &#39;Jerry&#39;&lt;/a&gt;"
         );
+    }
+
+    #[test]
+    fn normalizes_and_rejects_emails() {
+        assert_eq!(
+            normalize_email("  Ana.Pop@Example.RO ").map(|a| a.to_string()),
+            Some("ana.pop@example.ro".to_string())
+        );
+        assert!(normalize_email("not-an-email").is_none());
+        assert!(normalize_email("a@b\r\nBcc: x@y.z").is_none());
+        assert!(normalize_email(&format!("{}@example.ro", "a".repeat(250))).is_none());
     }
 
     #[test]

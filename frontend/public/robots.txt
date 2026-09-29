@@ -5,6 +5,8 @@ Disallow: /admin/
 Disallow: /api
 Disallow: /api/
 Disallow: /grafana/
+Disallow: /ro/account
+Disallow: /en/account
 Allow: /
 
 # Bing/Yandex throttle (Googlebot ignores this)

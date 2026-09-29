@@ -23,9 +23,9 @@ const AUTH_COOKIE_PATH: &str = "/api/admin";
 
 /// PHC-encoded Argon2 hash of an arbitrary string, computed lazily on first
 /// failed-username login. Used to equalize response time between "user does
-/// not exist" and "wrong password" paths so attackers can't enumerate admins
-/// via timing.
-fn dummy_password_hash() -> &'static str {
+/// not exist" and "wrong password" paths so attackers can't enumerate
+/// admins or customers via timing.
+pub(crate) fn dummy_password_hash() -> &'static str {
     static DUMMY: OnceLock<String> = OnceLock::new();
     DUMMY.get_or_init(|| {
         hash_password("not-a-real-password").expect("Argon2 must be able to hash a dummy password")

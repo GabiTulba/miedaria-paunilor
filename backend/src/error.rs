@@ -3,6 +3,7 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde::Serialize;
 
+use crate::account::PasswordProblem;
 use crate::blog_crud::BlogValidationError;
 use crate::product_crud::ProductValidationError;
 
@@ -44,12 +45,14 @@ pub enum AppError {
     Conflict(String),
     BadRequest(String),
     Unauthorized(String),
+    Forbidden(String),
     InternalServerError(String),
     ServiceUnavailable(String),
     DatabaseConnectionError,
     TooManyRequests,
     ProductValidation(Vec<ProductValidationError>),
     BlogValidation(Vec<BlogValidationError>),
+    WeakPassword(PasswordProblem),
     Database(diesel::result::Error),
 }
 
@@ -81,6 +84,7 @@ impl IntoResponse for AppError {
             AppError::Conflict(m) => json_error(StatusCode::CONFLICT, m),
             AppError::BadRequest(m) => json_error(StatusCode::BAD_REQUEST, m),
             AppError::Unauthorized(m) => json_error(StatusCode::UNAUTHORIZED, m),
+            AppError::Forbidden(m) => json_error(StatusCode::FORBIDDEN, m),
             AppError::InternalServerError(m) => json_error(StatusCode::INTERNAL_SERVER_ERROR, m),
             AppError::ServiceUnavailable(m) => json_error(StatusCode::SERVICE_UNAVAILABLE, m),
             AppError::DatabaseConnectionError => json_error(
@@ -93,6 +97,7 @@ impl IntoResponse for AppError {
             ),
             AppError::ProductValidation(errors) => json_validation_error(errors),
             AppError::BlogValidation(errors) => json_validation_error(errors),
+            AppError::WeakPassword(problem) => json_validation_error(vec![problem]),
             AppError::Database(e) => {
                 tracing::error!(error = %e, "db error");
                 json_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")

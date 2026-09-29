@@ -286,3 +286,9 @@
         margin-top: 0;
     }
 }
+
+.checkout-account-hint {
+    margin: 0.75rem 0 0;
+    font-size: 0.9rem;
+    color: var(--color-text-light);
+}

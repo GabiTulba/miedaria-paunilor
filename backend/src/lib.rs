@@ -1,27 +1,32 @@
+pub mod account;
 pub mod auth;
 pub mod blog_crud;
+pub mod customer_crud;
 pub mod db;
 pub mod enum_crud;
 pub mod enums;
 pub mod error;
 pub mod exchange_rate;
+pub mod google;
 pub mod image_crud;
 pub mod language;
 pub mod localized;
-pub mod metrics;
 pub mod lot_crud;
 pub mod mailer;
+pub mod metrics;
 pub mod models;
 pub mod newsletter;
 pub mod order_crud;
 pub mod pagination;
 pub mod product_crud;
+pub mod retention;
 pub mod routes;
 pub mod rss_crud;
 pub mod schema;
 pub mod settings_crud;
 pub mod sitemap_crud;
 pub mod stripe_checkout;
+pub mod tokens;
 pub mod user_crud;
 pub mod utils;
 
@@ -30,14 +35,13 @@ pub mod utils;
 pub use crate::error::{AppError, ErrorResponse};
 
 use governor::{Quota, RateLimiter, clock::DefaultClock, state::keyed::DefaultKeyedStateStore};
-use hmac::{Hmac, Mac};
-use sha2::Sha256;
 use std::net::IpAddr;
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
 
 pub type IpRateLimiter = RateLimiter<IpAddr, DefaultKeyedStateStore<IpAddr>, DefaultClock>;
+pub type KeyRateLimiter = RateLimiter<String, DefaultKeyedStateStore<String>, DefaultClock>;
 
 pub fn build_login_limiter() -> Arc<IpRateLimiter> {
     Arc::new(RateLimiter::keyed(Quota::per_minute(
@@ -77,13 +81,20 @@ pub fn build_newsletter_limiter() -> Arc<IpRateLimiter> {
     build_strict_limiter()
 }
 
-/// Random HMAC key for `AppState::client_key_hash`. Never persisted, so the
-/// stored hashes become unlinkable to any IP once the process restarts.
-pub fn generate_client_key_secret() -> [u8; 32] {
-    use argon2::password_hash::rand_core::{OsRng, RngCore};
-    let mut key = [0u8; 32];
-    OsRng.fill_bytes(&mut key);
-    key
+/// Every account email request (registration, password reset, email change)
+/// can send an email, so they share checkout's strict budget.
+pub fn build_account_limiter() -> Arc<IpRateLimiter> {
+    build_strict_limiter()
+}
+
+/// Password checks per account (logins and re-authentication alike): a burst
+/// of 10, then one a minute. Caps guessing against one account at about 60
+/// tries an hour, from any number of addresses, without locking out an
+/// owner who mistypes a few times.
+pub fn build_customer_password_limiter() -> Arc<KeyRateLimiter> {
+    let quota =
+        Quota::per_minute(NonZeroU32::new(1).unwrap()).allow_burst(NonZeroU32::new(10).unwrap());
+    Arc::new(RateLimiter::keyed(quota))
 }
 
 pub fn build_public_api_limiter() -> Arc<IpRateLimiter> {
@@ -100,6 +111,13 @@ pub struct AppState {
     pub public_api_limiter: Arc<IpRateLimiter>,
     pub checkout_limiter: Arc<IpRateLimiter>,
     pub newsletter_limiter: Arc<IpRateLimiter>,
+    pub account_limiter: Arc<IpRateLimiter>,
+    pub customer_login_limiter: Arc<IpRateLimiter>,
+    /// Keyed by `password_limit_key`, never by the address itself.
+    pub customer_password_limiter: Arc<KeyRateLimiter>,
+    /// Random per-process key for `client_key_hash` and `password_limit_key`;
+    /// never persisted, so neither can be linked to an IP or address after a
+    /// restart.
     pub client_key_secret: [u8; 32],
     pub site_url: String,
     pub jwt_secret: String,
@@ -108,6 +126,8 @@ pub struct AppState {
     pub stripe_client: stripe::Client,
     pub stripe_webhook_secret: String,
     pub mailer: mailer::Mailer,
+    /// `None` when Google sign-in is not configured.
+    pub google: google::SharedGoogleClient,
     /// See `newsletter::derive_unsubscribe_key`.
     pub unsubscribe_key: [u8; 32],
     /// Latest known BNR EUR reference rate, kept warm by the refresh task so
@@ -128,10 +148,19 @@ impl AppState {
     /// `auth::client_network`), used to cap pending orders per client without
     /// storing the IP itself.
     pub fn client_key_hash(&self, ip: IpAddr) -> String {
-        let mut mac = Hmac::<Sha256>::new_from_slice(&self.client_key_secret)
-            .expect("HMAC accepts any key length");
-        mac.update(auth::client_network(ip).to_string().as_bytes());
-        hex::encode(mac.finalize().into_bytes())
+        tokens::mac_hex(
+            &self.client_key_secret,
+            auth::client_network(ip).to_string().as_bytes(),
+        )
+    }
+
+    /// Rate-limiter key for password attempts on one account, so the limiter
+    /// holds no email addresses.
+    pub fn password_limit_key(&self, email: &str) -> String {
+        tokens::mac_hex(
+            &self.client_key_secret,
+            format!("password:{email}").as_bytes(),
+        )
     }
 }
 

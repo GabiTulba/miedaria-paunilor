@@ -263,6 +263,9 @@ pub struct Order {
     pub shipping_state: Option<String>,
     pub shipping_postal_code: Option<String>,
     pub shipping_country: Option<String>,
+    /// Set once the order's personal data was erased at the end of its
+    /// retention period.
+    pub anonymized_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 /// Delivery details captured from a completed Checkout Session.
@@ -286,6 +289,7 @@ pub struct NewOrder {
     pub total_amount_cents: i64,
     pub language: String,
     pub client_key_hash: String,
+    pub customer_id: Option<uuid::Uuid>,
 }
 
 #[derive(Queryable, Selectable, serde::Serialize, Debug, TS)]
@@ -472,4 +476,47 @@ pub struct UpdateBlogPost {
     pub author: Option<String>,
     #[ts(optional)]
     pub is_published: Option<bool>,
+}
+
+#[derive(Queryable, Selectable, Debug, Clone)]
+#[diesel(table_name = crate::schema::customers)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Customer {
+    pub id: uuid::Uuid,
+    pub email: String,
+    pub hashed_password: Option<String>,
+    pub email_verified_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub language: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// An order as its customer sees it: no Stripe or internal identifiers.
+#[derive(Queryable, Selectable, serde::Serialize, Debug, TS)]
+#[diesel(table_name = orders)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
+pub struct AccountOrder {
+    pub order_id: uuid::Uuid,
+    pub status: OrderStatus,
+    pub currency: String,
+    #[ts(type = "number")]
+    pub total_amount_cents: i64,
+    pub customer_email: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub shipping_name: Option<String>,
+    pub shipping_phone: Option<String>,
+    pub shipping_line1: Option<String>,
+    pub shipping_line2: Option<String>,
+    pub shipping_city: Option<String>,
+    pub shipping_state: Option<String>,
+    pub shipping_postal_code: Option<String>,
+    pub shipping_country: Option<String>,
+}
+
+#[derive(serde::Serialize, Debug, TS)]
+#[ts(export)]
+pub struct AccountOrderWithItems {
+    #[serde(flatten)]
+    pub order: AccountOrder,
+    pub items: Vec<OrderItem>,
 }

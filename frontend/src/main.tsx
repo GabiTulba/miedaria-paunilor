@@ -37,7 +37,17 @@ const AdminBlogCreate = React.lazy(() => import('./pages/admin/AdminBlogCreate')
 const AdminBlogEdit = React.lazy(() => import('./pages/admin/AdminBlogEdit'));
 const AdminOrders = React.lazy(() => import('./pages/admin/AdminOrders'));
 
+// Account pages are only needed by customers who use them.
+const AccountLogin = React.lazy(() => import('./pages/account/AccountLogin'));
+const AccountEmailRequest = React.lazy(() => import('./pages/account/AccountEmailRequest'));
+const AccountSetPassword = React.lazy(() => import('./pages/account/AccountSetPassword'));
+const AccountEmailConfirm = React.lazy(() => import('./pages/account/AccountEmailConfirm'));
+const AccountOrders = React.lazy(() => import('./pages/account/AccountOrders'));
+const AccountOrderDetail = React.lazy(() => import('./pages/account/AccountOrderDetail'));
+const AccountSettings = React.lazy(() => import('./pages/account/AccountSettings'));
+
 import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedAccountRoute from './components/ProtectedAccountRoute';
 import { detectInitialLang } from './lib/detectInitialLang';
 
 function PrefixWithLangRedirect() {
@@ -54,8 +64,7 @@ function LotRoRedirect() {
   return <Navigate to={`/ro${pathname}${search}${hash}`} replace />;
 }
 
-const adminFallback = null;
-const lazy = (node: React.ReactNode) => <Suspense fallback={adminFallback}>{node}</Suspense>;
+const lazy = (node: React.ReactNode) => <Suspense fallback={null}>{node}</Suspense>;
 
 const router = createBrowserRouter([
   { path: '/', element: <PrefixWithLangRedirect /> },
@@ -79,6 +88,19 @@ const router = createBrowserRouter([
       { path: 'privacy-policy', element: <PrivacyPolicy /> },
       { path: 'newsletter/confirm', element: <NewsletterConfirm /> },
       { path: 'newsletter/unsubscribe', element: <NewsletterUnsubscribe /> },
+      { path: 'account/login', element: lazy(<AccountLogin />) },
+      { path: 'account/register', element: lazy(<AccountEmailRequest kind="register" />) },
+      { path: 'account/forgot-password', element: lazy(<AccountEmailRequest kind="forgotPassword" />) },
+      { path: 'account/set-password', element: lazy(<AccountSetPassword />) },
+      { path: 'account/email/confirm', element: lazy(<AccountEmailConfirm />) },
+      {
+        element: <ProtectedAccountRoute />,
+        children: [
+          { path: 'account', element: lazy(<AccountOrders />) },
+          { path: 'account/orders/:orderId', element: lazy(<AccountOrderDetail />) },
+          { path: 'account/settings', element: lazy(<AccountSettings />) },
+        ],
+      },
       { path: '*', element: <NotFound /> },
     ],
   },
@@ -113,18 +135,21 @@ import { EnumProvider } from './context/EnumContext';
 
 import './index.css';
 import { CartProvider } from './context/CartContext';
+import { AccountProvider } from './context/AccountContext';
 import { ToastProvider } from './context/ToastContext';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <EnumProvider>
-      <CartProvider>
-        <ToastProvider>
-          <HelmetProvider>
-            <RouterProvider router={router} />
-          </HelmetProvider>
-        </ToastProvider>
-      </CartProvider>
+      <AccountProvider>
+        <CartProvider>
+          <ToastProvider>
+            <HelmetProvider>
+              <RouterProvider router={router} />
+            </HelmetProvider>
+          </ToastProvider>
+        </CartProvider>
+      </AccountProvider>
     </EnumProvider>
   </React.StrictMode>
 );

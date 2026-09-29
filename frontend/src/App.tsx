@@ -2,6 +2,7 @@ import { Outlet, useLocation, useMatch } from "react-router-dom";
 import { useContext, useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from './context/CartContext';
+import { useAccount } from './context/AccountContext';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import ThemeToggle from './components/ThemeToggle';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -19,6 +20,7 @@ import './App.css';
 
 function App() {
   const { itemCount } = useContext(CartContext);
+  const { account } = useAccount();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // Synchronous cookie read: no flash of gated content on first paint.
   const [isAgeVerified, setIsAgeVerified] = useState(() => getCookie(AGE_VERIFIED_COOKIE) === '1');
@@ -72,6 +74,9 @@ function App() {
             <LocalizedNavLink to="/about-us">{t('navigation.aboutUs')}</LocalizedNavLink>
             <LocalizedNavLink to="/contact">{t('navigation.contact')}</LocalizedNavLink>
             <LocalizedNavLink to="/cart">{t('navigation.cart')} {itemCount > 0 && `(${itemCount})`}</LocalizedNavLink>
+            <LocalizedNavLink to={account ? '/account' : '/account/login'}>
+              {t(account ? 'navigation.myAccount' : 'navigation.login')}
+            </LocalizedNavLink>
             <ThemeToggle />
             <LanguageSwitcher />
           </nav>

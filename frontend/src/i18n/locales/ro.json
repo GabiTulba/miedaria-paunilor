@@ -148,7 +148,9 @@
     "settings": "Setări",
     "toggleMenu": "Comută meniul de navigare",
     "main": "Navigare principală",
-    "skipToContent": "Sari la conținut"
+    "skipToContent": "Sari la conținut",
+    "login": "Autentificare",
+    "myAccount": "Contul meu"
   },
   "home": {
     "heroTitle": "Mied Autentic. Puritate Desăvârșită.",
@@ -271,7 +273,9 @@
     "productUnavailable": "Acest produs nu mai este disponibil",
     "outOfStock": "Acest produs nu mai este în stoc",
     "quantityReduced": "Cantitatea a fost ajustată — doar {{max}} disponibile",
-    "addedToCart": "Adăugat în coș"
+    "addedToCart": "Adăugat în coș",
+    "accountLogin": "Autentifică-te",
+    "accountOptional": "ca să regăsești comanda în contul tău. Este opțional: poți comanda și fără cont."
   },
   "ageGate": {
     "title": "Ai peste 18 ani?",
@@ -291,7 +295,10 @@
   "checkout": {
     "successTitle": "Vă mulțumim pentru comandă!",
     "successMessage": "Plata a fost efectuată cu succes și comanda dumneavoastră a fost confirmată.",
-    "successEmailNote": "Veți primi în curând un e-mail de confirmare de la procesatorul nostru de plăți."
+    "successEmailNote": "Veți primi în curând un e-mail de confirmare de la procesatorul nostru de plăți.",
+    "viewInAccount": "Vezi comanda în contul tău",
+    "createAccountHint": "Vrei să îți urmărești comenzile?",
+    "createAccount": "Creează un cont cu adresa folosită la plată"
   },
   "admin": {
     "logout": {
@@ -365,7 +372,8 @@
         "phone": "Telefon",
         "missing": "Comanda nu are adresă de livrare (plasată înainte de colectarea adresei sau încă neplătită)."
       },
-      "items": "Produse"
+      "items": "Produse",
+      "anonymized": "Date personale șterse (perioada de păstrare s-a încheiat)"
     },
     "products": {
       "title": "Gestionează Produse",
@@ -741,7 +749,8 @@
       "contact": "Contact",
       "notFound": "Pagină Negăsită",
       "cart": "Coș",
-      "checkoutSuccess": "Comandă Confirmată"
+      "checkoutSuccess": "Comandă Confirmată",
+      "account": "Contul meu"
     },
     "pageDescriptions": {
       "home": "Pagina Principală",
@@ -773,7 +782,7 @@
     },
     "types": {
       "cookie": "Cookie",
-      "httpOnlyCookie": "Cookie (doar server, zona de administrare)",
+      "httpOnlyCookie": "Cookie (doar server)",
       "localStorage": "Stocare locală",
       "sessionStorage": "Stocare de sesiune"
     },
@@ -818,6 +827,14 @@
       "newsletter_popup": {
         "purpose": "Reține că ai închis invitația la newsletter (timp de 60 de zile) sau că te-ai abonat, ca să nu mai fie afișată. Fără acord, este păstrată doar până închizi fila (sessionStorage).",
         "lifetime": "60 de zile după închidere; nelimitat după abonare"
+      },
+      "__Host-customer_session": {
+        "purpose": "Te menține autentificat în contul de client. Conține doar un cod aleatoriu; serverul păstrează doar o amprentă a lui și o uită la deconectare.",
+        "lifetime": "Până la deconectare; expiră după 7 zile fără utilizare și după cel mult 30 de zile"
+      },
+      "__Host-google_flow": {
+        "purpose": "Setat doar când alegi să continui cu Google: păstrează coduri de unică folosință care leagă răspunsul Google de acest browser, ca nimeni altcineva să nu poată finaliza autentificarea.",
+        "lifetime": "10 minute, șters la întoarcerea de la Google"
       }
     },
     "thirdPartyTitle": "Plata prin Stripe",
@@ -886,17 +903,24 @@
     "activities": {
       "orders": {
         "title": "Comenzi și livrare",
-        "data": "Numele, adresa de email, numărul de telefon, adresa de livrare, produsele comandate și valoarea comenzii, precum și limba site-ului din care ai comandat. Introduci aceste date pe pagina de plată Stripe, iar noi le primim după finalizarea plății.",
+        "data": "Numele, adresa de email, numărul de telefon, adresa de livrare, produsele comandate și valoarea comenzii, precum și limba site-ului din care ai comandat. Introduci aceste date pe pagina de plată Stripe, iar noi le primim după finalizarea plății. Dacă ești autentificat, comanda este legată și de contul tău, iar Stripe primește adresa de email a contului.",
         "purpose": "Livrarea comenzii, contactarea ta în legătură cu ea, gestionarea retururilor și reclamațiilor și păstrarea evidențelor contabile cerute de lege.",
         "legalBasis": "Executarea contractului de vânzare (art. 6 alin. (1) lit. b) GDPR) și îndeplinirea obligațiilor noastre legale contabile și fiscale (art. 6 alin. (1) lit. c)).",
-        "retention": "Evidențele comenzilor sunt păstrate pe durata cerută de legislația contabilă (în prezent 5 ani de la încheierea exercițiului financiar, conform Legii contabilității nr. 82/1991), apoi sunt șterse. Comenzile neplătite nu conțin date de contact."
+        "retention": "Comenzile plătite sunt documente contabile, păstrate pe durata cerută de legislația contabilă: 5 ani de la încheierea exercițiului financiar căruia îi aparțin (Legea contabilității nr. 82/1991). La încheierea acestei perioade, în luna ianuarie următoare, numele, adresa de email, numărul de telefon, adresa de livrare și referințele plății sunt șterse automat; rămâne doar o evidență anonimă a sumelor și produselor. Comenzile neplătite sunt șterse la fel, la 90 de zile după încheiere."
       },
       "payments": {
         "title": "Plăți",
         "data": "Datele cardului sau ale altei metode de plată. Acestea sunt introduse direct pe pagina de plată Stripe și nu ajung niciodată pe serverele noastre; primim doar starea plății și un număr de referință.",
         "purpose": "Încasarea plății pentru comandă și prevenirea fraudei.",
         "legalBasis": "Executarea contractului de vânzare (art. 6 alin. (1) lit. b)). Stripe acționează ca operator independent pentru datele de plată pe care le prelucrează.",
-        "retention": "Păstrăm referința plății împreună cu comanda. Stripe păstrează datele de plată conform propriei politici de confidențialitate."
+        "retention": "Păstrăm referința plății împreună cu comanda și o ștergem odată cu datele personale ale comenzii (vezi Comenzi și livrare). Stripe păstrează datele de plată conform propriei politici de confidențialitate."
+      },
+      "accounts": {
+        "title": "Conturi de client",
+        "data": "Adresa de email, amprenta parolei (nu păstrăm niciodată parola în sine), limba site-ului, datele înregistrării și ale verificării adresei, sesiunile de autentificare (păstrate doar ca amprente ale unor coduri aleatorii) și legătura dintre cont și comenzile tale. Dacă alegi să continui cu Google, primim de la Google și adresa ta de email și identificatorul contului, pe care îl păstrăm ca să te recunoaștem; nimic altceva din contul tău Google. Comenzile plasate cu adresa verificată a contului, inclusiv cele plasate anterior fără cont, sunt legate de acesta.",
+        "purpose": "Să te poți autentifica și să îți vezi istoricul comenzilor. Contul este opțional; orice comandă poate fi plasată și fără cont.",
+        "legalBasis": "Executarea contractului încheiat prin crearea contului (art. 6 alin. (1) lit. b)).",
+        "retention": "Până ștergi contul din pagina de setări, ceea ce îl șterge imediat; comenzile lui sunt apoi păstrate doar așa cum este descris la Comenzi și livrare, fără legătură cu vreun cont. Înregistrările pentru care nu se alege o parolă sunt șterse după 24 de ore; sesiunile expiră după 7 zile fără utilizare și după cel mult 30 de zile. Poți descărca toate datele contului din pagina de setări."
       },
       "newsletter": {
         "title": "Newsletter",
@@ -917,7 +941,7 @@
         "data": "Adresa IP, tipul browserului (user agent), pagina solicitată, pagina de proveniență și ora cererii. Parametrii din adrese, unde linkurile trimise prin email își poartă codurile, nu sunt înregistrați.",
         "purpose": "Menținerea securității și disponibilității site-ului: limitarea numărului de cereri, detectarea abuzurilor și diagnosticarea erorilor. Nu folosim aceste jurnale pentru profilare sau marketing.",
         "legalBasis": "Interesul nostru legitim privind securitatea site-ului (art. 6 alin. (1) lit. f)).",
-        "retention": "Jurnalele sunt rotite automat și suprascrise când ating o dimensiune fixă, de regulă în câteva săptămâni. Contoarele de limitare a cererilor sunt păstrate doar în memorie și dispar în câteva minute."
+        "retention": "Jurnalele sunt rotite automat și suprascrise când ating o dimensiune fixă, de regulă în câteva săptămâni. Contoarele de limitare a cererilor, inclusiv cele care încetinesc ghicirea parolei unui cont, sunt păstrate doar în memorie, nu conțin niciodată adresa ta de email și dispar în câteva minute. Încercările de autentificare sunt numărate doar ca totaluri anonime."
       }
     },
     "cookiesText": "Stocăm și câteva cookie-uri și date în browser, cum ar fi coșul de cumpărături și confirmarea că ai peste 18 ani. Acestea sunt descrise în detaliu în",
@@ -927,8 +951,9 @@
     "recipients": {
       "hosting": "Furnizorul nostru de găzduire, care operează serverele acestui site în Uniunea Europeană și prelucrează datele de mai sus în numele nostru.",
       "stripe": "Stripe Payments Europe Ltd. (Irlanda), care procesează plățile.",
-      "brevo": "Sendinblue SAS, sub numele Brevo (Franța), care livrează în numele nostru newsletterul și emailurile de confirmare.",
+      "brevo": "Sendinblue SAS, sub numele Brevo (Franța), care livrează în numele nostru newsletterul, emailurile de confirmare și pe cele legate de cont.",
       "google": "Google (Gmail), care găzduiește căsuța în care primim emailurile tale.",
+      "googleSignIn": "Google Ireland Ltd., doar dacă alegi să continui cu Google: Google ne confirmă identitatea ta și, ca operator separat, află că te-ai autentificat pe site-ul nostru.",
       "whatsapp": "WhatsApp Ireland Ltd. (Meta), atunci când alegi să ne scrii pe WhatsApp.",
       "courier": "Firma de curierat care îți livrează comanda și care primește numele, numărul de telefon și adresa de livrare.",
       "authorities": "Autoritățile publice, cum ar fi ANAF, atunci când legea ne obligă."
@@ -948,11 +973,11 @@
       "objection": "să te opui prelucrării bazate pe interesul nostru legitim (opoziție);",
       "withdrawConsent": "să îți retragi oricând consimțământul, de exemplu prin dezabonarea de la newsletter. Retragerea nu afectează prelucrarea efectuată înainte de aceasta."
     },
-    "rightsHowTo": "Pentru a-ți exercita oricare dintre aceste drepturi, scrie-ne la",
+    "rightsHowTo": "Dacă ai un cont, poți descărca toate datele lui sau îl poți șterge singur din setările contului. Pentru a-ți exercita oricare dintre aceste drepturi în alt mod, scrie-ne la",
     "complaintText": "Răspundem în termen de o lună. Dacă consideri că nu am prelucrat corect datele tale, poți depune și o plângere la autoritatea de supraveghere din România, Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP),",
     "complaintLink": "dataprotection.ro",
     "securityTitle": "Cum îți protejăm datele",
-    "securityText": "Site-ul este servit doar prin conexiuni criptate (HTTPS). Datele de plată nu ajung niciodată pe serverele noastre. Accesul la datele comenzilor este limitat la administratorii magazinului. Codurile de confirmare pentru newsletter sunt stocate doar ca amprente criptografice ireversibile, iar baza de date nu este accesibilă de pe internet.",
+    "securityText": "Site-ul este servit doar prin conexiuni criptate (HTTPS), iar datele de plată nu ajung niciodată pe serverele noastre. Parolele sunt stocate doar ca amprente Argon2id cu sare; sesiunile de autentificare și codurile din emailurile noastre sunt stocate doar ca amprente ireversibile, astfel încât o copie a bazei noastre de date nu poate fi folosită pentru a intra în contul cuiva. Modificările importante ale contului cer din nou parola (sau o nouă autentificare cu Google). Accesul la datele comenzilor este limitat la administratorii magazinului, baza de date nu este accesibilă de pe internet, iar datele personale din comenzile vechi sunt șterse automat când nu mai trebuie păstrate.",
     "automatedTitle": "Decizii automatizate",
     "automatedText": "Nu luăm decizii privind persoana ta bazate exclusiv pe prelucrare automată și nu îți creăm un profil.",
     "minorsTitle": "Minori",
@@ -962,5 +987,137 @@
   },
   "legal": {
     "lastUpdated": "Ultima actualizare: {{date}}"
+  },
+  "account": {
+    "nav": {
+      "label": "Cont",
+      "orders": "Comenzi",
+      "settings": "Setări",
+      "logout": "Deconectare"
+    },
+    "fields": {
+      "email": "Adresa de email",
+      "password": "Parola",
+      "currentPassword": "Parola actuală",
+      "newPassword": "Parola nouă",
+      "confirmPassword": "Repetă parola nouă",
+      "newEmail": "Adresa de email nouă",
+      "passwordHelp": "Cel puțin {{min}} caractere. Câteva cuvinte fără legătură între ele fac o parolă puternică și ușor de ținut minte."
+    },
+    "login": {
+      "title": "Autentificare",
+      "submit": "Autentifică-te",
+      "forgot": "Ți-ai uitat parola?",
+      "register": "Creează un cont",
+      "back": "Înapoi la autentificare"
+    },
+    "register": {
+      "title": "Creează un cont",
+      "intro": "Introdu adresa de email și îți trimitem un link pentru a alege o parolă. Comenzile plasate anterior cu aceeași adresă vor apărea în cont.",
+      "submit": "Trimite linkul",
+      "sent": "Verifică-ți căsuța de email: dacă adresa poate fi folosită pentru un cont nou, ți-am trimis un link pentru alegerea parolei. Este valabil 24 de ore.",
+      "privacy": "Contul este opțional; poți comanda oricând fără cont. Cum folosim datele tale:"
+    },
+    "forgotPassword": {
+      "title": "Resetează parola",
+      "intro": "Introdu adresa de email a contului și îți trimitem un link pentru a alege o parolă nouă.",
+      "submit": "Trimite linkul",
+      "sent": "Dacă există un cont cu această adresă, i-am trimis un link pentru alegerea unei parole noi. Este valabil o oră."
+    },
+    "setPassword": {
+      "title": "Alege o parolă",
+      "intro": "Alege parola contului tău. Toate dispozitivele autentificate vor fi deconectate.",
+      "submit": "Salvează parola",
+      "newLink": "Cere un link nou"
+    },
+    "emailConfirm": {
+      "title": "Confirmă noua adresă de email",
+      "prompt": "Apasă mai jos pentru a muta contul pe această adresă.",
+      "submit": "Confirmă adresa",
+      "done": "Contul tău folosește acum această adresă de email. Celelalte dispozitive au fost deconectate."
+    },
+    "orders": {
+      "title": "Comenzile mele",
+      "empty": "Nicio comandă încă. Comenzile plasate când ești autentificat sau cu adresa de email a contului vor apărea aici.",
+      "error": "Nu am putut încărca comenzile."
+    },
+    "order": {
+      "title": "Detaliile comenzii",
+      "placed": "Plasată pe",
+      "number": "Numărul comenzii",
+      "notFound": "Nu am găsit această comandă în contul tău.",
+      "back": "Înapoi la comenzile mele"
+    },
+    "settings": {
+      "title": "Setările contului",
+      "email": {
+        "title": "Adresa de email",
+        "description": "Contul tău folosește {{email}}. Îți trimitem un link de confirmare pe adresa nouă; nimic nu se schimbă până nu îl deschizi.",
+        "submit": "Schimbă adresa",
+        "sent": "Verifică noua adresă pentru linkul de confirmare. Este valabil 24 de ore."
+      },
+      "password": {
+        "title": "Parola",
+        "description": "Schimbarea parolei deconectează toate celelalte dispozitive.",
+        "submit": "Schimbă parola",
+        "done": "Parola a fost schimbată.",
+        "none": "Contul tău nu are parolă; te autentifici cu Google. Setează una ca să te poți autentifica și cu adresa de email.",
+        "sendLink": "Trimite-mi un link pentru setarea parolei",
+        "linkSent": "Verifică-ți căsuța de email pentru link. Este valabil o oră."
+      },
+      "sessions": {
+        "title": "Dispozitive",
+        "description": "Deconectează-te de pe toate dispozitivele, inclusiv acesta.",
+        "submit": "Deconectează-te peste tot"
+      },
+      "export": {
+        "title": "Descarcă datele tale",
+        "description": "Un fișier JSON cu tot ce păstrăm despre contul tău: profilul, comenzile și abonarea la newsletter.",
+        "submit": "Descarcă"
+      },
+      "delete": {
+        "title": "Șterge contul",
+        "description": "Îți șterge contul și te deconectează. Comenzile plasate rămân în evidențele noastre contabile pe durata impusă de lege, fără legătură cu vreun cont.",
+        "confirm": "Înțeleg că acțiunea nu poate fi anulată.",
+        "submit": "Șterge contul"
+      }
+    },
+    "errors": {
+      "invalidEmail": "Introdu o adresă de email validă.",
+      "invalidCredentials": "Email sau parolă greșită.",
+      "invalidLink": "Linkul este invalid sau a expirat.",
+      "emailTaken": "Această adresă aparține deja altui cont.",
+      "tooManyRequests": "Prea multe încercări. Așteaptă câteva minute și încearcă din nou.",
+      "generic": "Ceva nu a mers. Încearcă din nou mai târziu.",
+      "passwordMismatch": "Parolele nu coincid.",
+      "password": {
+        "too-short": "Parola este prea scurtă.",
+        "too-long": "Parola este prea lungă (cel mult 128 de caractere).",
+        "common": "Parola este prea des folosită. Alege alta.",
+        "contains-email": "Parola nu poate conține adresa ta de email."
+      },
+      "reauthRequired": "Confirmă mai întâi cu Google."
+    },
+    "google": {
+      "continue": "Continuă cu Google",
+      "or": "sau",
+      "title": "Autentificare cu Google",
+      "connectDescription": "Autentifică-te cu contul Google în loc de parolă. Primim doar adresa de email și identificatorul contului Google.",
+      "connect": "Conectează Google",
+      "connected": "Te poți autentifica cu Google. Dacă îl deconectezi, te vei autentifica cu parola.",
+      "connectedOnly": "Te autentifici cu Google. Pentru a-l deconecta, setează mai întâi o parolă mai sus.",
+      "disconnect": "Deconectează Google",
+      "disconnected": "Autentificarea cu Google a fost deconectată.",
+      "reauth": "Confirmă cu Google",
+      "reauthPrompt": "Contul tău nu are parolă, așa că confirmă că ești tu autentificându-te din nou cu Google. Confirmarea este valabilă 10 minute.",
+      "notices": {
+        "linked": "Autentificarea cu Google este conectată la contul tău.",
+        "reauthenticated": "Confirmat. Poți face modificări în următoarele 10 minute.",
+        "account-exists": "Există deja un cont cu această adresă Google. Autentifică-te cu parola lui, apoi conectează Google din setările contului.",
+        "linked-elsewhere": "Acest cont Google este conectat la alt cont.",
+        "session-ended": "Sesiunea ta s-a încheiat. Autentifică-te din nou.",
+        "failed": "Autentificarea cu Google nu a reușit. Încearcă din nou."
+      }
+    }
   }
 }

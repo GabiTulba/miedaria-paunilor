@@ -17,3 +17,7 @@ export function toNumber(value: number | string): number {
 export function toFixed(value: number | string, decimals: number = 2): string {
   return toNumber(value).toFixed(decimals);
 }
+
+export function formatAmount(cents: number, currency: string): string {
+    return `${(cents / 100).toFixed(2)} ${currency}`;
+}

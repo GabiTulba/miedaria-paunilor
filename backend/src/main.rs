@@ -5,9 +5,10 @@ use dotenvy::dotenv;
 
 use backend::routes;
 use backend::{
-    AppState, auth, build_admin_limiter, build_checkout_limiter, build_image_serve_limiter,
-    build_login_limiter, build_newsletter_limiter, build_public_api_limiter, db, exchange_rate,
-    generate_client_key_secret, mailer, metrics, newsletter, stripe_checkout,
+    AppState, account, auth, build_account_limiter, build_admin_limiter, build_checkout_limiter,
+    build_customer_password_limiter, build_image_serve_limiter, build_login_limiter,
+    build_newsletter_limiter, build_public_api_limiter, db, exchange_rate, google, mailer, metrics,
+    newsletter, retention, stripe_checkout, tokens,
 };
 
 struct Config {
@@ -21,6 +22,7 @@ struct Config {
     stripe_secret_key: String,
     stripe_webhook_secret: String,
     smtp: mailer::SmtpConfig,
+    google: Option<google::GoogleConfig>,
 }
 
 /// Read `name` from the env, recording it in `missing` (and returning an
@@ -140,7 +142,22 @@ impl Config {
             stripe_secret_key,
             stripe_webhook_secret,
             smtp,
+            google: google_config()?,
         })
+    }
+}
+
+/// Google sign-in is optional: both variables set enables it, neither
+/// disables it, and only one is a configuration error.
+fn google_config() -> Result<Option<google::GoogleConfig>, String> {
+    let read = |name| env::var(name).ok().filter(|v| !v.trim().is_empty());
+    match (read("GOOGLE_CLIENT_ID"), read("GOOGLE_CLIENT_SECRET")) {
+        (Some(client_id), Some(client_secret)) => Ok(Some(google::GoogleConfig {
+            client_id,
+            client_secret,
+        })),
+        (None, None) => Ok(None),
+        _ => Err("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set together".to_string()),
     }
 }
 
@@ -170,6 +187,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use axum::http::{HeaderValue, Method, header};
     use tower_http::cors::CorsLayer;
 
+    let google = match config.google {
+        Some(google_config) => Some(Arc::new(
+            google::GoogleClient::new(google_config, &config.allowed_origin)
+                .unwrap_or_else(|e| panic!("{e}")),
+        )),
+        None => {
+            tracing::info!("GOOGLE_CLIENT_ID not set; Google sign-in disabled");
+            None
+        }
+    };
     let mailer = mailer::Mailer::new(config.smtp).unwrap_or_else(|e| {
         tracing::error!("{}", e);
         std::process::exit(1);
@@ -188,7 +215,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         public_api_limiter: build_public_api_limiter(),
         checkout_limiter: build_checkout_limiter(),
         newsletter_limiter: build_newsletter_limiter(),
-        client_key_secret: generate_client_key_secret(),
+        account_limiter: build_account_limiter(),
+        customer_login_limiter: build_login_limiter(),
+        customer_password_limiter: build_customer_password_limiter(),
+        client_key_secret: tokens::random_key(),
         site_url: config.allowed_origin,
         unsubscribe_key: newsletter::derive_unsubscribe_key(&config.jwt_secret),
         jwt_secret: config.jwt_secret,
@@ -197,6 +227,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         stripe_client: stripe::Client::new(config.stripe_secret_key),
         stripe_webhook_secret: config.stripe_webhook_secret,
         mailer,
+        google,
         eur_rate: std::sync::RwLock::new(None),
     });
 
@@ -217,6 +248,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         app_state.clone(),
     ));
     tokio::spawn(newsletter::run_cleanup_task(app_state.clone()));
+    tokio::spawn(account::run_cleanup_task(app_state.clone()));
+    tokio::spawn(retention::run_retention_task(app_state.clone()));
 
     let allowed_origin = app_state
         .site_url
@@ -261,6 +294,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(routes::blog::public_router())
         .merge(routes::lot::public_router())
         .merge(routes::newsletter::public_router())
+        .merge(routes::account::router(app_state.clone()))
         .route_layer(axum::middleware::from_fn_with_state(
             app_state.clone(),
             auth::public_api_rate_limit,

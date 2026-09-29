@@ -3,13 +3,10 @@
 
 use std::sync::Arc;
 
-use argon2::password_hash::rand_core::{OsRng, RngCore};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
-use hmac::{Hmac, Mac};
 use lettre::Address;
 use serde::Serialize;
-use sha2::{Digest, Sha256};
 use ts_rs::TS;
 use uuid::Uuid;
 
@@ -17,17 +14,17 @@ use crate::AppState;
 use crate::db;
 use crate::error::RepositoryError;
 use crate::language::Language;
-use crate::mailer::{Email, escape_html};
+use crate::mailer::{Action, Email, escape_html, html_layout};
 use crate::metrics::{self, Task};
 use crate::models::BlogPost;
 use crate::schema::{blog_posts, newsletter_subscribers};
+use crate::tokens::{self, hash_token, random_token};
 
 const CONFIRMATION_TTL: chrono::Duration = chrono::Duration::hours(48);
 /// Minimum gap between two confirmation emails to the same address, so the
 /// sign-up form cannot be used to flood someone's inbox.
 const CONFIRMATION_RESEND_COOLDOWN: chrono::Duration = chrono::Duration::minutes(10);
 const CLEANUP_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60 * 60);
-const MAX_EMAIL_LEN: usize = 254;
 
 #[derive(Debug, Serialize, TS)]
 #[ts(export)]
@@ -42,25 +39,6 @@ pub struct Subscriber {
     pub id: Uuid,
     pub email: String,
     pub language: Language,
-}
-
-/// Trimmed, lowercased address if it is a syntactically valid mailbox.
-pub fn normalize_email(raw: &str) -> Option<Address> {
-    let email = raw.trim().to_lowercase();
-    if email.len() > MAX_EMAIL_LEN {
-        return None;
-    }
-    email.parse::<Address>().ok()
-}
-
-fn random_token() -> String {
-    let mut bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut bytes);
-    hex::encode(bytes)
-}
-
-fn hash_token(token: &str) -> String {
-    hex::encode(Sha256::digest(token.as_bytes()))
 }
 
 /// Registers a sign-up and returns the confirmation token to email, or
@@ -144,6 +122,36 @@ pub fn stats(conn: &mut PgConnection) -> QueryResult<NewsletterStats> {
     Ok(NewsletterStats { confirmed, pending })
 }
 
+/// A subscription as included in a customer's data export.
+#[derive(Serialize)]
+pub struct SubscriptionExport {
+    pub language: String,
+    pub subscribed_at: DateTime<Utc>,
+    pub confirmed_at: Option<DateTime<Utc>>,
+}
+
+pub fn export_subscription(
+    conn: &mut PgConnection,
+    email: &str,
+) -> QueryResult<Option<SubscriptionExport>> {
+    use newsletter_subscribers::dsl;
+
+    newsletter_subscribers::table
+        .filter(dsl::email.eq(email))
+        .select((dsl::language, dsl::created_at, dsl::confirmed_at))
+        .first::<(String, DateTime<Utc>, Option<DateTime<Utc>>)>(conn)
+        .optional()
+        .map(|row| {
+            row.map(
+                |(language, subscribed_at, confirmed_at)| SubscriptionExport {
+                    language,
+                    subscribed_at,
+                    confirmed_at,
+                },
+            )
+        })
+}
+
 pub fn confirmed_subscribers(conn: &mut PgConnection) -> QueryResult<Vec<Subscriber>> {
     use newsletter_subscribers::dsl;
 
@@ -223,69 +231,22 @@ pub async fn run_cleanup_task(app_state: Arc<AppState>) {
     }
 }
 
-/// Key for unsubscribe tokens, derived from `JWT_SECRET` under its own label
-/// so an unsubscribe token can never double as a JWT signature.
-pub fn derive_unsubscribe_key(secret: &str) -> [u8; 32] {
-    let mut mac =
-        Hmac::<Sha256>::new_from_slice(secret.as_bytes()).expect("HMAC accepts any key length");
-    mac.update(b"newsletter-unsubscribe-v1");
-    mac.finalize().into_bytes().into()
-}
+const UNSUBSCRIBE_KEY_LABEL: &[u8] = b"newsletter-unsubscribe-v1";
 
-fn unsubscribe_mac(key: &[u8; 32], id: Uuid) -> Hmac<Sha256> {
-    let mut mac = Hmac::<Sha256>::new_from_slice(key).expect("HMAC accepts any key length");
-    mac.update(id.as_bytes());
-    mac
+/// Key for unsubscribe tokens, derived from `JWT_SECRET`.
+pub fn derive_unsubscribe_key(secret: &str) -> [u8; 32] {
+    tokens::derive_key(secret, UNSUBSCRIBE_KEY_LABEL)
 }
 
 /// Unsubscribe links carry an HMAC of the subscriber id instead of a stored
 /// secret, so every email can include a working link without keeping any
 /// token at rest.
 pub fn unsubscribe_token(key: &[u8; 32], id: Uuid) -> String {
-    hex::encode(unsubscribe_mac(key, id).finalize().into_bytes())
+    tokens::mac_hex(key, id.as_bytes())
 }
 
-/// Constant-time check of an unsubscribe token.
 pub fn verify_unsubscribe_token(key: &[u8; 32], id: Uuid, token: &str) -> bool {
-    hex::decode(token)
-        .map(|bytes| unsubscribe_mac(key, id).verify_slice(&bytes).is_ok())
-        .unwrap_or(false)
-}
-
-/// A styled call-to-action link, rendered as a button in HTML mail.
-struct Action<'a> {
-    label: &'a str,
-    url: &'a str,
-}
-
-/// Wraps pre-escaped HTML paragraphs in the shared email layout.
-fn html_layout(
-    lang: Language,
-    heading: &str,
-    paragraphs: &[String],
-    action: &Action,
-    footer: &str,
-) -> String {
-    let body: String = paragraphs
-        .iter()
-        .map(|p| format!(r#"<p style="margin:0 0 16px;line-height:1.5">{p}</p>"#))
-        .collect();
-    format!(
-        r#"<!doctype html>
-<html lang="{lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
-<body style="margin:0;padding:24px 16px;background:#f5f1e8;font-family:Georgia,serif;color:#2b2b2b">
-<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px 24px">
-<p style="margin:0 0 24px;font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:#8a6d1d">Miedăria Păunilor</p>
-<h1 style="margin:0 0 16px;font-size:24px;line-height:1.3">{heading}</h1>
-{body}
-<p style="margin:24px 0"><a href="{url}" style="display:inline-block;padding:12px 24px;background:#1f3a5f;color:#ffffff;text-decoration:none;border-radius:4px">{label}</a></p>
-<p style="margin:32px 0 0;font-size:13px;line-height:1.5;color:#6b6b6b">{footer}</p>
-</div></body></html>"#,
-        lang = lang.code(),
-        heading = escape_html(heading),
-        url = escape_html(action.url),
-        label = escape_html(action.label),
-    )
+    tokens::verify_mac_hex(key, id.as_bytes(), token)
 }
 
 pub fn confirmation_email(site_url: &str, lang: Language, to: Address, token: &str) -> Email {
@@ -319,10 +280,10 @@ pub fn confirmation_email(site_url: &str, lang: Language, to: Address, token: &s
             lang,
             heading,
             &[escape_html(intro), escape_html(validity)],
-            &Action {
+            Some(&Action {
                 label: button,
                 url: &url,
-            },
+            }),
             &escape_html(ignore),
         ),
         list_unsubscribe: None,
@@ -371,10 +332,10 @@ pub fn blog_post_email(
             lang,
             title,
             &[escape_html(kicker), escape_html(excerpt)],
-            &Action {
+            Some(&Action {
                 label: button,
                 url: &post_url,
-            },
+            }),
             &format!(
                 r#"{} <a href="{}" style="color:#6b6b6b">{}</a>"#,
                 escape_html(reason),
@@ -391,17 +352,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn normalizes_and_rejects_emails() {
-        assert_eq!(
-            normalize_email("  Ana.Pop@Example.RO ").map(|a| a.to_string()),
-            Some("ana.pop@example.ro".to_string())
-        );
-        assert!(normalize_email("not-an-email").is_none());
-        assert!(normalize_email("a@b\r\nBcc: x@y.z").is_none());
-        assert!(normalize_email(&format!("{}@example.ro", "a".repeat(250))).is_none());
-    }
-
-    #[test]
     fn unsubscribe_tokens_are_bound_to_id_and_key() {
         let key = derive_unsubscribe_key("secret");
         let id = Uuid::new_v4();
@@ -414,13 +364,5 @@ mod tests {
             &token
         ));
         assert!(!verify_unsubscribe_token(&key, id, "zz"));
-    }
-
-    #[test]
-    fn token_hash_is_stable_hex() {
-        let token = random_token();
-        assert_eq!(token.len(), 64);
-        assert_eq!(hash_token(&token), hash_token(&token));
-        assert_eq!(hash_token(&token).len(), 64);
     }
 }

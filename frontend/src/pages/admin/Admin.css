@@ -621,14 +621,6 @@
     object-fit: cover;
 }
 
-.status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: var(--radius-pill);
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
 .status-success {
     background-color: var(--badge-success-bg);
     color: var(--badge-success-text);
@@ -875,15 +867,6 @@
     font-weight: 500;
 }
 
-.status-badge {
-    display: inline-block;
-    padding: 0.375rem 0.875rem;
-    border-radius: var(--radius-pill);
-    font-size: 0.85rem;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
 .status-success {
     background-color: var(--badge-success-bg);
     color: var(--badge-success-text);
@@ -895,21 +878,6 @@
 }
 
 .status-error {
-    background-color: var(--badge-error-bg);
-    color: var(--badge-error-text);
-}
-
-.status-active {
-    background-color: var(--badge-success-bg);
-    color: var(--badge-success-text);
-}
-
-.status-draft {
-    background-color: var(--badge-warning-bg);
-    color: var(--badge-warning-text);
-}
-
-.status-inactive {
     background-color: var(--badge-error-bg);
     color: var(--badge-error-text);
 }
@@ -929,11 +897,6 @@
 .order-detail-section h4 {
     margin: 0 0 0.25rem;
     font-size: 0.9rem;
-}
-
-.order-shipping-address {
-    font-style: normal;
-    line-height: 1.5;
 }
 
 .order-shipping-missing {
@@ -1004,17 +967,6 @@
     background-color: var(--primary-color-blue);
     border-color: var(--primary-color-blue);
     color: var(--button-secondary-text);
-}
-
-.button-danger {
-    background-color: var(--color-danger);
-    color: white;
-    border: 1px solid var(--color-danger);
-}
-
-.button-danger:hover {
-    background-color: var(--danger-hover);
-    border-color: var(--danger-hover);
 }
 
 /* Touch-target minimums for admin inputs and buttons (a11y floor; applies

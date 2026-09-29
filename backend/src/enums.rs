@@ -19,6 +19,17 @@ pub enum OrderStatus {
     Failed,
 }
 
+/// What an emailed customer token authorises.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, DbEnum)]
+#[ExistingTypePath = "crate::schema::sql_types::CustomerTokenPurposeEnum"]
+#[DbValueStyle = "kebab-case"]
+pub enum CustomerTokenPurpose {
+    /// Choosing a password: finishing registration or resetting it.
+    SetPassword,
+    /// Moving the account to the address in `customer_tokens.new_email`.
+    ChangeEmail,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
 #[serde(rename_all = "kebab-case")]
 #[ts(export)]

@@ -59,6 +59,25 @@ Tokens are random 256-bit values sent by URL; only their hashes are stored (same
 
 ## 5. User accounts
 
+> **Parts (a) and (b) plus the GDPR endpoints DONE 2026-09-30.** Implemented with these changes to the design below:
+> - **Email-first registration.** Registering takes only an email address, and the password is chosen from the emailed link. This closes a hole in "register with a password, then verify": someone could register another person's address with their own password, and if the owner clicked the unsolicited verification link, that person's guest orders would be linked to an account the stranger controls. The same set-password page serves password resets.
+> - **Database sessions instead of customer JWTs.** A random token in a `__Host-customer_session` cookie (HttpOnly, Secure, SameSite=Strict), stored as a hash, ending after 7 days idle or 30 days in all. Logging out, password changes, email changes and deletion revoke sessions immediately.
+> - **Tokens in their own table.** Emailed tokens live in `customer_tokens` (one per customer and purpose) instead of columns on `customers`. The old `users` table is dropped.
+> - **Re-authentication.** Email change, password change, data export and deletion all ask for the current password again.
+> - **Credential-stuffing defences.** Password checks are limited per network and per account and counted in `account_logins_total`. A Grafana alert fires above 100 failures an hour.
+> - **Guest-order linking.** Guest orders are linked when an address is verified, and later guest checkouts are linked when their Stripe email matches a verified account.
+>
+> **Deferred to #7 (Sameday):** saved addresses (`customer_addresses`), since Stripe still collects the delivery address and saved addresses would have nothing to fill.
+>
+> **Google sign-in added 2026-10-01.**
+> - Server-side OpenID Connect with PKCE; no Google script on the site.
+> - Identities are keyed by Google's `sub`, never by email.
+> - An address that already has an account is only connected to Google by its owner, from Settings.
+> - Google verifies the address and links guest orders only for Gmail and matching Workspace domains.
+> - Accounts without a password confirm sensitive actions by signing in with Google again.
+>
+> **Still outstanding outside the code:** legal review of the new privacy-policy sections (accounts, Google as sign-in provider).
+
 **Goal:** Customers can create accounts to track orders, see order history, and securely save delivery details.
 
 ### Design
@@ -126,6 +145,17 @@ The old empty `users` table gets dropped or replaced by `customers`.
 **Security checklist:** verification/reset tokens hashed at rest + single-use + short expiry; uniform responses on register/reset to avoid account enumeration; login rate limiting; cookie or storage handling consistent with the consent framework; customer JWTs signed with the same `JWT_SECRET` but distinct claims and shorter expiry.
 
 **Effort:** Large — the biggest feature here. Depends on feature 4's mailer. Sensible split: (a) auth + account pages, (b) order linkage + history, (c) addresses + GDPR endpoints.
+
+---
+
+## 9. Order data retention
+
+> **DONE 2026-10-02.** A daily task (`retention.rs`) erases the personal data of paid orders once 5 years have passed since the end of their financial year. Expired and failed orders are erased 90 days after they ended. The anonymous amounts and products stay for the accounting records and the metrics.
+>
+> **Still outstanding outside the code:**
+> - Encrypt the production server's disk.
+> - Set up encrypted, time-limited database backups. Erased data survives in older backups until they expire, so backup retention must be shorter than the time needed to answer an erasure request.
+> - Include the updated privacy-policy wording in the legal review.
 
 ---
 

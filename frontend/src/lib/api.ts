@@ -17,6 +17,10 @@ import type { OrderWithItems } from '../types/generated/OrderWithItems';
 import type { NewsletterStats } from '../types/generated/NewsletterStats';
 import type { NotifySubscribersResponse } from '../types/generated/NotifySubscribersResponse';
 import type { StockLevel } from '../types/generated/StockLevel';
+import type { AccountProfile } from '../types/generated/AccountProfile';
+import type { SignInProviders } from '../types/generated/SignInProviders';
+import type { AccountOrder } from '../types/generated/AccountOrder';
+import type { AccountOrderWithItems } from '../types/generated/AccountOrderWithItems';
 import i18n from '../i18n/config';
 
 // Mirror of `VARIANT_WIDTHS` in backend/src/image_crud.rs.
@@ -105,6 +109,14 @@ export type GetProductsParams = GetProductsQuery;
 export type GetAdminProductsParams = GetAdminProductsQuery;
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
+
+function postJson(endpoint: string, body: unknown) {
+    return request(endpoint, { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) });
+}
+
+function deleteJson(endpoint: string, body: unknown) {
+    return request(endpoint, { method: 'DELETE', headers: JSON_HEADERS, body: JSON.stringify(body) });
+}
 
 // Every id/slug interpolated into a path below goes through encodeURIComponent:
 // route params come from the address bar, and an unencoded `../` would let a
@@ -326,4 +338,42 @@ export const api = {
     getNewsletterStats: (signal?: AbortSignal): Promise<NewsletterStats> => {
         return request('/admin/newsletter/stats', { signal });
     },
+
+    // Customer accounts. The session lives in an httpOnly same-origin cookie,
+    // sent by default (credentials: 'same-origin').
+    accountMe: (signal?: AbortSignal): Promise<AccountProfile | null> => request('/account/me', { signal }),
+    accountRegister: (email: string): Promise<null> => postJson('/account/register', { email }),
+    accountRequestPasswordReset: (email: string): Promise<null> => postJson('/account/password-reset', { email }),
+    accountSetPassword: (token: string, password: string): Promise<AccountProfile> =>
+        postJson('/account/set-password', { token, password }),
+    accountLogin: (email: string, password: string): Promise<AccountProfile> =>
+        postJson('/account/login', { email, password }),
+    accountLogout: (): Promise<null> => request('/account/logout', { method: 'POST' }),
+    accountLogoutEverywhere: (): Promise<null> => request('/account/logout-all', { method: 'POST' }),
+    accountChangeEmail: (newEmail: string, currentPassword?: string): Promise<null> =>
+        postJson('/account/email', { new_email: newEmail, current_password: currentPassword }),
+    accountConfirmEmailChange: (token: string): Promise<null> => postJson('/account/email/confirm', { token }),
+    accountChangePassword: (currentPassword: string, newPassword: string): Promise<null> =>
+        postJson('/account/password', { current_password: currentPassword, new_password: newPassword }),
+    getAccountOrders: (page?: number, signal?: AbortSignal): Promise<PaginatedResponse<AccountOrder>> =>
+        request(`/account/orders${buildQuery({ page })}`, { signal }),
+    getAccountOrder: (id: string, signal?: AbortSignal): Promise<AccountOrderWithItems> =>
+        request(`/account/orders/${encodeURIComponent(id)}`, { signal }),
+    // `currentPassword` is omitted by accounts without a password, which
+    // confirm by signing in with Google again (see googleSignInUrl).
+    accountExport: (currentPassword?: string): Promise<unknown> =>
+        postJson('/account/export', { current_password: currentPassword }),
+    deleteAccount: (currentPassword?: string): Promise<null> =>
+        deleteJson('/account', { current_password: currentPassword }),
+    getSignInProviders: (signal?: AbortSignal): Promise<SignInProviders> => request('/account/providers', { signal }),
+    unlinkGoogle: (currentPassword: string): Promise<null> =>
+        deleteJson('/account/google', { current_password: currentPassword }),
 };
+
+export type GoogleIntent = 'sign-in' | 'link' | 'reauth';
+
+/// Page navigation (not fetch) that starts a Google sign-in; the backend
+/// redirects to Google and back to `next` on this site.
+export function googleSignInUrl(intent: GoogleIntent, lang: string, next: string): string {
+    return `${getApiBaseUrl() ?? ''}/account/google/start${buildQuery({ intent, lang, next })}`;
+}

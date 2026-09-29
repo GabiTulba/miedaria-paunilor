@@ -15,6 +15,7 @@ use crate::AppState;
 use crate::auth;
 use crate::db;
 use crate::language::Language;
+use crate::mailer;
 use crate::newsletter::{self, NewsletterStats};
 
 #[derive(Deserialize, TS)]
@@ -62,7 +63,7 @@ async fn subscribe(
         .check_key(&auth::client_network(auth::extract_client_ip(&headers)))
         .map_err(|_| AppError::TooManyRequests)?;
 
-    let email = newsletter::normalize_email(&request.email)
+    let email = mailer::normalize_email(&request.email)
         .ok_or_else(|| AppError::BadRequest("Invalid email address".to_string()))?;
     let mut conn = db::get_db_connection(&app_state)?;
     if let Some(token) = newsletter::subscribe(&mut conn, &email, lang)? {

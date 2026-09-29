@@ -8,17 +8,19 @@ use axum::{
     http::{HeaderMap, StatusCode},
     routing::{get, post},
 };
+use axum_extra::extract::cookie::CookieJar;
 use uuid::Uuid;
 
 use crate::AppError;
 use crate::AppState;
+use crate::account;
 use crate::auth;
 use crate::db;
 use crate::enums::OrderStatus;
 use crate::language::Language;
 use crate::models::{
-    CancelCheckoutRequest, CheckoutSessionRequest, CheckoutSessionResponse, CheckoutStatus, Order, OrderWithItems,
-    PaginatedResponse,
+    CancelCheckoutRequest, CheckoutSessionRequest, CheckoutSessionResponse, CheckoutStatus, Order,
+    OrderWithItems, PaginatedResponse,
 };
 use crate::order_crud;
 use crate::pagination::{self, PageQuery};
@@ -32,6 +34,7 @@ const STRIPE_SESSION_EXPIRY_SECS: i64 = 30 * 60;
 async fn create_checkout_session(
     State(app_state): State<Arc<AppState>>,
     headers: HeaderMap,
+    jar: CookieJar,
     lang: Language,
     Json(request): Json<CheckoutSessionRequest>,
 ) -> Result<Json<CheckoutSessionResponse>, AppError> {
@@ -41,6 +44,9 @@ async fn create_checkout_session(
         .check_key(&auth::client_network(client_ip))
         .map_err(|_| AppError::TooManyRequests)?;
 
+    // Logging in is never required; a logged-in customer's order goes
+    // straight into their history.
+    let customer = account::current_customer(&app_state, &jar)?.map(|current| current.customer);
     let OrderWithItems { order, items } = {
         let mut conn = db::get_db_connection(&app_state)?;
         if !settings_crud::is_checkout_enabled(&mut conn)? {
@@ -53,6 +59,7 @@ async fn create_checkout_session(
             &request.items,
             lang,
             &app_state.client_key_hash(client_ip),
+            customer.as_ref().map(|c| c.id),
         )?
     };
 
@@ -99,13 +106,17 @@ async fn create_checkout_session(
     params.expires_at = Some(chrono::Utc::now().timestamp() + STRIPE_SESSION_EXPIRY_SECS);
     // Bottles are shipped, so every order needs a delivery address and a phone
     // number for the courier. Delivery is Romania-only for now.
-    params.shipping_address_collection = Some(stripe::CreateCheckoutSessionShippingAddressCollection {
-        allowed_countries: vec![
-            stripe::CreateCheckoutSessionShippingAddressCollectionAllowedCountries::Ro,
-        ],
-    });
+    params.shipping_address_collection =
+        Some(stripe::CreateCheckoutSessionShippingAddressCollection {
+            allowed_countries: vec![
+                stripe::CreateCheckoutSessionShippingAddressCollectionAllowedCountries::Ro,
+            ],
+        });
     params.phone_number_collection =
         Some(stripe::CreateCheckoutSessionPhoneNumberCollection { enabled: true });
+    // Stripe shows a given email as fixed, keeping the receipt and the
+    // account on the same address.
+    params.customer_email = customer.as_ref().map(|c| c.email.as_str());
     params.metadata = Some(HashMap::from([(
         "order_id".to_string(),
         order_id_str.clone(),
@@ -161,8 +172,7 @@ async fn cancel_checkout(
         order_crud::pending_session(&mut conn, request.order_id)?
     };
     if let Some(session_id) = session_id {
-        stripe_checkout::release_hold(&app_state, request.order_id, session_id.as_deref())
-            .await?;
+        stripe_checkout::release_hold(&app_state, request.order_id, session_id.as_deref()).await?;
     }
     Ok(StatusCode::NO_CONTENT)
 }

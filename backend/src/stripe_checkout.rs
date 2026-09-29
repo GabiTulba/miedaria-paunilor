@@ -8,6 +8,7 @@ use diesel::PgConnection;
 use uuid::Uuid;
 
 use crate::AppState;
+use crate::customer_crud;
 use crate::db;
 use crate::enums::OrderStatus;
 use crate::error::RepositoryError;
@@ -75,7 +76,8 @@ pub fn shipping_from_session(session: &stripe::CheckoutSession) -> ShippingDetai
 }
 
 /// Applies a completed session: `Paid` if the money has moved, `Processing`
-/// if a delayed payment method is still settling.
+/// if a delayed payment method is still settling. A guest order whose email
+/// belongs to a verified account joins that account's history.
 pub fn apply_completed_session(
     conn: &mut PgConnection,
     order_id: Uuid,
@@ -95,14 +97,18 @@ pub fn apply_completed_session(
         .customer_details
         .as_ref()
         .and_then(|d| d.email.as_deref());
-    order_crud::record_payment(
+    let applied = order_crud::record_payment(
         conn,
         order_id,
         payment_intent_id.as_deref(),
         customer_email,
         shipping,
         settled,
-    )
+    )?;
+    if applied {
+        customer_crud::link_order_to_verified_account(conn, order_id)?;
+    }
+    Ok(applied)
 }
 
 /// Releases the stock of checkouts left unfinished for longer than
@@ -324,7 +330,10 @@ mod tests {
 
     #[test]
     fn shipping_missing_is_empty_and_values_are_truncated() {
-        assert_eq!(shipping_from_session_json(&serde_json::json!({})), ShippingDetails::default());
+        assert_eq!(
+            shipping_from_session_json(&serde_json::json!({})),
+            ShippingDetails::default()
+        );
         let long = "x".repeat(300);
         let s = shipping_from_session_json(&serde_json::json!({
             "shipping_details": {"name": long, "address": {"country": "ROU"}}

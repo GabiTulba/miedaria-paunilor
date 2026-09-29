@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CartContext } from '../context/CartContext';
+import { useAccount } from '../context/AccountContext';
 import { rememberPendingCheckout } from '../lib/pendingCheckout';
 import { api } from '../lib/api';
 import { toFixed, toNumber } from '../utils/numberUtils';
@@ -15,6 +16,7 @@ import './Cart.css';
 const DEFAULT_CURRENCY = 'EUR';
 
 function Cart() {
+    const { account } = useAccount();
     const { cartItems, removeFromCart, updateQuantity, updateStock, updateProduct, clearCart, itemCount } = useContext(CartContext);
     const { t, i18n } = useTranslation();
     const [stockWarnings, setStockWarnings] = useState<Record<string, string>>({});
@@ -229,6 +231,12 @@ function Cart() {
                         )}
                         {checkoutError && (
                             <p className="checkout-message" role="alert">{checkoutError}</p>
+                        )}
+                        {!account && (
+                            <p className="checkout-account-hint">
+                                <LocalizedLink to="/account/login?next=/cart">{t('cart.accountLogin')}</LocalizedLink>
+                                {' '}{t('cart.accountOptional')}
+                            </p>
                         )}
                         <button className="button-secondary clear-cart-btn" onClick={clearCart}>
                             {t('cart.clearCart')}

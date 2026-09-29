@@ -10,6 +10,10 @@ pub mod sql_types {
     pub struct BodyTypeEnum;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "customer_token_purpose_enum"))]
+    pub struct CustomerTokenPurposeEnum;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "effervescence_type_enum"))]
     pub struct EffervescenceTypeEnum;
 
@@ -42,9 +46,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    use diesel::sql_types::*;
-    use super::sql_types::*;
-
     blog_posts (id) {
         id -> Uuid,
         title -> Varchar,
@@ -59,6 +60,51 @@ diesel::table! {
         updated_at -> Timestamptz,
         is_published -> Bool,
         notified_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
+    customer_identities (provider, subject) {
+        provider -> Varchar,
+        subject -> Varchar,
+        customer_id -> Uuid,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    customer_sessions (token_hash) {
+        token_hash -> Varchar,
+        customer_id -> Uuid,
+        created_at -> Timestamptz,
+        last_seen_at -> Timestamptz,
+        expires_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::CustomerTokenPurposeEnum;
+
+    customer_tokens (customer_id, purpose) {
+        customer_id -> Uuid,
+        purpose -> CustomerTokenPurposeEnum,
+        token_hash -> Varchar,
+        new_email -> Nullable<Varchar>,
+        expires_at -> Timestamptz,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    customers (id) {
+        id -> Uuid,
+        email -> Varchar,
+        hashed_password -> Nullable<Varchar>,
+        email_verified_at -> Nullable<Timestamptz>,
+        language -> Varchar,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
     }
 }
 
@@ -126,7 +172,7 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::*;
-    use super::sql_types::*;
+    use super::sql_types::OrderStatusEnum;
 
     orders (order_id) {
         order_id -> Uuid,
@@ -148,12 +194,20 @@ diesel::table! {
         shipping_state -> Nullable<Varchar>,
         shipping_postal_code -> Nullable<Varchar>,
         shipping_country -> Nullable<Varchar>,
+        customer_id -> Nullable<Uuid>,
+        anonymized_at -> Nullable<Timestamptz>,
     }
 }
 
 diesel::table! {
     use diesel::sql_types::*;
-    use super::sql_types::*;
+    use super::sql_types::MeadTypeEnum;
+    use super::sql_types::SweetnessTypeEnum;
+    use super::sql_types::TurbidityTypeEnum;
+    use super::sql_types::EffervescenceTypeEnum;
+    use super::sql_types::AcidityTypeEnum;
+    use super::sql_types::TanninsTypeEnum;
+    use super::sql_types::BodyTypeEnum;
 
     products (product_id) {
         product_id -> Varchar,
@@ -190,21 +244,22 @@ diesel::table! {
     }
 }
 
-diesel::table! {
-    users (username) {
-        username -> Varchar,
-        hashed_password -> Varchar,
-    }
-}
-
+diesel::joinable!(customer_identities -> customers (customer_id));
+diesel::joinable!(customer_sessions -> customers (customer_id));
+diesel::joinable!(customer_tokens -> customers (customer_id));
 diesel::joinable!(lots -> products (product_id));
 diesel::joinable!(order_items -> orders (order_id));
 diesel::joinable!(order_items -> products (product_id));
+diesel::joinable!(orders -> customers (customer_id));
 diesel::joinable!(products -> images (image_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     admin_users,
     blog_posts,
+    customer_identities,
+    customer_sessions,
+    customer_tokens,
+    customers,
     exchange_rates,
     images,
     lots,
@@ -213,5 +268,4 @@ diesel::allow_tables_to_appear_in_same_query!(
     orders,
     products,
     site_settings,
-    users,
 );

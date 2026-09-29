@@ -1,3 +1,5 @@
+pub mod account;
+pub mod account_google;
 pub mod blog;
 pub mod checkout;
 pub mod image;

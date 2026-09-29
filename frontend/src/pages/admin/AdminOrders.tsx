@@ -5,6 +5,8 @@ import { useFormattedDate } from '../../hooks/useFormattedDate';
 import { useFetch } from '../../hooks/useFetch';
 import { usePageParam } from '../../hooks/usePageParam';
 import Pagination from '../../components/Pagination';
+import ShippingAddress from '../../components/ShippingAddress';
+import { formatAmount } from '../../utils/numberUtils';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import { OrderStatus } from '../../types/generated/OrderStatus';
 import { OrderItem } from '../../types/generated/OrderItem';
@@ -19,10 +21,6 @@ const STATUS_BADGE_CLASS: Record<OrderStatus, string> = {
     expired: 'status-inactive',
     failed: 'status-inactive',
 };
-
-function formatAmount(cents: number, currency: string): string {
-    return `${(cents / 100).toFixed(2)} ${currency}`;
-}
 
 function AdminOrders() {
     const [page, setPage] = usePageParam();
@@ -123,7 +121,7 @@ function AdminOrders() {
                                                 {t(`admin.orders.status.${order.status}`)}
                                             </span>
                                         </td>
-                                        <td data-label={t('admin.orders.table.email')}>{order.customer_email ?? '—'}</td>
+                                        <td data-label={t('admin.orders.table.email')}>{order.anonymized_at ? t('admin.orders.anonymized') : order.customer_email ?? '—'}</td>
                                         <td data-label={t('admin.orders.table.total')}>{formatAmount(order.total_amount_cents, order.currency)}</td>
                                         <td data-label={t('admin.orders.table.actions')}>
                                             <div className="action-buttons">
@@ -157,22 +155,9 @@ function AdminOrders() {
                                                     <div className="order-detail-section">
                                                         <h4>{t('admin.orders.shipping.title')}</h4>
                                                         {order.shipping_line1 ? (
-                                                            <address className="order-shipping-address">
-                                                                {order.shipping_name && <>{order.shipping_name}<br /></>}
-                                                                {order.shipping_line1}<br />
-                                                                {order.shipping_line2 && <>{order.shipping_line2}<br /></>}
-                                                                {[order.shipping_postal_code, order.shipping_city].filter(Boolean).join(' ')}<br />
-                                                                {[order.shipping_state, order.shipping_country].filter(Boolean).join(', ')}
-                                                                {order.shipping_phone && (
-                                                                    <>
-                                                                        <br />
-                                                                        {t('admin.orders.shipping.phone')}:{' '}
-                                                                        <a href={`tel:${order.shipping_phone}`}>{order.shipping_phone}</a>
-                                                                    </>
-                                                                )}
-                                                            </address>
+                                                            <ShippingAddress order={order} />
                                                         ) : (
-                                                            <p className="order-shipping-missing">{t('admin.orders.shipping.missing')}</p>
+                                                            <p className="order-shipping-missing">{t(order.anonymized_at ? 'admin.orders.anonymized' : 'admin.orders.shipping.missing')}</p>
                                                         )}
                                                     </div>
                                                 </div>

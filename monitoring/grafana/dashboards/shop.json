@@ -794,7 +794,7 @@
     {
       "id": 15,
       "type": "row",
-      "title": "Payments and newsletter",
+      "title": "Payments, newsletter and accounts",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -922,9 +922,9 @@
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 8,
+        "x": 12,
         "y": 31,
-        "w": 16,
+        "w": 12,
         "h": 8
       },
       "targets": [
@@ -961,6 +961,51 @@
           "decimals": 0
         },
         "overrides": []
+      }
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "Customer accounts",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 31,
+        "w": 4,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "shop_customers",
+          "instant": true
+        }
+      ],
+      "description": "Accounts with a verified email address.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "–"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
       }
     }
   ],

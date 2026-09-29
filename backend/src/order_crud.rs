@@ -85,6 +85,7 @@ pub fn create_pending_order(
     items: &[CheckoutItem],
     language: Language,
     client_key_hash: &str,
+    customer_id: Option<Uuid>,
 ) -> Result<OrderWithItems, RepositoryError> {
     validate_checkout_items(items)?;
 
@@ -164,6 +165,7 @@ pub fn create_pending_order(
                 total_amount_cents: total_cents,
                 language: language.code().to_string(),
                 client_key_hash: client_key_hash.to_string(),
+                customer_id,
             })
             .returning(Order::as_returning())
             .get_result(conn)?;
@@ -377,6 +379,48 @@ pub fn stale_processing(conn: &mut PgConnection, limit: i64) -> QueryResult<Vec<
             orders::stripe_session_id,
         ))
         .load(conn)
+}
+
+/// Erases the personal data of finished orders past their retention period
+/// (see `retention`): paid orders created before `paid_before`, and expired
+/// or failed ones that ended before `unpaid_before`. Amounts, products, dates
+/// and status stay. Returns the number of orders erased.
+pub fn anonymize_expired(
+    conn: &mut PgConnection,
+    paid_before: chrono::DateTime<chrono::Utc>,
+    unpaid_before: chrono::DateTime<chrono::Utc>,
+) -> QueryResult<usize> {
+    let due = orders::status
+        .eq(OrderStatus::Paid)
+        .and(orders::created_at.lt(paid_before))
+        .or(orders::status
+            .eq_any([OrderStatus::Expired, OrderStatus::Failed])
+            .and(orders::updated_at.lt(unpaid_before)));
+    diesel::update(
+        orders::table
+            .filter(orders::anonymized_at.is_null())
+            .filter(due),
+    )
+    .set((
+        orders::anonymized_at.eq(chrono::Utc::now()),
+        orders::customer_email.eq(None::<String>),
+        orders::customer_id.eq(None::<Uuid>),
+        orders::stripe_session_id.eq(None::<String>),
+        orders::stripe_payment_intent_id.eq(None::<String>),
+        orders::client_key_hash.eq(None::<String>),
+        // Explicit NULLs: a `ShippingDetails` changeset would skip `None`.
+        (
+            orders::shipping_name.eq(None::<String>),
+            orders::shipping_phone.eq(None::<String>),
+            orders::shipping_line1.eq(None::<String>),
+            orders::shipping_line2.eq(None::<String>),
+            orders::shipping_city.eq(None::<String>),
+            orders::shipping_state.eq(None::<String>),
+            orders::shipping_postal_code.eq(None::<String>),
+            orders::shipping_country.eq(None::<String>),
+        ),
+    ))
+    .execute(conn)
 }
 
 pub fn count_orders(conn: &mut PgConnection) -> QueryResult<i64> {

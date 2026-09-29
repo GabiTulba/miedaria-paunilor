@@ -148,7 +148,9 @@
     "settings": "Settings",
     "toggleMenu": "Toggle navigation menu",
     "main": "Main navigation",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "login": "Log in",
+    "myAccount": "My account"
   },
   "home": {
     "heroTitle": "Authentic Mead. Purity Perfected.",
@@ -271,7 +273,9 @@
     "productUnavailable": "This product is no longer available",
     "outOfStock": "This product is now out of stock",
     "quantityReduced": "Quantity adjusted — only {{max}} available",
-    "addedToCart": "Added to cart"
+    "addedToCart": "Added to cart",
+    "accountLogin": "Log in",
+    "accountOptional": "to find this order in your account later. It's optional: you can also check out as a guest."
   },
   "ageGate": {
     "title": "Are you over 18?",
@@ -291,7 +295,10 @@
   "checkout": {
     "successTitle": "Thank you for your order!",
     "successMessage": "Your payment was successful and your order has been confirmed.",
-    "successEmailNote": "You will receive a confirmation email from our payment provider shortly."
+    "successEmailNote": "You will receive a confirmation email from our payment provider shortly.",
+    "viewInAccount": "See this order in your account",
+    "createAccountHint": "Want to keep track of your orders?",
+    "createAccount": "Create an account with the email you used"
   },
   "admin": {
     "logout": {
@@ -365,7 +372,8 @@
         "phone": "Phone",
         "missing": "No delivery address on this order (placed before address collection was enabled, or not yet paid)."
       },
-      "items": "Items"
+      "items": "Items",
+      "anonymized": "Personal data erased (retention period ended)"
     },
     "products": {
       "title": "Manage Products",
@@ -742,7 +750,8 @@
       "contact": "Contact",
       "notFound": "Page Not Found",
       "cart": "Shopping Cart",
-      "checkoutSuccess": "Order Confirmed"
+      "checkoutSuccess": "Order Confirmed",
+      "account": "My account"
     },
     "pageDescriptions": {
       "home": "Home Page",
@@ -774,7 +783,7 @@
     },
     "types": {
       "cookie": "Cookie",
-      "httpOnlyCookie": "Cookie (server-only, admin area)",
+      "httpOnlyCookie": "Cookie (server-only)",
       "localStorage": "Local storage",
       "sessionStorage": "Session storage"
     },
@@ -819,6 +828,14 @@
       "newsletter_popup": {
         "purpose": "Remembers that you closed the newsletter invitation (for 60 days) or subscribed, so it is not shown again. Without consent it is kept only until you close the tab (sessionStorage).",
         "lifetime": "60 days after closing it; indefinitely after subscribing"
+      },
+      "__Host-customer_session": {
+        "purpose": "Keeps you logged in to your customer account. It only holds a random code; the server keeps just a fingerprint of it and forgets it when you log out.",
+        "lifetime": "Until you log out; ends after 7 days without use, and after 30 days at most"
+      },
+      "__Host-google_flow": {
+        "purpose": "Set only when you choose to continue with Google: holds one-time codes that tie Google's answer to this browser, so nobody else can complete the sign-in.",
+        "lifetime": "10 minutes, deleted when you return from Google"
       }
     },
     "thirdPartyTitle": "Payment with Stripe",
@@ -887,17 +904,24 @@
     "activities": {
       "orders": {
         "title": "Orders and delivery",
-        "data": "Name, email address, phone number, delivery address, the products ordered and the order amount, and the language of the site you ordered from. You enter these details on the Stripe payment page, and we receive them once the payment is completed.",
+        "data": "Name, email address, phone number, delivery address, the products ordered and the order amount, and the language of the site you ordered from. You enter these details on the Stripe payment page, and we receive them once the payment is completed. If you are logged in, the order is also linked to your account and Stripe is given your account's email address.",
         "purpose": "Delivering your order, contacting you about it, handling returns and complaints, and keeping the accounting records required by law.",
         "legalBasis": "Performance of the sales contract (GDPR Art. 6(1)(b)) and compliance with our legal obligations in accounting and taxation (Art. 6(1)(c)).",
-        "retention": "Order records are kept for the period required by Romanian accounting law (currently 5 years from the end of the financial year, Legea contabilității nr. 82/1991), then deleted. Orders that are never paid contain no contact details."
+        "retention": "Paid orders are accounting records, kept for the period required by Romanian accounting law: 5 years from the end of the financial year they belong to (Legea contabilității nr. 82/1991). When that period ends, in the January after it, your name, email address, phone number, delivery address and the payment references are erased automatically; only an anonymous record of the amounts and products remains. Unpaid orders are erased the same way 90 days after they end."
       },
       "payments": {
         "title": "Payments",
         "data": "Card or other payment details. These are entered directly on Stripe's payment page and never reach our servers; we only receive the payment's status and a reference number.",
         "purpose": "Taking payment for your order and preventing fraud.",
         "legalBasis": "Performance of the sales contract (Art. 6(1)(b)). Stripe acts as an independent controller for the payment data it processes.",
-        "retention": "We keep the payment reference together with the order. Stripe keeps payment data under its own privacy policy."
+        "retention": "We keep the payment reference with the order and erase it together with the order's personal data (see Orders and delivery). Stripe keeps payment data under its own privacy policy."
+      },
+      "accounts": {
+        "title": "Customer accounts",
+        "data": "Email address, a password hash (we never store the password itself), the site language, the dates you registered and verified your address, your login sessions (stored only as fingerprints of random codes) and the link between your account and your orders. If you choose to continue with Google, we also receive from Google your email address and its account ID, and store the ID to recognise you; nothing else from your Google account. Orders placed with the account's verified address, including earlier guest orders, are linked to it.",
+        "purpose": "Letting you log in and see your order history. Accounts are optional; every order can also be placed as a guest.",
+        "legalBasis": "Performance of the contract you enter into by creating the account (Art. 6(1)(b)).",
+        "retention": "Until you delete the account from its settings page, which erases it immediately; its orders are then kept only as described under Orders and delivery, detached from any account. Registrations whose password is never chosen are deleted after 24 hours; sessions end after 7 days without use and after 30 days at most. You can download all of your account data from its settings page."
       },
       "newsletter": {
         "title": "Newsletter",
@@ -918,7 +942,7 @@
         "data": "IP address, browser type (user agent), the page requested, the referring page and the time of the request. Query strings in addresses, where emailed links carry their codes, are not logged.",
         "purpose": "Keeping the website secure and available: rate limiting, detecting abuse and diagnosing errors. We do not use these logs to build profiles or for marketing.",
         "legalBasis": "Our legitimate interest in the security of the website (Art. 6(1)(f)).",
-        "retention": "Logs are rotated automatically and overwritten once they reach a fixed size, usually within a few weeks. Rate-limiting counters are kept in memory only and disappear within minutes."
+        "retention": "Logs are rotated automatically and overwritten once they reach a fixed size, usually within a few weeks. Rate-limiting counters, including those that slow down password guessing on an account, are kept in memory only, never contain your email address, and disappear within minutes. Login attempts are counted only as anonymous totals."
       }
     },
     "cookiesText": "We also store a few cookies and browser-storage items, such as your cart and the confirmation that you are over 18. They are described in detail in our",
@@ -928,8 +952,9 @@
     "recipients": {
       "hosting": "Our hosting provider, which runs the servers of this website in the European Union and processes the data above on our behalf.",
       "stripe": "Stripe Payments Europe Ltd. (Ireland), which processes payments.",
-      "brevo": "Sendinblue SAS, operating as Brevo (France), which delivers our newsletter and confirmation emails on our behalf.",
+      "brevo": "Sendinblue SAS, operating as Brevo (France), which delivers our newsletter, confirmation and account emails on our behalf.",
       "google": "Google (Gmail), which hosts the mailbox we receive your emails in.",
+      "googleSignIn": "Google Ireland Ltd., only if you choose to continue with Google: Google confirms your identity to us, and, as a separate controller, learns that you signed in to our website.",
       "whatsapp": "WhatsApp Ireland Ltd. (Meta), when you choose to message us on WhatsApp.",
       "courier": "The courier company that delivers your order, which receives your name, phone number and delivery address.",
       "authorities": "Public authorities, such as the tax authority (ANAF), when the law requires us to."
@@ -949,11 +974,11 @@
       "objection": "object to processing based on our legitimate interest (objection);",
       "withdrawConsent": "withdraw your consent at any time, for example by unsubscribing from the newsletter. This does not affect processing done before you withdrew it."
     },
-    "rightsHowTo": "To exercise any of these rights, write to us at",
+    "rightsHowTo": "If you have an account, you can download all of its data or delete it yourself from the account settings. To exercise any of these rights in another way, write to us at",
     "complaintText": "We answer within one month. If you think we have not handled your data correctly, you can also file a complaint with the Romanian supervisory authority, Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP),",
     "complaintLink": "dataprotection.ro",
     "securityTitle": "How we protect your data",
-    "securityText": "The website is served only over encrypted connections (HTTPS). Payment details never reach our servers. Access to order data is limited to the shop's administrators. Newsletter confirmation codes are stored only as one-way hashes, and the database is not reachable from the internet.",
+    "securityText": "The website is served only over encrypted connections (HTTPS), and payment details never reach our servers. Passwords are stored only as salted Argon2id hashes; login sessions and the codes in our emails are stored only as one-way hashes, so a copy of our database cannot be used to log in to anyone's account. Sensitive account changes require your password (or a fresh Google sign-in) again. Access to order data is limited to the shop's administrators, the database is not reachable from the internet, and the personal data in old orders is erased automatically once it no longer has to be kept.",
     "automatedTitle": "Automated decisions",
     "automatedText": "We do not make decisions about you based solely on automated processing, and we do not profile you.",
     "minorsTitle": "Minors",
@@ -963,5 +988,137 @@
   },
   "legal": {
     "lastUpdated": "Last updated: {{date}}"
+  },
+  "account": {
+    "nav": {
+      "label": "Account",
+      "orders": "Orders",
+      "settings": "Settings",
+      "logout": "Log out"
+    },
+    "fields": {
+      "email": "Email address",
+      "password": "Password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Repeat the new password",
+      "newEmail": "New email address",
+      "passwordHelp": "At least {{min}} characters. A few unrelated words make a strong password that is easy to remember."
+    },
+    "login": {
+      "title": "Log in",
+      "submit": "Log in",
+      "forgot": "Forgot your password?",
+      "register": "Create an account",
+      "back": "Back to login"
+    },
+    "register": {
+      "title": "Create an account",
+      "intro": "Enter your email address and we'll send you a link to choose a password. Orders you placed earlier with the same address will show up in your account.",
+      "submit": "Send the link",
+      "sent": "Check your inbox: if the address can be used for a new account, we've sent a link to choose your password. It is valid for 24 hours.",
+      "privacy": "An account is optional; you can always order as a guest. How we use your data:"
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "intro": "Enter the email address of your account and we'll send you a link to choose a new password.",
+      "submit": "Send the link",
+      "sent": "If an account uses this address, we've sent it a link to choose a new password. It is valid for one hour."
+    },
+    "setPassword": {
+      "title": "Choose a password",
+      "intro": "Choose the password for your account. Every device logged in to it will be logged out.",
+      "submit": "Save password",
+      "newLink": "Ask for a new link"
+    },
+    "emailConfirm": {
+      "title": "Confirm your new email address",
+      "prompt": "Click below to move your account to this address.",
+      "submit": "Confirm address",
+      "done": "Your account now uses this email address. Other devices were logged out."
+    },
+    "orders": {
+      "title": "My orders",
+      "empty": "No orders yet. Orders you place while logged in, or with this account's email address, will appear here.",
+      "error": "We couldn't load your orders."
+    },
+    "order": {
+      "title": "Order details",
+      "placed": "Placed on",
+      "number": "Order number",
+      "notFound": "We couldn't find this order in your account.",
+      "back": "Back to my orders"
+    },
+    "settings": {
+      "title": "Account settings",
+      "email": {
+        "title": "Email address",
+        "description": "Your account uses {{email}}. We'll send a confirmation link to the new address; nothing changes until you open it.",
+        "submit": "Change email",
+        "sent": "Check the new address for a confirmation link. It is valid for 24 hours."
+      },
+      "password": {
+        "title": "Password",
+        "description": "Changing your password logs out every other device.",
+        "submit": "Change password",
+        "done": "Your password was changed.",
+        "none": "Your account has no password; you log in with Google. Set one to also log in with your email address.",
+        "sendLink": "Email me a link to set a password",
+        "linkSent": "Check your inbox for the link. It is valid for one hour."
+      },
+      "sessions": {
+        "title": "Devices",
+        "description": "Log out of your account on every device, including this one.",
+        "submit": "Log out everywhere"
+      },
+      "export": {
+        "title": "Download your data",
+        "description": "A JSON file with everything we store about your account: your profile, your orders and your newsletter subscription.",
+        "submit": "Download"
+      },
+      "delete": {
+        "title": "Delete account",
+        "description": "Deletes your account and logs you out. Orders you placed stay in our accounting records for the period the law requires, no longer tied to any account.",
+        "confirm": "I understand this cannot be undone.",
+        "submit": "Delete my account"
+      }
+    },
+    "errors": {
+      "invalidEmail": "Please enter a valid email address.",
+      "invalidCredentials": "Wrong email or password.",
+      "invalidLink": "This link is invalid or has expired.",
+      "emailTaken": "This address already belongs to another account.",
+      "tooManyRequests": "Too many attempts. Please wait a few minutes and try again.",
+      "generic": "Something went wrong. Please try again later.",
+      "passwordMismatch": "The passwords don't match.",
+      "password": {
+        "too-short": "The password is too short.",
+        "too-long": "The password is too long (at most 128 characters).",
+        "common": "This password is too common. Please choose another.",
+        "contains-email": "The password can't contain your email address."
+      },
+      "reauthRequired": "Please confirm with Google first."
+    },
+    "google": {
+      "continue": "Continue with Google",
+      "or": "or",
+      "title": "Google sign-in",
+      "connectDescription": "Log in with your Google account instead of a password. Only your email address and Google's account ID are shared with us.",
+      "connect": "Connect Google",
+      "connected": "You can log in with Google. Disconnecting it leaves your password as the way to log in.",
+      "connectedOnly": "You log in with Google. To disconnect it, first set a password above.",
+      "disconnect": "Disconnect Google",
+      "disconnected": "Google sign-in was disconnected.",
+      "reauth": "Confirm with Google",
+      "reauthPrompt": "Your account has no password, so confirm it's you by signing in with Google again. It stays valid for 10 minutes.",
+      "notices": {
+        "linked": "Google sign-in is connected to your account.",
+        "reauthenticated": "Confirmed. You can make changes for the next 10 minutes.",
+        "account-exists": "An account already uses this Google address. Log in with its password, then connect Google from the account settings.",
+        "linked-elsewhere": "This Google account is connected to a different account.",
+        "session-ended": "Your session ended. Please log in again.",
+        "failed": "Signing in with Google didn't work. Please try again."
+      }
+    }
   }
 }

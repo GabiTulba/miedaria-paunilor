@@ -8,7 +8,7 @@ type StorageType = 'cookie' | 'httpOnlyCookie' | 'localStorage' | 'sessionStorag
 type ConsentLevel = 'necessary' | 'preference' | 'optional';
 
 interface StorageItem {
-    name: 'age_verified' | 'cookie_consent' | 'cart' | 'admin_session' | 'pending_checkout' | 'lang' | 'i18nextLng' | 'theme' | 'newsletter_popup';
+    name: 'age_verified' | 'cookie_consent' | 'cart' | '__Host-customer_session' | '__Host-google_flow' | 'admin_session' | 'pending_checkout' | 'lang' | 'i18nextLng' | 'theme' | 'newsletter_popup';
     type: StorageType;
     consent: ConsentLevel;
 }
@@ -19,6 +19,8 @@ const STORAGE_ITEMS: StorageItem[] = [
     { name: 'age_verified', type: 'cookie', consent: 'necessary' },
     { name: 'cookie_consent', type: 'cookie', consent: 'necessary' },
     { name: 'cart', type: 'cookie', consent: 'necessary' },
+    { name: '__Host-customer_session', type: 'httpOnlyCookie', consent: 'necessary' },
+    { name: '__Host-google_flow', type: 'httpOnlyCookie', consent: 'necessary' },
     { name: 'admin_session', type: 'httpOnlyCookie', consent: 'necessary' },
     { name: 'pending_checkout', type: 'sessionStorage', consent: 'necessary' },
     { name: 'theme', type: 'localStorage', consent: 'preference' },
@@ -28,7 +30,7 @@ const STORAGE_ITEMS: StorageItem[] = [
 ];
 
 const STRIPE_COOKIE_POLICY_URL = 'https://stripe.com/legal/cookies-policy';
-const LAST_UPDATED = '2026-09-28';
+const LAST_UPDATED = '2026-10-01';
 
 function CookiePolicy() {
     const { t } = useTranslation();

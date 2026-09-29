@@ -29,6 +29,7 @@ use prometheus_client::metrics::histogram::{Histogram, exponential_buckets};
 use prometheus_client::registry::Registry;
 
 use crate::AppState;
+use crate::customer_crud;
 use crate::db;
 use crate::enums::OrderStatus;
 use crate::newsletter::{self, NewsletterStats};
@@ -70,6 +71,8 @@ pub enum Task {
     reservation_sweep,
     processing_reconcile,
     shop_metrics,
+    account_purge,
+    order_retention,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -83,9 +86,30 @@ static HTTP_DURATION: LazyLock<Family<RouteLabels, Histogram>> = LazyLock::new(|
 });
 static TASK_FAILURES: LazyLock<Family<TaskLabels, Counter>> = LazyLock::new(Family::default);
 
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, EncodeLabelValue)]
+#[allow(non_camel_case_types)]
+pub enum LoginResult {
+    success,
+    failure,
+    throttled,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
+struct LoginLabels {
+    result: LoginResult,
+}
+
+static ACCOUNT_LOGINS: LazyLock<Family<LoginLabels, Counter>> = LazyLock::new(Family::default);
+
 /// Counts a failed run of a background task, next to its error log line.
 pub fn record_failure(task: Task) {
     TASK_FAILURES.get_or_create(&TaskLabels { task }).inc();
+}
+
+/// Counts a customer password check (login or re-authentication). A surge of
+/// failures signals credential stuffing.
+pub fn record_login(result: LoginResult) {
+    ACCOUNT_LOGINS.get_or_create(&LoginLabels { result }).inc();
 }
 
 /// Middleware counting and timing every routed request. Mounted as a route
@@ -158,6 +182,7 @@ struct ShopSnapshot {
     stock: Vec<ProductStock>,
     stale_processing: i64,
     subscribers: NewsletterStats,
+    customers: i64,
 }
 
 impl ShopSnapshot {
@@ -225,6 +250,7 @@ impl ShopSnapshot {
             stock,
             stale_processing: order_crud::count_stale_processing(conn)?,
             subscribers: newsletter::stats(conn)?,
+            customers: customer_crud::count_verified(conn)?,
         })
     }
 }
@@ -244,6 +270,16 @@ fn encode_family<M: EncodeMetric, L: EncodeLabelSet>(
         metric.encode(metric_encoder.encode_family(&labels)?)?;
     }
     Ok(())
+}
+
+fn encode_gauge(
+    encoder: &mut DescriptorEncoder,
+    name: &str,
+    help: &str,
+    value: i64,
+) -> Result<(), std::fmt::Error> {
+    let gauge = ConstGauge::new(value);
+    gauge.encode(encoder.encode_descriptor(name, help, None, gauge.metric_type())?)
 }
 
 fn major_units(cents: i64) -> f64 {
@@ -338,13 +374,18 @@ impl Collector for ShopSnapshot {
                 .iter()
                 .map(|s| (product(&s.product_id), ConstGauge::new(s.reserved))),
         )?;
-        let stale = ConstGauge::new(self.stale_processing);
-        stale.encode(encoder.encode_descriptor(
+        encode_gauge(
+            &mut encoder,
             "shop_stale_processing_orders",
             "Delayed payments Stripe has not resolved within STALE_PROCESSING_DAYS",
-            None,
-            stale.metric_type(),
-        )?)?;
+            self.stale_processing,
+        )?;
+        encode_gauge(
+            &mut encoder,
+            "shop_customers",
+            "Customer accounts with a verified email",
+            self.customers,
+        )?;
         encode_family(
             &mut encoder,
             "shop_newsletter_subscribers",
@@ -379,6 +420,11 @@ async fn serve_metrics(State(app_state): State<Arc<AppState>>) -> Response {
         "task_failures",
         "Failed background task runs",
         TASK_FAILURES.clone(),
+    );
+    registry.register(
+        "account_logins",
+        "Customer password checks by outcome",
+        ACCOUNT_LOGINS.clone(),
     );
 
     let snapshot = db::get_db_connection(&app_state)
