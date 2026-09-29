@@ -23,6 +23,10 @@ pub const MAX_PENDING_ORDERS_PER_CLIENT: i64 = 2;
 /// Checkout Session expire on its own sooner than 30 minutes, so the
 /// reservation sweeper expires the session itself once this elapses.
 pub const HOLD_SECS: i64 = 15 * 60;
+/// How long an order may sit in `processing` before it counts as stale.
+/// Stripe stops retrying a webhook after 3 days, so past this point the
+/// outcome only arrives through `stripe_checkout::run_processing_reconciler`.
+pub const STALE_PROCESSING_DAYS: i64 = 3;
 /// Statuses in which an order still holds reserved stock.
 const RESERVING_STATUSES: [OrderStatus; 2] = [OrderStatus::Pending, OrderStatus::Processing];
 
@@ -331,6 +335,47 @@ pub fn expired_holds(
         .order(orders::created_at.asc())
         .limit(limit)
         .select((orders::order_id, orders::stripe_session_id))
+        .load(conn)
+}
+
+/// Cutoff for `STALE_PROCESSING_DAYS`, compared against `updated_at`, which
+/// marks the move into `processing`: nothing else writes to an order in
+/// that state.
+fn stale_processing_cutoff() -> chrono::DateTime<chrono::Utc> {
+    chrono::Utc::now() - chrono::Duration::days(STALE_PROCESSING_DAYS)
+}
+
+#[derive(Queryable)]
+pub struct StripeRefs {
+    pub order_id: Uuid,
+    pub payment_intent_id: Option<String>,
+    pub session_id: Option<String>,
+}
+
+fn stale_processing_orders() -> orders::BoxedQuery<'static, diesel::pg::Pg> {
+    orders::table
+        .filter(
+            orders::status
+                .eq(OrderStatus::Processing)
+                .and(orders::updated_at.lt(stale_processing_cutoff())),
+        )
+        .into_boxed()
+}
+
+pub fn count_stale_processing(conn: &mut PgConnection) -> QueryResult<i64> {
+    stale_processing_orders().count().get_result(conn)
+}
+
+/// Stale `processing` orders, oldest first.
+pub fn stale_processing(conn: &mut PgConnection, limit: i64) -> QueryResult<Vec<StripeRefs>> {
+    stale_processing_orders()
+        .order(orders::updated_at.asc())
+        .limit(limit)
+        .select((
+            orders::order_id,
+            orders::stripe_payment_intent_id,
+            orders::stripe_session_id,
+        ))
         .load(conn)
 }
 

@@ -1,0 +1,95 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: shop
+    folder: Miedăria Păunilor
+    interval: 5m
+    rules:
+      - uid: stale-processing-orders
+        title: Delayed payments unresolved
+        condition: threshold
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: >-
+            {{ $values.stale.Value }} order(s) paid with a delayed method have waited
+            more than 3 days for Stripe. Their bottles stay reserved. The backend asks
+            Stripe once a day; if this persists, check the orders in the Stripe dashboard.
+        data:
+          - refId: stale
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              expr: max(shop_stale_processing_orders)
+              instant: true
+          - refId: threshold
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: stale
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+      - uid: background-task-failures
+        title: Background task failing
+        condition: threshold
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: >-
+            The {{ $labels.task }} task failed {{ $values.failures.Value }} time(s) in the
+            last hour. Check the backend logs.
+        data:
+          - refId: failures
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 3600, to: 0 }
+            model:
+              expr: sum by (task) (increase(task_failures_total[1h]))
+              instant: true
+          - refId: threshold
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: failures
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+      - uid: backend-down
+        title: Backend not answering
+        condition: threshold
+        for: 5m
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: Prometheus cannot scrape the backend's metrics endpoint.
+        data:
+          - refId: up
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              expr: up{job="backend"}
+              instant: true
+          - refId: threshold
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: up
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+
+contactPoints:
+  - orgId: 1
+    name: shop-email
+    receivers:
+      - uid: shop-email
+        type: email
+        settings:
+          addresses: $GRAFANA_ALERT_EMAIL
+          singleEmail: true
+
+policies:
+  - orgId: 1
+    receiver: shop-email
+    group_by: ["alertname"]
+    repeat_interval: 24h

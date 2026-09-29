@@ -39,3 +39,4 @@ webp = "0.3"
 strum = { version = "0.28.0", features = ["derive"] }
 async-stripe = { version = "0.41", default-features = false, features = ["runtime-tokio-hyper-rustls", "checkout", "webhook-events", "connect"] }
 ts-rs = { version = "12", features = ["chrono-impl", "uuid-impl", "no-serde-warnings"] }
+prometheus-client = "0.25"

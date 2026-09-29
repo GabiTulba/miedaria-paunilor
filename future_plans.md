@@ -131,6 +131,8 @@ The old empty `users` table gets dropped or replaced by `customers`.
 
 ## 6. Platform metrics (GDPR-compliant)
 
+> **Phase 1 DONE 2026-09-29, on Prometheus + Grafana** (an in-app admin metrics page built 2026-09-28 was replaced before commit). The backend exports request counters, background-task failures and shop totals (checkouts, paid orders and revenue per currency, bottles and revenue per product, stock and reserved stock per product, stale delayed payments, subscribers) on an internal-only port; Prometheus keeps 2 years; Grafana at `/grafana/` has a provisioned Shop dashboard and emailed alerts. Sales history starts when Prometheus is first deployed. The `processing` limitation below is resolved: a Grafana alert fires for orders stuck more than 3 days, and a daily backend task settles them from Stripe's PaymentIntent. Not built: checkout-toggle history, sell-through per lot (order items don't record the lot) and add-to-cart rejections (the cart never reaches the server); these need new data and belong with phase 2, whose event counters can now be added as Prometheus metrics instead of an `analytics_events` table.
+
 **Goal:** Give admins visibility into how the shop performs. The metric set is not final; below is a proposed catalog grounded in what the platform already records, plus the collection design.
 
 ### Approach: first-party, cookieless, aggregate-only
@@ -148,7 +150,7 @@ Rather than adding a third-party tracker, collect events server-side into Postgr
 - `analytics_events` table: `(id, event_type, path, product_id NULL, language, referrer_domain NULL, visitor_hash, created_at)` + daily rollup tables.
 - Backend: `POST /api/events` (public, rate-limited, strict allowlist of event types — reject anything else), plus server-side recording for events the backend already sees (checkout created, order paid via webhook, out-of-stock rejections).
 - Frontend: a tiny `track(event, props)` helper honoring `navigator.doNotTrack`, called from route changes and key interactions. No consent gate needed given the rules above, but if any future metric adds an identifier, it must move behind `useConsent`.
-- Admin UI: `admin/dashboard/metrics` page with time-range picker and simple charts.
+- Admin UI: panels on the Grafana Shop dashboard.
 
 ### Proposed metric catalog
 

@@ -7,13 +7,14 @@ use backend::routes;
 use backend::{
     AppState, auth, build_admin_limiter, build_checkout_limiter, build_image_serve_limiter,
     build_login_limiter, build_newsletter_limiter, build_public_api_limiter, db, exchange_rate,
-    generate_client_key_secret, mailer, newsletter, stripe_checkout,
+    generate_client_key_secret, mailer, metrics, newsletter, stripe_checkout,
 };
 
 struct Config {
     database_url: String,
     allowed_origin: String,
     backend_port: u16,
+    metrics_addr: SocketAddr,
     jwt_secret: String,
     jwt_expiration_hours: i64,
     image_upload_dir: String,
@@ -39,6 +40,7 @@ impl Config {
         let database_url = required("DATABASE_URL", &mut missing);
         let allowed_origin = required("ALLOWED_ORIGIN", &mut missing);
         let backend_port_str = required("BACKEND_PORT", &mut missing);
+        let metrics_addr_str = required("METRICS_ADDR", &mut missing);
         let jwt_secret = required("JWT_SECRET", &mut missing);
         let jwt_expiration_hours_str = required("JWT_EXPIRATION_HOURS", &mut missing);
         let image_upload_dir = required("IMAGE_UPLOAD_DIR", &mut missing);
@@ -62,6 +64,13 @@ impl Config {
         let backend_port = backend_port_str
             .parse::<u16>()
             .map_err(|_| "BACKEND_PORT must be a valid port number (0-65535)".to_string())?;
+        let metrics_addr = metrics_addr_str
+            .parse::<SocketAddr>()
+            .ok()
+            .filter(|addr| addr.port() != backend_port && !addr.ip().is_unspecified())
+            .ok_or(
+                "METRICS_ADDR must be an ip:port on a specific interface, with a port other than BACKEND_PORT",
+            )?;
         let smtp = mailer::SmtpConfig {
             host: smtp_host,
             port: smtp_port_str
@@ -124,6 +133,7 @@ impl Config {
             database_url,
             allowed_origin,
             backend_port,
+            metrics_addr,
             jwt_secret,
             jwt_expiration_hours,
             image_upload_dir,
@@ -203,6 +213,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     tokio::spawn(exchange_rate::run_refresh_task(app_state.clone()));
     tokio::spawn(stripe_checkout::run_reservation_sweeper(app_state.clone()));
+    tokio::spawn(stripe_checkout::run_processing_reconciler(
+        app_state.clone(),
+    ));
     tokio::spawn(newsletter::run_cleanup_task(app_state.clone()));
 
     let allowed_origin = app_state
@@ -252,6 +265,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             app_state.clone(),
             auth::public_api_rate_limit,
         ));
+    let metrics_router = metrics::router(app_state.clone());
 
     let app = Router::new()
         .merge(public_image_route)
@@ -263,6 +277,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/admin/login", post(auth::login))
         .route("/api/admin/logout", post(auth::logout))
         .nest("/api/admin", admin_routes)
+        .route_layer(axum::middleware::from_fn(metrics::track_http))
         .with_state(app_state)
         .layer(DefaultBodyLimit::max(256 * 1024)) // 256KB default; image upload route overrides to 50MB
         .layer(cors)
@@ -279,9 +294,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ),
         );
 
+    // Metrics listen only on the monitoring network's interface, so neither
+    // nginx nor anything else on the frontend network can reach them.
+    let metrics_addr = config.metrics_addr;
+    let metrics_listener = tokio::net::TcpListener::bind(metrics_addr).await?;
+    tokio::spawn(async move {
+        if let Err(e) = axum::serve(metrics_listener, metrics_router).await {
+            tracing::error!(error = %e, "metrics listener stopped");
+        }
+    });
+
     let addr = SocketAddr::from(([0, 0, 0, 0], config.backend_port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    println!("listening on {}", addr);
+    println!("listening on {} (metrics on {})", addr, metrics_addr);
     axum::serve(listener, app.into_make_service()).await?;
     Ok(())
 }

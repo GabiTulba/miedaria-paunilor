@@ -8,6 +8,7 @@ pub mod exchange_rate;
 pub mod image_crud;
 pub mod language;
 pub mod localized;
+pub mod metrics;
 pub mod lot_crud;
 pub mod mailer;
 pub mod models;

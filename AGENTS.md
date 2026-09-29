@@ -79,6 +79,8 @@ The app is built on top of Docker and has the following images:
 * a frontend image -- built with React (`node:20.20.2-slim` builder, `nginx:1.30.0-alpine` runtime)
 * a backend image -- built with Rust (`rust:1.95.0` builder, `debian:trixie-slim` runtime)
 * a database image -- built with PostgreSQL
+* a `prometheus` image (`prom/prometheus:v3.15.0`) -- scrapes the backend's metrics and keeps 2 years of history
+* a `grafana` image (`grafana/grafana:13.2.2`) -- dashboards and email alerts, served by nginx at `/grafana/`
 * a `mailpit` image (development only, `mail-dev` compose profile) -- catches outgoing email locally; its web UI is bound to `127.0.0.1:8025`
 
 
@@ -86,10 +88,14 @@ The app is built on top of Docker and has the following images:
 The backend is the middle-man between the frontend and the database. For security reasons, the frontend is not on the same docker network as the database and the networks are:
 * react-rust -- the frontend and the backend images share this network
 * rust-postgres -- the backend and the database images share this network
+* monitoring (internal, fixed subnet `172.31.99.0/24`) -- the backend (fixed IP `172.31.99.10`), Prometheus and Grafana
+* grafana-web -- nginx to Grafana, and Grafana's outbound access to the SMTP relay
 
 ## Volumes
-There are two volumes:
+There are four volumes:
 *   **postgres-data:** A volume for the PostgreSQL database.
+*   **prometheus-data:** Prometheus's time-series database.
+*   **grafana-data:** Grafana's own database (its admin account and sessions).
 *   **miedaria_paunilor_images:** A volume for storing uploaded product images, mounted at `/app/images` in both the backend and frontend (Nginx) containers.
 
 ## Environment
@@ -115,6 +121,11 @@ All Docker images utilize environment variables defined in a single `.env` file 
 *   **Backend Configuration:**
     *   `BACKEND_PORT`: The port on which the Rust backend server will listen (default: `8000`)
     *   `IMAGE_UPLOAD_DIR`: The directory where product images will be stored within the Docker container (default: `/app/images`)
+
+*   **Monitoring:**
+    *   `METRICS_ADDR`: Address of the backend's metrics listener, `172.31.99.10:9100` in Docker (the backend's IP on the monitoring network and the port in `monitoring/prometheus/prometheus.yml`); `127.0.0.1:9100` for `cargo run`. It must name a specific interface.
+    *   `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD`: Grafana's only account.
+    *   `GRAFANA_ALERT_EMAIL`: Recipient of Grafana alerts, sent through the SMTP relay below.
 
 *   **Email (SMTP):**
     *   `SMTP_HOST`, `SMTP_PORT`: Relay address (production: Brevo, `smtp-relay.brevo.com:587`; local: `mailpit:1025`)
@@ -232,7 +243,7 @@ The backend acts as a middle-man between the frontend and the database. It is bu
 *   [tracing] (v0.1) + [tracing-subscriber] (v0.3) - Structured logging with `env-filter` support. Log level configurable via `RUST_LOG` environment variable (default: `backend=info,tower_http=info`).
 *   [tower-http] (v0.6.7) - CORS and `TraceLayer` for request/response logging.
 
-The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `auth`, `blog_crud`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `language`, `localized`, `models`, `product_crud`, `schema`, `sitemap_crud`, `user_crud`, and `utils`.
+The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `auth`, `blog_crud`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `language`, `localized`, `metrics`, `models`, `product_crud`, `schema`, `sitemap_crud`, `user_crud`, and `utils`.
 
 `AppState` holds the database connection pool, login rate limiter, and `site_url` (read from `ALLOWED_ORIGIN` env var) used by `sitemap_crud` to construct absolute URLs.
 
@@ -280,6 +291,19 @@ Order statuses: `pending` (stock held, customer on Stripe), `processing` (checko
 *   `POST /api/newsletter/unsubscribe?id=&token=` deletes the row (right to erasure). The token is an HMAC of the subscriber id under a key derived from `JWT_SECRET` (domain-separated), so no unsubscribe secret is stored and rotating `JWT_SECRET` invalidates old links. The same URL serves RFC 8058 one-click unsubscribe (`List-Unsubscribe` / `List-Unsubscribe-Post` headers on every list email).
 *   Admin: `GET /api/admin/newsletter/stats` (confirmed and pending counts only; addresses are never exposed) and `POST /api/admin/blog/{id}/notify` (`{resend}`) which emails a published post to all confirmed subscribers in their own language. A row lock plus `notified_at` makes a post go out once unless `resend` is set.
 *   An hourly task purges sign-ups whose confirmation expired unused.
+
+### Metrics and Monitoring
+`metrics.rs` serves Prometheus metrics (OpenMetrics text, `prometheus-client`) on a second listener bound to `METRICS_ADDR`, the backend's interface on the internal monitoring network, so nginx and the frontend network cannot reach it. No metric carries data about a visitor.
+*   **Request metrics:** `http_requests_total` (method, route, status) and `http_request_duration_seconds`, recorded by the `track_http` route layer. The route label is the route template (`/api/products/{product_id}`), never the raw path, and unmatched paths are not recorded.
+*   **Background failures:** `task_failures_total{task}` is incremented next to the error log of each background job (BNR refresh, email delivery, newsletter purge, reservation sweep, processing reconciliation, shop metrics).
+*   **Shop figures:** read from the database on every scrape (so they survive restarts): `shop_checkouts_total`, `shop_paid_orders_total` and `shop_paid_revenue_total` per currency; `shop_bottles_sold_total` and `shop_product_revenue_total` per product and currency; `shop_orders` by status; `shop_stock_bottles` and `shop_reserved_bottles` per product; `shop_stale_processing_orders`; `shop_newsletter_subscribers` by state. Money is in major units. Every live product has a RON series from the start so `increase()` counts first sales. Sales over a range are `increase()` of these totals, so their history starts with Prometheus's; orders placed before that appear as a jump on the first scrape.
+*   **Stale delayed payments:** orders in `processing` for more than `order_crud::STALE_PROCESSING_DAYS` (3, Stripe's webhook retry window), measured from `updated_at`. `stripe_checkout::run_processing_reconciler` runs on startup and daily: for each one it retrieves the PaymentIntent (from the order, or else its Checkout Session) and applies `succeeded` → `paid` and `canceled`/`requires_payment_method` → release stock as `failed`, through the same idempotent transitions as the webhook.
+
+Prometheus (`monitoring/prometheus/prometheus.yml`) scrapes every 30 s and keeps 2 years. Grafana is provisioned read-only from `monitoring/grafana/`: the Prometheus data source, the dashboards in the **Miedăria Păunilor** folder, and alert rules emailed to `GRAFANA_ALERT_EMAIL` at most daily while firing: unresolved delayed payments, background task failures and backend unreachable. Grafana runs under `/grafana/` behind nginx with its own login (sign-up, anonymous access, external snapshots and phoning home disabled; secure `SameSite=Strict` cookies; its own CSP and HSTS), rate-limited by nginx and excluded in `robots.txt`.
+*   **Shop** (`dashboards/shop.json`): revenue, paid orders, average order, bottles per order, checkouts and conversion; revenue and checkouts per day, week or month (the Group by variable); products sold; orders by status; stock, bottles held by checkouts and days sold out; unresolved delayed payments; newsletter subscribers.
+*   **Backend** (`dashboards/backend.json`): up/down, request rate, server errors, background task failures, response time percentiles, metrics scrape time, and a per-route table of requests, client and server errors and response time.
+
+Both use Bucharest time and link to each other. Every JSON file in `monitoring/grafana/dashboards/` is loaded on startup and reloaded within 10 s of a change; Grafana does not save UI edits to them, so a dashboard is changed by editing its JSON (or by exporting a UI copy with *Export → Export as JSON* into that directory).
 
 Diesel is used to interact with the database, dealing with:
 *   Fetching data from the `products`, `images`, and `blog_posts` tables.
@@ -361,7 +385,7 @@ The frontend website is structured as follows:
         admin/dashboard/ -- A protected admin section with a sidebar for navigation. Logout requires confirmation.
             admin/dashboard/products -- A page to manage products (create, edit, delete) with a modern table view. Product forms include image selection from uploaded images.
             admin/dashboard/images -- A page to manage images (upload via click or drag-and-drop with progress bar, display, rename, delete). Displays a user-friendly error message if attempting to delete an image in use.
-            admin/dashboard/blog -- A page to manage blog posts (create, edit, delete) with markdown editor and bilingual support. Published posts have an "Email subscribers" action (with confirmation showing the recipient count; "Email again" once sent). The dashboard shows the confirmed subscriber count.
+            admin/dashboard/blog -- A page to manage blog posts (create, edit, delete) with markdown editor and bilingual support. Published posts have an "Email subscribers" action (with confirmation showing the recipient count; "Email again" once sent). The dashboard shows the confirmed subscriber count. The dashboard and metrics pages show a `StaleProcessingWarning` listing unresolved delayed payments.
 ```
 All pages are fully implemented and fetch data from the backend where applicable.
 The frontend uses two type families: `LocalizedProduct`/`LocalizedProductWithImage`/`LocalizedBlogPost` for public-facing components (single-language fields from Accept-Language negotiation), and `Product`/`ProductWithImage`/`BlogPost`/`ProductFormData` for admin edit forms (full bilingual fields).

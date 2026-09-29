@@ -9,6 +9,8 @@ use lettre::message::{Mailbox, MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Address, AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 
+use crate::metrics::{self, Task};
+
 const SMTP_TIMEOUT: Duration = Duration::from_secs(20);
 /// Pause between messages of a batch, keeping well inside relay rate limits.
 const BATCH_SEND_INTERVAL: Duration = Duration::from_millis(250);
@@ -134,6 +136,7 @@ impl Mailer {
         tokio::spawn(async move {
             if let Err(e) = mailer.send(email).await {
                 tracing::error!(error = %e, "email delivery failed");
+                metrics::record_failure(Task::email_delivery);
             }
         });
     }
@@ -149,6 +152,7 @@ impl Mailer {
                 if let Err(e) = mailer.send(email).await {
                     failed += 1;
                     tracing::error!(error = %e, "email delivery failed");
+                    metrics::record_failure(Task::email_delivery);
                 }
                 tokio::time::sleep(BATCH_SEND_INTERVAL).await;
             }

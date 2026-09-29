@@ -16,6 +16,7 @@ use ts_rs::TS;
 
 use crate::AppState;
 use crate::db;
+use crate::metrics::{self, Task};
 use crate::schema::exchange_rates;
 
 const BNR_RATES_URL: &str = "https://curs.bnr.ro/nbrfxrates.xml";
@@ -231,6 +232,7 @@ pub async fn run_refresh_task(app_state: Arc<AppState>) {
             }
             Err(e) => {
                 tracing::warn!(error = ?e, "BNR EUR rate refresh failed; serving last known rate");
+                metrics::record_failure(Task::bnr_refresh);
                 RETRY_DELAY
             }
         };

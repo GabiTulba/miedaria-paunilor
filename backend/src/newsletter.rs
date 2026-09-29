@@ -18,6 +18,7 @@ use crate::db;
 use crate::error::RepositoryError;
 use crate::language::Language;
 use crate::mailer::{Email, escape_html};
+use crate::metrics::{self, Task};
 use crate::models::BlogPost;
 use crate::schema::{blog_posts, newsletter_subscribers};
 
@@ -28,7 +29,7 @@ const CONFIRMATION_RESEND_COOLDOWN: chrono::Duration = chrono::Duration::minutes
 const CLEANUP_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60 * 60);
 const MAX_EMAIL_LEN: usize = 254;
 
-#[derive(Serialize, TS)]
+#[derive(Debug, Serialize, TS)]
 #[ts(export)]
 pub struct NewsletterStats {
     #[ts(type = "number")]
@@ -210,8 +211,14 @@ pub async fn run_cleanup_task(app_state: Arc<AppState>) {
         match db::get_db_connection(&app_state).map(|mut conn| delete_expired_signups(&mut conn)) {
             Ok(Ok(0)) => {}
             Ok(Ok(purged)) => tracing::info!(purged, "purged expired newsletter sign-ups"),
-            Ok(Err(e)) => tracing::warn!(error = ?e, "newsletter sign-up purge failed"),
-            Err(e) => tracing::warn!(error = ?e, "newsletter sign-up purge failed"),
+            Ok(Err(e)) => {
+                tracing::warn!(error = ?e, "newsletter sign-up purge failed");
+                metrics::record_failure(Task::newsletter_purge);
+            }
+            Err(e) => {
+                tracing::warn!(error = ?e, "newsletter sign-up purge failed");
+                metrics::record_failure(Task::newsletter_purge);
+            }
         }
     }
 }

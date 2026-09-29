@@ -11,10 +11,12 @@ use crate::AppState;
 use crate::db;
 use crate::enums::OrderStatus;
 use crate::error::RepositoryError;
+use crate::metrics::{self, Task};
 use crate::models::ShippingDetails;
 use crate::order_crud;
 
 const SWEEP_INTERVAL: Duration = Duration::from_secs(60);
+const RECONCILE_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
 /// Upper bound on Stripe calls per sweep; any remainder is handled next tick.
 const SWEEP_BATCH: i64 = 50;
 
@@ -114,6 +116,7 @@ pub async fn run_reservation_sweeper(app_state: Arc<AppState>) {
         interval.tick().await;
         if let Err(e) = sweep_expired_holds(&app_state).await {
             tracing::error!(error = ?e, "reservation sweep failed");
+            metrics::record_failure(Task::reservation_sweep);
         }
     }
 }
@@ -126,6 +129,7 @@ async fn sweep_expired_holds(app_state: &Arc<AppState>) -> Result<(), crate::App
     for (order_id, session_id) in holds {
         if let Err(e) = release_hold(app_state, order_id, session_id.as_deref()).await {
             tracing::error!(error = ?e, %order_id, "failed to release expired hold");
+            metrics::record_failure(Task::reservation_sweep);
         }
     }
     Ok(())
@@ -179,6 +183,102 @@ pub async fn release_hold(
         // Still open (a transient Stripe error): retried on the next sweep.
         _ => tracing::warn!(%order_id, "stripe session still open after expire attempt"),
     }
+    Ok(())
+}
+
+/// Daily safety net for delayed payments whose final webhook never arrived:
+/// asks Stripe for the outcome of every stale `processing` order and applies
+/// it through the same idempotent transitions the webhook uses.
+pub async fn run_processing_reconciler(app_state: Arc<AppState>) {
+    let mut interval = tokio::time::interval(RECONCILE_INTERVAL);
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    loop {
+        interval.tick().await;
+        if let Err(e) = reconcile_stale_processing(&app_state).await {
+            tracing::error!(error = ?e, "processing reconciliation failed");
+            metrics::record_failure(Task::processing_reconcile);
+        }
+    }
+}
+
+async fn reconcile_stale_processing(app_state: &Arc<AppState>) -> Result<(), crate::AppError> {
+    let stale = {
+        let mut conn = db::get_db_connection(app_state)?;
+        order_crud::stale_processing(&mut conn, SWEEP_BATCH)?
+    };
+    for order in stale {
+        if let Err(e) = reconcile_order(app_state, &order).await {
+            let order_id = order.order_id;
+            tracing::error!(error = ?e, %order_id, "failed to reconcile processing order");
+            metrics::record_failure(Task::processing_reconcile);
+        }
+    }
+    Ok(())
+}
+
+fn stripe_error(e: stripe::StripeError) -> crate::AppError {
+    crate::AppError::InternalServerError(format!("stripe request failed: {e}"))
+}
+
+/// The order's PaymentIntent, stored on completion or else read from its
+/// Checkout Session.
+async fn payment_intent_of(
+    client: &stripe::Client,
+    payment_intent_id: Option<&str>,
+    session_id: Option<&str>,
+) -> Result<Option<stripe::PaymentIntentId>, crate::AppError> {
+    let invalid =
+        |id: &str| crate::AppError::InternalServerError(format!("invalid stored stripe id {id}"));
+    if let Some(id) = payment_intent_id {
+        return id.parse().map(Some).map_err(|_| invalid(id));
+    }
+    let Some(session_id) = session_id else {
+        return Ok(None);
+    };
+    let session_id: stripe::CheckoutSessionId =
+        session_id.parse().map_err(|_| invalid(session_id))?;
+    let session = stripe::CheckoutSession::retrieve(client, &session_id, &[])
+        .await
+        .map_err(stripe_error)?;
+    Ok(session.payment_intent.map(|pi| pi.id()))
+}
+
+async fn reconcile_order(
+    app_state: &Arc<AppState>,
+    order: &order_crud::StripeRefs,
+) -> Result<(), crate::AppError> {
+    let order_id = order.order_id;
+    let client = &app_state.stripe_client;
+    let Some(payment_intent_id) = payment_intent_of(
+        client,
+        order.payment_intent_id.as_deref(),
+        order.session_id.as_deref(),
+    )
+    .await?
+    else {
+        tracing::warn!(%order_id, "processing order has no stripe payment intent");
+        return Ok(());
+    };
+    let payment_intent = stripe::PaymentIntent::retrieve(client, &payment_intent_id, &[])
+        .await
+        .map_err(stripe_error)?;
+
+    let mut conn = db::get_db_connection(app_state)?;
+    let applied = match payment_intent.status {
+        stripe::PaymentIntentStatus::Succeeded => order_crud::mark_paid(&mut conn, order_id)?,
+        stripe::PaymentIntentStatus::Canceled
+        | stripe::PaymentIntentStatus::RequiresPaymentMethod => {
+            order_crud::release_order(&mut conn, order_id, OrderStatus::Failed)?
+        }
+        // Still settling at Stripe: checked again tomorrow.
+        _ => false,
+    };
+    tracing::info!(
+        %order_id,
+        status = payment_intent.status.as_str(),
+        applied,
+        "reconciled processing order"
+    );
     Ok(())
 }
 
