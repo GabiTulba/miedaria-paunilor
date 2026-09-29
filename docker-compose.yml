@@ -70,7 +70,9 @@ services:
           cpus: '1.0'
           memory: 512M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      # The runtime image has no HTTP client; bash's /dev/tcp sends the
+      # request instead, so none has to be installed.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/$${BACKEND_PORT} && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && read -r _ status _ <&3 && [ \"$$status\" = 200 ]"]
       interval: 30s
       timeout: 10s
       retries: 3
