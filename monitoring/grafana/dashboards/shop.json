@@ -794,7 +794,7 @@
     {
       "id": 15,
       "type": "row",
-      "title": "Payments, newsletter and accounts",
+      "title": "Payments, checkout, newsletter and accounts",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -1006,6 +1006,81 @@
         "colorMode": "value",
         "graphMode": "none",
         "textMode": "value"
+      }
+    },
+    {
+      "id": 23,
+      "type": "state-timeline",
+      "title": "Checkout",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 39,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max(shop_checkout_enabled)",
+          "legendFormat": "Checkout"
+        }
+      ],
+      "description": "When the shop accepted orders and when checkout was switched off from the admin dashboard.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Off",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "On",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "legend": {
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
       }
     }
   ],

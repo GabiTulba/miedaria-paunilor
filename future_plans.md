@@ -59,7 +59,7 @@ Tokens are random 256-bit values sent by URL; only their hashes are stored (same
 
 ## 5. User accounts
 
-> **Parts (a) and (b) plus the GDPR endpoints DONE 2026-09-30.** Implemented with these changes to the design below:
+> **Parts (a) and (b) plus the GDPR endpoints DONE 2026-09-29.** Implemented with these changes to the design below:
 > - **Email-first registration.** Registering takes only an email address, and the password is chosen from the emailed link. This closes a hole in "register with a password, then verify": someone could register another person's address with their own password, and if the owner clicked the unsolicited verification link, that person's guest orders would be linked to an account the stranger controls. The same set-password page serves password resets.
 > - **Database sessions instead of customer JWTs.** A random token in a `__Host-customer_session` cookie (HttpOnly, Secure, SameSite=Strict), stored as a hash, ending after 7 days idle or 30 days in all. Logging out, password changes, email changes and deletion revoke sessions immediately.
 > - **Tokens in their own table.** Emailed tokens live in `customer_tokens` (one per customer and purpose) instead of columns on `customers`. The old `users` table is dropped.
@@ -69,7 +69,7 @@ Tokens are random 256-bit values sent by URL; only their hashes are stored (same
 >
 > **Deferred to #7 (Sameday):** saved addresses (`customer_addresses`), since Stripe still collects the delivery address and saved addresses would have nothing to fill.
 >
-> **Google sign-in added 2026-10-01.**
+> **Google sign-in added 2026-09-29.**
 > - Server-side OpenID Connect with PKCE; no Google script on the site.
 > - Identities are keyed by Google's `sub`, never by email.
 > - An address that already has an account is only connected to Google by its owner, from Settings.
@@ -150,7 +150,7 @@ The old empty `users` table gets dropped or replaced by `customers`.
 
 ## 9. Order data retention
 
-> **DONE 2026-10-02.** A daily task (`retention.rs`) erases the personal data of paid orders once 5 years have passed since the end of their financial year. Expired and failed orders are erased 90 days after they ended. The anonymous amounts and products stay for the accounting records and the metrics.
+> **DONE 2026-09-29.** A daily task (`retention.rs`) erases the personal data of paid orders once 5 years have passed since the end of their financial year. Expired and failed orders are erased 90 days after they ended. The anonymous amounts and products stay for the accounting records and the metrics.
 >
 > **Still outstanding outside the code:**
 > - Encrypt the production server's disk.
@@ -162,6 +162,16 @@ The old empty `users` table gets dropped or replaced by `customers`.
 ## 6. Platform metrics (GDPR-compliant)
 
 > **Phase 1 DONE 2026-09-29, on Prometheus + Grafana** (an in-app admin metrics page built 2026-09-28 was replaced before commit). The backend exports request counters, background-task failures and shop totals (checkouts, paid orders and revenue per currency, bottles and revenue per product, stock and reserved stock per product, stale delayed payments, subscribers) on an internal-only port; Prometheus keeps 2 years; Grafana at `/grafana/` has a provisioned Shop dashboard and emailed alerts. Sales history starts when Prometheus is first deployed. The `processing` limitation below is resolved: a Grafana alert fires for orders stuck more than 3 days, and a daily backend task settles them from Stripe's PaymentIntent. Not built: checkout-toggle history, sell-through per lot (order items don't record the lot) and add-to-cart rejections (the cart never reaches the server); these need new data and belong with phase 2, whose event counters can now be added as Prometheus metrics instead of an `analytics_events` table.
+>
+> **Phase 2 DONE 2026-09-29, as in-memory Prometheus counters instead of an `analytics_events` table**, so no event is ever stored.
+> - The browser posts each event to `POST /api/events` (`lib/analytics.ts`, `backend/src/analytics.rs`): page views with the previous page or the kind of referrer, product and blog post views, cart additions, cart-limit hits (the lost demand the phase-1 note mentioned), shop filters and the newsletter popup's outcomes.
+> - Every label comes from a closed set or the live catalog, and referring hosts are reduced to direct, search, social, email or other.
+> - Daily visitors are counted with an HMAC of the client network and user agent under an in-memory key that is replaced at midnight, together with the day's hashes.
+> - Do Not Track, Global Privacy Control, `navigator.webdriver` and bot user agents are not counted.
+> - Checkout-toggle history is the `shop_checkout_enabled` gauge.
+> - Everything shows on a new Traffic dashboard, with the checkout timeline on the Shop dashboard.
+>
+> **Not built:** sell-through per lot. Order items don't record the lot, and lots don't record how many bottles were filled.
 
 **Goal:** Give admins visibility into how the shop performs. The metric set is not final; below is a proposed catalog grounded in what the platform already records, plus the collection design.
 

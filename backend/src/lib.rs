@@ -1,4 +1,5 @@
 pub mod account;
+pub mod analytics;
 pub mod auth;
 pub mod blog_crud;
 pub mod customer_crud;
@@ -97,6 +98,14 @@ pub fn build_customer_password_limiter() -> Arc<KeyRateLimiter> {
     Arc::new(RateLimiter::keyed(quota))
 }
 
+/// Site statistics from the browser: a few events per page view, so a minute
+/// of steady browsing fits in the burst.
+pub fn build_events_limiter() -> Arc<IpRateLimiter> {
+    Arc::new(RateLimiter::keyed(Quota::per_minute(
+        NonZeroU32::new(60).unwrap(),
+    )))
+}
+
 pub fn build_public_api_limiter() -> Arc<IpRateLimiter> {
     Arc::new(RateLimiter::keyed(Quota::per_second(
         NonZeroU32::new(30).unwrap(),
@@ -113,6 +122,7 @@ pub struct AppState {
     pub newsletter_limiter: Arc<IpRateLimiter>,
     pub account_limiter: Arc<IpRateLimiter>,
     pub customer_login_limiter: Arc<IpRateLimiter>,
+    pub events_limiter: Arc<IpRateLimiter>,
     /// Keyed by `password_limit_key`, never by the address itself.
     pub customer_password_limiter: Arc<KeyRateLimiter>,
     /// Random per-process key for `client_key_hash` and `password_limit_key`;

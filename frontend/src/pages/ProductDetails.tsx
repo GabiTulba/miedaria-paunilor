@@ -21,6 +21,7 @@ import { buildProductLd, buildBreadcrumbLd } from '../lib/structuredData';
 import { clamp } from '../lib/text';
 import { Skeleton } from '../components/Skeleton';
 import EurConversionNote from '../components/EurConversionNote';
+import { track } from '../lib/analytics';
 
 import './ProductDetails.css';
 
@@ -44,11 +45,14 @@ function ProductDetails() {
 
     const handleAddToCart = () => {
         if (productWithImage?.product) {
+            const { product_id } = productWithImage.product;
             const added = addToCart(productWithImage.product, quantity, productWithImage.product.bottle_count);
             if (added < quantity) {
                 showToast(t('cart.orderLimitReached', { max: MAX_ORDER_BOTTLES }), 'warning');
+                track({ event: 'cart_limit', product_id });
             }
             if (added > 0) {
+                track({ event: 'add_to_cart', product_id });
                 showToast(t('cart.addedToCart'), 'success');
                 pulse('add-to-cart');
             }

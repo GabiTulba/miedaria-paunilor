@@ -937,6 +937,13 @@
         "legalBasis": "Our legitimate interest in answering you (Art. 6(1)(f)), or steps you ask for before entering into a contract (Art. 6(1)(b)).",
         "retention": "As long as needed to deal with your request, and no longer than 2 years after our last exchange, unless the message is part of an order record."
       },
+      "statistics": {
+        "title": "Site statistics",
+        "data": "The pages you open, how you arrived at the site (only its kind: direct, search engine, social network, email or another site), the products you view or add to the cart, the shop filters you pick and the site's language. To count each visitor once a day, your network address and browser type are combined into a code with a key that changes every day; neither they nor the code are stored. No cookie is used and nothing is saved on your device.",
+        "purpose": "Understanding which pages and products interest visitors, so we can improve the shop and plan production. The figures are totals only, such as views of a product per day, and cannot be traced back to anyone.",
+        "legalBasis": "Our legitimate interest in knowing how the shop is used (Art. 6(1)(f)). If your browser sends a Do Not Track or Global Privacy Control signal, nothing is counted for you.",
+        "retention": "The daily codes are kept in memory only and deleted at midnight. The anonymous totals are kept for 2 years."
+      },
       "security": {
         "title": "Security and technical logs",
         "data": "IP address, browser type (user agent), the page requested, the referring page and the time of the request. Query strings in addresses, where emailed links carry their codes, are not logged.",

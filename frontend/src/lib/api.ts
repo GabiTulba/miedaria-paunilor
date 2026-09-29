@@ -21,6 +21,7 @@ import type { AccountProfile } from '../types/generated/AccountProfile';
 import type { SignInProviders } from '../types/generated/SignInProviders';
 import type { AccountOrder } from '../types/generated/AccountOrder';
 import type { AccountOrderWithItems } from '../types/generated/AccountOrderWithItems';
+import type { SiteEvent } from '../types/generated/SiteEvent';
 import i18n from '../i18n/config';
 
 // Mirror of `VARIANT_WIDTHS` in backend/src/image_crud.rs.
@@ -333,6 +334,16 @@ export const api = {
 
     unsubscribeNewsletter: (id: string, token: string): Promise<null> => {
         return request(`/newsletter/unsubscribe${buildQuery({ id, token })}`, { method: 'POST' });
+    },
+
+    // Anonymous site statistics; keepalive lets an event outlive the page.
+    recordEvent: (event: SiteEvent): Promise<null> => {
+        return request('/events', {
+            method: 'POST',
+            headers: JSON_HEADERS,
+            body: JSON.stringify(event),
+            keepalive: true,
+        });
     },
 
     getNewsletterStats: (signal?: AbortSignal): Promise<NewsletterStats> => {

@@ -936,6 +936,13 @@
         "legalBasis": "Interesul nostru legitim de a-ți răspunde (art. 6 alin. (1) lit. f)) sau demersurile pe care le soliciți înainte de încheierea unui contract (art. 6 alin. (1) lit. b)).",
         "retention": "Cât este necesar pentru soluționarea solicitării și cel mult 2 ani de la ultima comunicare, cu excepția cazului în care mesajul face parte din evidența unei comenzi."
       },
+      "statistics": {
+        "title": "Statistici ale site-ului",
+        "data": "Paginile pe care le deschizi, felul în care ai ajuns pe site (doar tipul sursei: direct, motor de căutare, rețea socială, email sau alt site), produsele pe care le vezi sau le adaugi în coș, filtrele alese în magazin și limba site-ului. Pentru ca fiecare vizitator să fie numărat o singură dată pe zi, adresa ta de rețea și tipul browserului sunt combinate într-un cod cu o cheie care se schimbă zilnic; nici ele, nici codul nu sunt stocate. Nu folosim cookie-uri și nu salvăm nimic pe dispozitivul tău.",
+        "purpose": "Să înțelegem ce pagini și produse îi interesează pe vizitatori, pentru a îmbunătăți magazinul și a planifica producția. Cifrele sunt doar totaluri, de exemplu vizualizările unui produs într-o zi, și nu pot fi legate de nicio persoană.",
+        "legalBasis": "Interesul nostru legitim de a ști cum este folosit magazinul (art. 6 alin. (1) lit. f)). Dacă browserul tău trimite semnalul Do Not Track sau Global Privacy Control, nu numărăm nimic pentru tine.",
+        "retention": "Codurile zilnice sunt păstrate doar în memorie și șterse la miezul nopții. Totalurile anonime sunt păstrate 2 ani."
+      },
       "security": {
         "title": "Securitate și jurnale tehnice",
         "data": "Adresa IP, tipul browserului (user agent), pagina solicitată, pagina de proveniență și ora cererii. Parametrii din adrese, unde linkurile trimise prin email își poartă codurile, nu sunt înregistrați.",

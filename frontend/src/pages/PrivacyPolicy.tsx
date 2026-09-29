@@ -6,7 +6,7 @@ import { BUSINESS_INFO, BUSINESS_LEGAL, getFullAddress } from '../lib/businessIn
 /// Every purpose for which the site processes personal data. Must be kept in
 /// sync with what the code collects: update it together with any change that
 /// stores, logs or shares a new kind of personal data.
-const ACTIVITIES = ['orders', 'payments', 'accounts', 'newsletter', 'contact', 'security'] as const;
+const ACTIVITIES = ['orders', 'payments', 'accounts', 'newsletter', 'contact', 'statistics', 'security'] as const;
 const ACTIVITY_FACTS = ['data', 'purpose', 'legalBasis', 'retention'] as const;
 
 const RECIPIENTS: { name: 'hosting' | 'stripe' | 'brevo' | 'google' | 'googleSignIn' | 'whatsapp' | 'courier' | 'authorities'; policyUrl?: string }[] = [
@@ -23,7 +23,7 @@ const RECIPIENTS: { name: 'hosting' | 'stripe' | 'brevo' | 'google' | 'googleSig
 const RIGHTS = ['access', 'rectification', 'erasure', 'restriction', 'portability', 'objection', 'withdrawConsent'] as const;
 
 const SUPERVISORY_AUTHORITY_URL = 'https://www.dataprotection.ro';
-const LAST_UPDATED = '2026-10-02';
+const LAST_UPDATED = '2026-09-29';
 
 function PrivacyPolicy() {
     const { t } = useTranslation();

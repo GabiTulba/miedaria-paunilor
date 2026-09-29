@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import type { ApiError } from '../types/api';
 import { useConsent } from '../hooks/useConsent';
 import { LocalizedLink } from './LocalizedLink';
+import { track } from '../lib/analytics';
 import { isPopupSuppressed, rememberDismissal, rememberSubscription } from '../lib/newsletterPopup';
 import './NewsletterPopup.css';
 
@@ -56,9 +57,16 @@ function NewsletterPopup() {
     const visible = consent !== null && !suppressed && engaged;
 
     const close = useCallback(() => {
-        if (consent && status !== 'success') rememberDismissal(consent);
+        if (consent && status !== 'success') {
+            rememberDismissal(consent);
+            track({ event: 'newsletter_popup', outcome: 'dismissed' });
+        }
         setSuppressed(true);
     }, [consent, status]);
+
+    useEffect(() => {
+        if (visible) track({ event: 'newsletter_popup', outcome: 'shown' });
+    }, [visible]);
 
     useEffect(() => {
         if (!visible) return;
@@ -77,6 +85,7 @@ function NewsletterPopup() {
         try {
             await api.subscribeNewsletter(email);
             rememberSubscription(consent);
+            track({ event: 'newsletter_popup', outcome: 'subscribed' });
             setStatus('success');
         } catch (err) {
             const httpStatus = (err as ApiError).response?.status;

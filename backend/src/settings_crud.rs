@@ -6,7 +6,7 @@ const CHECKOUT_ENABLED_KEY: &str = "checkout_enabled";
 
 /// Missing row means enabled: the migration seeds `true`, and failing open
 /// matches that default rather than silently closing the shop.
-pub fn is_checkout_enabled(conn: &mut PgConnection) -> Result<bool, RepositoryError> {
+pub fn is_checkout_enabled(conn: &mut PgConnection) -> QueryResult<bool> {
     let value: Option<String> = site_settings::table
         .filter(site_settings::setting_key.eq(CHECKOUT_ENABLED_KEY))
         .select(site_settings::setting_value)

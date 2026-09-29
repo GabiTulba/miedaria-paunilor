@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useReducer } from 'react';
+import { trackShopFilter } from '../lib/analytics';
 
 export interface ShopFilters {
     orderBy: string;
@@ -55,6 +56,7 @@ export function useShopFilters(): UseShopFiltersResult {
 
     const setFilter = useCallback(<K extends keyof ShopFilters>(key: K, value: ShopFilters[K]) => {
         dispatch({ type: 'set', key, value });
+        trackShopFilter(key, value);
     }, []);
 
     const clearFilters = useCallback(() => dispatch({ type: 'reset' }), []);

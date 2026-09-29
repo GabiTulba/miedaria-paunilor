@@ -30,7 +30,7 @@ const STORAGE_ITEMS: StorageItem[] = [
 ];
 
 const STRIPE_COOKIE_POLICY_URL = 'https://stripe.com/legal/cookies-policy';
-const LAST_UPDATED = '2026-10-01';
+const LAST_UPDATED = '2026-09-29';
 
 function CookiePolicy() {
     const { t } = useTranslation();

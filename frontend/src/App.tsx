@@ -16,6 +16,7 @@ import CookieConsentBanner from './components/CookieConsentBanner';
 import NewsletterPopup from './components/NewsletterPopup';
 import { getCookie } from './lib/cookies';
 import { resetConsent } from './lib/consent';
+import { trackPageView } from './lib/analytics';
 import './App.css';
 
 function App() {
@@ -36,6 +37,10 @@ function App() {
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    trackPageView(pathname);
   }, [pathname]);
 
   useFocusTrapDrawer({

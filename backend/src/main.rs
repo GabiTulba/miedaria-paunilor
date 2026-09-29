@@ -6,9 +6,9 @@ use dotenvy::dotenv;
 use backend::routes;
 use backend::{
     AppState, account, auth, build_account_limiter, build_admin_limiter, build_checkout_limiter,
-    build_customer_password_limiter, build_image_serve_limiter, build_login_limiter,
-    build_newsletter_limiter, build_public_api_limiter, db, exchange_rate, google, mailer, metrics,
-    newsletter, retention, stripe_checkout, tokens,
+    build_customer_password_limiter, build_events_limiter, build_image_serve_limiter,
+    build_login_limiter, build_newsletter_limiter, build_public_api_limiter, db, exchange_rate,
+    google, mailer, metrics, newsletter, retention, stripe_checkout, tokens,
 };
 
 struct Config {
@@ -218,6 +218,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         account_limiter: build_account_limiter(),
         customer_login_limiter: build_login_limiter(),
         customer_password_limiter: build_customer_password_limiter(),
+        events_limiter: build_events_limiter(),
         client_key_secret: tokens::random_key(),
         site_url: config.allowed_origin,
         unsubscribe_key: newsletter::derive_unsubscribe_key(&config.jwt_secret),
@@ -295,6 +296,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(routes::lot::public_router())
         .merge(routes::newsletter::public_router())
         .merge(routes::account::router(app_state.clone()))
+        .merge(routes::analytics::router(app_state.clone()))
         .route_layer(axum::middleware::from_fn_with_state(
             app_state.clone(),
             auth::public_api_rate_limit,

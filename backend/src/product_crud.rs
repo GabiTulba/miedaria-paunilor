@@ -1,8 +1,8 @@
 use crate::AppError;
+use crate::enums::OrderStatus;
 use crate::enums::*;
 use crate::error::RepositoryError;
 use crate::lot_crud;
-use crate::enums::OrderStatus;
 use crate::models::{
     CreateProductRequest, Image, LotNutrition, NewProduct, Product, StockLevel,
     UpdateProductRequest,
@@ -371,6 +371,18 @@ pub fn get_product(conn: &mut PgConnection, id: &str) -> QueryResult<Option<Prod
         .select(ProductWithImage::as_select())
         .first(conn)
         .optional()
+}
+
+/// Whether `id` is a product on sale (not deleted).
+pub fn is_listed(conn: &mut PgConnection, id: &str) -> QueryResult<bool> {
+    use crate::schema::products::dsl::*;
+
+    diesel::select(diesel::dsl::exists(
+        products
+            .filter(product_id.eq(id))
+            .filter(deleted_at.is_null()),
+    ))
+    .get_result(conn)
 }
 
 pub fn get_product_admin(
@@ -760,7 +772,10 @@ mod tests {
 
     #[test]
     fn search_terms_are_trimmed_and_blank_means_none() {
-        assert_eq!(normalize_search_term("  apricot ").unwrap(), Some("apricot"));
+        assert_eq!(
+            normalize_search_term("  apricot ").unwrap(),
+            Some("apricot")
+        );
         assert_eq!(normalize_search_term("   ").unwrap(), None);
         assert!(normalize_search_term(&"ă".repeat(100)).is_ok());
         assert!(normalize_search_term(&"a".repeat(101)).is_err());

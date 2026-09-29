@@ -2,7 +2,7 @@
 //! container to scrape. Request and background-task counters live in process
 //! memory; shop figures (orders, revenue, stock, subscribers) are read from
 //! the database on every scrape, so they survive restarts and never drift
-//! from the source of truth. No metric carries data about a visitor.
+//! from the source of truth. No metric identifies a visitor.
 
 use std::sync::{Arc, LazyLock};
 use std::time::Instant;
@@ -29,12 +29,14 @@ use prometheus_client::metrics::histogram::{Histogram, exponential_buckets};
 use prometheus_client::registry::Registry;
 
 use crate::AppState;
+use crate::analytics;
 use crate::customer_crud;
 use crate::db;
 use crate::enums::OrderStatus;
 use crate::newsletter::{self, NewsletterStats};
 use crate::order_crud;
 use crate::schema::orders;
+use crate::settings_crud;
 
 /// Orders are charged in RON; its series exist from the first scrape so that
 /// `increase()` also counts the very first sale.
@@ -183,6 +185,7 @@ struct ShopSnapshot {
     stale_processing: i64,
     subscribers: NewsletterStats,
     customers: i64,
+    checkout_enabled: bool,
 }
 
 impl ShopSnapshot {
@@ -251,6 +254,7 @@ impl ShopSnapshot {
             stale_processing: order_crud::count_stale_processing(conn)?,
             subscribers: newsletter::stats(conn)?,
             customers: customer_crud::count_verified(conn)?,
+            checkout_enabled: settings_crud::is_checkout_enabled(conn)?,
         })
     }
 }
@@ -382,6 +386,12 @@ impl Collector for ShopSnapshot {
         )?;
         encode_gauge(
             &mut encoder,
+            "shop_checkout_enabled",
+            "1 while the shop accepts orders, 0 while checkout is switched off",
+            self.checkout_enabled.into(),
+        )?;
+        encode_gauge(
+            &mut encoder,
             "shop_customers",
             "Customer accounts with a verified email",
             self.customers,
@@ -426,6 +436,7 @@ async fn serve_metrics(State(app_state): State<Arc<AppState>>) -> Response {
         "Customer password checks by outcome",
         ACCOUNT_LOGINS.clone(),
     );
+    analytics::register(&mut registry);
 
     let snapshot = db::get_db_connection(&app_state)
         .map_err(|e| format!("{e:?}"))

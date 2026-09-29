@@ -161,6 +161,15 @@ pub fn get_blog_post_by_slug(conn: &mut PgConnection, slug: &str) -> Result<Blog
         .first::<BlogPost>(conn)
 }
 
+pub fn is_published(conn: &mut PgConnection, slug: &str) -> QueryResult<bool> {
+    diesel::select(diesel::dsl::exists(
+        blog_posts::table
+            .filter(blog_posts::slug.eq(slug))
+            .filter(blog_posts::is_published.eq(true)),
+    ))
+    .get_result(conn)
+}
+
 pub fn get_blog_post_by_id(
     conn: &mut PgConnection,
     id: uuid::Uuid,
