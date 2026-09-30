@@ -61,6 +61,7 @@ pub enum ProductValidationError {
     InvalidBottleCount,
     BottleCountTooLarge,
     InvalidBottleSize,
+    InvalidWeightGrams,
     InvalidPriceRon,
     PriceRonBelowMinimum,
     InvalidAbvPrecision,
@@ -99,6 +100,7 @@ struct ProductValidationInput<'a> {
     abv: Decimal,
     bottle_count: i32,
     bottle_size: i32,
+    weight_grams: i32,
     price_ron: Decimal,
     bottling_date: chrono::NaiveDate,
     lot_number: i32,
@@ -106,7 +108,7 @@ struct ProductValidationInput<'a> {
 
 /// `Product` and `NewProduct` share the validated field set (Diesel generates
 /// both from the same schema). The macro emits a `From` impl that copies the
-/// same 13 fields from either source — adding a new validated field is a
+/// same 14 fields from either source — adding a new validated field is a
 /// single edit to the macro body.
 macro_rules! impl_validation_input_from {
     ($source:ty) => {
@@ -123,6 +125,7 @@ macro_rules! impl_validation_input_from {
                     abv: p.abv,
                     bottle_count: p.bottle_count,
                     bottle_size: p.bottle_size,
+                    weight_grams: p.weight_grams,
                     price_ron: p.price_ron,
                     bottling_date: p.bottling_date,
                     lot_number: p.lot_number,
@@ -136,6 +139,8 @@ impl_validation_input_from!(NewProduct);
 impl_validation_input_from!(Product);
 
 const MAX_BOTTLE_COUNT: i32 = 1_000_000;
+/// Matches the `products_weight_grams_check` constraint.
+const MAX_WEIGHT_GRAMS: i32 = 30_000;
 
 fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationError> {
     // ABV: 0.0–99.9 (DECIMAL(3,1))
@@ -209,6 +214,10 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
     // bottle_size: Positive integer (mililiters of volume).
     if input.bottle_size <= 0 {
         errors.push(ProductValidationError::InvalidBottleSize);
+    }
+
+    if !(1..=MAX_WEIGHT_GRAMS).contains(&input.weight_grams) {
+        errors.push(ProductValidationError::InvalidWeightGrams);
     }
 
     // price_ron: Decimal with two digits of precision.

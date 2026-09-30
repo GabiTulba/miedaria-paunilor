@@ -173,6 +173,16 @@ function PricingSection({ stock }: PricingSectionProps) {
                         helpText={t('admin.productForm.bottleSizeHelp')}
                         {...register('bottle_size', numericOptions((v) => validatePositiveNumber(v, 'Bottle size')))}
                     />
+                    <NumberInput
+                        id="weight_grams"
+                        label={t('admin.productForm.weightGrams')}
+                        required
+                        min="1"
+                        max="30000"
+                        error={errors.weight_grams?.message}
+                        helpText={t('admin.productForm.weightGramsHelp')}
+                        {...register('weight_grams', numericOptions((v) => validatePositiveNumber(v, 'Weight')))}
+                    />
                 </div>
                 <div className="form-row">
                     <div className="form-group">

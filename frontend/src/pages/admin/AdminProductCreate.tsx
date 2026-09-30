@@ -31,6 +31,7 @@ const INITIAL_PRODUCT: ProductFormData = {
     abv: 0.0,
     bottle_count: 0,
     bottle_size: 750,
+    weight_grams: 1350,
     price_ron: 0.00,
     image_id: '',
     bottling_date: '',

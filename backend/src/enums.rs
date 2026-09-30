@@ -19,6 +19,18 @@ pub enum OrderStatus {
     Failed,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, DbEnum, EnumIter, TS)]
+#[serde(rename_all = "kebab-case")]
+#[ts(export)]
+#[ExistingTypePath = "crate::schema::sql_types::DeliveryMethodEnum"]
+#[DbValueStyle = "kebab-case"]
+pub enum DeliveryMethod {
+    /// Sameday courier to the address the customer gives on Stripe's page.
+    Home,
+    /// Sameday easybox locker, chosen in the cart.
+    Easybox,
+}
+
 /// What an emailed customer token authorises.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, DbEnum)]
 #[ExistingTypePath = "crate::schema::sql_types::CustomerTokenPurposeEnum"]

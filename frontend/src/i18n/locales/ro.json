@@ -150,7 +150,8 @@
     "main": "Navigare principală",
     "skipToContent": "Sari la conținut",
     "login": "Autentificare",
-    "myAccount": "Contul meu"
+    "myAccount": "Contul meu",
+    "shipping": "Livrare"
   },
   "home": {
     "heroTitle": "Mied Autentic. Puritate Desăvârșită.",
@@ -275,7 +276,26 @@
     "quantityReduced": "Cantitatea a fost ajustată — doar {{max}} disponibile",
     "addedToCart": "Adăugat în coș",
     "accountLogin": "Autentifică-te",
-    "accountOptional": "ca să regăsești comanda în contul tău. Este opțional: poți comanda și fără cont."
+    "accountOptional": "ca să regăsești comanda în contul tău. Este opțional: poți comanda și fără cont.",
+    "products": "Produse",
+    "adultConfirm": "Am cel puțin 18 ani, iar coletul va fi primit de o persoană majoră. Hidromelul este o băutură alcoolică.",
+    "delivery": {
+      "title": "Livrare",
+      "home": "Curier Sameday la adresă",
+      "easybox": "Locker Sameday easybox",
+      "shipping": "Livrare",
+      "free": "Gratuit",
+      "freeFrom": "Gratuită de la {{amount}} în produse",
+      "homeHint": "Adresa de livrare și numărul de telefon le completezi pe pagina de plată. Curierul te sună înainte de livrare.",
+      "lockerHint": "Alege easybox-ul de unde vrei să ridici coletul.",
+      "chooseLocker": "Alege un easybox",
+      "changeLocker": "Alege alt easybox",
+      "mapNotice": "Harta este oferită de Sameday și se deschide de pe site-ul lor; îți poate cere locația pentru a arăta lockerele din apropiere.",
+      "mapError": "Harta easybox nu s-a putut încărca. Încearcă din nou sau alege livrarea la adresă.",
+      "lockerRequired": "Alege un easybox pentru a continua.",
+      "loadError": "Opțiunile de livrare nu s-au putut încărca. Reîncarcă pagina.",
+      "unavailable": "Această livrare nu se poate folosi pentru comanda ta. Un easybox încape cel mult aproximativ o duzină de sticle; alege livrarea la adresă sau alt locker."
+    }
   },
   "ageGate": {
     "title": "Ai peste 18 ani?",
@@ -373,7 +393,19 @@
         "missing": "Comanda nu are adresă de livrare (plasată înainte de colectarea adresei sau încă neplătită)."
       },
       "items": "Produse",
-      "anonymized": "Date personale șterse (perioada de păstrare s-a încheiat)"
+      "anonymized": "Date personale șterse (perioada de păstrare s-a încheiat)",
+      "awb": {
+        "create": "Generează AWB",
+        "parcels": "Colete",
+        "weight": "Greutate (kg)",
+        "insured": "Declară valoarea produselor (taxă 1%, acoperă spargerea)",
+        "label": "Descarcă eticheta (PDF)",
+        "cancel": "Anulează AWB",
+        "cancelTitle": "Anulezi AWB-ul Sameday?",
+        "cancelMessage": "AWB-ul {{awb}} va fi anulat la Sameday. Merge doar înainte ca curierul să ridice coletul.",
+        "error": "Cererea către Sameday a eșuat. Încearcă din nou.",
+        "unavailable": "Sameday nu este configurat sau nu răspunde."
+      }
     },
     "products": {
       "title": "Gestionează Produse",
@@ -435,6 +467,8 @@
       "bottleCount": "Număr Sticle",
       "bottleSize": "Volum",
       "bottleSizeHelp": "Volum în mililitri",
+      "weightGrams": "Greutate ambalată (g)",
+      "weightGramsHelp": "O sticlă cu ambalajul ei, în grame. Folosită la AWB-urile Sameday și la limita de greutate easybox; nu apare pe site.",
       "bottlingDate": "Data de Îmbuteliere",
       "bottlingDateHelp": "Data când hidromelul a fost îmbuteliat",
       "lotNumber": "Număr Lot",
@@ -558,6 +592,19 @@
         "confirm": "Trimite emailul",
         "success": "Articolul se trimite către {{count}} abonați"
       }
+    },
+    "shipping": {
+      "title": "Livrare",
+      "subtitle": "Prețuri fixe de livrare Sameday, încasate în RON la plată",
+      "price": "Preț (RON)",
+      "freeFrom": "Gratuită de la (RON în produse)",
+      "freeFromHelp": "Lasă gol ca livrarea să se plătească mereu.",
+      "enabled": "Oferă această metodă de livrare",
+      "easyboxHelp": "Easybox apare doar după ce contul Sameday este configurat și lockerele sunt sincronizate.",
+      "save": "Salvează",
+      "saved": "Prețul de livrare a fost salvat",
+      "saveError": "Prețul de livrare nu s-a putut salva",
+      "loadError": "Prețurile de livrare nu s-au putut încărca"
     }
   },
   "about": {
@@ -629,6 +676,7 @@
       "InvalidBottleCount": "Numărul de sticle trebuie să fie un întreg nenegativ.",
       "BottleCountTooLarge": "Numărul de sticle este prea mare.",
       "InvalidBottleSize": "Volumul trebuie să fie un întreg pozitiv.",
+      "InvalidWeightGrams": "Greutatea ambalată trebuie să fie între 1 și 30000 de grame.",
       "InvalidPriceRon": "Prețul RON trebuie să fie între 0.00 și 99999.99.",
       "InvalidPriceRonPrecision": "Prețul RON poate avea cel mult două zecimale.",
       "PriceRonBelowMinimum": "Prețul minim este 2,00 RON (suma minimă acceptată de Stripe).",
@@ -812,6 +860,10 @@
         "purpose": "Ne permite să eliberăm sticlele rezervate pentru comanda ta dacă părăsești pagina de plată fără să plătești.",
         "lifetime": "Până închizi fila"
       },
+      "easybox_locker": {
+        "purpose": "Ține minte easybox-ul ales pe harta Sameday cât timp îți finalizezi comanda.",
+        "lifetime": "Până închizi fila"
+      },
       "lang": {
         "purpose": "Reține limba preferată, ca pagina principală să se deschidă în ea.",
         "lifetime": "1 an"
@@ -840,6 +892,7 @@
     "thirdPartyTitle": "Plata prin Stripe",
     "thirdPartyText": "Plățile sunt procesate pe pagina de plată proprie Stripe (checkout.stripe.com). Stripe setează acolo propriile cookie-uri, de exemplu pentru prevenirea fraudei, conform politicii sale.",
     "stripeLink": "Politica de cookie-uri Stripe",
+    "samedayMapText": "Dacă alegi livrarea la easybox, harta lockerelor Sameday se deschide de pe site-ul lor (lockerplugin.sameday.ro) doar când apeși să alegi un locker. Îți poate cere locația pentru a arăta lockerele din apropiere, iar Sameday poate seta acolo propriile cookie-uri conform politicii sale de confidențialitate. Noi primim doar lockerul ales.",
     "manageTitle": "Schimbarea alegerii",
     "manageText": "Îți poți schimba alegerea oricând. Butonul de mai jos afișează din nou bannerul de cookie-uri. Dacă refuzi, preferințele opționale (limba și invitația la newsletter) sunt șterse imediat. Poți șterge cookie-urile și datele site-ului și din setările browserului; cele strict necesare vor fi setate din nou când folosești magazinul.",
     "manageButton": "Schimbă setările cookie-urilor",
@@ -903,10 +956,10 @@
     "activities": {
       "orders": {
         "title": "Comenzi și livrare",
-        "data": "Numele, adresa de email, numărul de telefon, adresa de livrare, produsele comandate și valoarea comenzii, precum și limba site-ului din care ai comandat. Introduci aceste date pe pagina de plată Stripe, iar noi le primim după finalizarea plății. Dacă ești autentificat, comanda este legată și de contul tău, iar Stripe primește adresa de email a contului.",
+        "data": "Numele, adresa de email, numărul de telefon, adresa de livrare sau easybox-ul Sameday ales, produsele comandate, valoarea comenzii și a livrării, confirmarea că ai cel puțin 18 ani și limba site-ului din care ai comandat. Adresa, numărul de telefon și numele le introduci pe pagina de plată Stripe, iar noi le primim după finalizarea plății. Dacă ești autentificat, comanda este legată și de contul tău, iar Stripe primește adresa de email a contului. După predarea coletului către Sameday păstrăm numărul AWB și starea livrării.",
         "purpose": "Livrarea comenzii, contactarea ta în legătură cu ea, gestionarea retururilor și reclamațiilor și păstrarea evidențelor contabile cerute de lege.",
         "legalBasis": "Executarea contractului de vânzare (art. 6 alin. (1) lit. b) GDPR) și îndeplinirea obligațiilor noastre legale contabile și fiscale (art. 6 alin. (1) lit. c)).",
-        "retention": "Comenzile plătite sunt documente contabile, păstrate pe durata cerută de legislația contabilă: 5 ani de la încheierea exercițiului financiar căruia îi aparțin (Legea contabilității nr. 82/1991). La încheierea acestei perioade, în luna ianuarie următoare, numele, adresa de email, numărul de telefon, adresa de livrare și referințele plății sunt șterse automat; rămâne doar o evidență anonimă a sumelor și produselor. Comenzile neplătite sunt șterse la fel, la 90 de zile după încheiere."
+        "retention": "Comenzile plătite sunt documente contabile, păstrate pe durata cerută de legislația contabilă: 5 ani de la încheierea exercițiului financiar căruia îi aparțin (Legea contabilității nr. 82/1991). La încheierea acestei perioade, în luna ianuarie următoare, numele, adresa de email, numărul de telefon, adresa de livrare și referințele plății sunt șterse automat; rămâne doar o evidență anonimă a sumelor și produselor. Numărul AWB se șterge odată cu ele. Comenzile neplătite sunt șterse la fel, la 90 de zile după încheiere."
       },
       "payments": {
         "title": "Plăți",
@@ -962,7 +1015,7 @@
       "google": "Google (Gmail), care găzduiește căsuța în care primim emailurile tale.",
       "googleSignIn": "Google Ireland Ltd., doar dacă alegi să continui cu Google: Google ne confirmă identitatea ta și, ca operator separat, află că te-ai autentificat pe site-ul nostru.",
       "whatsapp": "WhatsApp Ireland Ltd. (Meta), atunci când alegi să ne scrii pe WhatsApp.",
-      "courier": "Firma de curierat care îți livrează comanda și care primește numele, numărul de telefon și adresa de livrare.",
+      "sameday": "Sameday, firma de curierat (România), care îți livrează comanda: primește numele, numărul de telefon și adresa de email, împreună cu adresa de livrare sau easybox-ul ales. Dacă alegi un easybox, harta lockerelor este a Sameday și se încarcă de pe site-ul lor.",
       "authorities": "Autoritățile publice, cum ar fi ANAF, atunci când legea ne obligă."
     },
     "recipientPolicyLink": "(politica de confidențialitate)",
@@ -1126,5 +1179,11 @@
         "failed": "Autentificarea cu Google nu a reușit. Încearcă din nou."
       }
     }
+  },
+  "orderTracking": {
+    "awb": "AWB Sameday",
+    "handedOver": "Predat către Sameday",
+    "delivered": "Livrat pe {{date}}",
+    "canceled": "Expediere anulată"
   }
 }

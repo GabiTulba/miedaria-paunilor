@@ -23,8 +23,11 @@ pub mod product_crud;
 pub mod retention;
 pub mod routes;
 pub mod rss_crud;
+pub mod sameday;
 pub mod schema;
 pub mod settings_crud;
+pub mod shipments;
+pub mod shipping;
 pub mod sitemap_crud;
 pub mod stripe_checkout;
 pub mod tokens;
@@ -138,6 +141,9 @@ pub struct AppState {
     pub mailer: mailer::Mailer,
     /// `None` when Google sign-in is not configured.
     pub google: google::SharedGoogleClient,
+    /// `None` when Sameday is not configured: easybox is not offered and
+    /// waybills are made by hand in Sameday's eAWB portal.
+    pub sameday: sameday::SharedSamedayClient,
     /// See `newsletter::derive_unsubscribe_key`.
     pub unsubscribe_key: [u8; 32],
     /// Latest known BNR EUR reference rate, kept warm by the refresh task so

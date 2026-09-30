@@ -24,6 +24,7 @@ export const errorMapping: Record<ProductValidationError, keyof Product | keyof 
     InvalidBottleCount: 'bottle_count',
     BottleCountTooLarge: 'bottle_count',
     InvalidBottleSize: 'bottle_size',
+    InvalidWeightGrams: 'weight_grams',
     InvalidPriceRon: 'price_ron',
     InvalidPriceRonPrecision: 'price_ron',
     PriceRonBelowMinimum: 'price_ron',

@@ -14,6 +14,10 @@ pub mod sql_types {
     pub struct CustomerTokenPurposeEnum;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "delivery_method_enum"))]
+    pub struct DeliveryMethodEnum;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "effervescence_type_enum"))]
     pub struct EffervescenceTypeEnum;
 
@@ -173,6 +177,7 @@ diesel::table! {
 diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::OrderStatusEnum;
+    use super::sql_types::DeliveryMethodEnum;
 
     orders (order_id) {
         order_id -> Uuid,
@@ -196,6 +201,15 @@ diesel::table! {
         shipping_country -> Nullable<Varchar>,
         customer_id -> Nullable<Uuid>,
         anonymized_at -> Nullable<Timestamptz>,
+        delivery_method -> DeliveryMethodEnum,
+        shipping_amount_cents -> Int8,
+        age_confirmed_at -> Nullable<Timestamptz>,
+        locker_id -> Nullable<Int4>,
+        locker_name -> Nullable<Varchar>,
+        locker_address -> Nullable<Varchar>,
+        locker_city -> Nullable<Varchar>,
+        locker_county -> Nullable<Varchar>,
+        locker_postal_code -> Nullable<Varchar>,
     }
 }
 
@@ -233,6 +247,50 @@ diesel::table! {
         lot_number -> Int4,
         updated_at -> Timestamptz,
         deleted_at -> Nullable<Timestamptz>,
+        weight_grams -> Int4,
+    }
+}
+
+diesel::table! {
+    sameday_lockers (locker_id) {
+        locker_id -> Int4,
+        name -> Varchar,
+        county -> Varchar,
+        city -> Varchar,
+        address -> Varchar,
+        postal_code -> Varchar,
+        synced_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    shipments (order_id) {
+        order_id -> Uuid,
+        awb_number -> Nullable<Varchar>,
+        service_code -> Varchar,
+        parcel_count -> Int4,
+        weight_grams -> Int4,
+        insured_value_cents -> Int8,
+        cost_cents -> Nullable<Int8>,
+        status_label -> Nullable<Varchar>,
+        status_at -> Nullable<Timestamptz>,
+        delivered_at -> Nullable<Timestamptz>,
+        canceled -> Bool,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::DeliveryMethodEnum;
+
+    shipping_rates (delivery_method) {
+        delivery_method -> DeliveryMethodEnum,
+        price_cents -> Int8,
+        free_from_cents -> Nullable<Int8>,
+        enabled -> Bool,
+        updated_at -> Timestamptz,
     }
 }
 
@@ -252,6 +310,7 @@ diesel::joinable!(order_items -> orders (order_id));
 diesel::joinable!(order_items -> products (product_id));
 diesel::joinable!(orders -> customers (customer_id));
 diesel::joinable!(products -> images (image_id));
+diesel::joinable!(shipments -> orders (order_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     admin_users,
@@ -267,5 +326,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     order_items,
     orders,
     products,
+    sameday_lockers,
+    shipments,
+    shipping_rates,
     site_settings,
 );

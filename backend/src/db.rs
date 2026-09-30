@@ -5,7 +5,6 @@ use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use dotenvy::dotenv;
 use std::env;
-use std::sync::Arc;
 use std::time::Duration;
 
 pub type PgPool = Pool<ConnectionManager<PgConnection>>;
@@ -30,7 +29,7 @@ pub fn establish_pooled_connection(database_url: &str) -> Result<PgPool, r2d2::E
 }
 
 pub fn get_db_connection(
-    app_state: &Arc<AppState>,
+    app_state: &AppState,
 ) -> Result<PooledConnection<ConnectionManager<PgConnection>>, AppError> {
     app_state.pool.get().map_err(|e| {
         tracing::error!(error = %e, "db pool exhausted");

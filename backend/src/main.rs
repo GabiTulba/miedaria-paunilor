@@ -8,7 +8,7 @@ use backend::{
     AppState, account, auth, build_account_limiter, build_admin_limiter, build_checkout_limiter,
     build_customer_password_limiter, build_events_limiter, build_image_serve_limiter,
     build_login_limiter, build_newsletter_limiter, build_public_api_limiter, db, exchange_rate,
-    google, mailer, metrics, newsletter, retention, stripe_checkout, tokens,
+    google, mailer, metrics, newsletter, retention, sameday, shipments, stripe_checkout, tokens,
 };
 
 struct Config {
@@ -23,6 +23,7 @@ struct Config {
     stripe_webhook_secret: String,
     smtp: mailer::SmtpConfig,
     google: Option<google::GoogleConfig>,
+    sameday: Option<sameday::SamedayConfig>,
 }
 
 /// Read `name` from the env, recording it in `missing` (and returning an
@@ -143,6 +144,7 @@ impl Config {
             stripe_webhook_secret,
             smtp,
             google: google_config()?,
+            sameday: sameday_config()?,
         })
     }
 }
@@ -158,6 +160,32 @@ fn google_config() -> Result<Option<google::GoogleConfig>, String> {
         })),
         (None, None) => Ok(None),
         _ => Err("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set together".to_string()),
+    }
+}
+
+/// Sameday is optional: all four variables set enables easybox and waybills,
+/// none leaves home delivery with waybills made by hand in eAWB.
+fn sameday_config() -> Result<Option<sameday::SamedayConfig>, String> {
+    let read = |name| env::var(name).ok().filter(|v| !v.trim().is_empty());
+    match (
+        read("SAMEDAY_API_URL"),
+        read("SAMEDAY_USERNAME"),
+        read("SAMEDAY_PASSWORD"),
+        read("SAMEDAY_LOCKER_CLIENT_ID"),
+    ) {
+        (Some(api_url), Some(username), Some(password), Some(locker_client_id)) => {
+            if !api_url.starts_with("https://") {
+                return Err("SAMEDAY_API_URL must be an https:// URL".to_string());
+            }
+            Ok(Some(sameday::SamedayConfig {
+                api_url: api_url.trim_end_matches('/').to_string(),
+                username,
+                password,
+                locker_client_id,
+            }))
+        }
+        (None, None, None, None) => Ok(None),
+        _ => Err("SAMEDAY_API_URL, SAMEDAY_USERNAME, SAMEDAY_PASSWORD and SAMEDAY_LOCKER_CLIENT_ID must be set together".to_string()),
     }
 }
 
@@ -197,6 +225,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None
         }
     };
+    let sameday = match config.sameday {
+        Some(sameday_config) => Some(Arc::new(
+            sameday::SamedayClient::new(sameday_config).unwrap_or_else(|e| panic!("{e}")),
+        )),
+        None => {
+            tracing::info!("SAMEDAY_API_URL not set; easybox and waybills disabled");
+            None
+        }
+    };
     let mailer = mailer::Mailer::new(config.smtp).unwrap_or_else(|e| {
         tracing::error!("{}", e);
         std::process::exit(1);
@@ -229,6 +266,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         stripe_webhook_secret: config.stripe_webhook_secret,
         mailer,
         google,
+        sameday,
         eur_rate: std::sync::RwLock::new(None),
     });
 
@@ -251,6 +289,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::spawn(newsletter::run_cleanup_task(app_state.clone()));
     tokio::spawn(account::run_cleanup_task(app_state.clone()));
     tokio::spawn(retention::run_retention_task(app_state.clone()));
+    tokio::spawn(shipments::run_locker_sync(app_state.clone()));
+    tokio::spawn(shipments::run_tracking_sync(app_state.clone()));
 
     let allowed_origin = app_state
         .site_url
@@ -272,6 +312,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let admin_routes = Router::new()
         .merge(routes::product::admin_router())
         .merge(routes::checkout::admin_router())
+        .merge(routes::shipping::admin_router())
         .merge(routes::blog::admin_router())
         .merge(routes::image::admin_router())
         .merge(routes::misc::admin_router())
@@ -292,6 +333,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let public_api_routes = Router::new()
         .merge(routes::product::public_router())
         .merge(routes::checkout::public_router())
+        .merge(routes::shipping::public_router())
         .merge(routes::blog::public_router())
         .merge(routes::lot::public_router())
         .merge(routes::newsletter::public_router())

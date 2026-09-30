@@ -2,9 +2,11 @@ use crate::enums::OrderStatus;
 use crate::error::RepositoryError;
 use crate::language::Language;
 use crate::models::{
-    CheckoutItem, NewOrder, NewOrderItem, Order, OrderItem, OrderWithItems, ShippingDetails,
+    CheckoutItem, DeliveryChoice, NewOrder, NewOrderItem, Order, OrderItem, OrderWithItems,
+    Shipment, ShippingDetails,
 };
 use crate::schema::*;
+use crate::shipping;
 use diesel::prelude::*;
 use diesel::sql_types::Text;
 use rust_decimal::Decimal;
@@ -79,10 +81,13 @@ fn amount_cents(price: Decimal) -> Result<i64, RepositoryError> {
 /// English site are indicative conversions. Fails with `TooManyRequests` if
 /// the client already holds `MAX_PENDING_ORDERS_PER_CLIENT` live reservations,
 /// and with `Conflict` if any product is missing, deleted, or short on stock —
-/// nothing is reserved then.
+/// nothing is reserved then. The delivery is checked and priced by
+/// `shipping::resolve_delivery`, and its charge is part of the order total.
 pub fn create_pending_order(
     conn: &mut PgConnection,
     items: &[CheckoutItem],
+    delivery: DeliveryChoice,
+    easybox_available: bool,
     language: Language,
     client_key_hash: &str,
     customer_id: Option<Uuid>,
@@ -110,14 +115,15 @@ pub fn create_pending_order(
             return Err(RepositoryError::TooManyRequests);
         }
 
-        let mut total_cents: i64 = 0;
+        let mut products_cents: i64 = 0;
+        let mut parcel_grams: i64 = 0;
         let mut new_items: Vec<NewOrderItem> = Vec::with_capacity(items.len());
 
         for item in items {
             // Conditional decrement doubles as the stock check: 0 rows updated
             // means "not found, deleted, or insufficient stock", and the
             // transaction rollback releases any earlier reservations.
-            let reserved: Option<(String, String, Decimal)> = diesel::update(
+            let reserved: Option<(String, String, Decimal, i32)> = diesel::update(
                 products::table.filter(
                     products::product_id
                         .eq(&item.product_id)
@@ -130,11 +136,12 @@ pub fn create_pending_order(
                 products::product_name,
                 products::product_name_ro,
                 products::price_ron,
+                products::weight_grams,
             ))
             .get_result(conn)
             .optional()?;
 
-            let (name_en, name_ro, price_ron) = reserved.ok_or_else(|| {
+            let (name_en, name_ro, price_ron, weight_grams) = reserved.ok_or_else(|| {
                 RepositoryError::Conflict(format!(
                     "Insufficient stock for product {}",
                     item.product_id
@@ -146,7 +153,8 @@ pub fn create_pending_order(
                 Language::Ro => name_ro,
             };
             let unit_amount_cents = amount_cents(price_ron)?;
-            total_cents += unit_amount_cents * i64::from(item.quantity);
+            products_cents += unit_amount_cents * i64::from(item.quantity);
+            parcel_grams += i64::from(weight_grams) * i64::from(item.quantity);
 
             new_items.push(NewOrderItem {
                 order_id: Uuid::nil(), // patched after the order row exists
@@ -157,15 +165,31 @@ pub fn create_pending_order(
             });
         }
 
-        let currency = "RON";
+        let delivery = shipping::resolve_delivery(
+            conn,
+            delivery,
+            easybox_available,
+            products_cents,
+            parcel_grams,
+        )?;
+        let locker = delivery.locker.as_ref();
 
         let order: Order = diesel::insert_into(orders::table)
             .values(&NewOrder {
-                currency: currency.to_string(),
-                total_amount_cents: total_cents,
+                currency: "RON".to_string(),
+                total_amount_cents: products_cents + delivery.shipping_cents,
                 language: language.code().to_string(),
                 client_key_hash: client_key_hash.to_string(),
                 customer_id,
+                delivery_method: delivery.method,
+                shipping_amount_cents: delivery.shipping_cents,
+                age_confirmed_at: chrono::Utc::now(),
+                locker_id: locker.map(|l| l.locker_id),
+                locker_name: locker.map(|l| l.name.clone()),
+                locker_address: locker.map(|l| l.address.clone()),
+                locker_city: locker.map(|l| l.city.clone()),
+                locker_county: locker.map(|l| l.county.clone()),
+                locker_postal_code: locker.map(|l| l.postal_code.clone()),
             })
             .returning(Order::as_returning())
             .get_result(conn)?;
@@ -179,7 +203,11 @@ pub fn create_pending_order(
             .returning(OrderItem::as_returning())
             .get_results(conn)?;
 
-        Ok(OrderWithItems { order, items })
+        Ok(OrderWithItems {
+            order,
+            items,
+            shipment: None,
+        })
     })
 }
 
@@ -383,8 +411,8 @@ pub fn stale_processing(conn: &mut PgConnection, limit: i64) -> QueryResult<Vec<
 
 /// Erases the personal data of finished orders past their retention period
 /// (see `retention`): paid orders created before `paid_before`, and expired
-/// or failed ones that ended before `unpaid_before`. Amounts, products, dates
-/// and status stay. Returns the number of orders erased.
+/// or failed ones that ended before `unpaid_before`, with their AWB numbers.
+/// Amounts, products, dates, status and the delivery method stay. Returns the number of orders erased.
 pub fn anonymize_expired(
     conn: &mut PgConnection,
     paid_before: chrono::DateTime<chrono::Utc>,
@@ -396,31 +424,47 @@ pub fn anonymize_expired(
         .or(orders::status
             .eq_any([OrderStatus::Expired, OrderStatus::Failed])
             .and(orders::updated_at.lt(unpaid_before)));
-    diesel::update(
-        orders::table
-            .filter(orders::anonymized_at.is_null())
-            .filter(due),
-    )
-    .set((
-        orders::anonymized_at.eq(chrono::Utc::now()),
-        orders::customer_email.eq(None::<String>),
-        orders::customer_id.eq(None::<Uuid>),
-        orders::stripe_session_id.eq(None::<String>),
-        orders::stripe_payment_intent_id.eq(None::<String>),
-        orders::client_key_hash.eq(None::<String>),
-        // Explicit NULLs: a `ShippingDetails` changeset would skip `None`.
-        (
-            orders::shipping_name.eq(None::<String>),
-            orders::shipping_phone.eq(None::<String>),
-            orders::shipping_line1.eq(None::<String>),
-            orders::shipping_line2.eq(None::<String>),
-            orders::shipping_city.eq(None::<String>),
-            orders::shipping_state.eq(None::<String>),
-            orders::shipping_postal_code.eq(None::<String>),
-            orders::shipping_country.eq(None::<String>),
-        ),
-    ))
-    .execute(conn)
+    let due_orders = orders::table
+        .filter(orders::anonymized_at.is_null())
+        .filter(due);
+    conn.transaction(|conn| {
+        // Sameday looks the recipient up by AWB number, so it goes too.
+        diesel::update(
+            shipments::table
+                .filter(shipments::order_id.eq_any(due_orders.clone().select(orders::order_id))),
+        )
+        .set(shipments::awb_number.eq(None::<String>))
+        .execute(conn)?;
+        diesel::update(due_orders)
+            .set((
+                orders::anonymized_at.eq(chrono::Utc::now()),
+                orders::customer_email.eq(None::<String>),
+                orders::customer_id.eq(None::<Uuid>),
+                orders::stripe_session_id.eq(None::<String>),
+                orders::stripe_payment_intent_id.eq(None::<String>),
+                orders::client_key_hash.eq(None::<String>),
+                // Explicit NULLs: a `ShippingDetails` changeset would skip `None`.
+                (
+                    orders::shipping_name.eq(None::<String>),
+                    orders::shipping_phone.eq(None::<String>),
+                    orders::shipping_line1.eq(None::<String>),
+                    orders::shipping_line2.eq(None::<String>),
+                    orders::shipping_city.eq(None::<String>),
+                    orders::shipping_state.eq(None::<String>),
+                    orders::shipping_postal_code.eq(None::<String>),
+                    orders::shipping_country.eq(None::<String>),
+                ),
+                (
+                    orders::locker_id.eq(None::<i32>),
+                    orders::locker_name.eq(None::<String>),
+                    orders::locker_address.eq(None::<String>),
+                    orders::locker_city.eq(None::<String>),
+                    orders::locker_county.eq(None::<String>),
+                    orders::locker_postal_code.eq(None::<String>),
+                ),
+            ))
+            .execute(conn)
+    })
 }
 
 pub fn count_orders(conn: &mut PgConnection) -> QueryResult<i64> {
@@ -454,8 +498,17 @@ pub fn get_order_with_items(
         .filter(order_items::order_id.eq(id))
         .select(OrderItem::as_select())
         .load(conn)?;
+    let shipment = shipments::table
+        .find(id)
+        .select(Shipment::as_select())
+        .first(conn)
+        .optional()?;
 
-    Ok(Some(OrderWithItems { order, items }))
+    Ok(Some(OrderWithItems {
+        order,
+        items,
+        shipment,
+    }))
 }
 
 #[cfg(test)]

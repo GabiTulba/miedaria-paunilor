@@ -9,21 +9,21 @@ import { BUSINESS_INFO, BUSINESS_LEGAL, getFullAddress } from '../lib/businessIn
 const ACTIVITIES = ['orders', 'payments', 'accounts', 'newsletter', 'contact', 'statistics', 'security'] as const;
 const ACTIVITY_FACTS = ['data', 'purpose', 'legalBasis', 'retention'] as const;
 
-const RECIPIENTS: { name: 'hosting' | 'stripe' | 'brevo' | 'google' | 'googleSignIn' | 'whatsapp' | 'courier' | 'authorities'; policyUrl?: string }[] = [
+const RECIPIENTS: { name: 'hosting' | 'stripe' | 'brevo' | 'google' | 'googleSignIn' | 'whatsapp' | 'sameday' | 'authorities'; policyUrl?: string }[] = [
     { name: 'hosting' },
     { name: 'stripe', policyUrl: 'https://stripe.com/privacy' },
     { name: 'brevo', policyUrl: 'https://www.brevo.com/legal/privacypolicy/' },
     { name: 'google', policyUrl: 'https://policies.google.com/privacy' },
     { name: 'googleSignIn', policyUrl: 'https://policies.google.com/privacy' },
     { name: 'whatsapp', policyUrl: 'https://www.whatsapp.com/legal/privacy-policy-eea' },
-    { name: 'courier' },
+    { name: 'sameday', policyUrl: 'https://sameday.ro/politica-de-confidentialitate/' },
     { name: 'authorities' },
 ];
 
 const RIGHTS = ['access', 'rectification', 'erasure', 'restriction', 'portability', 'objection', 'withdrawConsent'] as const;
 
 const SUPERVISORY_AUTHORITY_URL = 'https://www.dataprotection.ro';
-const LAST_UPDATED = '2026-09-29';
+const LAST_UPDATED = '2026-09-30';
 
 function PrivacyPolicy() {
     const { t } = useTranslation();

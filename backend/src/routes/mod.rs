@@ -8,6 +8,7 @@ pub mod lot;
 pub mod misc;
 pub mod newsletter;
 pub mod product;
+pub mod shipping;
 
 use axum::response::AppendHeaders;
 

@@ -36,6 +36,7 @@ const AdminBlog = React.lazy(() => import('./pages/admin/AdminBlog'));
 const AdminBlogCreate = React.lazy(() => import('./pages/admin/AdminBlogCreate'));
 const AdminBlogEdit = React.lazy(() => import('./pages/admin/AdminBlogEdit'));
 const AdminOrders = React.lazy(() => import('./pages/admin/AdminOrders'));
+const AdminShipping = React.lazy(() => import('./pages/admin/AdminShipping'));
 
 // Account pages are only needed by customers who use them.
 const AccountLogin = React.lazy(() => import('./pages/account/AccountLogin'));
@@ -123,6 +124,7 @@ const router = createBrowserRouter([
           { path: 'dashboard/blog/create', element: lazy(<AdminBlogCreate />) },
           { path: 'dashboard/blog/:id/edit', element: lazy(<AdminBlogEdit />) },
           { path: 'dashboard/orders', element: lazy(<AdminOrders />) },
+          { path: 'dashboard/shipping', element: lazy(<AdminShipping />) },
         ],
       },
     ],

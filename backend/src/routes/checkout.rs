@@ -16,7 +16,7 @@ use crate::AppState;
 use crate::account;
 use crate::auth;
 use crate::db;
-use crate::enums::OrderStatus;
+use crate::enums::{DeliveryMethod, OrderStatus};
 use crate::language::Language;
 use crate::models::{
     CancelCheckoutRequest, CheckoutSessionRequest, CheckoutSessionResponse, CheckoutStatus, Order,
@@ -30,6 +30,67 @@ use crate::stripe_checkout;
 /// Stripe's minimum Checkout Session lifetime. Our own hold is shorter
 /// (`order_crud::HOLD_SECS`); the reservation sweeper expires the session early.
 const STRIPE_SESSION_EXPIRY_SECS: i64 = 30 * 60;
+
+/// The order's shipping charge as Stripe's single, preselected option.
+fn shipping_option(order: &Order, lang: Language) -> stripe::CreateCheckoutSessionShippingOptions {
+    use stripe::CreateCheckoutSessionShippingOptionsShippingRateDataDeliveryEstimateMaximumUnit as MaxUnit;
+    use stripe::CreateCheckoutSessionShippingOptionsShippingRateDataDeliveryEstimateMinimumUnit as MinUnit;
+    let ro = lang == Language::Ro;
+    let display_name = match order.delivery.delivery_method {
+        DeliveryMethod::Home => {
+            if ro {
+                "Curier Sameday la adresă"
+            } else {
+                "Sameday courier to your door"
+            }
+        }
+        DeliveryMethod::Easybox => {
+            if ro {
+                "Sameday easybox"
+            } else {
+                "Sameday easybox locker"
+            }
+        }
+    };
+    stripe::CreateCheckoutSessionShippingOptions {
+        shipping_rate_data: Some(stripe::CreateCheckoutSessionShippingOptionsShippingRateData {
+            display_name: order
+                .delivery
+                .locker_name
+                .as_ref()
+                .map_or_else(|| display_name.to_string(), |locker| format!("{display_name}: {locker}"))
+                .chars()
+                .take(100)
+                .collect(),
+            fixed_amount: Some(
+                stripe::CreateCheckoutSessionShippingOptionsShippingRateDataFixedAmount {
+                    amount: order.delivery.shipping_amount_cents,
+                    currency: stripe::Currency::RON,
+                    currency_options: None,
+                },
+            ),
+            delivery_estimate: Some(
+                stripe::CreateCheckoutSessionShippingOptionsShippingRateDataDeliveryEstimate {
+                    minimum: Some(
+                        stripe::CreateCheckoutSessionShippingOptionsShippingRateDataDeliveryEstimateMinimum {
+                            unit: MinUnit::BusinessDay,
+                            value: 1,
+                        },
+                    ),
+                    maximum: Some(
+                        stripe::CreateCheckoutSessionShippingOptionsShippingRateDataDeliveryEstimateMaximum {
+                            unit: MaxUnit::BusinessDay,
+                            value: 3,
+                        },
+                    ),
+                },
+            ),
+            type_: Some(stripe::CreateCheckoutSessionShippingOptionsShippingRateDataType::FixedAmount),
+            ..Default::default()
+        }),
+        shipping_rate: None,
+    }
+}
 
 async fn create_checkout_session(
     State(app_state): State<Arc<AppState>>,
@@ -47,7 +108,12 @@ async fn create_checkout_session(
     // Logging in is never required; a logged-in customer's order goes
     // straight into their history.
     let customer = account::current_customer(&app_state, &jar)?.map(|current| current.customer);
-    let OrderWithItems { order, items } = {
+    if !request.adult_confirmed {
+        return Err(AppError::BadRequest(
+            "Confirm that you are 18 or older to order alcohol".to_string(),
+        ));
+    }
+    let OrderWithItems { order, items, .. } = {
         let mut conn = db::get_db_connection(&app_state)?;
         if !settings_crud::is_checkout_enabled(&mut conn)? {
             return Err(AppError::ServiceUnavailable(
@@ -57,6 +123,8 @@ async fn create_checkout_session(
         order_crud::create_pending_order(
             &mut conn,
             &request.items,
+            request.delivery,
+            app_state.sameday.is_some(),
             lang,
             &app_state.client_key_hash(client_ip),
             customer.as_ref().map(|c| c.id),
@@ -104,14 +172,41 @@ async fn create_checkout_session(
     params.cancel_url = Some(&cancel_url);
     params.client_reference_id = Some(&order_id_str);
     params.expires_at = Some(chrono::Utc::now().timestamp() + STRIPE_SESSION_EXPIRY_SECS);
-    // Bottles are shipped, so every order needs a delivery address and a phone
-    // number for the courier. Delivery is Romania-only for now.
-    params.shipping_address_collection =
-        Some(stripe::CreateCheckoutSessionShippingAddressCollection {
-            allowed_countries: vec![
-                stripe::CreateCheckoutSessionShippingAddressCollectionAllowedCountries::Ro,
-            ],
-        });
+    params.shipping_options = Some(vec![shipping_option(&order, lang)]);
+    match order.delivery.delivery_method {
+        // Delivery is Romania-only for now.
+        DeliveryMethod::Home => {
+            params.shipping_address_collection =
+                Some(stripe::CreateCheckoutSessionShippingAddressCollection {
+                    allowed_countries: vec![
+                        stripe::CreateCheckoutSessionShippingAddressCollectionAllowedCountries::Ro,
+                    ],
+                });
+        }
+        // The locker is the address; Sameday still needs whom to hand it to.
+        DeliveryMethod::Easybox => {
+            params.custom_fields = Some(vec![stripe::CreateCheckoutSessionCustomFields {
+                key: stripe_checkout::RECIPIENT_NAME_FIELD.to_string(),
+                label: stripe::CreateCheckoutSessionCustomFieldsLabel {
+                    custom: (if lang == Language::Ro {
+                        "Numele destinatarului"
+                    } else {
+                        "Recipient's full name"
+                    })
+                    .to_string(),
+                    type_: stripe::CreateCheckoutSessionCustomFieldsLabelType::Custom,
+                },
+                text: Some(stripe::CreateCheckoutSessionCustomFieldsText {
+                    minimum_length: Some(3),
+                    maximum_length: Some(100),
+                }),
+                type_: stripe::CreateCheckoutSessionCustomFieldsType::Text,
+                optional: Some(false),
+                ..Default::default()
+            }]);
+        }
+    }
+    // The courier calls the recipient; easybox sends the opening code.
     params.phone_number_collection =
         Some(stripe::CreateCheckoutSessionPhoneNumberCollection { enabled: true });
     // Stripe shows a given email as fixed, keeping the receipt and the

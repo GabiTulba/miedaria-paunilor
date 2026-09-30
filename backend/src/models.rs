@@ -92,6 +92,8 @@ pub struct Product {
     pub image_id: Option<uuid::Uuid>,
     pub bottling_date: chrono::NaiveDate,
     pub lot_number: i32,
+    /// Packed weight of one bottle, for waybills; never shown publicly.
+    pub weight_grams: i32,
     pub updated_at: chrono::NaiveDateTime,
     #[diesel(skip_update)]
     pub deleted_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -126,6 +128,7 @@ pub struct NewProduct {
     pub image_id: Option<uuid::Uuid>,
     pub bottling_date: chrono::NaiveDate,
     pub lot_number: i32,
+    pub weight_grams: i32,
 }
 
 /// EU nutrition declaration for one bottling batch, per 100 ml. Embedded in
@@ -255,6 +258,26 @@ pub struct Order {
     pub language: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    #[diesel(embed)]
+    #[serde(flatten)]
+    #[ts(flatten)]
+    pub delivery: OrderDelivery,
+    /// Set once the order's personal data was erased at the end of its
+    /// retention period.
+    pub anonymized_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+/// Where and how an order is delivered: the method and shipping charge chosen
+/// in the cart, the address Stripe collected (home delivery; also the
+/// recipient's name and phone for easybox) and the easybox locker snapshot.
+#[derive(Queryable, Selectable, serde::Serialize, Debug, TS)]
+#[diesel(table_name = orders)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
+pub struct OrderDelivery {
+    pub delivery_method: DeliveryMethod,
+    #[ts(type = "number")]
+    pub shipping_amount_cents: i64,
     pub shipping_name: Option<String>,
     pub shipping_phone: Option<String>,
     pub shipping_line1: Option<String>,
@@ -263,9 +286,11 @@ pub struct Order {
     pub shipping_state: Option<String>,
     pub shipping_postal_code: Option<String>,
     pub shipping_country: Option<String>,
-    /// Set once the order's personal data was erased at the end of its
-    /// retention period.
-    pub anonymized_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub locker_name: Option<String>,
+    pub locker_address: Option<String>,
+    pub locker_city: Option<String>,
+    pub locker_county: Option<String>,
+    pub locker_postal_code: Option<String>,
 }
 
 /// Delivery details captured from a completed Checkout Session.
@@ -290,6 +315,15 @@ pub struct NewOrder {
     pub language: String,
     pub client_key_hash: String,
     pub customer_id: Option<uuid::Uuid>,
+    pub delivery_method: DeliveryMethod,
+    pub shipping_amount_cents: i64,
+    pub age_confirmed_at: chrono::DateTime<chrono::Utc>,
+    pub locker_id: Option<i32>,
+    pub locker_name: Option<String>,
+    pub locker_address: Option<String>,
+    pub locker_city: Option<String>,
+    pub locker_county: Option<String>,
+    pub locker_postal_code: Option<String>,
 }
 
 #[derive(Queryable, Selectable, serde::Serialize, Debug, TS)]
@@ -329,6 +363,72 @@ pub struct CheckoutItem {
 #[ts(export)]
 pub struct CheckoutSessionRequest {
     pub items: Vec<CheckoutItem>,
+    pub delivery: DeliveryChoice,
+    /// The customer confirmed being 18 or older and receiving the parcel.
+    pub adult_confirmed: bool,
+}
+
+/// Delivery picked in the cart. The locker is re-read from `sameday_lockers`;
+/// only its id is taken from the browser.
+#[derive(serde::Deserialize, Debug, Clone, Copy, TS)]
+#[serde(tag = "method", rename_all = "kebab-case")]
+#[ts(export)]
+pub enum DeliveryChoice {
+    Home,
+    Easybox { locker_id: i32 },
+}
+
+impl DeliveryChoice {
+    pub fn method(self) -> DeliveryMethod {
+        match self {
+            DeliveryChoice::Home => DeliveryMethod::Home,
+            DeliveryChoice::Easybox { .. } => DeliveryMethod::Easybox,
+        }
+    }
+}
+
+/// Flat shipping price of one delivery method, free once the products reach
+/// `free_from_cents`.
+#[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug, Clone, TS)]
+#[diesel(table_name = shipping_rates)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
+pub struct ShippingRate {
+    pub delivery_method: DeliveryMethod,
+    #[ts(type = "number")]
+    pub price_cents: i64,
+    #[ts(type = "number | null")]
+    pub free_from_cents: Option<i64>,
+    pub enabled: bool,
+}
+
+/// What the cart needs to offer delivery: the enabled methods and, when
+/// easybox is offered, the ids Sameday's locker map is started with.
+#[derive(serde::Serialize, Debug, TS)]
+#[ts(export)]
+pub struct ShippingOptions {
+    pub rates: Vec<crate::localized::LocalizedShippingRate>,
+    pub locker_map: Option<LockerMapConfig>,
+}
+
+#[derive(serde::Serialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct LockerMapConfig {
+    pub client_id: String,
+    pub api_username: String,
+}
+
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Debug, Clone)]
+#[diesel(table_name = sameday_lockers)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct SamedayLocker {
+    pub locker_id: i32,
+    pub name: String,
+    pub county: String,
+    pub city: String,
+    pub address: String,
+    pub postal_code: String,
+    pub synced_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(serde::Serialize, Debug, TS)]
@@ -357,12 +457,70 @@ pub struct CheckoutStatus {
     pub enabled: bool,
 }
 
-/// Admin order-detail view: the order row plus its item snapshots.
+/// Admin order-detail view: the order row, its item snapshots and its
+/// Sameday waybill.
 #[derive(serde::Serialize, Debug, TS)]
 #[ts(export)]
 pub struct OrderWithItems {
     pub order: Order,
     pub items: Vec<OrderItem>,
+    pub shipment: Option<Shipment>,
+}
+
+/// The Sameday waybill (AWB) of an order.
+#[derive(Queryable, Selectable, serde::Serialize, Debug, Clone, TS)]
+#[diesel(table_name = shipments)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
+pub struct Shipment {
+    pub service_code: String,
+    pub parcel_count: i32,
+    pub weight_grams: i32,
+    #[ts(type = "number")]
+    pub insured_value_cents: i64,
+    #[ts(type = "number | null")]
+    pub cost_cents: Option<i64>,
+    #[diesel(embed)]
+    #[serde(flatten)]
+    #[ts(flatten)]
+    pub tracking: ShipmentTracking,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Where a parcel is, as its customer sees it.
+#[derive(Queryable, Selectable, serde::Serialize, Debug, Clone, TS)]
+#[diesel(table_name = shipments)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[ts(export)]
+pub struct ShipmentTracking {
+    /// `None` once the order's personal data was erased.
+    pub awb_number: Option<String>,
+    pub status_label: Option<String>,
+    pub status_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub delivered_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub canceled: bool,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = shipments)]
+pub struct NewShipment {
+    pub order_id: uuid::Uuid,
+    pub awb_number: String,
+    pub service_code: String,
+    pub parcel_count: i32,
+    pub weight_grams: i32,
+    pub insured_value_cents: i64,
+    pub cost_cents: Option<i64>,
+}
+
+/// Body of `POST /api/admin/orders/{id}/awb`.
+#[derive(serde::Deserialize, Debug, TS)]
+#[ts(export)]
+pub struct CreateShipmentRequest {
+    pub parcel_count: i32,
+    pub weight_grams: i32,
+    /// Declare the products' value to Sameday (1% fee; covers breakage).
+    pub insured: bool,
 }
 
 #[derive(Queryable, Selectable, serde::Serialize, serde::Deserialize, Debug, TS)]
@@ -434,6 +592,7 @@ mod tests {
             "image_id": null,
             "bottling_date": "2026-01-10",
             "lot_number": 42,
+            "weight_grams": 900,
             "energy_kj": 280.5,
             "energy_kcal": 67.0,
             "fat": 0.0,
@@ -503,14 +662,10 @@ pub struct AccountOrder {
     pub total_amount_cents: i64,
     pub customer_email: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
-    pub shipping_name: Option<String>,
-    pub shipping_phone: Option<String>,
-    pub shipping_line1: Option<String>,
-    pub shipping_line2: Option<String>,
-    pub shipping_city: Option<String>,
-    pub shipping_state: Option<String>,
-    pub shipping_postal_code: Option<String>,
-    pub shipping_country: Option<String>,
+    #[diesel(embed)]
+    #[serde(flatten)]
+    #[ts(flatten)]
+    pub delivery: OrderDelivery,
 }
 
 #[derive(serde::Serialize, Debug, TS)]
@@ -519,4 +674,5 @@ pub struct AccountOrderWithItems {
     #[serde(flatten)]
     pub order: AccountOrder,
     pub items: Vec<OrderItem>,
+    pub tracking: Option<ShipmentTracking>,
 }

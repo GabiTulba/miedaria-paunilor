@@ -8,10 +8,11 @@ use diesel::sql_types::{Integer, Interval, Nullable, Timestamptz, Uuid as SqlUui
 use uuid::Uuid;
 
 use crate::enums::{CustomerTokenPurpose, OrderStatus};
-use crate::models::{AccountOrder, AccountOrderWithItems, Customer, OrderItem};
+use crate::models::{AccountOrder, AccountOrderWithItems, Customer, OrderItem, ShipmentTracking};
 use crate::schema::sql_types::CustomerTokenPurposeEnum;
 use crate::schema::{
     customer_identities, customer_sessions, customer_tokens, customers, order_items, orders,
+    shipments,
 };
 use crate::tokens::{hash_token, random_token};
 
@@ -402,7 +403,16 @@ fn with_items(conn: &mut PgConnection, order: AccountOrder) -> QueryResult<Accou
         .filter(order_items::order_id.eq(order.order_id))
         .select(OrderItem::as_select())
         .load(conn)?;
-    Ok(AccountOrderWithItems { order, items })
+    let tracking = shipments::table
+        .find(order.order_id)
+        .select(ShipmentTracking::as_select())
+        .first(conn)
+        .optional()?;
+    Ok(AccountOrderWithItems {
+        order,
+        items,
+        tracking,
+    })
 }
 
 pub const GOOGLE: &str = "google";

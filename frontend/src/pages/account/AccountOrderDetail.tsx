@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import { LocalizedLink } from '../../components/LocalizedLink';
-import ShippingAddress from '../../components/ShippingAddress';
+import DeliveryDetails from '../../components/DeliveryDetails';
 import { useFetch } from '../../hooks/useFetch';
 import { useFormattedDate } from '../../hooks/useFormattedDate';
 import { api } from '../../lib/api';
@@ -58,16 +58,22 @@ function AccountOrderDetail() {
                             ))}
                         </tbody>
                         <tfoot>
+                            {order.shipping_amount_cents > 0 && (
+                                <tr>
+                                    <th scope="row">{t('cart.delivery.shipping')}</th>
+                                    <td>{formatAmount(order.shipping_amount_cents, order.currency)}</td>
+                                </tr>
+                            )}
                             <tr>
                                 <th scope="row">{t('cart.total')}</th>
                                 <td>{formatAmount(order.total_amount_cents, order.currency)}</td>
                             </tr>
                         </tfoot>
                     </table>
-                    {order.shipping_line1 && (
+                    {(order.shipping_line1 || order.locker_name) && (
                         <>
                             <h2>{t('admin.orders.shipping.title')}</h2>
-                            <ShippingAddress order={order} />
+                            <DeliveryDetails order={order} tracking={order.tracking} />
                         </>
                     )}
                 </article>

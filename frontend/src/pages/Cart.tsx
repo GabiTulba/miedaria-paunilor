@@ -9,6 +9,11 @@ import { LocalizedLink } from '../components/LocalizedLink';
 import { usePulse } from '../hooks/usePulse';
 import SEO from '../components/SEO';
 import EurConversionNote from '../components/EurConversionNote';
+import CartDelivery from '../components/CartDelivery';
+import { shippingPrice } from '../lib/shippingPrice';
+import { rememberedLocker, type ChosenLocker } from '../lib/lockerMap';
+import type { DeliveryMethod } from '../types/generated/DeliveryMethod';
+import type { ShippingOptions } from '../types/generated/ShippingOptions';
 import { MAX_ORDER_BOTTLES } from '../utils/stockAvailability';
 import type { ApiError } from '../types/api';
 import './Cart.css';
@@ -23,6 +28,11 @@ function Cart() {
     const [checkoutError, setCheckoutError] = useState<string | null>(null);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const [isCheckoutEnabled, setIsCheckoutEnabled] = useState(true);
+    const [shippingOptions, setShippingOptions] = useState<ShippingOptions | null>(null);
+    const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('home');
+    const [locker, setLocker] = useState<ChosenLocker | null>(rememberedLocker);
+    const [adultConfirmed, setAdultConfirmed] = useState(false);
+    const [shippingLoadFailed, setShippingLoadFailed] = useState(false);
     const { isPulsing, pulse } = usePulse();
 
     useEffect(() => {
@@ -34,6 +44,26 @@ function Cart() {
             });
         return () => controller.abort();
     }, []);
+
+    // Prices follow the site's currency, so they are fetched per language.
+    useEffect(() => {
+        const controller = new AbortController();
+        setShippingLoadFailed(false);
+        api.getShippingOptions(controller.signal)
+            .then(options => {
+                setShippingOptions(options);
+                const offered = options.rates.map(r => r.delivery_method);
+                setDeliveryMethod(current => (offered.includes(current) ? current : offered[0] ?? 'home'));
+            })
+            .catch(err => {
+                if (!controller.signal.aborted) {
+                    console.error('Failed to load delivery options:', err);
+                    setShippingOptions(null);
+                    setShippingLoadFailed(true);
+                }
+            });
+        return () => controller.abort();
+    }, [i18n.language]);
 
     // Coming back from Stripe with the browser's Back button can restore this
     // page from the back/forward cache with the button still "redirecting".
@@ -95,9 +125,13 @@ function Cart() {
         setCheckoutError(null);
         setIsCheckingOut(true);
         try {
-            const { url, order_id } = await api.createCheckoutSession(
-                cartItems.map(item => ({ product_id: item.product_id, quantity: item.quantity }))
-            );
+            const { url, order_id } = await api.createCheckoutSession({
+                items: cartItems.map(item => ({ product_id: item.product_id, quantity: item.quantity })),
+                delivery: deliveryMethod === 'easybox' && locker
+                    ? { method: 'easybox', locker_id: locker.lockerId }
+                    : { method: 'home' },
+                adult_confirmed: adultConfirmed,
+            });
             // If the customer comes back without paying, the cart releases
             // this order's reserved stock (see CartContext).
             rememberPendingCheckout(order_id);
@@ -105,12 +139,16 @@ function Cart() {
         } catch (err) {
             console.error('Failed to start checkout:', err);
             const status = (err as Partial<ApiError>).response?.status;
+            // 400 = the delivery can't be used (locker gone, parcel too heavy
+            //       for an easybox, method switched off);
             // 409 = a product went out of stock between page load and checkout;
             // 429 = too many checkouts started from this network recently;
             // 503 = an admin disabled checkout after this page loaded.
             if (status === 503) {
                 setIsCheckoutEnabled(false);
                 setCheckoutError(null);
+            } else if (status === 400) {
+                setCheckoutError(t('cart.delivery.unavailable'));
             } else if (status === 409) {
                 setCheckoutError(t('cart.checkoutOutOfStock'));
             } else if (status === 429) {
@@ -122,13 +160,15 @@ function Cart() {
         }
     };
 
-    // TODO: when checkout is implemented, totals MUST be recomputed server-side from
-    // the canonical price list before charging. Treat this client-side total as display-only.
-    const getTotalCents = () =>
-        cartItems.reduce((total, item) => total + Math.round(toNumber(item.price) * 100) * item.quantity, 0);
-    const getTotalPrice = () => (getTotalCents() / 100).toFixed(2);
+    // Display only: checkout recomputes every amount server-side in RON.
+    const productsCents = cartItems.reduce(
+        (total, item) => total + Math.round(toNumber(item.price) * 100) * item.quantity, 0);
+    const selectedRate = shippingOptions?.rates.find(r => r.delivery_method === deliveryMethod);
+    const shippingCents = selectedRate ? Math.round(shippingPrice(selectedRate, productsCents / 100) * 100) : 0;
+    const needsLocker = deliveryMethod === 'easybox' && !locker;
 
     const cartCurrency = cartItems.length > 0 ? cartItems[0].currency : DEFAULT_CURRENCY;
+    const converted = cartItems.some(i => i.is_converted) ? '*' : '';
 
     return (
         <div className="cart-page">
@@ -211,18 +251,52 @@ function Cart() {
 
                      <aside className="cart-summary">
                         <h3>{t('cart.orderSummary')}</h3>
+                        {shippingOptions && shippingOptions.rates.length > 0 && (
+                            <CartDelivery
+                                options={shippingOptions}
+                                productsTotal={productsCents / 100}
+                                method={deliveryMethod}
+                                onMethodChange={setDeliveryMethod}
+                                locker={locker}
+                                onLockerChange={setLocker}
+                            />
+                        )}
+                        <div className="summary-line">
+                            <span>{t('cart.products')}</span>
+                            <span>{(productsCents / 100).toFixed(2)} {cartCurrency}{converted}</span>
+                        </div>
+                        {selectedRate && (
+                            <div className="summary-line">
+                                <span>{t('cart.delivery.shipping')}</span>
+                                <span>
+                                    {shippingCents === 0
+                                        ? t('cart.delivery.free')
+                                        : `${(shippingCents / 100).toFixed(2)} ${cartCurrency}${converted}`}
+                                </span>
+                            </div>
+                        )}
                         <div className="summary-total">
                             <span>{t('cart.total')}</span>
-                            <span>{getTotalPrice()} {cartCurrency}{cartItems.some(i => i.is_converted) ? '*' : ''}</span>
+                            <span>{((productsCents + shippingCents) / 100).toFixed(2)} {cartCurrency}{converted}</span>
                         </div>
                         <EurConversionNote products={cartItems} />
                         {itemCount >= MAX_ORDER_BOTTLES && (
                             <p className="checkout-message">{t('cart.orderLimitReached', { max: MAX_ORDER_BOTTLES })}</p>
                         )}
+                        <label className="cart-age-confirm">
+                            <input
+                                type="checkbox"
+                                checked={adultConfirmed}
+                                onChange={e => setAdultConfirmed(e.target.checked)}
+                            />
+                            <span>{t('cart.adultConfirm')}</span>
+                        </label>
+                        {shippingLoadFailed && <p className="checkout-message" role="alert">{t('cart.delivery.loadError')}</p>}
+                        {needsLocker && <p className="checkout-message">{t('cart.delivery.lockerRequired')}</p>}
                         <button
                             className="button checkout-btn"
                             onClick={handleCheckout}
-                            disabled={isCheckingOut || !isCheckoutEnabled}
+                            disabled={isCheckingOut || !isCheckoutEnabled || !adultConfirmed || needsLocker || !shippingOptions}
                         >
                             {isCheckingOut ? t('cart.redirectingToPayment') : t('cart.proceedToCheckout')}
                         </button>

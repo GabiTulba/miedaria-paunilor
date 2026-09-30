@@ -9,7 +9,11 @@ import type { AdminProductDetail } from '../types/generated/AdminProductDetail';
 import type { LocalizedLot } from '../types/generated/LocalizedLot';
 import type { ExchangeRateInfo } from '../types/generated/ExchangeRateInfo';
 import type { LotNutrition } from '../types/generated/LotNutrition';
-import type { CheckoutItem } from '../types/generated/CheckoutItem';
+import type { CheckoutSessionRequest } from '../types/generated/CheckoutSessionRequest';
+import type { ShippingOptions } from '../types/generated/ShippingOptions';
+import type { ShippingRate } from '../types/generated/ShippingRate';
+import type { Shipment } from '../types/generated/Shipment';
+import type { CreateShipmentRequest } from '../types/generated/CreateShipmentRequest';
 import type { CheckoutStatus } from '../types/generated/CheckoutStatus';
 import type { CheckoutSessionResponse } from '../types/generated/CheckoutSessionResponse';
 import type { Order } from '../types/generated/Order';
@@ -138,13 +142,10 @@ export const api = {
 
     // Starts a Stripe Checkout Session; the returned url is Stripe-hosted and
     // the browser should be redirected there. Prices are recomputed server-side.
-    createCheckoutSession: (items: CheckoutItem[]): Promise<CheckoutSessionResponse> => {
-        return request('/checkout/session', {
-            method: 'POST',
-            headers: JSON_HEADERS,
-            body: JSON.stringify({ items }),
-        });
-    },
+    createCheckoutSession: (checkout: CheckoutSessionRequest): Promise<CheckoutSessionResponse> =>
+        postJson('/checkout/session', checkout),
+
+    getShippingOptions: (signal?: AbortSignal): Promise<ShippingOptions> => request('/shipping/options', { signal }),
 
     // Releases the stock held by a checkout the customer left without paying.
     // Safe to call for any order: the server ignores orders no longer pending.
@@ -175,6 +176,35 @@ export const api = {
 
     getAdminOrder: (id: string, signal?: AbortSignal): Promise<OrderWithItems> => {
         return request(`/admin/orders/${encodeURIComponent(id)}`, { signal });
+    },
+
+    getShippingRates: (signal?: AbortSignal): Promise<ShippingRate[]> => request('/admin/shipping/rates', { signal }),
+
+    updateShippingRate: (rate: ShippingRate): Promise<ShippingRate[]> =>
+        request('/admin/shipping/rates', { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(rate) }),
+
+    // Suggested parcel weight in grams, from the products' packed weights.
+    getShipmentWeight: (orderId: string, signal?: AbortSignal): Promise<number> =>
+        request(`/admin/orders/${encodeURIComponent(orderId)}/awb/weight`, { signal }),
+
+    createShipment: (orderId: string, shipment: CreateShipmentRequest): Promise<Shipment> =>
+        postJson(`/admin/orders/${encodeURIComponent(orderId)}/awb`, shipment),
+
+    cancelShipment: (orderId: string): Promise<null> =>
+        request(`/admin/orders/${encodeURIComponent(orderId)}/awb`, { method: 'DELETE' }),
+
+    // Fetched with the admin cookie and handed to the browser as a download.
+    downloadShipmentLabel: async (orderId: string): Promise<Blob> => {
+        const baseUrl = getApiBaseUrl();
+        const response = await fetch(`${baseUrl}/admin/orders/${encodeURIComponent(orderId)}/awb/label`, {
+            credentials: 'include',
+        });
+        if (!response.ok) {
+            const error = new Error('Could not download the label') as ApiError;
+            error.response = { status: response.status, data: { message: 'Could not download the label' } };
+            throw error;
+        }
+        return response.blob();
     },
 
     adminLogin: async (credentials: LoginCredentials): Promise<LoginResponse> => {

@@ -31,6 +31,9 @@ pub fn order_id_from_metadata(session: &stripe::CheckoutSession) -> Option<Uuid>
         .and_then(|s| Uuid::parse_str(s).ok())
 }
 
+/// Stripe custom field holding the recipient's name on easybox checkouts.
+pub const RECIPIENT_NAME_FIELD: &str = "recipient_name";
+
 /// Trimmed, non-empty string at `key`, cut to `max` characters so it always
 /// fits its column.
 fn json_str(value: Option<&serde_json::Value>, key: &str, max: usize) -> Option<String> {
@@ -55,8 +58,20 @@ pub fn shipping_from_session_json(session: &serde_json::Value) -> ShippingDetail
     let address = shipping.and_then(|s| s.get("address")).filter(not_null);
     let customer = session.get("customer_details").filter(not_null);
 
+    // Easybox checkouts collect no address, only the recipient's name.
+    let recipient_name = session
+        .get("custom_fields")
+        .and_then(|fields| fields.as_array())
+        .and_then(|fields| {
+            fields
+                .iter()
+                .find(|f| f.get("key").and_then(|k| k.as_str()) == Some(RECIPIENT_NAME_FIELD))
+        })
+        .and_then(|f| f.get("text"));
     ShippingDetails {
-        shipping_name: json_str(shipping, "name", 255).or_else(|| json_str(customer, "name", 255)),
+        shipping_name: json_str(shipping, "name", 255)
+            .or_else(|| json_str(recipient_name, "value", 255))
+            .or_else(|| json_str(customer, "name", 255)),
         shipping_phone: json_str(customer, "phone", 64).or_else(|| json_str(shipping, "phone", 64)),
         shipping_line1: json_str(address, "line1", 255),
         shipping_line2: json_str(address, "line2", 255),
@@ -326,6 +341,20 @@ mod tests {
         assert_eq!(s.shipping_name.as_deref(), Some("Ion Ionescu"));
         assert_eq!(s.shipping_phone.as_deref(), Some("+40722000001"));
         assert_eq!(s.shipping_line1.as_deref(), Some("Bd. Unirii 2"));
+    }
+
+    #[test]
+    fn easybox_recipient_name_from_custom_field() {
+        let session = serde_json::json!({
+            "customer_details": {"name": "Card Holder", "phone": "+40722000002"},
+            "collected_information": {"shipping_details": null},
+            "custom_fields": [{"key": "recipient_name", "type": "text",
+                               "text": {"value": "  Maria Pop  "}}]
+        });
+        let s = shipping_from_session_json(&session);
+        assert_eq!(s.shipping_name.as_deref(), Some("Maria Pop"));
+        assert_eq!(s.shipping_phone.as_deref(), Some("+40722000002"));
+        assert_eq!(s.shipping_line1, None);
     }
 
     #[test]

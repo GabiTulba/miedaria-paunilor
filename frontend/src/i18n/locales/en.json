@@ -150,7 +150,8 @@
     "main": "Main navigation",
     "skipToContent": "Skip to content",
     "login": "Log in",
-    "myAccount": "My account"
+    "myAccount": "My account",
+    "shipping": "Shipping"
   },
   "home": {
     "heroTitle": "Authentic Mead. Purity Perfected.",
@@ -275,7 +276,26 @@
     "quantityReduced": "Quantity adjusted — only {{max}} available",
     "addedToCart": "Added to cart",
     "accountLogin": "Log in",
-    "accountOptional": "to find this order in your account later. It's optional: you can also check out as a guest."
+    "accountOptional": "to find this order in your account later. It's optional: you can also check out as a guest.",
+    "products": "Products",
+    "adultConfirm": "I am 18 or older, and the parcel will be received by an adult. Mead is an alcoholic drink.",
+    "delivery": {
+      "title": "Delivery",
+      "home": "Sameday courier to your door",
+      "easybox": "Sameday easybox locker",
+      "shipping": "Shipping",
+      "free": "Free",
+      "freeFrom": "Free from {{amount}} of products",
+      "homeHint": "You'll enter the delivery address and phone number on the payment page. The courier calls before delivering.",
+      "lockerHint": "Choose the easybox where you want to pick up the parcel.",
+      "chooseLocker": "Choose an easybox",
+      "changeLocker": "Choose another easybox",
+      "mapNotice": "The map is provided by Sameday and opens from their website; it may ask for your location to show nearby lockers.",
+      "mapError": "The easybox map could not be loaded. Please try again or choose home delivery.",
+      "lockerRequired": "Choose an easybox to continue.",
+      "loadError": "Delivery options could not be loaded. Please refresh the page.",
+      "unavailable": "This delivery can't be used for your order. An easybox holds about a dozen bottles at most; choose home delivery or another locker."
+    }
   },
   "ageGate": {
     "title": "Are you over 18?",
@@ -373,7 +393,19 @@
         "missing": "No delivery address on this order (placed before address collection was enabled, or not yet paid)."
       },
       "items": "Items",
-      "anonymized": "Personal data erased (retention period ended)"
+      "anonymized": "Personal data erased (retention period ended)",
+      "awb": {
+        "create": "Generate AWB",
+        "parcels": "Parcels",
+        "weight": "Weight (kg)",
+        "insured": "Declare the products' value (1% fee, covers breakage)",
+        "label": "Download label (PDF)",
+        "cancel": "Cancel AWB",
+        "cancelTitle": "Cancel the Sameday AWB?",
+        "cancelMessage": "AWB {{awb}} will be cancelled at Sameday. This only works before the courier picks up the parcel.",
+        "error": "The Sameday request failed. Please try again.",
+        "unavailable": "Sameday is not configured or not answering."
+      }
     },
     "products": {
       "title": "Manage Products",
@@ -435,6 +467,8 @@
       "bottleCount": "Bottle Count",
       "bottleSize": "Volume",
       "bottleSizeHelp": "Volume in milliliters",
+      "weightGrams": "Packed weight (g)",
+      "weightGramsHelp": "One bottle with its packaging, in grams. Used for Sameday waybills and the easybox weight limit; not shown on the site.",
       "bottlingDate": "Bottling Date",
       "bottlingDateHelp": "Date when the mead was bottled",
       "lotNumber": "Lot Number",
@@ -559,6 +593,19 @@
         "confirm": "Send email",
         "success": "Sending the post to {{count}} subscribers"
       }
+    },
+    "shipping": {
+      "title": "Shipping",
+      "subtitle": "Flat Sameday shipping prices, charged in RON at checkout",
+      "price": "Price (RON)",
+      "freeFrom": "Free from (RON of products)",
+      "freeFromHelp": "Leave empty to always charge shipping.",
+      "enabled": "Offer this delivery method",
+      "easyboxHelp": "Easybox is only offered once the Sameday account is configured and its lockers are synced.",
+      "save": "Save",
+      "saved": "Shipping price saved",
+      "saveError": "Could not save the shipping price",
+      "loadError": "Failed to load shipping prices"
     }
   },
   "about": {
@@ -630,6 +677,7 @@
       "InvalidBottleCount": "Bottle count must be a non-negative integer.",
       "BottleCountTooLarge": "Bottle count is too large.",
       "InvalidBottleSize": "Volume must be a positive integer.",
+      "InvalidWeightGrams": "Packed weight must be between 1 and 30000 grams.",
       "InvalidPriceRon": "RON price must be between 0.00 and 99999.99.",
       "InvalidPriceRonPrecision": "RON price must have at most 2 decimal places.",
       "PriceRonBelowMinimum": "The minimum price is 2.00 RON (Stripe's minimum charge).",
@@ -813,6 +861,10 @@
         "purpose": "Lets us release the bottles reserved for your order if you leave the payment page without paying.",
         "lifetime": "Until you close the tab"
       },
+      "easybox_locker": {
+        "purpose": "Remembers the easybox you chose on Sameday's map while you finish your order.",
+        "lifetime": "Until you close the tab"
+      },
       "lang": {
         "purpose": "Remembers your preferred language, so the home page opens in it.",
         "lifetime": "1 year"
@@ -841,6 +893,7 @@
     "thirdPartyTitle": "Payment with Stripe",
     "thirdPartyText": "Payments are processed on Stripe's own checkout page (checkout.stripe.com). Stripe sets its own cookies there, for example to prevent fraud, under its own policy.",
     "stripeLink": "Stripe cookie policy",
+    "samedayMapText": "If you choose delivery to an easybox, Sameday's locker map opens from its own website (lockerplugin.sameday.ro) only when you click to choose a locker. It may ask for your location to show nearby lockers, and Sameday may set its own cookies there under its privacy policy. We receive only the locker you pick.",
     "manageTitle": "Changing your choice",
     "manageText": "You can change your choice at any time. The button below shows the cookie banner again. If you decline, the optional preferences (language and newsletter invitation) are deleted straight away. You can also delete cookies and site data from your browser settings; the strictly necessary ones will be set again when you use the shop.",
     "manageButton": "Change cookie settings",
@@ -904,10 +957,10 @@
     "activities": {
       "orders": {
         "title": "Orders and delivery",
-        "data": "Name, email address, phone number, delivery address, the products ordered and the order amount, and the language of the site you ordered from. You enter these details on the Stripe payment page, and we receive them once the payment is completed. If you are logged in, the order is also linked to your account and Stripe is given your account's email address.",
+        "data": "Name, email address, phone number, the delivery address or the Sameday easybox you chose, the products ordered, the order and shipping amounts, your confirmation that you are 18 or older, and the language of the site you ordered from. You enter the address, phone number and name on the Stripe payment page, and we receive them once the payment is completed. If you are logged in, the order is also linked to your account and Stripe is given your account's email address. Once the parcel is handed to Sameday, we keep its waybill (AWB) number and delivery status.",
         "purpose": "Delivering your order, contacting you about it, handling returns and complaints, and keeping the accounting records required by law.",
         "legalBasis": "Performance of the sales contract (GDPR Art. 6(1)(b)) and compliance with our legal obligations in accounting and taxation (Art. 6(1)(c)).",
-        "retention": "Paid orders are accounting records, kept for the period required by Romanian accounting law: 5 years from the end of the financial year they belong to (Legea contabilității nr. 82/1991). When that period ends, in the January after it, your name, email address, phone number, delivery address and the payment references are erased automatically; only an anonymous record of the amounts and products remains. Unpaid orders are erased the same way 90 days after they end."
+        "retention": "Paid orders are accounting records, kept for the period required by Romanian accounting law: 5 years from the end of the financial year they belong to (Legea contabilității nr. 82/1991). When that period ends, in the January after it, your name, email address, phone number, delivery address and the payment references are erased automatically; only an anonymous record of the amounts and products remains. The waybill number is erased with them. Unpaid orders are erased the same way 90 days after they end."
       },
       "payments": {
         "title": "Payments",
@@ -963,7 +1016,7 @@
       "google": "Google (Gmail), which hosts the mailbox we receive your emails in.",
       "googleSignIn": "Google Ireland Ltd., only if you choose to continue with Google: Google confirms your identity to us, and, as a separate controller, learns that you signed in to our website.",
       "whatsapp": "WhatsApp Ireland Ltd. (Meta), when you choose to message us on WhatsApp.",
-      "courier": "The courier company that delivers your order, which receives your name, phone number and delivery address.",
+      "sameday": "Sameday, the courier (Romania), which delivers your order: it receives your name, phone number and email address with the delivery address or the easybox you chose. If you choose an easybox, the locker map is Sameday's own and loads from its website.",
       "authorities": "Public authorities, such as the tax authority (ANAF), when the law requires us to."
     },
     "recipientPolicyLink": "(privacy policy)",
@@ -1127,5 +1180,11 @@
         "failed": "Signing in with Google didn't work. Please try again."
       }
     }
+  },
+  "orderTracking": {
+    "awb": "Sameday AWB",
+    "handedOver": "Handed to Sameday",
+    "delivered": "Delivered on {{date}}",
+    "canceled": "Shipment cancelled"
   }
 }

@@ -5,11 +5,11 @@ import { useFormattedDate } from '../../hooks/useFormattedDate';
 import { useFetch } from '../../hooks/useFetch';
 import { usePageParam } from '../../hooks/usePageParam';
 import Pagination from '../../components/Pagination';
-import ShippingAddress from '../../components/ShippingAddress';
+import OrderShipment from './OrderShipment';
 import { formatAmount } from '../../utils/numberUtils';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import { OrderStatus } from '../../types/generated/OrderStatus';
-import { OrderItem } from '../../types/generated/OrderItem';
+import type { OrderWithItems } from '../../types/generated/OrderWithItems';
 import './Admin.css';
 
 const ADMIN_ORDERS_PER_PAGE = 20;
@@ -25,7 +25,7 @@ const STATUS_BADGE_CLASS: Record<OrderStatus, string> = {
 function AdminOrders() {
     const [page, setPage] = usePageParam();
     const [expandedId, setExpandedId] = useState<string | null>(null);
-    const [expandedItems, setExpandedItems] = useState<Record<string, OrderItem[]>>({});
+    const [details, setDetails] = useState<Record<string, OrderWithItems>>({});
     const { t } = useTranslation();
     const formatDateOptions = useMemo(() => ({
         year: 'numeric' as const,
@@ -50,10 +50,10 @@ function AdminOrders() {
             return;
         }
         setExpandedId(orderId);
-        if (!expandedItems[orderId]) {
+        if (!details[orderId]) {
             try {
                 const detail = await api.getAdminOrder(orderId);
-                setExpandedItems(prev => ({ ...prev, [orderId]: detail.items }));
+                setDetails(prev => ({ ...prev, [orderId]: detail }));
             } catch (err) {
                 console.error('Failed to load order detail:', err);
             }
@@ -122,7 +122,11 @@ function AdminOrders() {
                                             </span>
                                         </td>
                                         <td data-label={t('admin.orders.table.email')}>{order.anonymized_at ? t('admin.orders.anonymized') : order.customer_email ?? '—'}</td>
-                                        <td data-label={t('admin.orders.table.total')}>{formatAmount(order.total_amount_cents, order.currency)}</td>
+                                        <td data-label={t('admin.orders.table.total')}>
+                                            {formatAmount(order.total_amount_cents, order.currency)}
+                                            <br />
+                                            <small>{t(`cart.delivery.${order.delivery_method}`)}</small>
+                                        </td>
                                         <td data-label={t('admin.orders.table.actions')}>
                                             <div className="action-buttons">
                                                 <button
@@ -140,9 +144,9 @@ function AdminOrders() {
                                                 <div className="order-detail">
                                                     <div className="order-detail-section">
                                                         <h4>{t('admin.orders.items')}</h4>
-                                                        {expandedItems[order.order_id] ? (
+                                                        {details[order.order_id] ? (
                                                             <ul className="order-items-list">
-                                                                {expandedItems[order.order_id].map(item => (
+                                                                {details[order.order_id].items.map(item => (
                                                                     <li key={item.order_item_id}>
                                                                         {item.quantity} × {item.product_name} — {formatAmount(item.unit_amount_cents, order.currency)}
                                                                     </li>
@@ -152,14 +156,15 @@ function AdminOrders() {
                                                             <p>{t('common.loading')}</p>
                                                         )}
                                                     </div>
-                                                    <div className="order-detail-section">
-                                                        <h4>{t('admin.orders.shipping.title')}</h4>
-                                                        {order.shipping_line1 ? (
-                                                            <ShippingAddress order={order} />
-                                                        ) : (
-                                                            <p className="order-shipping-missing">{t(order.anonymized_at ? 'admin.orders.anonymized' : 'admin.orders.shipping.missing')}</p>
-                                                        )}
-                                                    </div>
+                                                    {details[order.order_id] && (
+                                                        <OrderShipment
+                                                            detail={details[order.order_id]}
+                                                            onShipmentChange={shipment => setDetails(prev => ({
+                                                                ...prev,
+                                                                [order.order_id]: { ...prev[order.order_id], shipment },
+                                                            }))}
+                                                        />
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

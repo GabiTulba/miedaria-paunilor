@@ -2,7 +2,7 @@ use crate::enums::*;
 use crate::exchange_rate::EurRate;
 use crate::language::Language;
 use crate::lot_crud::LotPageRow;
-use crate::models::{BlogPost, Image, LotNutrition, Product};
+use crate::models::{BlogPost, Image, LotNutrition, Product, ShippingRate};
 use crate::product_crud::ProductWithImage;
 use rust_decimal::{Decimal, RoundingStrategy};
 use serde::Serialize;
@@ -64,6 +64,41 @@ pub struct LocalizedBlogPost {
     pub is_published: bool,
 }
 
+/// A RON amount as the visitor's language shows it. RON is the source of
+/// truth; the English site shows an indicative EUR amount derived from the
+/// official BNR rate. When no rate is known yet, it falls back to RON rather
+/// than inventing a price.
+pub struct LocalizedPrice {
+    pub price: Decimal,
+    pub currency: String,
+    pub is_converted: bool,
+    pub rate_date: Option<chrono::NaiveDate>,
+}
+
+impl LocalizedPrice {
+    pub fn new(price_ron: Decimal, lang: Language, eur_rate: Option<EurRate>) -> Self {
+        match (lang, eur_rate) {
+            (Language::En, Some(r)) => LocalizedPrice {
+                price: (price_ron / r.rate)
+                    .round_dp_with_strategy(2, RoundingStrategy::MidpointAwayFromZero),
+                currency: "EUR".to_string(),
+                is_converted: true,
+                rate_date: Some(r.rate_date),
+            },
+            _ => LocalizedPrice {
+                price: price_ron,
+                currency: "RON".to_string(),
+                is_converted: false,
+                rate_date: None,
+            },
+        }
+    }
+
+    pub fn from_cents(cents: i64, lang: Language, eur_rate: Option<EurRate>) -> Self {
+        Self::new(Decimal::new(cents, 2), lang, eur_rate)
+    }
+}
+
 /// Pick the language-specific value for a field that has both an English and
 /// a Romanian variant. Caller passes EN first, RO second.
 fn pick<T>(lang: Language, en: T, ro: T) -> T {
@@ -75,19 +110,12 @@ fn pick<T>(lang: Language, en: T, ro: T) -> T {
 
 impl LocalizedProduct {
     pub fn from_product(product: Product, lang: Language, eur_rate: Option<EurRate>) -> Self {
-        // RON is the source of truth; the English site shows an indicative
-        // EUR amount derived from the official BNR rate. When no rate is
-        // known yet, fall back to RON rather than inventing a price.
-        let (price, currency, is_converted, rate_date) = match (lang, eur_rate) {
-            (Language::En, Some(r)) => (
-                (product.price_ron / r.rate)
-                    .round_dp_with_strategy(2, RoundingStrategy::MidpointAwayFromZero),
-                "EUR".to_string(),
-                true,
-                Some(r.rate_date),
-            ),
-            _ => (product.price_ron, "RON".to_string(), false, None),
-        };
+        let LocalizedPrice {
+            price,
+            currency,
+            is_converted,
+            rate_date,
+        } = LocalizedPrice::new(product.price_ron, lang, eur_rate);
         LocalizedProduct {
             product_id: product.product_id,
             product_name: pick(lang, product.product_name, product.product_name_ro),
@@ -175,6 +203,38 @@ impl LocalizedBlogPost {
             published_at: post.published_at,
             updated_at: post.updated_at,
             is_published: post.is_published,
+        }
+    }
+}
+
+/// A delivery method as the cart offers it, in the visitor's currency.
+/// Checkout charges the RON rate; on the English site these are indicative.
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
+pub struct LocalizedShippingRate {
+    pub delivery_method: DeliveryMethod,
+    #[serde(with = "rust_decimal::serde::float")]
+    #[ts(type = "number")]
+    pub price: Decimal,
+    /// Free when the products reach this amount.
+    #[serde(with = "rust_decimal::serde::float_option")]
+    #[ts(type = "number | null")]
+    pub free_from: Option<Decimal>,
+    pub currency: String,
+    pub is_converted: bool,
+}
+
+impl LocalizedShippingRate {
+    pub fn from_rate(rate: &ShippingRate, lang: Language, eur_rate: Option<EurRate>) -> Self {
+        let price = LocalizedPrice::from_cents(rate.price_cents, lang, eur_rate);
+        LocalizedShippingRate {
+            delivery_method: rate.delivery_method,
+            price: price.price,
+            free_from: rate
+                .free_from_cents
+                .map(|cents| LocalizedPrice::from_cents(cents, lang, eur_rate).price),
+            currency: price.currency,
+            is_converted: price.is_converted,
         }
     }
 }

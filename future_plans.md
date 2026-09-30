@@ -231,6 +231,20 @@ An order paid with a delayed method (bank debit, transfer) moves to `processing`
 
 ## 7. Delivery integration with Sameday (courier + easybox lockers)
 
+> **Code DONE 2026-09-29, not yet tested against Sameday.** Built with these decisions:
+> - **Flat prices** per method (home, easybox), free above a threshold, set by the admin. No live cost estimate, so checkout never depends on Sameday being up.
+> - **Stripe still collects the home address and phone.** The cart only chooses home or easybox (Sameday's own map widget, loaded on click). Saved addresses (`customer_addresses`, deferred from #5) are dropped: there is nothing for them to fill.
+> - **18+ confirmation** at checkout, stored on the order; easybox parcels are capped at 18 kg.
+> - **Admin-triggered AWBs** with label download and cancellation, a "your order is on its way" email, and tracking by polling every 30 minutes (Sameday has no webhooks).
+> - **Everything Sameday is optional:** without the four `SAMEDAY_*` variables the site sells home delivery only and waybills are made by hand in eAWB.
+>
+> **Still outstanding outside the code:**
+> - Ask Sameday for an account: demo API credentials, then production ones, and a locker-map `clientId`. Then test the whole flow on the demo environment: locker sync, easybox checkout, AWB creation, the label, tracking. The code was checked against Sameday's API documentation v3.5 (2026-09-30).
+> - Confirm in the contract that alcohol and glass are accepted, including in easybox, and whether the 18 kg easybox cap needs lowering.
+> - Customs: whether the mead needs an authorized tax warehouse (antrepozit fiscal).
+> - Legal review: delivering alcohol to a locker with only an 18+ declaration, and the new privacy and cookie wording (Sameday as a recipient, the locker map). Fill in Sameday's legal entity name in the privacy policy; it could not be confirmed from an official source.
+> - Set each product's packed weight in the admin (seeded at 1.8 g per ml) and review the seeded shipping prices.
+
 **Goal:** Ship orders via Sameday, Romania's dominant courier: generate AWBs (waybills) from paid orders, print labels, track shipments, and offer **easybox locker delivery** at checkout.
 
 ### Can we use `sameday-courier/php-sdk`?
@@ -299,11 +313,4 @@ Sources: [Sameday PHP SDK](https://github.com/sameday-courier/php-sdk) · [sandb
 
 ## Suggested implementation order
 
-1. **Logo resize** (#1) and **toggle confirmation** (#2) — small, independent, immediate.
-2. **RON/BNR pricing** (#3) — self-contained, high legal/correctness value.
-3. **Cookie policy page** (#8) — small; needed before launch so cookie consent is informed.
-4. **Mailing list** (#4) — builds the email infrastructure.
-5. **Metrics, phase 1** (#6) — sales/inventory dashboards from existing data (can happen anytime).
-6. **User accounts** (#5) — largest; reuses the mailer; builds the address/checkout groundwork Sameday needs.
-7. **Sameday delivery** (#7) — depends on #5's checkout address step; AWB + lockers + tracking.
-8. **Metrics, phase 2** (#6) — anonymous event pipeline + traffic dashboards (now including shipping funnel events).
+Everything above is built. What remains is the work outside the code listed in each DONE note, starting with the Sameday account and its demo testing (#7).

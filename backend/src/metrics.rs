@@ -35,7 +35,7 @@ use crate::db;
 use crate::enums::OrderStatus;
 use crate::newsletter::{self, NewsletterStats};
 use crate::order_crud;
-use crate::schema::orders;
+use crate::schema::{orders, shipments};
 use crate::settings_crud;
 
 /// Orders are charged in RON; its series exist from the first scrape so that
@@ -75,6 +75,8 @@ pub enum Task {
     shop_metrics,
     account_purge,
     order_retention,
+    sameday_lockers,
+    sameday_tracking,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -165,6 +167,17 @@ struct ProductSales {
     revenue_cents: i64,
 }
 
+/// Paid orders and shipping charged per delivery method (always RON).
+#[derive(Debug, QueryableByName)]
+struct DeliveryTotals {
+    #[diesel(sql_type = Varchar)]
+    method: String,
+    #[diesel(sql_type = BigInt)]
+    paid_orders: i64,
+    #[diesel(sql_type = BigInt)]
+    shipping_cents: i64,
+}
+
 #[derive(Debug, QueryableByName)]
 struct ProductStock {
     #[diesel(sql_type = Varchar)]
@@ -182,6 +195,8 @@ struct ShopSnapshot {
     currencies: Vec<CurrencyTotals>,
     product_sales: Vec<ProductSales>,
     stock: Vec<ProductStock>,
+    deliveries: Vec<DeliveryTotals>,
+    shipments_in_transit: i64,
     stale_processing: i64,
     subscribers: NewsletterStats,
     customers: i64,
@@ -246,11 +261,29 @@ impl ShopSnapshot {
         )
         .load(conn)?;
 
+        // Both methods always have a series so `increase()` counts first orders.
+        let deliveries = diesel::sql_query(
+            "SELECT m.method::varchar AS method, \
+             COUNT(o.order_id) AS paid_orders, \
+             COALESCE(SUM(o.shipping_amount_cents), 0)::bigint AS shipping_cents \
+             FROM unnest(enum_range(NULL::delivery_method_enum)) AS m(method) \
+             LEFT JOIN orders o ON o.delivery_method = m.method AND o.status = 'paid' \
+             GROUP BY m.method",
+        )
+        .load(conn)?;
+        let shipments_in_transit = shipments::table
+            .filter(shipments::delivered_at.is_null())
+            .filter(shipments::canceled.eq(false))
+            .count()
+            .get_result(conn)?;
+
         Ok(Self {
             orders_by_status,
             currencies,
             product_sales,
             stock,
+            deliveries,
+            shipments_in_transit,
             stale_processing: order_crud::count_stale_processing(conn)?,
             subscribers: newsletter::stats(conn)?,
             customers: customer_crud::count_verified(conn)?,
@@ -377,6 +410,34 @@ impl Collector for ShopSnapshot {
             self.stock
                 .iter()
                 .map(|s| (product(&s.product_id), ConstGauge::new(s.reserved))),
+        )?;
+        encode_family(
+            &mut encoder,
+            "shop_paid_orders_by_delivery",
+            "Orders paid per delivery method",
+            self.deliveries.iter().map(|d| {
+                (
+                    [("method", d.method.clone())],
+                    ConstCounter::new(d.paid_orders as u64),
+                )
+            }),
+        )?;
+        encode_family(
+            &mut encoder,
+            "shop_shipping_revenue",
+            "Shipping charged on paid orders per delivery method, in RON (included in shop_paid_revenue)",
+            self.deliveries.iter().map(|d| {
+                (
+                    [("method", d.method.clone())],
+                    ConstCounter::new(major_units(d.shipping_cents)),
+                )
+            }),
+        )?;
+        encode_gauge(
+            &mut encoder,
+            "shop_shipments_in_transit",
+            "Sameday waybills not yet delivered or cancelled",
+            self.shipments_in_transit,
         )?;
         encode_gauge(
             &mut encoder,
