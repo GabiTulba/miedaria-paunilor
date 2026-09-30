@@ -31,6 +31,7 @@ services:
     volumes:
       - 'miedaria_paunilor_images:/app/images'
       - './ssl:/etc/nginx/ssl:ro'  # Mount SSL certificates
+      - './acme:/var/www/acme:ro'  # Let's Encrypt challenges (scripts/server_setup.sh)
     depends_on:
       backend:
         condition: service_started

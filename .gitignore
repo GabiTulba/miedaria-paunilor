@@ -150,3 +150,6 @@ ehthumbs.db
 # Test data
 test-data/
 fixtures/
+
+# Let's Encrypt challenges (scripts/server_setup.sh)
+acme/
