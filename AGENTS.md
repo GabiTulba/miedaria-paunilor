@@ -167,7 +167,7 @@ All Docker images utilize environment variables defined in a single `.env` file 
 ### HTTPS Configuration
 The application serves content over HTTPS (host port 443 → container port 8443) with HTTP (port 80 → 8080) redirecting to HTTPS, except Let's Encrypt's `/.well-known/acme-challenge/`, served from the host's `acme/` folder. Certificates live in `ssl/` (`cert.pem`, and `key.pem` with mode 640 and group 101 so the container's non-root nginx can read it), mounted read-only.
 *   **Local development:** `scripts/generate-ssl.sh` makes a self-signed certificate for localhost.
-*   **Servers:** `scripts/server_setup.sh <email>`, run as root after writing `.env`, installs `miedaria-paunilor.service` (builds and starts the stack at boot), a Let's Encrypt certificate for the domains of `MODE` (`miedaria-paunilor.ro` and `www` for prod, `dev.miedaria-paunilor.ro` for dev), obtained through the webroot so nginx keeps running, a cron job that replaces the certificate and key on the 1st of every month (the deploy hook copies them into `ssl/` and reloads nginx), and a weekly apt update, upgrade and reboot (Sunday 04:47).
+*   **Servers:** `scripts/server_setup.sh <email>`, run as root after writing `.env`, installs `miedaria-paunilor.service` (builds and starts the stack at boot), a Let's Encrypt certificate for the domains of `MODE` (`miedaria-paunilor.ro` and `www` for prod, `dev.miedaria-paunilor.ro` and `www.dev` for dev; each `www` name redirects to the name without it), obtained through the webroot so nginx keeps running, a cron job that replaces the certificate and key on the 1st of every month (the deploy hook copies them into `ssl/` and reloads nginx), and a weekly apt update, upgrade and reboot (Sunday 04:47).
 
 # Logical Components
 ## Database

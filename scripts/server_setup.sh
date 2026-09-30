@@ -36,7 +36,7 @@ fi
 MODE="$(sed -n 's/^MODE=//p' "$REPO_DIR/.env" | tail -n 1 | tr -d "\"' \r")"
 case "$MODE" in
     prod) DOMAINS=(miedaria-paunilor.ro www.miedaria-paunilor.ro) ;;
-    dev) DOMAINS=(dev.miedaria-paunilor.ro) ;;
+    dev) DOMAINS=(dev.miedaria-paunilor.ro www.dev.miedaria-paunilor.ro) ;;
     *) fail "MODE in .env must be dev or prod, not '$MODE'" ;;
 esac
 
@@ -112,7 +112,7 @@ for domain in "${DOMAINS[@]}"; do domain_args+=(-d "$domain"); done
 certbot certonly --webroot -w "$REPO_DIR/acme" "${domain_args[@]}" \
     --cert-name "$CERT_NAME" --key-type ecdsa \
     --non-interactive --agree-tos -m "$LE_EMAIL" \
-    --keep-until-expiring --deploy-hook "$INSTALL_CERT"
+    --keep-until-expiring --expand --deploy-hook "$INSTALL_CERT"
 # Covers a certificate that already existed, which certbot leaves alone.
 "$INSTALL_CERT"
 
