@@ -1,6 +1,13 @@
 #!/bin/sh
 set -e
 
+# MODE picks the nginx behaviour: `dev` puts the whole site behind the dev
+# access login, `prod` serves the public shop.
+case "$MODE" in
+  dev|prod) cp "/etc/nginx/modes/$MODE/"*.conf /etc/nginx/mode/ ;;
+  *) echo "[entrypoint] ERROR: MODE must be dev or prod, not '$MODE'" >&2; exit 1 ;;
+esac
+
 # Generate a fresh sitemap once at startup so a new container doesn't serve
 # the stale baked sitemap for up to 10 minutes. Failures are non-fatal — the
 # static sitemap remains as fallback and supercronic will retry on schedule.

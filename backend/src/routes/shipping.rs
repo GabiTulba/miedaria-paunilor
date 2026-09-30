@@ -19,17 +19,25 @@ use crate::models::{
     CreateShipmentRequest, LockerMapConfig, Shipment, ShippingOptions, ShippingRate,
 };
 use crate::routes::{VaryLang, vary_accept_language};
+use crate::sameday::SamedayClient;
 use crate::shipments;
 use crate::shipping;
 
-/// Delivery methods the cart can offer. Easybox needs Sameday configured and
-/// at least one synced locker.
+/// Delivery methods the cart can offer. Easybox needs Sameday configured
+/// with the locker map and at least one synced locker.
+pub(crate) fn easybox_offered(app_state: &AppState) -> bool {
+    app_state
+        .sameday
+        .as_deref()
+        .is_some_and(SamedayClient::offers_easybox)
+}
+
 async fn get_shipping_options(
     State(app_state): State<Arc<AppState>>,
     lang: Language,
 ) -> Result<(VaryLang, Json<ShippingOptions>), AppError> {
     let mut conn = db::get_db_connection(&app_state)?;
-    let easybox = app_state.sameday.is_some() && shipping::has_lockers(&mut conn)?;
+    let easybox = easybox_offered(&app_state) && shipping::has_lockers(&mut conn)?;
     let eur_rate = app_state.current_eur_rate();
     let rates = shipping::rates(&mut conn)?
         .iter()
@@ -42,9 +50,11 @@ async fn get_shipping_options(
             .sameday
             .as_deref()
             .filter(|_| easybox)
-            .map(|client| LockerMapConfig {
-                client_id: client.locker_client_id().to_string(),
-                api_username: client.api_username().to_string(),
+            .and_then(|client| {
+                Some(LockerMapConfig {
+                    client_id: client.locker_client_id()?.to_string(),
+                    api_username: client.api_username().to_string(),
+                })
             }),
     };
     Ok((vary_accept_language(), Json(options)))

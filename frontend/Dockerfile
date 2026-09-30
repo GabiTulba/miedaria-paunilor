@@ -11,6 +11,8 @@ ARG VITE_BUSINESS_TAX_ID
 ENV VITE_BUSINESS_TAX_ID=$VITE_BUSINESS_TAX_ID
 ARG VITE_BUSINESS_TRADE_REGISTER_NO
 ENV VITE_BUSINESS_TRADE_REGISTER_NO=$VITE_BUSINESS_TRADE_REGISTER_NO
+ARG VITE_SITE_MODE
+ENV VITE_SITE_MODE=$VITE_SITE_MODE
 COPY package*.json ./
 RUN npm install
 COPY . .
@@ -41,6 +43,7 @@ RUN curl -fsSLO "https://github.com/aptible/supercronic/releases/download/v${SUP
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY security-headers.conf /etc/nginx/conf.d/security-headers.conf
+COPY nginx-modes /etc/nginx/modes
 
 # Sitemap generator + container entrypoint
 COPY generate-sitemap.sh /usr/local/bin/generate-sitemap.sh
@@ -54,8 +57,8 @@ RUN mkdir -p /etc/supercronic && \
     printf '*/10 * * * * /usr/local/bin/generate-sitemap.sh\n' > /etc/supercronic/crontab
 
 # nginx pid file, cache dirs, and webroot must be writable by the nginx worker
-RUN mkdir -p /var/cache/nginx /var/run /run && \
-    chown -R nginx:nginx /var/cache/nginx /var/run /run /usr/share/nginx/html
+RUN mkdir -p /var/cache/nginx /var/run /run /etc/nginx/mode && \
+    chown -R nginx:nginx /var/cache/nginx /var/run /run /usr/share/nginx/html /etc/nginx/mode
 
 USER nginx
 

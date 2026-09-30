@@ -17,6 +17,7 @@ import NewsletterPopup from './components/NewsletterPopup';
 import { getCookie } from './lib/cookies';
 import { resetConsent } from './lib/consent';
 import { trackPageView } from './lib/analytics';
+import { IS_DEV_SITE } from './lib/siteMode';
 import './App.css';
 
 function App() {
@@ -60,6 +61,7 @@ function App() {
   return (
     <>
       <a href="#main-content" className="skip-link">{t('navigation.skipToContent')}</a>
+      {IS_DEV_SITE && <div className="dev-site-banner" role="note">{t('footer.devSite')}</div>}
       <header className="header">
         <div className="container">
           <LocalizedLink to="/" className="logo">

@@ -28,6 +28,7 @@ pub mod schema;
 pub mod settings_crud;
 pub mod shipments;
 pub mod shipping;
+pub mod site_mode;
 pub mod sitemap_crud;
 pub mod stripe_checkout;
 pub mod tokens;
@@ -126,6 +127,8 @@ pub struct AppState {
     pub account_limiter: Arc<IpRateLimiter>,
     pub customer_login_limiter: Arc<IpRateLimiter>,
     pub events_limiter: Arc<IpRateLimiter>,
+    /// Sign-ins to a `MODE=dev` site.
+    pub dev_access_limiter: Arc<IpRateLimiter>,
     /// Keyed by `password_limit_key`, never by the address itself.
     pub customer_password_limiter: Arc<KeyRateLimiter>,
     /// Random per-process key for `client_key_hash` and `password_limit_key`;
@@ -133,6 +136,7 @@ pub struct AppState {
     /// restart.
     pub client_key_secret: [u8; 32],
     pub site_url: String,
+    pub site_mode: site_mode::SiteMode,
     pub jwt_secret: String,
     pub jwt_expiration_hours: i64,
     pub image_upload_dir: String,

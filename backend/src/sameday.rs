@@ -28,8 +28,9 @@ pub struct SamedayConfig {
     pub api_url: String,
     pub username: String,
     pub password: String,
-    /// Identifies this site to Sameday's easybox map widget.
-    pub locker_client_id: String,
+    /// Identifies this site to Sameday's easybox map widget; without it
+    /// easybox is not offered.
+    pub locker_client_id: Option<String>,
 }
 
 pub type SharedSamedayClient = Option<Arc<SamedayClient>>;
@@ -329,8 +330,13 @@ impl SamedayClient {
         &self.config.username
     }
 
-    pub fn locker_client_id(&self) -> &str {
-        &self.config.locker_client_id
+    pub fn locker_client_id(&self) -> Option<&str> {
+        self.config.locker_client_id.as_deref()
+    }
+
+    /// easybox needs the locker map to choose a locker.
+    pub fn offers_easybox(&self) -> bool {
+        self.config.locker_client_id.is_some()
     }
 
     async fn token(&self, renew: bool) -> Result<String, SamedayError> {

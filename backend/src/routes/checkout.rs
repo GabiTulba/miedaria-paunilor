@@ -124,7 +124,7 @@ async fn create_checkout_session(
             &mut conn,
             &request.items,
             request.delivery,
-            app_state.sameday.is_some(),
+            super::shipping::easybox_offered(&app_state),
             lang,
             &app_state.client_key_hash(client_ip),
             customer.as_ref().map(|c| c.id),

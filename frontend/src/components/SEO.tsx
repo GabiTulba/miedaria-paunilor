@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLanguage, SUPPORTED_LANGUAGES, Language, DEFAULT_LANGUAGE } from '../hooks/useLanguage';
 import { getOrigin } from '../lib/origin';
+import { IS_DEV_SITE } from '../lib/siteMode';
 
 const OG_LOCALE: Record<Language, string> = {
   ro: 'ro_RO',
@@ -81,7 +82,11 @@ export default function SEO({
         href={`${origin}${swapLangPrefix(pathname, DEFAULT_LANGUAGE)}`}
       />
 
-      {noindex && <meta name="robots" content="noindex,follow" />}
+      {IS_DEV_SITE ? (
+        <meta name="robots" content="noindex,nofollow" />
+      ) : (
+        noindex && <meta name="robots" content="noindex,follow" />
+      )}
 
       <meta property="og:site_name" content={siteName} />
       <meta property="og:title" content={fullTitle} />

@@ -629,6 +629,7 @@
   },
   "footer": {
     "copyright": "© {{year}} Miedăria Păunilor. Toate drepturile rezervate.",
+    "devSite": "Site de test: comenzile nu sunt reale și nu se încasează nicio plată.",
     "links": "Link-uri Rapide",
     "contact": "Contactați-ne",
     "social": "Urmărește-ne",

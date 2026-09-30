@@ -103,6 +103,10 @@ All Docker images utilize environment variables defined in a single `.env` file 
 
 ### Environment Variables
 
+*   **Deployment mode:**
+    *   `MODE`: `prod` (the public shop, `miedaria-paunilor.ro`) or `dev` (a test copy at `dev.miedaria-paunilor.ro`, on its own server with its own `.env`); anything else fails backend startup, the frontend build and the frontend container. See Dev Mode.
+    *   `DEV_ACCESS_USERNAME`, `DEV_ACCESS_PASSWORD` (at least 12 characters): the shared login of a dev site, required with `MODE=dev`.
+
 *   **Database Configuration:**
     *   `POSTGRES_HOST`: PostgreSQL database host (default: `database`)
     *   `POSTGRES_PORT`: PostgreSQL database port (default: `5432`)
@@ -129,8 +133,8 @@ All Docker images utilize environment variables defined in a single `.env` file 
 
 *   **Sameday delivery (optional):**
     *   `SAMEDAY_API_URL` (`https://sameday-api.demo.zitec.com` demo, `https://api.sameday.ro` production), `SAMEDAY_USERNAME`, `SAMEDAY_PASSWORD`: API credentials from Sameday.
-    *   `SAMEDAY_LOCKER_CLIENT_ID`: identifies the site to Sameday's easybox map.
-    *   All four empty: home delivery only, with waybills made by hand in eAWB. Only some set fails startup.
+    *   `SAMEDAY_LOCKER_CLIENT_ID`: identifies the site's domain to Sameday's easybox map, issued by app.support@sameday.ro; without it easybox is not offered.
+    *   All empty: home delivery only, with waybills made by hand in eAWB. Only some of the credentials set, or a client id without them, fails startup.
 
 *   **Google sign-in (optional):**
     *   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`: a Google Cloud "Web application" OAuth client whose authorized redirect URI is `<ALLOWED_ORIGIN>/api/account/google/callback`. Both empty disables "Continue with Google"; only one set fails startup.
@@ -153,6 +157,12 @@ All Docker images utilize environment variables defined in a single `.env` file 
 *   **Resource limits and healthchecks** configured on all services in `docker-compose.yml`.
 *   **Log retention:** every service uses the `json-file` driver capped at 5 × 10 MB, since the logs hold IP addresses and user agents. nginx and the backend log request paths without query strings, which carry emailed tokens.
 *   **`.dockerignore`** files in both `backend/` and `frontend/` exclude `.env`, `.git`, `target/`, `node_modules/`, and `dist/` from build contexts.
+
+### Dev Mode
+`MODE=dev` turns a deployment into a private test site (`site_mode.rs`, `routes/dev_access.rs`, `frontend/nginx-modes/`):
+*   **Access:** the frontend entrypoint installs `nginx-modes/dev/`, whose `auth_request` asks `GET /api/dev-access/check` before serving anything. Without a valid `__Host-dev_access` cookie nginx serves the bilingual login page from `/api/dev-access/login`, which returns the visitor to the page asked for (same-site paths only). The cookie is `<expiry>.<HMAC>` under a key derived from `JWT_SECRET` and the dev credentials (HttpOnly, Secure, `SameSite=Lax` so returns from Stripe, Google and email links keep access, 30 days), so changing either signs everyone out. Credentials are compared in constant time and attempts are limited like the admin login (10 a minute per IP). Only Stripe's webhook (signed) and `/health` pass without the cookie. In `prod` the dev-access routes are not mounted.
+*   **Marking:** every response carries `X-Robots-Tag: noindex, nofollow` and pages a robots `noindex` meta, a banner above the header says orders are not real (`IS_DEV_SITE`, `lib/siteMode.ts`, baked in as `VITE_SITE_MODE`), and email subjects start with `[DEV]`.
+*   **Safety:** startup refuses a live Stripe key (`sk_live_`), so a dev site can only take test payments.
 
 ### HTTPS Configuration
 The application serves content over HTTPS (host port 443 → container port 8443) with HTTP (port 80 → 8080) redirecting to HTTPS. For development, self-signed certificates are generated using `generate-ssl.sh` (ECDSA P-384, 90-day expiry, with SAN). For production, replace certificates in the `ssl/` directory with Let's Encrypt certificates.
@@ -297,7 +307,7 @@ Order statuses: `pending` (stock held, customer on Stripe), `processing` (checko
 ### Delivery (Sameday)
 Orders ship with Sameday, to the door or to an easybox locker, chosen in the cart (`CartDelivery`).
 *   **Pricing** (`shipping.rs`): `shipping_rates` holds a flat RON price per method, free once the products reach `free_from_cents` (seeded at 20 RON home, 15 RON easybox, free from 250 RON), edited on the admin **Shipping** page. `GET /api/shipping/options` returns the enabled methods in the visitor's currency (`LocalizedShippingRate`, indicative EUR on the English site) and, when easybox is offered, the ids the locker map needs.
-*   **Checkout:** `CheckoutSessionRequest` carries `delivery` (`home`, or `easybox` with a `locker_id`) and `adult_confirmed`, which must be true (the cart's 18+ checkbox; stored as `orders.age_confirmed_at`). Inside the stock-reserving transaction the delivery is priced and checked: the method must be enabled, the locker must be in `sameday_lockers` (its address is copied from there onto the order, never from the browser), easybox needs Sameday configured, and an easybox parcel may weigh at most `MAX_LOCKER_GRAMS` (18 kg of `weight_grams`). `orders.total_amount_cents` includes `shipping_amount_cents`; `order_items` hold the products alone. Stripe gets the charge as a single `shipping_options` entry. Home delivery keeps Stripe's Romania-only address collection; easybox collects no address, only a required `recipient_name` custom field. Both collect the phone number.
+*   **Checkout:** `CheckoutSessionRequest` carries `delivery` (`home`, or `easybox` with a `locker_id`) and `adult_confirmed`, which must be true (the cart's 18+ checkbox; stored as `orders.age_confirmed_at`). Inside the stock-reserving transaction the delivery is priced and checked: the method must be enabled, the locker must be in `sameday_lockers` (its address is copied from there onto the order, never from the browser), easybox needs Sameday configured with the locker client id, and an easybox parcel may weigh at most `MAX_LOCKER_GRAMS` (18 kg of `weight_grams`). `orders.total_amount_cents` includes `shipping_amount_cents`; `order_items` hold the products alone. Stripe gets the charge as a single `shipping_options` entry. Home delivery keeps Stripe's Romania-only address collection; easybox collects no address, only a required `recipient_name` custom field. Both collect the phone number.
 *   **Easybox map** (`lib/lockerMap.ts`): Sameday's script (`cdn.sameday.ro`) is loaded only when the customer clicks "Choose an easybox"; it opens an iframe from `lockerplugin.sameday.ro`, the only third-party frame and geolocation delegate the CSP and Permissions-Policy allow. The choice is kept in the `easybox_locker` sessionStorage key.
 *   **Sameday client** (`sameday.rs`): REST API with PHP-style bracket form bodies and JSON responses. The token (`X-AUTH-TOKEN`, 14 days with `remember_me`; authentication is limited to 12 a minute per IP) is cached and renewed once on 401/403. Service ids (`24` home, `LN` easybox) and the default pickup point are looked up, never hard-coded, since they differ between demo and production.
 *   **Waybills** (`shipments.rs`, `routes/shipping.rs`): on the admin orders page a paid order gets **Generate AWB** (parcels, weight pre-filled from `weight_grams`, optional declared value), which creates the AWB (`oohLastMile` and the locker's address for easybox, `packageType` from the parcel weight, a fresh `clientInternalReference` per AWB), stores it in `shipments` (one per order) and emails the customer a bilingual "on its way" message with the tracking link (`https://sameday.ro/#awb=`). A failed insert cancels the AWB at Sameday again. **Download label** proxies the A6 PDF; **Cancel AWB** deletes it before pickup. Sameday rejections are shown to the admin with Sameday's message (409); an unreachable or unconfigured Sameday answers 503.

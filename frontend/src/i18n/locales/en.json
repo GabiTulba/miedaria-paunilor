@@ -630,6 +630,7 @@
   },
   "footer": {
     "copyright": "© {{year}} Miedăria Păunilor. All rights reserved.",
+    "devSite": "Test site: orders are not real and no payment is taken.",
     "links": "Quick Links",
     "contact": "Contact Us",
     "social": "Follow Us",

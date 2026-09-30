@@ -63,10 +63,12 @@ pub struct Email {
 pub struct Mailer {
     transport: AsyncSmtpTransport<Tokio1Executor>,
     from: Mailbox,
+    /// Marks every subject from a `MODE=dev` site.
+    subject_prefix: &'static str,
 }
 
 impl Mailer {
-    pub fn new(config: SmtpConfig) -> Result<Self, String> {
+    pub fn new(config: SmtpConfig, subject_prefix: &'static str) -> Result<Self, String> {
         let from_address = config
             .from_address
             .parse::<Address>()
@@ -94,6 +96,7 @@ impl Mailer {
         Ok(Mailer {
             transport,
             from: Mailbox::new(Some(config.from_name), from_address),
+            subject_prefix,
         })
     }
 
@@ -101,7 +104,7 @@ impl Mailer {
         let mut builder = Message::builder()
             .from(self.from.clone())
             .to(Mailbox::new(None, email.to))
-            .subject(email.subject);
+            .subject(format!("{}{}", self.subject_prefix, email.subject));
         if let Some(url) = email.list_unsubscribe {
             builder = builder
                 .raw_header(HeaderValue::new(

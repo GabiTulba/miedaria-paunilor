@@ -16,12 +16,21 @@ const ENV_DIR = '..'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
+  const env = loadEnv(mode, ENV_DIR, '')
   if (command === 'build') {
-    const env = loadEnv(mode, ENV_DIR)
     const missing = REQUIRED_BUILD_ENV.filter(name => !env[name]?.trim())
     if (missing.length > 0) {
       throw new Error(`Missing required build environment variables: ${missing.join(', ')}`)
     }
   }
-  return { envDir: ENV_DIR, plugins: [react()] }
+  // `MODE` in the root `.env`, or VITE_SITE_MODE as the Docker build passes it.
+  const siteMode = env.VITE_SITE_MODE || env.MODE
+  if (siteMode !== 'dev' && siteMode !== 'prod') {
+    throw new Error(`MODE must be dev or prod, not "${siteMode ?? ''}"`)
+  }
+  return {
+    envDir: ENV_DIR,
+    plugins: [react()],
+    define: { 'import.meta.env.VITE_SITE_MODE': JSON.stringify(siteMode) },
+  }
 })

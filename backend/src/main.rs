@@ -8,7 +8,8 @@ use backend::{
     AppState, account, auth, build_account_limiter, build_admin_limiter, build_checkout_limiter,
     build_customer_password_limiter, build_events_limiter, build_image_serve_limiter,
     build_login_limiter, build_newsletter_limiter, build_public_api_limiter, db, exchange_rate,
-    google, mailer, metrics, newsletter, retention, sameday, shipments, stripe_checkout, tokens,
+    google, mailer, metrics, newsletter, retention, sameday, shipments, site_mode, stripe_checkout,
+    tokens,
 };
 
 struct Config {
@@ -24,6 +25,7 @@ struct Config {
     smtp: mailer::SmtpConfig,
     google: Option<google::GoogleConfig>,
     sameday: Option<sameday::SamedayConfig>,
+    site_mode: site_mode::SiteMode,
 }
 
 /// Read `name` from the env, recording it in `missing` (and returning an
@@ -63,6 +65,9 @@ impl Config {
                 missing.join(", ")
             ));
         }
+
+        let site_mode = site_mode::SiteMode::from_env()?;
+        site_mode.check_stripe_key(&stripe_secret_key)?;
 
         let backend_port = backend_port_str
             .parse::<u16>()
@@ -145,6 +150,7 @@ impl Config {
             smtp,
             google: google_config()?,
             sameday: sameday_config()?,
+            site_mode,
         })
     }
 }
@@ -163,17 +169,18 @@ fn google_config() -> Result<Option<google::GoogleConfig>, String> {
     }
 }
 
-/// Sameday is optional: all four variables set enables easybox and waybills,
-/// none leaves home delivery with waybills made by hand in eAWB.
+/// Sameday is optional: the API credentials enable waybills, and with
+/// SAMEDAY_LOCKER_CLIENT_ID also easybox; none leaves home delivery with
+/// waybills made by hand in eAWB.
 fn sameday_config() -> Result<Option<sameday::SamedayConfig>, String> {
     let read = |name| env::var(name).ok().filter(|v| !v.trim().is_empty());
+    let locker_client_id = read("SAMEDAY_LOCKER_CLIENT_ID");
     match (
         read("SAMEDAY_API_URL"),
         read("SAMEDAY_USERNAME"),
         read("SAMEDAY_PASSWORD"),
-        read("SAMEDAY_LOCKER_CLIENT_ID"),
     ) {
-        (Some(api_url), Some(username), Some(password), Some(locker_client_id)) => {
+        (Some(api_url), Some(username), Some(password)) => {
             if !api_url.starts_with("https://") {
                 return Err("SAMEDAY_API_URL must be an https:// URL".to_string());
             }
@@ -184,8 +191,11 @@ fn sameday_config() -> Result<Option<sameday::SamedayConfig>, String> {
                 locker_client_id,
             }))
         }
-        (None, None, None, None) => Ok(None),
-        _ => Err("SAMEDAY_API_URL, SAMEDAY_USERNAME, SAMEDAY_PASSWORD and SAMEDAY_LOCKER_CLIENT_ID must be set together".to_string()),
+        (None, None, None) if locker_client_id.is_none() => Ok(None),
+        _ => Err(
+            "SAMEDAY_API_URL, SAMEDAY_USERNAME and SAMEDAY_PASSWORD must be set together, and SAMEDAY_LOCKER_CLIENT_ID needs them"
+                .to_string(),
+        ),
     }
 }
 
@@ -226,18 +236,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
     let sameday = match config.sameday {
-        Some(sameday_config) => Some(Arc::new(
-            sameday::SamedayClient::new(sameday_config).unwrap_or_else(|e| panic!("{e}")),
-        )),
+        Some(sameday_config) => Some(Arc::new({
+            if sameday_config.locker_client_id.is_none() {
+                tracing::info!("SAMEDAY_LOCKER_CLIENT_ID not set; easybox disabled");
+            }
+            sameday::SamedayClient::new(sameday_config).unwrap_or_else(|e| panic!("{e}"))
+        })),
         None => {
             tracing::info!("SAMEDAY_API_URL not set; easybox and waybills disabled");
             None
         }
     };
-    let mailer = mailer::Mailer::new(config.smtp).unwrap_or_else(|e| {
-        tracing::error!("{}", e);
-        std::process::exit(1);
-    });
+    if config.site_mode.is_dev() {
+        tracing::info!("MODE=dev: the site asks for the dev access login");
+    }
+    let mailer = mailer::Mailer::new(config.smtp, config.site_mode.email_subject_prefix())
+        .unwrap_or_else(|e| {
+            tracing::error!("{}", e);
+            std::process::exit(1);
+        });
 
     let pool = db::establish_pooled_connection(&config.database_url)
         .expect("Failed to create database pool");
@@ -256,8 +273,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         customer_login_limiter: build_login_limiter(),
         customer_password_limiter: build_customer_password_limiter(),
         events_limiter: build_events_limiter(),
+        dev_access_limiter: build_login_limiter(),
         client_key_secret: tokens::random_key(),
         site_url: config.allowed_origin,
+        site_mode: config.site_mode,
         unsubscribe_key: newsletter::derive_unsubscribe_key(&config.jwt_secret),
         jwt_secret: config.jwt_secret,
         jwt_expiration_hours: config.jwt_expiration_hours,
@@ -345,6 +364,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ));
     let metrics_router = metrics::router(app_state.clone());
 
+    let dev_access_routes = if app_state.site_mode.is_dev() {
+        routes::dev_access::router()
+    } else {
+        Router::new()
+    };
+
     let app = Router::new()
         .merge(public_image_route)
         .merge(public_api_routes)
@@ -352,6 +377,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Server-to-server Stripe endpoint: authenticated by signature
         // verification over the raw body, so no auth middleware or CORS needs.
         .merge(routes::checkout::webhook_router())
+        .merge(dev_access_routes)
         .route("/api/admin/login", post(auth::login))
         .route("/api/admin/logout", post(auth::logout))
         .nest("/api/admin", admin_routes)
