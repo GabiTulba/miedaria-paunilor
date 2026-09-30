@@ -20,14 +20,12 @@ Thumbs.db
 
 # Rust backend
 backend/target/
-backend/Cargo.lock
 backend/migrations/.diesel_lock
 backend/migrations/*_diesel_initial_setup/*
 
 # Node.js/TypeScript frontend
 frontend/node_modules/
 frontend/dist/
-frontend/package-lock.json
 
 # Docker volumes (created by docker-compose)
 postgres-data/
