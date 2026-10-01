@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { CartContext } from '../context/CartContext';
 import { useAccount } from '../context/AccountContext';
 import { rememberPendingCheckout } from '../lib/pendingCheckout';
@@ -291,6 +291,9 @@ function Cart() {
                             />
                             <span>{t('cart.adultConfirm')}</span>
                         </label>
+                        <p className="cart-terms-accept">
+                            <Trans i18nKey="cart.termsAccept" components={{ terms: <LocalizedLink to="/terms" /> }} />
+                        </p>
                         {shippingLoadFailed && <p className="checkout-message" role="alert">{t('cart.delivery.loadError')}</p>}
                         {needsLocker && <p className="checkout-message">{t('cart.delivery.lockerRequired')}</p>}
                         <button

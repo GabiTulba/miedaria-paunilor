@@ -13,7 +13,7 @@ interface LegalPageProps {
     children: ReactNode;
 }
 
-/// Shared frame of the cookie and privacy policies.
+/// Shared frame of the cookie and privacy policies and the terms.
 function LegalPage({ title, description, intro, lastUpdated, children }: LegalPageProps) {
     const { t } = useTranslation();
     const formatDate = useFormattedDate();

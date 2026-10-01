@@ -16,6 +16,7 @@ import AboutUs from './pages/AboutUs';
 import Contact from './pages/Contact';
 import CookiePolicy from './pages/CookiePolicy';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
 import NewsletterConfirm from './pages/NewsletterConfirm';
 import NewsletterUnsubscribe from './pages/NewsletterUnsubscribe';
 import Blog from './pages/Blog';
@@ -87,6 +88,7 @@ const router = createBrowserRouter([
       { path: 'contact', element: <Contact /> },
       { path: 'cookie-policy', element: <CookiePolicy /> },
       { path: 'privacy-policy', element: <PrivacyPolicy /> },
+      { path: 'terms', element: <TermsAndConditions /> },
       { path: 'newsletter/confirm', element: <NewsletterConfirm /> },
       { path: 'newsletter/unsubscribe', element: <NewsletterUnsubscribe /> },
       { path: 'account/login', element: lazy(<AccountLogin />) },

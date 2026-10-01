@@ -68,6 +68,11 @@
     accent-color: var(--primary-color);
 }
 
+.cart-terms-accept {
+    font-size: 0.85rem;
+    margin: -0.5rem 0 1rem;
+}
+
 .summary-line {
     display: flex;
     justify-content: space-between;

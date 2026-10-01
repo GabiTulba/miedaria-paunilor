@@ -295,7 +295,8 @@
       "lockerRequired": "Alege un easybox pentru a continua.",
       "loadError": "Opțiunile de livrare nu s-au putut încărca. Reîncarcă pagina.",
       "unavailable": "Această livrare nu se poate folosi pentru comanda ta. Un easybox încape cel mult aproximativ o duzină de sticle; alege livrarea la adresă sau alt locker."
-    }
+    },
+    "termsAccept": "Plasând comanda, accepți <terms>Termenii și condițiile</terms>."
   },
   "ageGate": {
     "title": "Ai peste 18 ani?",
@@ -635,7 +636,8 @@
     "social": "Urmărește-ne",
     "cookieSettings": "Setări cookie-uri",
     "cookiePolicy": "Politica de cookie-uri",
-    "privacyPolicy": "Politica de confidențialitate"
+    "privacyPolicy": "Politica de confidențialitate",
+    "terms": "Termeni și condiții"
   },
   "confirm": {
     "delete": {
@@ -810,7 +812,8 @@
       "notFound": "Pagină Negăsită",
       "cart": "Coș",
       "cookiePolicy": "Ce cookie-uri și ce date stocate în browser folosește site-ul Miedăria Păunilor, de ce, pentru cât timp și cum îți poți schimba alegerea.",
-      "privacyPolicy": "Ce date personale colectează Miedăria Păunilor, de ce, cât timp le păstrăm și cum îți exerciți drepturile conform GDPR."
+      "privacyPolicy": "Ce date personale colectează Miedăria Păunilor, de ce, cât timp le păstrăm și cum îți exerciți drepturile conform GDPR.",
+      "terms": "Condițiile de cumpărare de la Miedăria Păunilor: comenzi, plată, livrare, retur, garanții și reclamații."
     }
   },
   "cookiePolicy": {
@@ -1045,6 +1048,100 @@
     "minorsText": "Vindem băuturi alcoolice, așa că acest site se adresează doar persoanelor de cel puțin 18 ani. Nu colectăm cu bună știință date de la minori; dacă afli că un minor ne-a transmis date personale, contactează-ne și le vom șterge.",
     "changesTitle": "Modificări ale acestei politici",
     "changesText": "Actualizăm această pagină atunci când se schimbă modul în care prelucrăm datele personale. Data din partea de sus arată când a fost actualizată ultima dată."
+  },
+  "terms": {
+    "title": "Termeni și condiții",
+    "intro": "Acești termeni se aplică fiecărei comenzi plasate pe acest site. Te rugăm să-i citești înainte de a comanda: plasând o comandă, îi accepți.",
+    "sellerTitle": "Cine vinde",
+    "phone": "Telefon",
+    "sections": {
+      "age": {
+        "title": "Vârsta minimă",
+        "paragraphs": [
+          "Produsele noastre sunt băuturi alcoolice. Vânzarea alcoolului către persoane sub 18 ani este interzisă (Legea 61/1991), așa că pot comanda doar persoanele care au împlinit 18 ani.",
+          "Înainte de plată confirmi că ai cel puțin 18 ani și că coletul va fi primit de o persoană majoră. Putem anula o comandă, iar curierul poate refuza predarea coletului, dacă există motive să credem că cumpărătorul sau destinatarul este minor."
+        ]
+      },
+      "orders": {
+        "title": "Comenzi și încheierea contractului",
+        "paragraphs": [
+          "Adaugi produsele în coș, alegi livrarea, confirmi vârsta și ajungi pe pagina de plată. Cât timp plătești, stocul îți este rezervat 15 minute.",
+          "Contractul se încheie la confirmarea plății, pe care site-ul ți-o afișează la finalul comenzii. Dacă o comandă nu poate fi onorată (de exemplu un produs se dovedește indisponibil), te anunțăm și îți rambursăm integral suma plătită.",
+          "O comandă poate conține cel mult 100 de sticle. Prin acest site nu vindem către revânzători."
+        ]
+      },
+      "prices": {
+        "title": "Prețuri",
+        "paragraphs": [
+          "Prețurile sunt în lei (RON) și includ toate taxele aplicabile. Costul livrării apare în coș și pe pagina de plată înainte să plătești; peste pragul afișat în coș, livrarea este gratuită.",
+          "Pe versiunea în engleză a site-ului, prețurile în euro marcate cu * sunt doar orientative, calculate la cursul BNR. Plata se face întotdeauna în lei; banca ta poate aplica propria conversie."
+        ]
+      },
+      "payment": {
+        "title": "Plata",
+        "paragraphs": [
+          "Plata se face online prin Stripe, cu metodele afișate pe pagina de plată (de exemplu card bancar). Nu vedem și nu stocăm datele cardului tău.",
+          "Unele metode de plată confirmă plata ulterior; comanda este procesată după confirmare. Nu oferim plata ramburs."
+        ]
+      },
+      "delivery": {
+        "title": "Livrarea",
+        "paragraphs": [
+          "Livrăm în România prin Sameday, fie la adresa pe care o indici pe pagina de plată, fie în easybox-ul ales în coș. Coletele livrate în easybox pot cântări cel mult 18 kg.",
+          "De regulă predăm coletul către Sameday în cel mult 2 zile lucrătoare de la plată, iar Sameday îl livrează în 1–3 zile lucrătoare. La expediere îți trimitem pe email numărul AWB și linkul de urmărire. Termenele sunt estimative; dacă întârzierea depășește 30 de zile, poți anula comanda și primești banii înapoi integral.",
+          "Te rugăm să verifici coletul la primire și să ne anunți în 2 zile lucrătoare, cu fotografii, dacă a ajuns deteriorat; înlocuim sau rambursăm produsele. Riscul trece asupra ta în momentul în care tu sau persoana indicată de tine primiți coletul."
+        ]
+      },
+      "withdrawal": {
+        "title": "Dreptul de retragere (retururi)",
+        "paragraphs": [
+          "Ca și consumator, te poți retrage din contract în 14 zile de la primirea produselor, fără să motivezi decizia (OUG 34/2014). Pentru aceasta, trimite-ne pe email o declarație clară, de exemplu formularul-tip din anexa 1 a ordonanței.",
+          "Din motive de protecție a sănătății și de igienă, dreptul de retragere nu se aplică sticlelor desfăcute sau al căror sigiliu a fost rupt după livrare (art. 16 lit. e din ordonanță).",
+          "Trimite produsele înapoi în 14 zile de la notificare, nedesfăcute și bine ambalate; costul returului îl suporți tu. Rambursăm prețul și costul livrării standard în 14 zile de la primirea declarației, prin aceeași metodă de plată, dar putem amâna rambursarea până primim produsele înapoi."
+        ]
+      },
+      "conformity": {
+        "title": "Garanția legală de conformitate",
+        "paragraphs": [
+          "Produsele beneficiază de garanția legală de conformitate (OUG 140/2021). Dacă un produs nu corespunde descrierii, este alterat sau a depășit data durabilității minimale la primire, contactează-ne și îl înlocuim sau îți rambursăm contravaloarea.",
+          "Hidromelul este un produs natural: mici diferențe de culoare, limpiditate și sediment între loturi sunt normale și nu reprezintă defecte. Păstrează sticlele ferite de lumină și căldură."
+        ]
+      },
+      "accounts": {
+        "title": "Contul de client",
+        "paragraphs": [
+          "Poți comanda și fără cont. Dacă îți creezi unul, păstrează parola secretă; răspunzi de ce se face cu contul tău. Îl poți șterge oricând din pagina de setări.",
+          "Putem suspenda conturile folosite pentru fraudă sau pentru abuzarea site-ului."
+        ]
+      },
+      "liability": {
+        "title": "Răspundere",
+        "paragraphs": [
+          "Consumă alcool cu moderație. Nu conduce după ce ai consumat alcool și nu consuma alcool în timpul sarcinii.",
+          "Avem grijă ca informațiile de pe site să fie corecte, dar fotografiile produselor sunt cu titlu de prezentare și pot apărea erori. Dacă un preț este vădit greșit, te anunțăm înainte de expediere și poți anula comanda cu rambursare integrală. Nimic din acești termeni nu îți limitează drepturile de consumator prevăzute de lege."
+        ]
+      },
+      "intellectualProperty": {
+        "title": "Proprietate intelectuală",
+        "paragraphs": [
+          "Textele, fotografiile, logo-ul și designul acestui site aparțin vânzătorului sau sunt folosite cu acord. Nu pot fi copiate sau folosite în scop comercial fără acordul nostru scris."
+        ]
+      },
+      "law": {
+        "title": "Legea aplicabilă",
+        "paragraphs": [
+          "Acești termeni sunt guvernați de legea română. Litigiile care nu pot fi rezolvate pe cale amiabilă se soluționează de instanțele române competente, fără a afecta normele de protecție a consumatorului din țara în care locuiești."
+        ]
+      }
+    },
+    "complaintsTitle": "Reclamații",
+    "complaintsText": "Pentru orice problemă legată de o comandă, scrie-ne și îți răspundem în cel mult 30 de zile:",
+    "authorityText": "Dacă nu reușim să o rezolvăm, te poți adresa Autorității Naționale pentru Protecția Consumatorilor sau soluționării alternative a litigiilor:",
+    "salLink": "Soluționarea alternativă a litigiilor (SAL)",
+    "privacyTitle": "Date personale",
+    "privacyText": "Modul în care prelucrăm datele necesare comenzilor este descris în:",
+    "changesTitle": "Modificări",
+    "changesText": "Putem actualiza acești termeni. O comandă este guvernată de termenii în vigoare la data plasării ei; data din partea de sus arată ultima actualizare."
   },
   "legal": {
     "lastUpdated": "Ultima actualizare: {{date}}"

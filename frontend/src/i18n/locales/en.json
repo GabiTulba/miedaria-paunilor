@@ -295,7 +295,8 @@
       "lockerRequired": "Choose an easybox to continue.",
       "loadError": "Delivery options could not be loaded. Please refresh the page.",
       "unavailable": "This delivery can't be used for your order. An easybox holds about a dozen bottles at most; choose home delivery or another locker."
-    }
+    },
+    "termsAccept": "By placing the order you accept the <terms>Terms and conditions</terms>."
   },
   "ageGate": {
     "title": "Are you over 18?",
@@ -636,7 +637,8 @@
     "social": "Follow Us",
     "cookieSettings": "Cookie settings",
     "cookiePolicy": "Cookie policy",
-    "privacyPolicy": "Privacy policy"
+    "privacyPolicy": "Privacy policy",
+    "terms": "Terms and conditions"
   },
   "confirm": {
     "delete": {
@@ -811,7 +813,8 @@
       "notFound": "Page Not Found",
       "cart": "Cart Page",
       "cookiePolicy": "Which cookies and browser storage the Miedăria Păunilor website uses, why, for how long, and how to change your choice.",
-      "privacyPolicy": "What personal data Miedăria Păunilor collects, why, how long it is kept and how to exercise your GDPR rights."
+      "privacyPolicy": "What personal data Miedăria Păunilor collects, why, how long it is kept and how to exercise your GDPR rights.",
+      "terms": "The terms of buying from Miedăria Păunilor: ordering, payment, delivery, returns, guarantees and complaints."
     }
   },
   "cookiePolicy": {
@@ -1046,6 +1049,100 @@
     "minorsText": "We sell alcoholic drinks, so this website is intended only for people aged 18 or over. We do not knowingly collect data from minors; if you believe a minor has given us personal data, contact us and we will delete it.",
     "changesTitle": "Changes to this policy",
     "changesText": "We update this page when the way we process personal data changes. The date at the top shows when it was last updated."
+  },
+  "terms": {
+    "title": "Terms and conditions",
+    "intro": "These terms apply to every order placed on this website. Please read them before ordering: by placing an order you accept them.",
+    "sellerTitle": "Who sells",
+    "phone": "Phone",
+    "sections": {
+      "age": {
+        "title": "Age requirement",
+        "paragraphs": [
+          "Our products are alcoholic drinks. Selling alcohol to people under 18 is forbidden (Law 61/1991), so only people aged 18 or over may order.",
+          "Before paying you confirm that you are 18 or older and that the parcel will be received by an adult. We may cancel an order, and the courier may refuse to hand over a parcel, if there is reason to believe the buyer or recipient is a minor."
+        ]
+      },
+      "orders": {
+        "title": "Orders and the contract",
+        "paragraphs": [
+          "You add products to the cart, choose delivery, confirm your age and are taken to the payment page. Stock is reserved for 15 minutes while you pay.",
+          "The contract is concluded when the payment is confirmed, which the site shows you at the end of checkout. If an order cannot be fulfilled (for example a product turns out to be unavailable), we let you know and refund the amount paid in full.",
+          "An order may contain at most 100 bottles. We do not sell to resellers through this website."
+        ]
+      },
+      "prices": {
+        "title": "Prices",
+        "paragraphs": [
+          "Prices are in Romanian lei (RON) and include all applicable taxes. The delivery charge is shown in the cart and on the payment page before you pay; delivery is free above the threshold shown in the cart.",
+          "On the English version of the site, prices in euro marked with * are indicative only, converted at the BNR exchange rate. You are always charged in lei; your bank may apply its own conversion."
+        ]
+      },
+      "payment": {
+        "title": "Payment",
+        "paragraphs": [
+          "Payment is made online through Stripe, with the methods shown on the payment page (such as bank cards). We never see or store your card details.",
+          "Some payment methods confirm the payment later; the order is processed once the payment is confirmed. Cash on delivery is not available."
+        ]
+      },
+      "delivery": {
+        "title": "Delivery",
+        "paragraphs": [
+          "We deliver within Romania through Sameday, either to the address you give on the payment page or to the easybox locker you choose in the cart. Parcels to a locker may weigh at most 18 kg.",
+          "We usually hand the parcel to Sameday within 2 business days of payment, and Sameday delivers within 1–3 business days. When the parcel leaves we email you the waybill (AWB) number and a tracking link. These times are estimates; if a delay is longer than 30 days you may cancel the order and get a full refund.",
+          "Please check the parcel on delivery and tell us within 2 business days, with photos, if it arrived damaged; we will replace the products or refund them. The risk passes to you when you, or the person you name, receive the parcel."
+        ]
+      },
+      "withdrawal": {
+        "title": "Right of withdrawal (returns)",
+        "paragraphs": [
+          "As a consumer you may withdraw from the contract within 14 days of receiving the products, without giving a reason (Government Emergency Ordinance 34/2014). To do so, send us a clear statement by email, for example using the standard form in annex 1 of the ordinance.",
+          "For health and hygiene reasons, the right of withdrawal does not apply to bottles that have been opened or whose seal has been broken after delivery (art. 16 e of the ordinance).",
+          "Send the products back within 14 days of telling us, unopened and well packed; the cost of returning them is yours. We refund the price and the standard delivery charge within 14 days of receiving your statement, with the same payment method, but we may wait until the products are back with us."
+        ]
+      },
+      "conformity": {
+        "title": "Legal guarantee of conformity",
+        "paragraphs": [
+          "The products benefit from the legal guarantee of conformity (Government Emergency Ordinance 140/2021). If a product is not as described, is spoiled or past its best-before date when it reaches you, contact us and we will replace it or refund it.",
+          "Mead is a natural product: small variations in colour, clarity and sediment between lots are normal and are not defects. Store bottles away from light and heat."
+        ]
+      },
+      "accounts": {
+        "title": "Customer accounts",
+        "paragraphs": [
+          "You can order without an account. If you create one, keep your password secret; you are responsible for what is done with your account. You can delete it at any time from its settings page.",
+          "We may suspend accounts used for fraud or abuse of the website."
+        ]
+      },
+      "liability": {
+        "title": "Liability",
+        "paragraphs": [
+          "Drink responsibly. Do not drive after drinking alcohol, and do not drink alcohol while pregnant.",
+          "We take care that the information on the site is correct, but product photos are illustrative and errors can occur. If a price is obviously wrong, we will tell you before shipping and you may cancel the order with a full refund. Nothing in these terms limits your rights as a consumer under the law."
+        ]
+      },
+      "intellectualProperty": {
+        "title": "Intellectual property",
+        "paragraphs": [
+          "The texts, photos, logo and design of this website belong to the seller or are used with permission. They may not be copied or used commercially without our written consent."
+        ]
+      },
+      "law": {
+        "title": "Applicable law",
+        "paragraphs": [
+          "These terms are governed by Romanian law. Disputes that cannot be settled amicably are decided by the competent Romanian courts, without affecting the consumer protection rules of the country where you live."
+        ]
+      }
+    },
+    "complaintsTitle": "Complaints",
+    "complaintsText": "For any problem with an order, write to us and we will answer within 30 days:",
+    "authorityText": "If we cannot settle it, you can turn to the National Authority for Consumer Protection or to alternative dispute resolution:",
+    "salLink": "Alternative dispute resolution (SAL)",
+    "privacyTitle": "Personal data",
+    "privacyText": "How we process the data needed for orders is described in our:",
+    "changesTitle": "Changes",
+    "changesText": "We may update these terms. An order is governed by the terms in force when it was placed; the date at the top shows the last update."
   },
   "legal": {
     "lastUpdated": "Last updated: {{date}}"

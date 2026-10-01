@@ -117,6 +117,9 @@ function App() {
       <footer className="footer">
         <div className="container">
           <p>{t('footer.copyright', { year: currentYear })}</p>
+          <LocalizedLink to="/terms" className="footer-link-button">
+            {t('footer.terms')}
+          </LocalizedLink>
           <LocalizedLink to="/privacy-policy" className="footer-link-button">
             {t('footer.privacyPolicy')}
           </LocalizedLink>
