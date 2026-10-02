@@ -99,8 +99,8 @@ struct Page<T> {
     pages: u32,
 }
 
+/// The one snake_case response of the API.
 #[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct AuthResponse {
     token: String,
     expire_at_utc: String,
