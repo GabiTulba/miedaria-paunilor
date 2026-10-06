@@ -32,6 +32,16 @@ export function validateNonNegative(value: string, fieldName: string): string | 
     return undefined;
 }
 
+// Mirror of `is_valid_ean13` in backend/src/utils.rs: 13 digits, the last
+// being the check digit. Blank is valid (the code is optional).
+export function validateEan13(value: string | null): string | undefined {
+    if (!value) return undefined;
+    if (!/^\d{13}$/.test(value)) return 'EAN-13 must be 13 digits';
+    const weighted = [...value.slice(0, 12)].reduce((sum, digit, i) => sum + Number(digit) * (i % 2 ? 3 : 1), 0);
+    if ((10 - (weighted % 10)) % 10 !== Number(value[12])) return 'EAN-13 check digit is wrong';
+    return undefined;
+}
+
 // react-hook-form register options for number inputs: store a number in form
 // state (empty input collapses to 0, matching the old handleNumericChange) and
 // adapt the string-based validators above to the numeric stored value.

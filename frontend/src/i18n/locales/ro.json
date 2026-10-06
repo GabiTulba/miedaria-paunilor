@@ -151,7 +151,8 @@
     "skipToContent": "Sari la conținut",
     "login": "Autentificare",
     "myAccount": "Contul meu",
-    "shipping": "Livrare"
+    "shipping": "Livrare",
+    "labels": "Etichete"
   },
   "home": {
     "heroTitle": "Mied Autentic. Puritate Desăvârșită.",
@@ -443,7 +444,8 @@
       "restoreSuccess": "Produsul a fost restaurat cu succes",
       "created": "Produsul a fost creat cu succes",
       "updated": "Produsul a fost actualizat cu succes",
-      "hardDeleteRefused": "Acest produs are comenzi sau loturi (coduri QR de pe sticle), deci nu poate fi șters definitiv. Rămâne arhivat."
+      "hardDeleteRefused": "Acest produs are comenzi sau loturi (coduri QR de pe sticle), deci nu poate fi șters definitiv. Rămâne arhivat.",
+      "label": "Etichetă"
     },
     "productForm": {
       "createTitle": "Creează Produs Nou",
@@ -474,6 +476,8 @@
       "bottlingDateHelp": "Data când hidromelul a fost îmbuteliat",
       "lotNumber": "Număr Lot",
       "lotNumberHelp": "Numărul lotului de producție (număr întreg pozitiv, unic pentru toate produsele)",
+      "eanCode": "Cod EAN-13",
+      "eanCodeHelp": "Codul de bare al produsului, tipărit pe eticheta din spate (13 cifre, înregistrat la GS1 și în sistemul garanție-returnare SGR). Opțional până la alocare; nu apare pe site.",
       "nutrition": "Declarație Nutrițională (per 100 ml)",
       "nutritionHelp": "Afișată pe pagina publică a lotului, accesată prin codul QR de pe eticheta sticlei. Energia în kJ este calculată automat din kcal (1 kcal = 4,184 kJ).",
       "energyKcal": "Energie (kcal)",
@@ -606,6 +610,69 @@
       "saved": "Prețul de livrare a fost salvat",
       "saveError": "Prețul de livrare nu s-a putut salva",
       "loadError": "Prețurile de livrare nu s-au putut încărca"
+    },
+    "labels": {
+      "title": "Etichete",
+      "subtitle": "Etichete față și spate pentru sticle, gata de tipărit, completate dintr-un produs sau manual.",
+      "product": "Completează din produs",
+      "productHelp": "Copiază în formular numele, dulceața, data îmbutelierii, alcoolul, volumul, lotul și codul EAN ale produsului.",
+      "noProduct": "— Niciunul —",
+      "productLoadError": "Produsul nu a putut fi încărcat.",
+      "size": "Format etichetă",
+      "sizeOption": "Față {{front}} mm, spate {{back}} mm (sticlă de {{volume}} cl)",
+      "bottle": "Sticlă",
+      "front": "Eticheta din față",
+      "back": "Eticheta din spate",
+      "include": "Include",
+      "fields": {
+        "alcoholPercent": "Alcool (% vol.)",
+        "volumeMl": "Volum (ml)",
+        "variantLine1": "Numele sortimentului",
+        "variantLine2": "Numele sortimentului, al doilea rând",
+        "sweetness": "Dulceață",
+        "bottlingDate": "Data îmbutelierii",
+        "pillColor": "Culoarea benzii",
+        "producerName": "Producător",
+        "addressLine1": "Adresă",
+        "addressLine2": "Adresă, al doilea rând",
+        "lotCode": "Cod lot",
+        "ean": "EAN-13",
+        "qrUrl": "Linkul codului QR",
+        "containsSulfites": "Conține sulfiți"
+      },
+      "help": {
+        "volumeMl": "Lăsați gol pentru volumul sticlei fiecărui format de etichetă.",
+        "variantLine2": "Opțional: împarte un nume lung pe două rânduri.",
+        "lotCode": "Începe cu L, de ex. L12.",
+        "ean": "12 cifre (cifra de control se adaugă) sau toate 13.",
+        "qrUrl": "Unde duce codul QR: pagina lotului, cu lista de ingrediente.",
+        "containsSulfites": "Lăsați bifat dacă un laborator nu confirmă un total de SO₂ de cel mult 10 mg/l."
+      },
+      "problems": {
+        "required": "obligatoriu",
+        "too_long": "cel mult {{- detail}} caractere",
+        "line_count": "cel mult {{- detail}} rânduri",
+        "format": "format invalid",
+        "check_digit": "cifra de control este greșită",
+        "unsupported_character": "fontul etichetei nu are caracterul „{{- detail}}”",
+        "unknown_size": "format de etichetă necunoscut",
+        "type": "valoare invalidă"
+      },
+      "doesNotFit": "Nu încape pe eticheta {{size}} ({{- detail}}). Scurtați textul sau împărțiți numele sortimentului pe două rânduri.",
+      "illegible": "Text prea mic pe eticheta {{size}}: {{- measures}}.",
+      "dropped": "Omise din lipsă de spațiu: {{- items}}.",
+      "extras": {
+        "brand line": "rândul cu marca",
+        "QR code": "codul QR"
+      },
+      "noPreview": "Nimic de previzualizat încă.",
+      "unavailable": "Generatorul de etichete nu este disponibil. Încercați din nou peste un minut.",
+      "requestError": "Etichetele nu au putut fi generate.",
+      "download": "Descărcare",
+      "allSizes": "Toate formatele de etichetă",
+      "downloadHelp": "O arhivă ZIP cu, pentru fiecare etichetă: eticheta ca SVG în trei straturi (aspect final, folie aurie, tipar color) și foi A4 cu ele ca SVG și PDF. Tipăriți PDF-urile la 100% (mărime reală). Pentru folia aurie, tipăriți sheet-foil.pdf în negru, aplicați folia, apoi tipăriți sheet-print.pdf pe aceeași foaie.",
+      "downloadButton": "Descarcă ZIP",
+      "downloading": "Se generează…"
     }
   },
   "about": {
@@ -680,6 +747,8 @@
       "BottleCountTooLarge": "Numărul de sticle este prea mare.",
       "InvalidBottleSize": "Volumul trebuie să fie un întreg pozitiv.",
       "InvalidWeightGrams": "Greutatea ambalată trebuie să fie între 1 și 30000 de grame.",
+      "InvalidEanCode": "Codul EAN-13 trebuie să aibă 13 cifre și o cifră de control corectă.",
+      "EanCodeInUse": "Acest cod EAN-13 este deja folosit de alt produs.",
       "InvalidPriceRon": "Prețul RON trebuie să fie între 0.00 și 99999.99.",
       "InvalidPriceRonPrecision": "Prețul RON poate avea cel mult două zecimale.",
       "PriceRonBelowMinimum": "Prețul minim este 2,00 RON (suma minimă acceptată de Stripe).",

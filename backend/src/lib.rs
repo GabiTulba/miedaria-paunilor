@@ -10,6 +10,7 @@ pub mod error;
 pub mod exchange_rate;
 pub mod google;
 pub mod image_crud;
+pub mod labels;
 pub mod language;
 pub mod localized;
 pub mod lot_crud;
@@ -148,6 +149,8 @@ pub struct AppState {
     /// `None` when Sameday is not configured: easybox is not offered and
     /// waybills are made by hand in Sameday's eAWB portal.
     pub sameday: sameday::SharedSamedayClient,
+    /// The label renderer behind the admin label tool.
+    pub labels: labels::LabelsClient,
     /// See `newsletter::derive_unsubscribe_key`.
     pub unsubscribe_key: [u8; 32],
     /// Latest known BNR EUR reference rate, kept warm by the refresh task so

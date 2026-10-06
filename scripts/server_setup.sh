@@ -29,6 +29,9 @@ fail() {
 [[ -n "$LE_EMAIL" ]] || fail "usage: $0 <email for Let's Encrypt notices>"
 [[ -f "$REPO_DIR/.env" ]] || fail "$REPO_DIR/.env is missing; copy env.sample and fill it in first"
 docker compose version >/dev/null 2>&1 || fail "Docker with the compose plugin must be installed"
+# The labels service builds from the artwork submodule.
+[[ -f "$REPO_DIR/labels/artwork/lib/label.py" ]] ||
+    fail "labels/artwork is empty; run 'git submodule update --init' (and 'git config submodule.recurse true', so git pull keeps it current) as the user who cloned the repository"
 if ! grep -q "acme-challenge" "$REPO_DIR/frontend/nginx.conf" || ! grep -q "/var/www/acme" "$REPO_DIR/docker-compose.yml"; then
     fail "this checkout's nginx does not serve Let's Encrypt challenges; update it (git pull) first"
 fi

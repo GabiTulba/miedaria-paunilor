@@ -94,6 +94,9 @@ pub struct Product {
     pub lot_number: i32,
     /// Packed weight of one bottle, for waybills; never shown publicly.
     pub weight_grams: i32,
+    /// EAN-13 for the back label's barcode; never shown publicly.
+    #[diesel(treat_none_as_null = true)]
+    pub ean_code: Option<String>,
     pub updated_at: chrono::NaiveDateTime,
     #[diesel(skip_update)]
     pub deleted_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -129,6 +132,7 @@ pub struct NewProduct {
     pub bottling_date: chrono::NaiveDate,
     pub lot_number: i32,
     pub weight_grams: i32,
+    pub ean_code: Option<String>,
 }
 
 /// EU nutrition declaration for one bottling batch, per 100 ml. Embedded in
@@ -593,6 +597,7 @@ mod tests {
             "bottling_date": "2026-01-10",
             "lot_number": 42,
             "weight_grams": 900,
+            "ean_code": null,
             "energy_kj": 280.5,
             "energy_kcal": 67.0,
             "fat": 0.0,

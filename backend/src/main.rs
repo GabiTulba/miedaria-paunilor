@@ -8,8 +8,8 @@ use backend::{
     AppState, account, auth, build_account_limiter, build_admin_limiter, build_checkout_limiter,
     build_customer_password_limiter, build_events_limiter, build_image_serve_limiter,
     build_login_limiter, build_newsletter_limiter, build_public_api_limiter, db, exchange_rate,
-    google, mailer, metrics, newsletter, retention, sameday, shipments, site_mode, stripe_checkout,
-    tokens,
+    google, labels, mailer, metrics, newsletter, retention, sameday, shipments, site_mode,
+    stripe_checkout, tokens,
 };
 
 struct Config {
@@ -20,6 +20,7 @@ struct Config {
     jwt_secret: String,
     jwt_expiration_hours: i64,
     image_upload_dir: String,
+    labels_url: String,
     stripe_secret_key: String,
     stripe_webhook_secret: String,
     smtp: mailer::SmtpConfig,
@@ -49,6 +50,7 @@ impl Config {
         let jwt_secret = required("JWT_SECRET", &mut missing);
         let jwt_expiration_hours_str = required("JWT_EXPIRATION_HOURS", &mut missing);
         let image_upload_dir = required("IMAGE_UPLOAD_DIR", &mut missing);
+        let labels_url = required("LABELS_URL", &mut missing);
         let stripe_secret_key = required("STRIPE_SECRET_KEY", &mut missing);
         let stripe_webhook_secret = required("STRIPE_WEBHOOK_SECRET", &mut missing);
         let smtp_host = required("SMTP_HOST", &mut missing);
@@ -145,6 +147,7 @@ impl Config {
             jwt_secret,
             jwt_expiration_hours,
             image_upload_dir,
+            labels_url,
             stripe_secret_key,
             stripe_webhook_secret,
             smtp,
@@ -256,6 +259,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::process::exit(1);
         });
 
+    let labels = labels::LabelsClient::new(&config.labels_url).unwrap_or_else(|e| {
+        tracing::error!("{}", e);
+        std::process::exit(1);
+    });
+
     let pool = db::establish_pooled_connection(&config.database_url)
         .expect("Failed to create database pool");
 
@@ -286,6 +294,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         mailer,
         google,
         sameday,
+        labels,
         eur_rate: std::sync::RwLock::new(None),
     });
 
@@ -336,6 +345,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .merge(routes::image::admin_router())
         .merge(routes::misc::admin_router())
         .merge(routes::newsletter::admin_router())
+        .merge(routes::labels::admin_router())
         .route_layer(axum::middleware::from_fn_with_state(
             app_state.clone(),
             auth::auth_middleware,

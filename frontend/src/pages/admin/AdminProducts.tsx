@@ -267,6 +267,12 @@ function AdminProducts() {
                                                             <Link to={`${product.product_id}/edit`} className="button button-small button-secondary">
                                                                 {t('admin.products.edit')}
                                                             </Link>
+                                                            <Link
+                                                                to={`/admin/dashboard/labels?product=${encodeURIComponent(product.product_id)}`}
+                                                                className="button button-small button-secondary"
+                                                            >
+                                                                {t('admin.products.label')}
+                                                            </Link>
                                                             <button
                                                                 onClick={() => handleDeleteClick(product.product_id)}
                                                                 className="button button-small button-danger"

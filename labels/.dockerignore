@@ -1,0 +1,15 @@
+# Allow-list: the service and the parts of the artwork submodule it renders
+# with (no FreeCAD sources, generated output, tests or git metadata).
+*
+!content.py
+!render.py
+!server.py
+!constraints.txt
+!artwork/requirements.txt
+!artwork/lib/*.py
+!artwork/generators/common.py
+!artwork/generators/sheet.py
+!artwork/fonts/*.ttf
+!artwork/fonts/OFL-*.txt
+!artwork/logo/logo.svg
+!artwork/sgr/sgr-symbol.svg

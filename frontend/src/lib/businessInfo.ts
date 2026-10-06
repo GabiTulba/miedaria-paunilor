@@ -4,6 +4,7 @@ export const BUSINESS_INFO = {
   email: 'miedaria.paunilor@gmail.com',
   streetAddress: 'Str. Principală 429B',
   locality: 'Urleta',
+  county: 'Prahova',
   country: 'RO',
   countryName: 'România',
 } as const;

@@ -11,4 +11,8 @@ export type Product = { product_id: string, product_name: string, product_name_r
 /**
  * Packed weight of one bottle, for waybills; never shown publicly.
  */
-weight_grams: number, updated_at: string, deleted_at: string | null, };
+weight_grams: number, 
+/**
+ * EAN-13 for the back label's barcode; never shown publicly.
+ */
+ean_code: string | null, updated_at: string, deleted_at: string | null, };

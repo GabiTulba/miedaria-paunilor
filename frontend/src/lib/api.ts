@@ -26,6 +26,10 @@ import type { SignInProviders } from '../types/generated/SignInProviders';
 import type { AccountOrder } from '../types/generated/AccountOrder';
 import type { AccountOrderWithItems } from '../types/generated/AccountOrderWithItems';
 import type { SiteEvent } from '../types/generated/SiteEvent';
+import type { LabelSize } from '../types/generated/LabelSize';
+import type { LabelPreview } from '../types/generated/LabelPreview';
+import type { LabelPreviewRequest } from '../types/generated/LabelPreviewRequest';
+import type { LabelBundleRequest } from '../types/generated/LabelBundleRequest';
 import i18n from '../i18n/config';
 
 // Mirror of `VARIANT_WIDTHS` in backend/src/image_crud.rs.
@@ -69,6 +73,23 @@ function normalizeProductPayload(productData: ProductFormData | (Product & LotNu
     };
 }
 
+async function apiError(response: Response): Promise<ApiError> {
+    const contentType = response.headers.get('content-type');
+    let errorBody: ApiErrorResponse;
+    if (contentType && contentType.includes('application/json')) {
+        errorBody = await response.json() as ApiErrorResponse;
+    } else {
+        const text = await response.text();
+        errorBody = { message: text || 'Network response was not ok' };
+    }
+    const error = new Error(errorBody.message || 'An error occurred') as ApiError;
+    error.response = {
+        status: response.status,
+        data: errorBody,
+    };
+    return error;
+}
+
 async function request(endpoint: string, options: RequestInit = {}) {
     const baseUrl = getApiBaseUrl();
     if (!baseUrl) {
@@ -88,20 +109,7 @@ async function request(endpoint: string, options: RequestInit = {}) {
         options.credentials ?? (endpoint.startsWith('/admin') ? 'include' : undefined);
     const response = await fetch(url, { ...options, headers, credentials });
     if (!response.ok) {
-        const contentType = response.headers.get('content-type');
-        let errorBody: ApiErrorResponse;
-        if (contentType && contentType.includes('application/json')) {
-            errorBody = await response.json() as ApiErrorResponse;
-        } else {
-            const text = await response.text();
-            errorBody = { message: text || 'Network response was not ok' };
-        }
-        const error = new Error(errorBody.message || 'An error occurred') as ApiError;
-        error.response = {
-            status: response.status,
-            data: errorBody,
-        };
-        throw error;
+        throw await apiError(response);
     }
     if (response.status === 204) {
         return null;
@@ -194,6 +202,23 @@ export const api = {
         request(`/admin/orders/${encodeURIComponent(orderId)}/awb`, { method: 'DELETE' }),
 
     // Fetched with the admin cookie and handed to the browser as a download.
+    getLabelSizes: (signal?: AbortSignal): Promise<LabelSize[]> => request('/admin/labels/sizes', { signal }),
+    previewLabels: (body: LabelPreviewRequest, signal?: AbortSignal): Promise<LabelPreview> =>
+        request('/admin/labels/preview', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body), signal }),
+    // A ZIP of every label, print layer and A4 sheet; a refusal is thrown with
+    // the renderer's `LabelError` as its response data.
+    downloadLabelBundle: async (body: LabelBundleRequest): Promise<Blob> => {
+        const response = await fetch(`${getApiBaseUrl()}/admin/labels/bundle`, {
+            method: 'POST',
+            headers: JSON_HEADERS,
+            body: JSON.stringify(body),
+            credentials: 'include',
+        });
+        if (!response.ok) {
+            throw await apiError(response);
+        }
+        return response.blob();
+    },
     downloadShipmentLabel: async (orderId: string): Promise<Blob> => {
         const baseUrl = getApiBaseUrl();
         const response = await fetch(`${baseUrl}/admin/orders/${encodeURIComponent(orderId)}/awb/label`, {

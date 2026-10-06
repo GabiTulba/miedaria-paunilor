@@ -151,7 +151,8 @@
     "skipToContent": "Skip to content",
     "login": "Log in",
     "myAccount": "My account",
-    "shipping": "Shipping"
+    "shipping": "Shipping",
+    "labels": "Labels"
   },
   "home": {
     "heroTitle": "Authentic Mead. Purity Perfected.",
@@ -443,7 +444,8 @@
       "restoreSuccess": "Product restored successfully",
       "created": "Product created successfully",
       "updated": "Product updated successfully",
-      "hardDeleteRefused": "This product has orders or lot records (bottle QR codes), so it can't be permanently deleted. It stays archived."
+      "hardDeleteRefused": "This product has orders or lot records (bottle QR codes), so it can't be permanently deleted. It stays archived.",
+      "label": "Label"
     },
     "productForm": {
       "createTitle": "Create New Product",
@@ -474,6 +476,8 @@
       "bottlingDateHelp": "Date when the mead was bottled",
       "lotNumber": "Lot Number",
       "lotNumberHelp": "Production lot number (positive integer, unique across all products)",
+      "eanCode": "EAN-13 code",
+      "eanCodeHelp": "The product's barcode, printed on its back label (13 digits, registered with GS1 and the SGR deposit system). Optional until assigned; not shown on the site.",
       "nutrition": "Nutrition Declaration (per 100 ml)",
       "nutritionHelp": "Shown on the public lot page reached by the QR code on the bottle label. Energy in kJ is calculated automatically from kcal (1 kcal = 4.184 kJ).",
       "energyKcal": "Energy (kcal)",
@@ -607,6 +611,69 @@
       "saved": "Shipping price saved",
       "saveError": "Could not save the shipping price",
       "loadError": "Failed to load shipping prices"
+    },
+    "labels": {
+      "title": "Labels",
+      "subtitle": "Print-ready front and back bottle labels, filled in from a product or by hand.",
+      "product": "Fill from product",
+      "productHelp": "Copies the product's name, sweetness, bottling date, ABV, volume, lot and EAN into the form.",
+      "noProduct": "— None —",
+      "productLoadError": "Could not load the product.",
+      "size": "Label format",
+      "sizeOption": "Front {{front}} mm, back {{back}} mm ({{volume}} cl bottle)",
+      "bottle": "Bottle",
+      "front": "Front label",
+      "back": "Back label",
+      "include": "Include",
+      "fields": {
+        "alcoholPercent": "ABV (% vol.)",
+        "volumeMl": "Volume (ml)",
+        "variantLine1": "Variant name",
+        "variantLine2": "Variant name, second line",
+        "sweetness": "Sweetness",
+        "bottlingDate": "Bottling date",
+        "pillColor": "Pill color",
+        "producerName": "Producer",
+        "addressLine1": "Address",
+        "addressLine2": "Address, second line",
+        "lotCode": "Lot code",
+        "ean": "EAN-13",
+        "qrUrl": "QR code link",
+        "containsSulfites": "Contains sulphites"
+      },
+      "help": {
+        "volumeMl": "Leave empty to print each label format's bottle volume.",
+        "variantLine2": "Optional: splits a long name over two lines.",
+        "lotCode": "Starts with L, e.g. L12.",
+        "ean": "12 digits (the check digit is added) or all 13.",
+        "qrUrl": "Where the QR code leads: the lot page with the ingredients list.",
+        "containsSulfites": "Keep this on unless a lab confirms total SO₂ of at most 10 mg/l."
+      },
+      "problems": {
+        "required": "required",
+        "too_long": "at most {{- detail}} characters",
+        "line_count": "at most {{- detail}} lines",
+        "format": "invalid format",
+        "check_digit": "wrong check digit",
+        "unsupported_character": "the label font has no “{{- detail}}” character",
+        "unknown_size": "unknown label format",
+        "type": "invalid value"
+      },
+      "doesNotFit": "Does not fit the {{size}} label ({{- detail}}). Shorten the text or split the variant name over two lines.",
+      "illegible": "Text too small on the {{size}} label: {{- measures}}.",
+      "dropped": "Left off for lack of room: {{- items}}.",
+      "extras": {
+        "brand line": "brand line",
+        "QR code": "QR code"
+      },
+      "noPreview": "Nothing to preview yet.",
+      "unavailable": "The label renderer is unavailable. Try again in a minute.",
+      "requestError": "Could not render the labels.",
+      "download": "Download",
+      "allSizes": "All label formats",
+      "downloadHelp": "A ZIP with, for each label: the label as SVG in three layers (finished look, gold foil, colour print) and A4 sheets of them as SVG and PDF. Print the PDFs at 100% (actual size). For gold foil, print sheet-foil.pdf in black, foil it, then print sheet-print.pdf on the same sheet.",
+      "downloadButton": "Download ZIP",
+      "downloading": "Rendering…"
     }
   },
   "about": {
@@ -681,6 +748,8 @@
       "BottleCountTooLarge": "Bottle count is too large.",
       "InvalidBottleSize": "Volume must be a positive integer.",
       "InvalidWeightGrams": "Packed weight must be between 1 and 30000 grams.",
+      "InvalidEanCode": "The EAN-13 code must be 13 digits with a correct check digit.",
+      "EanCodeInUse": "This EAN-13 code is already used by another product.",
       "InvalidPriceRon": "RON price must be between 0.00 and 99999.99.",
       "InvalidPriceRonPrecision": "RON price must have at most 2 decimal places.",
       "PriceRonBelowMinimum": "The minimum price is 2.00 RON (Stripe's minimum charge).",

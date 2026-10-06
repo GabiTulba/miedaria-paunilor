@@ -5,13 +5,14 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ProductFormData } from '../../../types';
 import NumberInput from '../../../components/forms/NumberInput';
+import TextInput from '../../../components/forms/TextInput';
 import { useLanguage } from '../../../hooks/useLanguage';
 import { useFormattedDate } from '../../../hooks/useFormattedDate';
 import { useFetch } from '../../../hooks/useFetch';
 import { api } from '../../../lib/api';
 import { useToast } from '../../../context/ToastContext';
 import type { ApiError } from '../../../types/api';
-import { numericOptions, validateAbv, validatePositiveNumber, validateNonNegative } from '../../../lib/validators';
+import { numericOptions, validateAbv, validateEan13, validatePositiveNumber, validateNonNegative } from '../../../lib/validators';
 // Side-effect import — registers en/ro locales with react-datepicker.
 import '../../../utils/dateUtils';
 
@@ -80,7 +81,6 @@ function StockPanel({ productId, initialReserved }: { productId: string; initial
                 <input
                     type="number"
                     step="1"
-                    className="form-input"
                     id="stock_delta"
                     aria-label={t('admin.productForm.stock.deltaLabel')}
                     placeholder={t('admin.productForm.stock.deltaPlaceholder')}
@@ -230,6 +230,20 @@ function PricingSection({ stock }: PricingSectionProps) {
                         error={errors.lot_number?.message}
                         helpText={t('admin.productForm.lotNumberHelp')}
                         {...register('lot_number', numericOptions((v) => validatePositiveNumber(v, 'Lot number')))}
+                    />
+                </div>
+                <div className="form-row">
+                    <TextInput
+                        id="ean_code"
+                        label={t('admin.productForm.eanCode')}
+                        inputMode="numeric"
+                        maxLength={13}
+                        error={errors.ean_code?.message}
+                        helpText={t('admin.productForm.eanCodeHelp')}
+                        {...register('ean_code', {
+                            setValueAs: (v: string | null) => v?.trim() || null,
+                            validate: validateEan13,
+                        })}
                     />
                 </div>
             </div>

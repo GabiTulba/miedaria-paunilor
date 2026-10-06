@@ -36,6 +36,7 @@ const INITIAL_PRODUCT: ProductFormData = {
     image_id: '',
     bottling_date: '',
     lot_number: 1,
+    ean_code: null,
     energy_kj: 0.0,
     energy_kcal: 0.0,
     fat: 0.0,

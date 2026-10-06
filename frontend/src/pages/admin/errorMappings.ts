@@ -25,6 +25,8 @@ export const errorMapping: Record<ProductValidationError, keyof Product | keyof 
     BottleCountTooLarge: 'bottle_count',
     InvalidBottleSize: 'bottle_size',
     InvalidWeightGrams: 'weight_grams',
+    InvalidEanCode: 'ean_code',
+    EanCodeInUse: 'ean_code',
     InvalidPriceRon: 'price_ron',
     InvalidPriceRonPrecision: 'price_ron',
     PriceRonBelowMinimum: 'price_ron',

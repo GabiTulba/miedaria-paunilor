@@ -248,6 +248,7 @@ diesel::table! {
         updated_at -> Timestamptz,
         deleted_at -> Nullable<Timestamptz>,
         weight_grams -> Int4,
+        ean_code -> Nullable<Varchar>,
     }
 }
 

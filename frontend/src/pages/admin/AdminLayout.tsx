@@ -89,6 +89,10 @@ function AdminLayout() {
                         <span className="nav-icon shipping-icon"></span>
                         <span className="nav-text">{t('navigation.shipping')}</span>
                     </NavLink>
+                    <NavLink to="/admin/dashboard/labels" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                        <span className="nav-icon labels-icon"></span>
+                        <span className="nav-text">{t('navigation.labels')}</span>
+                    </NavLink>
                 </nav>
                 <div className="sidebar-footer">
                     <div className="sidebar-controls">

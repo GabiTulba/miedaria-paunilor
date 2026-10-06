@@ -42,6 +42,7 @@ This document should always reflect the **current state** of the project, not hi
 **Docker:**
 - Start: `docker-compose up --build`
 - Stop: `docker-compose down`
+- The labels image builds from the `labels/artwork` git submodule: clone with `--recurse-submodules` (or run `git submodule update --init`), and set `git config submodule.recurse true` so `git pull` keeps it at the pinned commit.
 
 ## Code Style Guidelines
 **Rust Backend:**
@@ -79,6 +80,7 @@ The app is built on top of Docker and has the following images:
 * a frontend image -- built with React (`node:20.20.2-slim` builder, `nginx:1.30.0-alpine` runtime)
 * a backend image -- built with Rust (`rust:1.95.0` builder, `debian:trixie-slim` runtime)
 * a database image -- built with PostgreSQL
+* a `labels` image (`python:3.14.4-slim-trixie`) -- renders bottle labels for the admin label tool (see Label Generation)
 * a `prometheus` image (`prom/prometheus:v3.15.0`) -- scrapes the backend's metrics and keeps 2 years of history
 * a `grafana` image (`grafana/grafana:13.2.2`) -- dashboards and email alerts, served by nginx at `/grafana/`
 * a `mailpit` image (development only, `mail-dev` compose profile) -- catches outgoing email locally; its web UI is bound to `127.0.0.1:8025`
@@ -88,6 +90,7 @@ The app is built on top of Docker and has the following images:
 The backend is the middle-man between the frontend and the database. For security reasons, the frontend is not on the same docker network as the database and the networks are:
 * react-rust -- the frontend and the backend images share this network
 * rust-postgres -- the backend and the database images share this network
+* labels (internal) -- the backend and the label renderer only
 * monitoring (internal, fixed subnet `172.31.99.0/24`) -- the backend (fixed IP `172.31.99.10`), Prometheus and Grafana
 * grafana-web -- nginx to Grafana, and Grafana's outbound access to the SMTP relay
 
@@ -125,6 +128,7 @@ All Docker images utilize environment variables defined in a single `.env` file 
 *   **Backend Configuration:**
     *   `BACKEND_PORT`: The port on which the Rust backend server will listen (default: `8000`)
     *   `IMAGE_UPLOAD_DIR`: The directory where product images will be stored within the Docker container (default: `/app/images`)
+    *   `LABELS_URL`: The label renderer, set to `http://labels:8080` by `docker-compose.yml`; only needed in `.env` for `cargo run`.
 
 *   **Monitoring:**
     *   `METRICS_ADDR`: Address of the backend's metrics listener, `172.31.99.10:9100` in Docker (the backend's IP on the monitoring network and the port in `monitoring/prometheus/prometheus.yml`); `127.0.0.1:9100` for `cargo run`. It must name a specific interface.
@@ -153,7 +157,7 @@ All Docker images utilize environment variables defined in a single `.env` file 
 
 ### Security Hardening
 *   **No exposed ports for database or backend** — only the frontend exposes ports 80 and 443 to the host. The backend (port 8000) and database (port 5432) are accessible only via internal Docker networks.
-*   **Non-root containers** — the backend runs as `appuser` (via `gosu` in `entrypoint.sh`); the frontend runs as the `nginx` user.
+*   **Non-root containers** — the backend runs as `appuser` (via `gosu` in `entrypoint.sh`); the frontend runs as the `nginx` user; the labels service runs as `labels` on a read-only filesystem with every capability dropped.
 *   **Resource limits and healthchecks** configured on all services in `docker-compose.yml`.
 *   **Log retention:** every service uses the `json-file` driver capped at 5 × 10 MB, since the logs hold IP addresses and user agents. nginx and the backend log request paths without query strings, which carry emailed tokens.
 *   **`.dockerignore`** files in both `backend/` and `frontend/` exclude `.env`, `.git`, `target/`, `node_modules/`, and `dist/` from build contexts.
@@ -167,7 +171,7 @@ All Docker images utilize environment variables defined in a single `.env` file 
 ### HTTPS Configuration
 The application serves content over HTTPS (host port 443 → container port 8443) with HTTP (port 80 → 8080) redirecting to HTTPS, except Let's Encrypt's `/.well-known/acme-challenge/`, served from the host's `acme/` folder. Certificates live in `ssl/` (`cert.pem`, and `key.pem` with mode 640 and group 101 so the container's non-root nginx can read it), mounted read-only.
 *   **Local development:** `scripts/generate-ssl.sh` makes a self-signed certificate for localhost.
-*   **Servers:** `scripts/server_setup.sh <email>`, run as root after writing `.env`, installs `miedaria-paunilor.service` (builds and starts the stack at boot), a Let's Encrypt certificate for the domains of `MODE` (`miedaria-paunilor.ro` and `www` for prod, `dev.miedaria-paunilor.ro` and `www.dev` for dev; each `www` name redirects to the name without it), obtained through the webroot so nginx keeps running, a cron job that replaces the certificate and key on the 1st of every month (the deploy hook copies them into `ssl/` and reloads nginx), and a weekly apt update, upgrade and reboot (Sunday 04:47).
+*   **Servers:** `scripts/server_setup.sh <email>`, run as root after writing `.env` and checking out the `labels/artwork` submodule (it refuses to run without it), installs `miedaria-paunilor.service` (builds and starts the stack at boot), a Let's Encrypt certificate for the domains of `MODE` (`miedaria-paunilor.ro` and `www` for prod, `dev.miedaria-paunilor.ro` and `www.dev` for dev; each `www` name redirects to the name without it), obtained through the webroot so nginx keeps running, a cron job that replaces the certificate and key on the 1st of every month (the deploy hook copies them into `ssl/` and reloads nginx), and a weekly apt update, upgrade and reboot (Sunday 04:47).
 
 # Logical Components
 ## Database
@@ -227,6 +231,7 @@ The instance has a single database [miedaria_paunilor]. Its main tables are:
 * bottling_date - Date with CHECK constraint (<= CURRENT_DATE). Cannot be in the future.
 * lot_number - Positive integer with CHECK constraint (> 0).
 * weight_grams - Packed weight of one bottle (1–30000 g), for waybills and the easybox limit; admin-only.
+* ean_code - Nullable EAN-13 (13 digits with a valid check digit, unique), the back label's barcode; admin-only.
 * updated_at - TIMESTAMPTZ, auto-updated by a database trigger on every UPDATE.
 
 [admin_users] has the following schema:
@@ -260,7 +265,7 @@ The backend acts as a middle-man between the frontend and the database. It is bu
 *   [tracing] (v0.1) + [tracing-subscriber] (v0.3) - Structured logging with `env-filter` support. Log level configurable via `RUST_LOG` environment variable (default: `backend=info,tower_http=info`).
 *   [tower-http] (v0.6.7) - CORS and `TraceLayer` for request/response logging.
 
-The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `account`, `analytics`, `auth`, `blog_crud`, `customer_crud`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `language`, `localized`, `metrics`, `models`, `product_crud`, `sameday`, `schema`, `shipments`, `shipping`, `sitemap_crud`, `tokens`, `user_crud`, and `utils`.
+The backend is structured as a library crate (`lib.rs`) consumed by a main binary (`main.rs`) and a helper binary (`add_admin_user.rs`). Key modules include `account`, `analytics`, `auth`, `blog_crud`, `customer_crud`, `db`, `enum_crud`, `enums`, `error`, `image_crud`, `labels`, `language`, `localized`, `metrics`, `models`, `product_crud`, `sameday`, `schema`, `shipments`, `shipping`, `sitemap_crud`, `tokens`, `user_crud`, and `utils`.
 
 `AppState` holds the database connection pool, login rate limiter, and `site_url` (read from `ALLOWED_ORIGIN` env var) used by `sitemap_crud` to construct absolute URLs.
 
@@ -310,6 +315,12 @@ Orders ship with Sameday, to the door or to an easybox locker, chosen in the car
 *   **Waybills** (`shipments.rs`, `routes/shipping.rs`): on the admin orders page a paid order gets **Generate AWB** (parcels, weight pre-filled from `weight_grams`, optional declared value), which creates the AWB (`oohLastMile` and the locker's address for easybox, `packageType` from the parcel weight, a fresh `clientInternalReference` per AWB), stores it in `shipments` (one per order) and emails the customer a bilingual "on its way" message with the tracking link (`https://sameday.ro/#awb=`). A failed insert cancels the AWB at Sameday again. **Download label** proxies the A6 PDF; **Cancel AWB** deletes it before pickup. Sameday rejections are shown to the admin with Sameday's message (409); an unreachable or unconfigured Sameday answers 503.
 *   **Background tasks:** `run_locker_sync` replaces `sameday_lockers` on startup and daily (hourly while failing; an empty answer keeps the old list) and refreshes the service ids. `run_tracking_sync` polls each undelivered AWB under 30 days old every 30 minutes (Sameday has no webhooks), storing the status, delivery time and cancellation. Failures count as `task_failures_total{task="sameday_lockers"|"sameday_tracking"}`.
 *   **Views:** `DeliveryDetails` shows the method, the address or locker, the phone and the AWB with its status on the admin and account order pages.
+
+### Label Generation
+Bottle labels come from the artwork repository (`labels/artwork`, a git submodule pinned to a commit), whose Python library draws the front label (brand, variant name, sweetness line, bottling date, ABV/volume pill) and the legally mandatory back label (legal name, ABV and net quantity, sulphites, producer and address, lot code, SGR mark, EAN-13 barcode, QR code to the lot page) at five bottle formats, each in three print layers (finished look, gold foil, colour print) and as A4 sheets.
+*   **Renderer** (`labels/`): a stdlib HTTP server (`server.py`) on the internal `labels` network, reachable only by the backend. `content.py` validates every field (lengths, formats, EAN check digit, a glyph in the label font for every character) and reports the first bad one as `{code: "invalid_field", field, problem, detail}`; `render.py` runs the artwork's own checks (text that is too wide or tall is `does_not_fit`, text below the legal or house minimum size is `illegible`) and draws the labels. `/preview` returns each side's finished-look SVG and the voluntary extras dropped for lack of room (each side validated on its own); `/bundle` returns a ZIP laid out like the artwork's output tree (`<side>/<size>/label*.svg`, `sheet*.svg/.pdf`). Renders run one at a time; `fonttools` and `segno` are pinned in `constraints.txt`.
+*   **Backend** (`labels.rs`, `routes/labels.rs`): admin-only `GET /api/admin/labels/sizes`, `POST /api/admin/labels/preview` and `POST /api/admin/labels/bundle`, with typed requests (unknown fields rejected) and answers; a refusal is relayed as 422 with the `LabelError`, an unreachable renderer is 503. nginx allows `/api/admin/labels/` 180 s for large bundles.
+*   **Admin tool** (`AdminLabels.tsx`, `lib/labelForm.ts`): one form for both labels, the ABV and volume shared so the two sides agree. "Fill from product" (also the **Label** action on the products page, `?product=<id>`) fills in the Romanian name and sweetness, the bottling month, ABV, volume, the lot code `L<lot_number>`, the EAN and the QR link `<site>/lot/<lot_number>`, and picks the format of the bottle volume; the producer and address come from `BUSINESS_LEGAL` and `BUSINESS_INFO`. The preview redraws 0.8 s after the last edit and is shown as an `<img>` of a blob URL, so the SVG cannot run scripts. The ZIP covers the chosen format or all of them.
 
 ### Order Retention
 `retention.rs` enforces storage limitation (GDPR art. 5(1)(e)). A task runs on startup and daily, calling `order_crud::anonymize_expired`, which erases an order's personal data: `customer_email`, the shipping fields, the locker snapshot, the AWB number, `customer_id`, the Stripe session and payment intent ids, and `client_key_hash`. It then sets `orders.anonymized_at`. Amounts, currency, status, dates and `order_items` stay, so the accounting totals and the `shop_*` metrics are unchanged.
@@ -448,10 +459,11 @@ The frontend website is structured as follows:
     * -- 404 Not Found page for any unmatched route.
     admin/ -- A login page for administrators.
         admin/dashboard/ -- A protected admin section with a sidebar for navigation. Logout requires confirmation.
-            admin/dashboard/products -- A page to manage products (create, edit, delete) with a modern table view. Product forms include image selection from uploaded images.
+            admin/dashboard/products -- A page to manage products (create, edit, delete, open in the label tool) with a modern table view. Product forms include image selection from uploaded images and the optional EAN-13 code.
             admin/dashboard/images -- A page to manage images (upload via click or drag-and-drop with progress bar, display, rename, delete). Displays a user-friendly error message if attempting to delete an image in use.
             admin/dashboard/orders -- Orders with their items, delivery details and Sameday waybill actions (generate, label, cancel).
             admin/dashboard/shipping -- Shipping price, free-shipping threshold and availability per delivery method.
+            admin/dashboard/labels -- Front and back bottle labels with live preview and ZIP download, filled in by hand or from a product (see Label Generation).
             admin/dashboard/blog -- A page to manage blog posts (create, edit, delete) with markdown editor and bilingual support. Published posts have an "Email subscribers" action (with confirmation showing the recipient count; "Email again" once sent). The dashboard shows the confirmed subscriber count. The dashboard and metrics pages show a `StaleProcessingWarning` listing unresolved delayed payments.
 ```
 All pages are fully implemented and fetch data from the backend where applicable.

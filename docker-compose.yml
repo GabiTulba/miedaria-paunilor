@@ -55,17 +55,22 @@ services:
     networks:
       react-rust:
       rust-postgres:
+      labels:
       monitoring:
         # Fixed so the metrics listener can bind to this interface only
         # (METRICS_ADDR in .env).
         ipv4_address: 172.31.99.10
     env_file:
       - .env
+    environment:
+      LABELS_URL: http://labels:8080
     volumes:
       - 'miedaria_paunilor_images:/app/images'
     depends_on:
       database:
         condition: service_healthy
+      labels:
+        condition: service_started
     deploy:
       resources:
         limits:
@@ -79,6 +84,32 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+
+  # Renders bottle labels for the admin label tool, with the artwork
+  # repository (the labels/artwork submodule). Reachable only by the backend.
+  labels:
+    logging: *logging
+    build: ./labels
+    networks:
+      - labels
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   database:
     logging: *logging
@@ -209,6 +240,9 @@ services:
 networks:
   react-rust:
   rust-postgres:
+  # backend to the label renderer only; no internet access.
+  labels:
+    internal: true
   # backend metrics port, Prometheus and Grafana; the frontend is not on it.
   monitoring:
     internal: true

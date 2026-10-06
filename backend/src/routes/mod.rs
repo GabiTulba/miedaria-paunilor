@@ -5,6 +5,7 @@ pub mod blog;
 pub mod checkout;
 pub mod dev_access;
 pub mod image;
+pub mod labels;
 pub mod lot;
 pub mod misc;
 pub mod newsletter;

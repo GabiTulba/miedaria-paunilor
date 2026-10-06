@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import ConfirmModal from '../../components/ConfirmModal';
 import DeliveryDetails from '../../components/DeliveryDetails';
 import { api } from '../../lib/api';
+import { saveBlob } from '../../lib/download';
 import type { ApiError } from '../../types/api';
 import type { OrderWithItems } from '../../types/generated/OrderWithItems';
 import type { Shipment } from '../../types/generated/Shipment';
 
 const MAX_PARCELS = 20;
 
-function errorMessage(err: unknown, t: (key: string) => string): string {
+function errorMessage(err: unknown, t: TFunction): string {
     const response = (err as Partial<ApiError>).response;
     if (response?.status === 409 && response.data?.message) return response.data.message;
     if (response?.status === 503) return response.data?.message ?? t('admin.orders.awb.unavailable');
@@ -68,12 +70,7 @@ function OrderShipment({ detail, onShipmentChange }: {
 
     const downloadLabel = () => run(async () => {
         const blob = await api.downloadShipmentLabel(order.order_id);
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `awb-${shipment?.awb_number ?? order.order_id}.pdf`;
-        link.click();
-        URL.revokeObjectURL(url);
+        saveBlob(blob, `awb-${shipment?.awb_number ?? order.order_id}.pdf`);
     });
 
     const cancelAwb = () => {

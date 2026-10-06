@@ -14,4 +14,8 @@ export type UpdateProductRequest = { product_id: string, product_name: string, p
 /**
  * Packed weight of one bottle, for waybills; never shown publicly.
  */
-weight_grams: number, updated_at: string, deleted_at: string | null, energy_kj: number, energy_kcal: number, fat: number, saturates: number, carbohydrates: number, sugars: number, protein: number, salt: number, };
+weight_grams: number, 
+/**
+ * EAN-13 for the back label's barcode; never shown publicly.
+ */
+ean_code: string | null, updated_at: string, deleted_at: string | null, energy_kj: number, energy_kcal: number, fat: number, saturates: number, carbohydrates: number, sugars: number, protein: number, salt: number, };

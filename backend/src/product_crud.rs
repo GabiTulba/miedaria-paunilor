@@ -62,6 +62,8 @@ pub enum ProductValidationError {
     BottleCountTooLarge,
     InvalidBottleSize,
     InvalidWeightGrams,
+    InvalidEanCode,
+    EanCodeInUse,
     InvalidPriceRon,
     PriceRonBelowMinimum,
     InvalidAbvPrecision,
@@ -101,6 +103,7 @@ struct ProductValidationInput<'a> {
     bottle_count: i32,
     bottle_size: i32,
     weight_grams: i32,
+    ean_code: Option<&'a str>,
     price_ron: Decimal,
     bottling_date: chrono::NaiveDate,
     lot_number: i32,
@@ -108,7 +111,7 @@ struct ProductValidationInput<'a> {
 
 /// `Product` and `NewProduct` share the validated field set (Diesel generates
 /// both from the same schema). The macro emits a `From` impl that copies the
-/// same 14 fields from either source — adding a new validated field is a
+/// same 15 fields from either source — adding a new validated field is a
 /// single edit to the macro body.
 macro_rules! impl_validation_input_from {
     ($source:ty) => {
@@ -126,6 +129,7 @@ macro_rules! impl_validation_input_from {
                     bottle_count: p.bottle_count,
                     bottle_size: p.bottle_size,
                     weight_grams: p.weight_grams,
+                    ean_code: p.ean_code.as_deref(),
                     price_ron: p.price_ron,
                     bottling_date: p.bottling_date,
                     lot_number: p.lot_number,
@@ -218,6 +222,13 @@ fn validate_product(input: &ProductValidationInput) -> Vec<ProductValidationErro
 
     if !(1..=MAX_WEIGHT_GRAMS).contains(&input.weight_grams) {
         errors.push(ProductValidationError::InvalidWeightGrams);
+    }
+
+    if input
+        .ean_code
+        .is_some_and(|code| !crate::utils::is_valid_ean13(code))
+    {
+        errors.push(ProductValidationError::InvalidEanCode);
     }
 
     // price_ron: Decimal with two digits of precision.
@@ -315,6 +326,20 @@ fn map_unique_violation(
     RepositoryError::Database(e)
 }
 
+/// A product insert or update that hit `products_ean_code_key` reuses
+/// another product's EAN: a validation error on that field.
+fn map_ean_in_use(e: RepositoryError) -> RepositoryError {
+    match e {
+        RepositoryError::Database(DieselError::DatabaseError(
+            DatabaseErrorKind::UniqueViolation,
+            ref info,
+        )) if info.constraint_name() == Some("products_ean_code_key") => {
+            RepositoryError::ProductValidation(vec![ProductValidationError::EanCodeInUse])
+        }
+        other => other,
+    }
+}
+
 #[derive(Debug, Serialize, Queryable, Selectable, TS)]
 #[diesel(table_name = products)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -356,11 +381,11 @@ pub fn create_product(
             .returning(Product::as_returning())
             .get_result(conn)
             .map_err(|e| {
-                map_unique_violation(
+                map_ean_in_use(map_unique_violation(
                     e,
                     |c| c == "products_pkey",
                     "Product with this ID already exists.",
-                )
+                ))
             })?;
 
         lot_crud::upsert_lot(conn, &product, &request.nutrition)?;
@@ -428,7 +453,7 @@ pub fn update_product(
             .get_result(conn)
             .map_err(|e| match e {
                 DieselError::NotFound => RepositoryError::NotFound("Product not found".to_string()),
-                other => RepositoryError::Database(other),
+                other => map_ean_in_use(RepositoryError::Database(other)),
             })?;
 
         lot_crud::upsert_lot(conn, &updated, &request.nutrition)?;

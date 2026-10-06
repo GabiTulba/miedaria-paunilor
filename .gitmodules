@@ -1,0 +1,3 @@
+[submodule "labels/artwork"]
+	path = labels/artwork
+	url = git@github.com:GabiTulba/miedaria-paunilor-artwork.git
