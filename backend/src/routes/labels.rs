@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
-    extract::State,
+    extract::{DefaultBodyLimit, State},
     http::header,
     response::IntoResponse,
     routing::{get, post},
@@ -43,10 +43,20 @@ async fn bundle(
     ))
 }
 
+/// Room for a medal picture (base64 PNG, at most 2 MB decoded, which the
+/// renderer enforces) besides the label text.
+const LABEL_BODY_LIMIT: usize = 3 * 1024 * 1024;
+
 /// Routes mounted under `/api/admin/...`.
 pub fn admin_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/labels/sizes", get(sizes))
-        .route("/labels/preview", post(preview))
-        .route("/labels/bundle", post(bundle))
+        .route(
+            "/labels/preview",
+            post(preview).layer(DefaultBodyLimit::max(LABEL_BODY_LIMIT)),
+        )
+        .route(
+            "/labels/bundle",
+            post(bundle).layer(DefaultBodyLimit::max(LABEL_BODY_LIMIT)),
+        )
 }

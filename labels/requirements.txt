@@ -1,0 +1,3 @@
+# The label service's own dependencies (the artwork library's are in
+# artwork/requirements.txt): Pillow re-encodes uploaded medal pictures.
+Pillow>=12.3

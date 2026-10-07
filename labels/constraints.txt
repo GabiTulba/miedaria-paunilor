@@ -1,4 +1,5 @@
-# Pinned so the label artwork renders exactly as in the artwork repository's
-# golden tests.
+# Pinned so labels render reproducibly: the artwork exactly as in the
+# artwork repository's golden tests, medal pictures re-encoded the same way.
 fonttools==4.66.1
 segno==1.6.6
+Pillow==12.3.0

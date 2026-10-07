@@ -5,6 +5,8 @@
  * variant name on one or two lines on a stripe of `stripe_color`, the
  * sweetness line with the optional effervescence after it ("Demidulce ·
  * Ușor Spumant"), the bottling date, and the ABV and volume in the bottom
- * corners. `volume_cl` `None` prints each size's bottle volume.
+ * corners. `volume_cl` `None` prints each size's bottle volume. `medal` is
+ * an award medal's picture, a base64 PNG the renderer checks, re-encodes
+ * and places in the top-right corner.
  */
-export type FrontLabelContent = { pre_title: string | null, variant_lines: Array<string>, sweetness: string, effervescence: string | null, stripe_color: string, bottling_date: string, alcohol_percent: string, volume_cl: string | null, };
+export type FrontLabelContent = { medal: string | null, pre_title: string | null, variant_lines: Array<string>, sweetness: string, effervescence: string | null, stripe_color: string, bottling_date: string, alcohol_percent: string, volume_cl: string | null, };

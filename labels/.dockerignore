@@ -5,6 +5,7 @@
 !render.py
 !server.py
 !constraints.txt
+!requirements.txt
 !artwork/requirements.txt
 !artwork/lib/*.py
 !artwork/generators/common.py

@@ -17,6 +17,9 @@ const PRE_TITLE = 'Mied cu';
 export interface LabelForm {
     includeFront: boolean;
     includeBack: boolean;
+    /** A medal picture as base64 PNG (see `medalPng()`), or '' for none. */
+    medal: string;
+    medalName: string;
     preTitle: string;
     variantLine1: string;
     variantLine2: string;
@@ -35,13 +38,15 @@ export interface LabelForm {
     containsSulfites: boolean;
 }
 
-export type LabelFormField = Exclude<keyof LabelForm, 'includeFront' | 'includeBack'>;
+export type LabelFormField = Exclude<keyof LabelForm, 'includeFront' | 'includeBack' | 'medalName'>;
 export type LabelTextField = { [K in LabelFormField]: LabelForm[K] extends string ? K : never }[LabelFormField];
 
 export function emptyLabelForm(): LabelForm {
     return {
         includeFront: true,
         includeBack: true,
+        medal: '',
+        medalName: '',
         preTitle: PRE_TITLE,
         variantLine1: '',
         variantLine2: '',
@@ -89,8 +94,9 @@ function nameParts(name: string): Pick<LabelForm, 'preTitle' | 'variantLine1' | 
 }
 
 /// `form` with the product's label content filled in; the producer, stripe
-/// color and chosen sides are kept. The effervescence is typed by hand, so
-/// it is cleared rather than carried over from another product. The lot code and QR link match the
+/// color and chosen sides are kept. The effervescence and the medal are
+/// chosen by hand, so they are cleared rather than carried over from another
+/// product. The lot code and QR link match the
 /// public lot page (`/lot/{lot_number}`).
 export function withProduct(form: LabelForm, product: Product): LabelForm {
     return {
@@ -98,6 +104,8 @@ export function withProduct(form: LabelForm, product: Product): LabelForm {
         ...nameParts(product.product_name_ro),
         sweetness: getEnumLabel(product.sweetness, 'sweetness', romanian()),
         effervescence: '',
+        medal: '',
+        medalName: '',
         bottlingDate: monthAndYear(product.bottling_date),
         alcoholPercent: decimalComma(product.abv, 1),
         volumeMl: String(product.bottle_size),
@@ -121,6 +129,7 @@ function centiliters(milliliters: string): string {
 export function frontContent(form: LabelForm): FrontLabelContent {
     const volume = form.volumeMl.trim();
     return {
+        medal: form.medal || null,
         pre_title: form.preTitle.trim() ? form.preTitle : null,
         variant_lines: lines(form.variantLine1, form.variantLine2),
         sweetness: form.sweetness,
@@ -148,6 +157,7 @@ export function backContent(form: LabelForm): BackLabelContent {
 /// The renderer's field path (`back.ean`, `front.variant_lines.1`) as the
 /// form field it came from.
 const FIELD_PATHS: Record<string, LabelFormField> = {
+    'front.medal': 'medal',
     'front.pre_title': 'preTitle',
     'front.variant_lines': 'variantLine1',
     'front.variant_lines.0': 'variantLine1',

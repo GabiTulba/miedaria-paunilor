@@ -34,7 +34,7 @@ import content  # noqa: E402
 import render  # noqa: E402
 from lib import SIZES  # noqa: E402
 
-MAX_BODY_BYTES = 64 * 1024
+MAX_BODY_BYTES = 3 * 1024 * 1024           # a medal picture (base64) and the label text
 REQUEST_TIMEOUT_SECS = 30
 SIZES_JSON = json.dumps([{'name': s.name, 'front_mm': s.front_mm, 'back_mm': s.back_mm, 'bottle': s.bottle,
                           'volume_cl': s.volume_cl} for s in SIZES.values()]).encode()

@@ -633,6 +633,7 @@
         "variantLine2": "Variant name, second line",
         "sweetness": "Sweetness",
         "effervescence": "Effervescence",
+        "medal": "Medal",
         "bottlingDate": "Bottling date",
         "stripeColor": "Stripe color",
         "producerName": "Producer",
@@ -649,6 +650,7 @@
         "variantLine1": "Set large on the coloured stripe, e.g. “Mentă”.",
         "variantLine2": "Optional: the stripe's second line, e.g. “& Cacao”.",
         "effervescence": "Optional, for sparkling meads: printed after the sweetness, e.g. “Demidulce · Ușor Spumant”.",
+        "medal": "Optional, for awarded meads: a PNG, JPEG or WebP picture of the medal (ideally with a transparent background). It is placed in the top-right corner, as large as fits. The file stays on this device.",
         "lotCode": "Starts with L, e.g. L12.",
         "ean": "12 digits (the check digit is added) or all 13.",
         "qrUrl": "Where the QR code leads: the lot page with the ingredients list.",
@@ -662,7 +664,8 @@
         "check_digit": "wrong check digit",
         "unsupported_character": "the label font has no “{{- detail}}” character",
         "unknown_size": "unknown label format",
-        "type": "invalid value"
+        "type": "invalid value",
+        "too_large": "too large (at most {{- detail}})"
       },
       "doesNotFit": "Does not fit the {{size}} label ({{- detail}}). Shorten the text or split the variant name over two lines.",
       "illegible": "Text too small on the {{size}} label: {{- measures}}.",
@@ -672,6 +675,8 @@
         "QR code": "QR code"
       },
       "noPreview": "Nothing to preview yet.",
+      "removeMedal": "Remove",
+      "medalReadError": "This file could not be read as a picture.",
       "unavailable": "The label renderer is unavailable. Try again in a minute.",
       "requestError": "Could not render the labels.",
       "download": "Download",

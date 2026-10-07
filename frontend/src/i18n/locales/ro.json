@@ -632,6 +632,7 @@
         "variantLine2": "Numele sortimentului, al doilea rând",
         "sweetness": "Dulceață",
         "effervescence": "Efervescență",
+        "medal": "Medalie",
         "bottlingDate": "Data îmbutelierii",
         "stripeColor": "Culoarea benzii",
         "producerName": "Producător",
@@ -648,6 +649,7 @@
         "variantLine1": "Scris mare pe banda colorată, de ex. „Mentă”.",
         "variantLine2": "Opțional: al doilea rând de pe bandă, de ex. „& Cacao”.",
         "effervescence": "Opțional, pentru miedurile spumante: scris după dulceață, de ex. „Demidulce · Ușor Spumant”.",
+        "medal": "Opțional, pentru miedurile premiate: o imagine PNG, JPEG sau WebP a medaliei (ideal cu fundal transparent). Se așază în colțul din dreapta sus, cât de mare încape. Fișierul rămâne pe acest dispozitiv.",
         "lotCode": "Începe cu L, de ex. L12.",
         "ean": "12 cifre (cifra de control se adaugă) sau toate 13.",
         "qrUrl": "Unde duce codul QR: pagina lotului, cu lista de ingrediente.",
@@ -661,7 +663,8 @@
         "check_digit": "cifra de control este greșită",
         "unsupported_character": "fontul etichetei nu are caracterul „{{- detail}}”",
         "unknown_size": "format de etichetă necunoscut",
-        "type": "valoare invalidă"
+        "type": "valoare invalidă",
+        "too_large": "prea mare (cel mult {{- detail}})"
       },
       "doesNotFit": "Nu încape pe eticheta {{size}} ({{- detail}}). Scurtați textul sau împărțiți numele sortimentului pe două rânduri.",
       "illegible": "Text prea mic pe eticheta {{size}}: {{- measures}}.",
@@ -671,6 +674,8 @@
         "QR code": "codul QR"
       },
       "noPreview": "Nimic de previzualizat încă.",
+      "removeMedal": "Elimină",
+      "medalReadError": "Fișierul nu a putut fi citit ca imagine.",
       "unavailable": "Generatorul de etichete nu este disponibil. Încercați din nou peste un minut.",
       "requestError": "Etichetele nu au putut fi generate.",
       "download": "Descărcare",

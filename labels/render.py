@@ -51,7 +51,8 @@ def _checked(side, size, lines):
 def front(content, size):
     """The front label at `size`, as `(markup_for_layer, dropped)`."""
     options = dict(alcohol_percent=content.alcohol_percent, volume_cl=content.volume_cl, size=size,
-                   sweetness=content.sweetness, effervescence=content.effervescence, pre_title=content.pre_title)
+                   sweetness=content.sweetness, effervescence=content.effervescence, pre_title=content.pre_title,
+                   medal=content.medal)
     lines = list(content.variant_lines)
     _checked('front', size, lambda: front_text_lines(lines, content.bottling_date, **options))
     return (lambda layer: label_svg(lines, content.stripe_color, content.bottling_date, layer=layer, **options)), ()

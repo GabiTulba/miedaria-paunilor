@@ -36,11 +36,14 @@ pub struct LabelSize {
 /// variant name on one or two lines on a stripe of `stripe_color`, the
 /// sweetness line with the optional effervescence after it ("Demidulce ·
 /// Ușor Spumant"), the bottling date, and the ABV and volume in the bottom
-/// corners. `volume_cl` `None` prints each size's bottle volume.
+/// corners. `volume_cl` `None` prints each size's bottle volume. `medal` is
+/// an award medal's picture, a base64 PNG the renderer checks, re-encodes
+/// and places in the top-right corner.
 #[derive(Serialize, Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
 #[ts(export)]
 pub struct FrontLabelContent {
+    pub medal: Option<String>,
     pub pre_title: Option<String>,
     pub variant_lines: Vec<String>,
     pub sweetness: String,

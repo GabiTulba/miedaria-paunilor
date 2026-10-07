@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import SelectInput from '../../components/forms/SelectInput';
+import FormField from '../../components/forms/FormField';
 import TextInput from '../../components/forms/TextInput';
 import { useToast } from '../../context/ToastContext';
 import { useFetch } from '../../hooks/useFetch';
@@ -13,6 +14,7 @@ import {
     backContent, emptyLabelForm, formField, frontContent, withProduct,
     type LabelForm, type LabelFormField, type LabelTextField,
 } from '../../lib/labelForm';
+import { MEDAL_FILE_TYPES, medalPng } from '../../lib/medalImage';
 import type { ApiError } from '../../types/api';
 import type { ProductWithImage } from '../../types/models';
 import type { LabelError } from '../../types/generated/LabelError';
@@ -153,6 +155,7 @@ function AdminLabels() {
     const [preview, setPreview] = useState<PreviewState>({ result: null, loading: false, error: null });
     const [downloading, setDownloading] = useState(false);
     const [downloadError, setDownloadError] = useState<LabelError | string | null>(null);
+    const [medalError, setMedalError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!productId) return;
@@ -222,6 +225,26 @@ function AdminLabels() {
     const update = <K extends keyof LabelForm>(field: K, value: LabelForm[K]) => {
         setForm(current => ({ ...current, [field]: value }));
         setDownloadError(null);
+    };
+
+    const chooseMedal = async (input: HTMLInputElement) => {
+        const file = input.files?.[0];
+        input.value = '';
+        if (!file) return;
+        try {
+            const medal = await medalPng(file);
+            setForm(current => ({ ...current, medal, medalName: file.name }));
+            setMedalError(null);
+            setDownloadError(null);
+        } catch (err) {
+            console.error('Could not read the medal picture:', err);
+            setMedalError(t('admin.labels.medalReadError'));
+        }
+    };
+
+    const removeMedal = () => {
+        setForm(current => ({ ...current, medal: '', medalName: '' }));
+        setMedalError(null);
     };
 
     const chooseProduct = (id: string) => {
@@ -351,6 +374,33 @@ function AdminLabels() {
                                     value={form.stripeColor}
                                     onChange={e => update('stripeColor', e.target.value)}
                                 />
+                                <FormField
+                                    id="label-medal"
+                                    label={t('admin.labels.fields.medal')}
+                                    helpText={t('admin.labels.help.medal')}
+                                    error={medalError ?? errors.medal}
+                                >
+                                    {({ describedBy }) => (
+                                        <div className="labels-medal">
+                                            <input
+                                                id="label-medal"
+                                                type="file"
+                                                accept={MEDAL_FILE_TYPES}
+                                                aria-describedby={describedBy}
+                                                aria-invalid={medalError ?? errors.medal ? true : undefined}
+                                                onChange={e => void chooseMedal(e.currentTarget)}
+                                            />
+                                            {form.medalName && (
+                                                <p className="labels-medal-chosen">
+                                                    <span>{form.medalName}</span>
+                                                    <button type="button" className="button button-small button-secondary" onClick={removeMedal}>
+                                                        {t('admin.labels.removeMedal')}
+                                                    </button>
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </FormField>
                             </div>
                         )}
                     </section>

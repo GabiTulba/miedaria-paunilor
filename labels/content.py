@@ -5,10 +5,17 @@ lengths, formats, and that every character has a glyph in the label font,
 so a bad field is reported by name instead of failing deep in the artwork
 library. Lengths are capped well above what fits on a label, which only
 bounds the work a request can cause; whether the text fits is the
-artwork's own check (see render.py).
+artwork's own check (see render.py). A medal picture is decoded and
+re-encoded as a fresh PNG of bounded size, so nothing of the uploaded file
+but its pixels reaches a label.
 """
+import base64
+import binascii
+import io
 import re
 from dataclasses import dataclass
+
+from PIL import Image
 
 from lib import SIZES
 from lib.ean13 import ean13_normalize
@@ -28,6 +35,11 @@ VOLUME_ML = re.compile(r'\d{1,4}')
 EAN = re.compile(r'\d{12,13}')
 URL = re.compile(r'https?://[!-~]+')       # printable ASCII, no spaces
 
+MAX_MEDAL_BYTES = 2 * 1024 * 1024          # the uploaded PNG, decoded
+MAX_MEDAL_SIDE = 2048                      # its pixels, either side
+MEDAL_SIDE = 600                           # as embedded, at most: ~850 dpi at the largest medal (18 mm)
+Image.MAX_IMAGE_PIXELS = MAX_MEDAL_SIDE ** 2   # Pillow's own guard against decompression bombs
+
 
 class InvalidField(Exception):
     """A request field that can't be used: `field` is its dotted path (e.g.
@@ -44,6 +56,7 @@ class InvalidField(Exception):
 
 @dataclass(frozen=True)
 class FrontContent:
+    medal: bytes | None
     pre_title: str | None
     variant_lines: tuple
     sweetness: str
@@ -139,6 +152,7 @@ def _lot_code(data, path):
 def front_content(value, path='front'):
     data = _object(value, path)
     return FrontContent(
+        medal=_medal(data, f'{path}.medal'),
         pre_title=_optional_text(data, 'pre_title', f'{path}.pre_title', MAX_SHORT_CHARS, capitals=True),
         variant_lines=_lines(data, 'variant_lines', f'{path}.variant_lines', FONT_BODY_ITALIC),
         sweetness=_text(data, 'sweetness', f'{path}.sweetness', MAX_SHORT_CHARS),
@@ -163,6 +177,33 @@ def back_content(value, path='back'):
         alcohol_percent=_matching(data, 'alcohol_percent', f'{path}.alcohol_percent', ALCOHOL_PERCENT),
         volume_ml=_optional_matching(data, 'volume_ml', f'{path}.volume_ml', VOLUME_ML),
         contains_sulfites=contains_sulfites)
+
+
+def _medal(data, path):
+    """The optional medal picture: base64 PNG, decoded, checked and
+    re-encoded as an RGBA PNG at most MEDAL_SIDE pixels on a side."""
+    value = data.get('medal')
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise InvalidField(path, 'type')
+    if len(value) > (MAX_MEDAL_BYTES + 2) // 3 * 4:
+        raise InvalidField(path, 'too_large', f'{MAX_MEDAL_BYTES // (1024 * 1024)} MB')
+    try:
+        raw = base64.b64decode(value, validate=True)
+    except binascii.Error:
+        raise InvalidField(path, 'format') from None
+    try:
+        with Image.open(io.BytesIO(raw), formats=['PNG']) as image:
+            if max(image.size) > MAX_MEDAL_SIDE:
+                raise InvalidField(path, 'too_large', f'{MAX_MEDAL_SIDE} px')
+            picture = image.convert('RGBA')
+    except (OSError, ValueError, Image.DecompressionBombError):
+        raise InvalidField(path, 'format') from None
+    picture.thumbnail((MEDAL_SIDE, MEDAL_SIDE), Image.Resampling.LANCZOS)
+    encoded = io.BytesIO()
+    picture.save(encoded, 'PNG', optimize=True)
+    return encoded.getvalue()
 
 
 def _size(value, path):
