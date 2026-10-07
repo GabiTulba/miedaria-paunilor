@@ -32,16 +32,20 @@ pub struct LabelSize {
     pub volume_cl: u32,
 }
 
-/// The front label's text: the variant name on one or two lines, the
-/// sweetness line, the ABV/volume pill's color and figures, and the bottling
-/// date. `volume_cl` `None` prints each size's bottle volume.
+/// The front label's text: the optional small pre-title ("Mied cu"), the
+/// variant name on one or two lines on a stripe of `stripe_color`, the
+/// sweetness line with the optional effervescence after it ("Demidulce ·
+/// Ușor Spumant"), the bottling date, and the ABV and volume in the bottom
+/// corners. `volume_cl` `None` prints each size's bottle volume.
 #[derive(Serialize, Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
 #[ts(export)]
 pub struct FrontLabelContent {
+    pub pre_title: Option<String>,
     pub variant_lines: Vec<String>,
     pub sweetness: String,
-    pub pill_color: String,
+    pub effervescence: Option<String>,
+    pub stripe_color: String,
     pub bottling_date: String,
     pub alcohol_percent: String,
     pub volume_cl: Option<String>,

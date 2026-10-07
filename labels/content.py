@@ -14,14 +14,14 @@ from lib import SIZES
 from lib.ean13 import ean13_normalize
 from lib.label import BODY_FONT_WEIGHT
 from lib.outline import _font_data
-from lib.paths import FONT_BODY
+from lib.paths import FONT_BODY, FONT_BODY_ITALIC
 
 MAX_LINE_CHARS = 100
 MAX_SHORT_CHARS = 40
 MAX_URL_CHARS = 200
 MAX_LINES = 2
 
-PILL_COLOR = re.compile(r'#[0-9a-fA-F]{6}')
+HEX_COLOR = re.compile(r'#[0-9a-fA-F]{6}')
 ALCOHOL_PERCENT = re.compile(r'\d{1,2}(,\d)?')
 VOLUME_CL = re.compile(r'\d{1,3}(,\d)?')
 VOLUME_ML = re.compile(r'\d{1,4}')
@@ -44,9 +44,11 @@ class InvalidField(Exception):
 
 @dataclass(frozen=True)
 class FrontContent:
+    pre_title: str | None
     variant_lines: tuple
     sweetness: str
-    pill_color: str
+    effervescence: str | None
+    stripe_color: str
     bottling_date: str
     alcohol_percent: str
     volume_cl: str | None
@@ -83,23 +85,29 @@ def _string(data, field, path, max_chars):
     return value
 
 
-def _text(data, field, path, max_chars=MAX_LINE_CHARS):
-    """A line of label text: `_string()`, every character in the font."""
+def _text(data, field, path, max_chars=MAX_LINE_CHARS, font=FONT_BODY, capitals=False):
+    """A line of label text: `_string()`, every character - in capitals,
+    if the label sets it so - in `font`."""
     value = _string(data, field, path, max_chars)
-    cmap = _font_data(FONT_BODY, BODY_FONT_WEIGHT)[1]
-    unsupported = next((c for c in value if not c.isprintable() or ord(c) not in cmap), None)
+    cmap = _font_data(font, BODY_FONT_WEIGHT)[1]
+    unsupported = next((c for c in (value.upper() if capitals else value)
+                        if not c.isprintable() or ord(c) not in cmap), None)
     if unsupported is not None:
         raise InvalidField(path, 'unsupported_character', unsupported)
     return value
 
 
-def _lines(data, field, path):
+def _optional_text(data, field, path, max_chars, capitals=False):
+    return None if data.get(field) is None else _text(data, field, path, max_chars, capitals=capitals)
+
+
+def _lines(data, field, path, font=FONT_BODY):
     value = data.get(field)
     if not isinstance(value, list):
         raise InvalidField(path, 'type')
     if not 1 <= len(value) <= MAX_LINES:
         raise InvalidField(path, 'line_count', MAX_LINES)
-    return tuple(_text({field: line}, field, f'{path}.{index}') for index, line in enumerate(value))
+    return tuple(_text({field: line}, field, f'{path}.{index}', font=font) for index, line in enumerate(value))
 
 
 def _matching(data, field, path, pattern, max_chars=MAX_SHORT_CHARS):
@@ -131,9 +139,11 @@ def _lot_code(data, path):
 def front_content(value, path='front'):
     data = _object(value, path)
     return FrontContent(
-        variant_lines=_lines(data, 'variant_lines', f'{path}.variant_lines'),
+        pre_title=_optional_text(data, 'pre_title', f'{path}.pre_title', MAX_SHORT_CHARS, capitals=True),
+        variant_lines=_lines(data, 'variant_lines', f'{path}.variant_lines', FONT_BODY_ITALIC),
         sweetness=_text(data, 'sweetness', f'{path}.sweetness', MAX_SHORT_CHARS),
-        pill_color=_matching(data, 'pill_color', f'{path}.pill_color', PILL_COLOR),
+        effervescence=_optional_text(data, 'effervescence', f'{path}.effervescence', MAX_SHORT_CHARS),
+        stripe_color=_matching(data, 'stripe_color', f'{path}.stripe_color', HEX_COLOR),
         bottling_date=_text(data, 'bottling_date', f'{path}.bottling_date', MAX_SHORT_CHARS),
         alcohol_percent=_matching(data, 'alcohol_percent', f'{path}.alcohol_percent', ALCOHOL_PERCENT),
         volume_cl=_optional_matching(data, 'volume_cl', f'{path}.volume_cl', VOLUME_CL))

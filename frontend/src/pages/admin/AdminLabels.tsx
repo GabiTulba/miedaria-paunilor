@@ -336,18 +336,20 @@ function AdminLabels() {
                         </div>
                         {form.includeFront && (
                             <div className="labels-fields">
-                                {text('variantLine1', { required: true })}
+                                {text('preTitle', { helpText: t('admin.labels.help.preTitle'), placeholder: 'Mied cu' })}
+                                {text('variantLine1', { required: true, helpText: t('admin.labels.help.variantLine1') })}
                                 {text('variantLine2', { helpText: t('admin.labels.help.variantLine2') })}
                                 {text('sweetness', { required: true, placeholder: 'Demidulce' })}
+                                {text('effervescence', { helpText: t('admin.labels.help.effervescence'), placeholder: 'Ușor Spumant' })}
                                 {text('bottlingDate', { required: true, placeholder: 'Noiembrie 2025' })}
                                 <TextInput
-                                    id="label-pillColor"
+                                    id="label-stripeColor"
                                     type="color"
-                                    label={t('admin.labels.fields.pillColor')}
+                                    label={t('admin.labels.fields.stripeColor')}
                                     className="labels-color"
-                                    error={errors.pillColor}
-                                    value={form.pillColor}
-                                    onChange={e => update('pillColor', e.target.value)}
+                                    error={errors.stripeColor}
+                                    value={form.stripeColor}
+                                    onChange={e => update('stripeColor', e.target.value)}
                                 />
                             </div>
                         )}
